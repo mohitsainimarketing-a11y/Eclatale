@@ -95,87 +95,73 @@ const INDUSTRIES = [
 ];
 
 const GROWTH_GOALS = [
-  { id: 'visible', label: 'Get Visible Online', icon: '👁', desc: 'Stand out in your industry and become known' },
-  { id: 'clients', label: 'Land More Clients', icon: '🤝', desc: 'Attract high-quality leads through your brand' },
-  { id: 'promoted', label: 'Get Promoted', icon: '📈', desc: 'Accelerate your career growth trajectory' },
-  { id: 'thought-leader', label: 'Build Thought Leadership', icon: '💡', desc: 'Become the go-to voice in your domain' },
-  { id: 'new-job', label: 'Find a New Job', icon: '🎯', desc: 'Make opportunities come to you' },
-  { id: 'network', label: 'Grow My Network', icon: '🌐', desc: 'Connect with the right people at scale' },
-  { id: 'launch', label: 'Launch My Business', icon: '🚀', desc: 'Build an audience before you launch' },
-  { id: 'speaker', label: 'Become a Speaker', icon: '🎤', desc: 'Land speaking gigs and conference spots' },
+  { id: 'visible', label: 'Get Visible Online', emoji: '👁️', desc: 'Stand out in your industry' },
+  { id: 'clients', label: 'Land More Clients', emoji: '🤝', desc: 'Attract high-quality leads' },
+  { id: 'promoted', label: 'Get Promoted', emoji: '📈', desc: 'Accelerate career growth' },
+  { id: 'thought-leader', label: 'Build Thought Leadership', emoji: '💡', desc: 'Become the go-to voice' },
+  { id: 'new-job', label: 'Find a New Job', emoji: '🎯', desc: 'Make opportunities come to you' },
+  { id: 'network', label: 'Grow My Network', emoji: '🌐', desc: 'Connect at scale' },
+  { id: 'launch', label: 'Launch My Business', emoji: '🚀', desc: 'Build audience before launch' },
+  { id: 'speaker', label: 'Become a Speaker', emoji: '🎤', desc: 'Land speaking gigs' },
 ];
 
-function SearchableDropdown({
-  options,
-  value,
-  onChange,
-  placeholder,
-}: {
-  options: string[];
-  value: string;
-  onChange: (val: string) => void;
-  placeholder: string;
+function SearchableDropdown({ options, value, onChange, placeholder }: {
+  options: string[]; value: string; onChange: (val: string) => void; placeholder: string;
 }) {
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
   const filtered = useMemo(() => {
-    if (!search) return options.slice(0, 20);
+    if (!search) return options.slice(0, 15);
     const lower = search.toLowerCase();
-    const exact: string[] = [];
-    const startsWith: string[] = [];
-    const contains: string[] = [];
-    for (const opt of options) {
-      const l = opt.toLowerCase();
-      if (l === lower) exact.push(opt);
-      else if (l.startsWith(lower)) startsWith.push(opt);
-      else if (l.includes(lower)) contains.push(opt);
-    }
-    return [...exact, ...startsWith, ...contains].slice(0, 20);
+    return options
+      .filter(opt => opt.toLowerCase().includes(lower))
+      .sort((a, b) => {
+        const al = a.toLowerCase();
+        const bl = b.toLowerCase();
+        if (al.startsWith(lower) && !bl.startsWith(lower)) return -1;
+        if (!al.startsWith(lower) && bl.startsWith(lower)) return 1;
+        return 0;
+      })
+      .slice(0, 15);
   }, [search, options]);
 
   return (
     <div className="relative">
       <div className="relative">
-        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-400" />
-        <Sparkles size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-pink-400" />
+        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-muted" />
         <input
           type="text"
           value={isOpen ? search : value || search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            onChange('');
-            if (!isOpen) setIsOpen(true);
-          }}
+          onChange={(e) => { setSearch(e.target.value); onChange(''); if (!isOpen) setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full pl-12 pr-12 py-4 rounded-2xl border-2 border-purple-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100 transition-all text-lg"
+          className="input !pl-11 !pr-11 !rounded-2xl !text-base"
+          role="combobox"
+          aria-expanded={isOpen}
         />
+        <Sparkles size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-purple/40" />
       </div>
 
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute z-20 w-full mt-2 bg-white rounded-2xl shadow-2xl shadow-purple-200/50 border-2 border-purple-100 max-h-64 overflow-y-auto">
+          <div className="absolute z-20 w-full mt-2 card !rounded-2xl max-h-60 overflow-y-auto shadow-brand-lg" role="listbox">
             {filtered.length === 0 ? (
-              <div className="p-4 text-center text-gray-400 text-sm">
-                No matches found. Try a different search.
-              </div>
+              <div className="p-4 text-center text-sm text-brand-muted">No matches. Try a different search.</div>
             ) : (
               filtered.map((opt) => (
                 <button
                   key={opt}
-                  onClick={() => {
-                    onChange(opt);
-                    setSearch(opt);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full text-left px-5 py-3 hover:bg-purple-50 transition-colors flex items-center justify-between group ${
-                    value === opt ? 'bg-purple-50 text-purple-700' : 'text-gray-700'
+                  role="option"
+                  aria-selected={value === opt}
+                  onClick={() => { onChange(opt); setSearch(opt); setIsOpen(false); }}
+                  className={`w-full text-left px-4 py-3 flex items-center justify-between hover:bg-brand-bg transition-colors text-sm ${
+                    value === opt ? 'bg-brand-bg text-brand-purple font-semibold' : 'text-brand-dark'
                   }`}
                 >
                   <span className="font-medium">{opt}</span>
-                  {value === opt && <Check size={18} className="text-purple-500" />}
+                  {value === opt && <Check size={16} className="text-brand-purple" />}
                 </button>
               ))
             )}
@@ -193,179 +179,116 @@ export default function Onboarding() {
   const [goals, setGoals] = useState<string[]>([]);
 
   const toggleGoal = (id: string) => {
-    setGoals((prev) =>
-      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
-    );
+    setGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 
-  const canProceed =
-    (step === 1 && role) ||
-    (step === 2 && industry) ||
-    (step === 3 && goals.length > 0);
+  const canProceed = (step === 1 && role) || (step === 2 && industry) || (step === 3 && goals.length > 0);
 
   const handleFinish = async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        role,
-        industry,
-        goals,
-      });
+      await supabase.from('profiles').upsert({ id: data.user.id, role, industry, goals });
     }
     window.location.href = '/dashboard';
   };
 
-  const stepLabels = ['Your Role', 'Your Domain', 'Your Goals'];
-
   return (
-    <div className="min-h-screen gradient-bg-hero flex flex-col">
+    <div className="min-h-screen gradient-bg-page flex flex-col">
       {/* Header */}
-      <div className="px-8 py-6 flex items-center justify-between">
-        <div className="text-2xl font-bold gradient-text">Eclatale</div>
-        <div className="text-sm text-gray-500 font-medium">Step {step} of 3</div>
+      <div className="px-5 md:px-8 h-14 md:h-16 flex items-center justify-between flex-shrink-0">
+        <div className="text-lg md:text-xl font-extrabold gradient-text">Eclatale</div>
+        <span className="text-xs font-semibold text-brand-muted">Step {step}/3</span>
       </div>
 
-      {/* Progress Bar */}
-      <div className="px-8 mb-2">
-        <div className="flex gap-2">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex-1 h-2 rounded-full overflow-hidden bg-purple-100">
+      {/* Progress */}
+      <div className="px-5 md:px-8 mb-6 md:mb-8">
+        <div className="max-w-2xl mx-auto flex gap-2">
+          {[1, 2, 3].map(s => (
+            <div key={s} className="flex-1 h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500 gradient-bg"
+                className="h-full rounded-full gradient-primary transition-all duration-500"
                 style={{ width: s <= step ? '100%' : '0%' }}
               />
             </div>
           ))}
         </div>
-        <div className="flex justify-between mt-2">
-          {stepLabels.map((label, i) => (
-            <span
-              key={i}
-              className={`text-xs font-medium ${
-                i + 1 <= step ? 'text-purple-600' : 'text-gray-400'
-              }`}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center px-6 py-8">
-        <div className="w-full max-w-2xl">
-
-          {/* Step 1: Role */}
+      <div className="flex-1 flex items-start md:items-center justify-center px-5 py-4 md:py-8">
+        <div className="w-full max-w-xl">
           {step === 1 && (
             <div className="animate-fadeIn">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-purple-100 text-purple-700 font-medium mb-4">
-                  <Sparkles size={16} />
-                  AI-Powered Matching
+              <div className="text-center mb-6 md:mb-8">
+                <div className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple mb-4">
+                  <Sparkles size={13} /> AI-Powered
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                  What's your <span className="gradient-text">role</span>?
-                </h2>
-                <p className="text-gray-500 text-lg">
-                  We'll personalize your content strategy for your position.
-                </p>
+                <h2 className="h2 text-brand-dark mb-2">What's your <span className="gradient-text">role</span>?</h2>
+                <p className="body-text text-sm">We'll personalize your content strategy.</p>
               </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-xl shadow-purple-200/30 border-2 border-purple-100">
-                <SearchableDropdown
-                  options={ROLES}
-                  value={role}
-                  onChange={setRole}
-                  placeholder="Search your role... (e.g., CEO, Designer)"
-                />
+              <div className="card p-5 md:p-6">
+                <SearchableDropdown options={ROLES} value={role} onChange={setRole} placeholder="Search your role..." />
                 {role && (
-                  <div className="mt-4 flex items-center gap-2 text-purple-600 font-medium">
-                    <Check size={18} className="text-green-500" />
-                    Selected: <span className="font-bold">{role}</span>
+                  <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brand-purple animate-checkmark">
+                    <Check size={16} className="text-brand-teal" /> {role}
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Step 2: Industry */}
           {step === 2 && (
             <div className="animate-fadeIn">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-pink-100 text-pink-700 font-medium mb-4">
-                  <Sparkles size={16} />
-                  AI-Powered Matching
+              <div className="text-center mb-6 md:mb-8">
+                <div className="badge bg-[rgba(247,37,133,0.08)] text-brand-pink mb-4">
+                  <Sparkles size={13} /> AI-Powered
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                  What's your <span className="gradient-text">domain</span>?
-                </h2>
-                <p className="text-gray-500 text-lg">
-                  We'll tailor content for your industry's audience.
-                </p>
+                <h2 className="h2 text-brand-dark mb-2">What's your <span className="gradient-text">industry</span>?</h2>
+                <p className="body-text text-sm">We'll tailor content for your audience.</p>
               </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-xl shadow-purple-200/30 border-2 border-pink-100">
-                <SearchableDropdown
-                  options={INDUSTRIES}
-                  value={industry}
-                  onChange={setIndustry}
-                  placeholder="Search your industry... (e.g., Technology, Finance)"
-                />
+              <div className="card p-5 md:p-6">
+                <SearchableDropdown options={INDUSTRIES} value={industry} onChange={setIndustry} placeholder="Search your industry..." />
                 {industry && (
-                  <div className="mt-4 flex items-center gap-2 text-pink-600 font-medium">
-                    <Check size={18} className="text-green-500" />
-                    Selected: <span className="font-bold">{industry}</span>
+                  <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brand-pink animate-checkmark">
+                    <Check size={16} className="text-brand-teal" /> {industry}
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Step 3: Goals */}
           {step === 3 && (
             <div className="animate-fadeIn">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-orange-100 text-orange-700 font-medium mb-4">
-                  <Sparkles size={16} />
-                  Select Multiple
+              <div className="text-center mb-6 md:mb-8">
+                <div className="badge bg-[rgba(255,107,53,0.08)] text-brand-orange mb-4">
+                  <Sparkles size={13} /> Select Multiple
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                  What are your <span className="gradient-text">growth goals</span>?
-                </h2>
-                <p className="text-gray-500 text-lg">
-                  Pick all that apply — we'll build your roadmap.
-                </p>
+                <h2 className="h2 text-brand-dark mb-2">Your <span className="gradient-text">growth goals</span></h2>
+                <p className="body-text text-sm">Pick all that apply — we'll build your roadmap.</p>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {GROWTH_GOALS.map((goal) => {
+                {GROWTH_GOALS.map(goal => {
                   const selected = goals.includes(goal.id);
                   return (
                     <button
                       key={goal.id}
                       onClick={() => toggleGoal(goal.id)}
-                      className={`text-left p-5 rounded-2xl border-2 transition-all hover:shadow-lg ${
-                        selected
-                          ? 'border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md'
-                          : 'border-purple-100 bg-white hover:border-purple-300'
+                      className={`card card-hover p-4 text-left !transition-all ${
+                        selected ? '!border-brand-purple !shadow-brand-md' : ''
                       }`}
+                      aria-pressed={selected}
                     >
-                      <div className="flex items-start gap-3">
-                        <span className="text-2xl">{goal.icon}</span>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className={`font-bold ${selected ? 'text-purple-700' : 'text-gray-900'}`}>
-                              {goal.label}
-                            </h3>
-                            {selected && (
-                              <div className="w-6 h-6 rounded-full gradient-bg flex items-center justify-center">
-                                <Check size={14} className="text-white" />
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">{goal.desc}</p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{goal.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-bold text-brand-dark">{goal.label}</h3>
+                          <p className="text-xs text-brand-muted mt-0.5">{goal.desc}</p>
                         </div>
+                        {selected && (
+                          <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center animate-checkmark flex-shrink-0">
+                            <Check size={11} className="text-white" />
+                          </div>
+                        )}
                       </div>
                     </button>
                   );
@@ -374,28 +297,19 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
+          {/* Nav */}
+          <div className="flex justify-between mt-6 md:mt-8">
             {step > 1 ? (
-              <button
-                onClick={() => setStep(step - 1)}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-purple-600 hover:bg-purple-50 transition-all border-2 border-purple-200"
-              >
-                <ArrowLeft size={18} /> Back
+              <button onClick={() => setStep(step - 1)} className="btn-ghost text-sm !py-3">
+                <ArrowLeft size={16} /> Back
               </button>
-            ) : (
-              <div />
-            )}
-
+            ) : <div />}
             <button
-              onClick={() => {
-                if (step < 3) setStep(step + 1);
-                else handleFinish();
-              }}
+              onClick={() => { if (step < 3) setStep(step + 1); else handleFinish(); }}
               disabled={!canProceed}
-              className="flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-white gradient-bg hover:opacity-90 transition-all shadow-lg shadow-purple-400/25 disabled:opacity-40 disabled:shadow-none"
+              className="btn-primary text-sm"
             >
-              {step === 3 ? 'Get Started' : 'Continue'} <ArrowRight size={18} />
+              {step === 3 ? 'Get Started' : 'Continue'} <ArrowRight size={16} />
             </button>
           </div>
         </div>

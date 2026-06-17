@@ -89,7 +89,7 @@ export default function Dashboard() {
                 Tell us your topic and we'll create a perfect LinkedIn post in seconds
               </p>
             </a>
-            <div className="p-6 rounded-xl border-2 border-pink-100 cursor-pointer hover:border-pink-400 hover:shadow-lg transition-all bg-gradient-to-br from-pink-50 to-orange-50 group">
+            <a href="/guided" className="p-6 rounded-xl border-2 border-pink-100 cursor-pointer hover:border-pink-400 hover:shadow-lg transition-all bg-gradient-to-br from-pink-50 to-orange-50 group block">
               <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center mb-4 group-hover:bg-pink-200 transition-colors">
                 <PenTool className="text-pink-600" size={24} />
               </div>
@@ -97,7 +97,7 @@ export default function Dashboard() {
               <p className="text-sm text-gray-500">
                 Have an idea? We'll help you shape it into compelling content
               </p>
-            </div>
+            </a>
           </div>
         </div>
 

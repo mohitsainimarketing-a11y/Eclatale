@@ -80,7 +80,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-2xl p-8 border-2 border-purple-100 mb-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Create Your First Post</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-6 rounded-xl border-2 border-purple-100 cursor-pointer hover:border-purple-400 hover:shadow-lg transition-all bg-gradient-to-br from-purple-50 to-pink-50 group">
+            <a href="/create" className="p-6 rounded-xl border-2 border-purple-100 cursor-pointer hover:border-purple-400 hover:shadow-lg transition-all bg-gradient-to-br from-purple-50 to-pink-50 group block">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-4 group-hover:bg-purple-200 transition-colors">
                 <Sparkles className="text-purple-600" size={24} />
               </div>
@@ -88,7 +88,7 @@ export default function Dashboard() {
               <p className="text-sm text-gray-500">
                 Tell us your topic and we'll create a perfect LinkedIn post in seconds
               </p>
-            </div>
+            </a>
             <div className="p-6 rounded-xl border-2 border-pink-100 cursor-pointer hover:border-pink-400 hover:shadow-lg transition-all bg-gradient-to-br from-pink-50 to-orange-50 group">
               <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center mb-4 group-hover:bg-pink-200 transition-colors">
                 <PenTool className="text-pink-600" size={24} />

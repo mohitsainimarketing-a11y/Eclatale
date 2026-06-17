@@ -11,7 +11,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+      if (!data.user) {
+        window.location.href = '/signup';
+      } else {
+        setUser(data.user);
+      }
     });
   }, []);
 

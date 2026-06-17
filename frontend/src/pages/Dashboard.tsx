@@ -48,7 +48,7 @@ export default function Dashboard() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) {
-        window.location.href = '/signup';
+        window.location.href = '/login';
       } else {
         setUser(data.user);
         setLoading(false);

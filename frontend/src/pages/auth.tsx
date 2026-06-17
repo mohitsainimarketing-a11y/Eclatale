@@ -7,10 +7,10 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
 
-export default function Auth() {
+export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: boolean }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(defaultIsLogin);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -21,7 +21,7 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        window.location.href = '/onboarding';
+        window.location.href = '/dashboard';
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
@@ -106,12 +106,12 @@ export default function Auth() {
 
           <p className="text-center text-sm text-brand-muted mt-5">
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <button
-              onClick={() => { setIsLogin(!isLogin); setMessage(''); }}
+            <a
+              href={isLogin ? '/signup' : '/login'}
               className="text-brand-purple font-semibold hover:underline"
             >
               {isLogin ? 'Sign up' : 'Sign in'}
-            </button>
+            </a>
           </p>
         </div>
       </div>

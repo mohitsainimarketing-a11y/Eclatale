@@ -12,7 +12,7 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
 const TONES = [
   { id: 'professional', emoji: '💼', label: 'Professional', desc: 'Polished & authoritative' },
@@ -48,7 +48,7 @@ export default function GuidedCreate() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) window.location.href = '/signup';
+      if (!data.user) window.location.href = '/login';
       else setUserId(data.user.id);
     });
   }, []);
@@ -60,7 +60,7 @@ export default function GuidedCreate() {
     setLoading(true); setError('');
     try {
       const res = await fetch(`${API_URL}/api/guided-questions`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ rawIdea, contentType, userId }),
       });
       const data = await res.json();
@@ -75,7 +75,7 @@ export default function GuidedCreate() {
     setLoading(true); setError('');
     try {
       const res = await fetch(`${API_URL}/api/guided-generate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ rawIdea, contentType, tone, questions, answers, userId }),
       });
       const data = await res.json();

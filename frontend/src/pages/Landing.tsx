@@ -30,7 +30,8 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Features</a>
             <a href="#faq" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">FAQ</a>
-            <a href="/signup" className="btn-primary text-sm !py-2.5 !px-6">Get Started Free</a>
+            <a href="/login" className="text-sm font-medium text-brand-muted hover:text-brand-purple hover:underline transition-colors">Sign In</a>
+            <a href="/signup" className="btn-primary text-sm !py-2.5 !px-6">Start Free</a>
           </div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 -mr-2" aria-label="Toggle menu">
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -40,7 +41,8 @@ export default function Landing() {
           <div className="md:hidden bg-white border-t border-[rgba(124,92,252,0.06)] px-5 py-4 space-y-3 animate-fadeIn">
             <a href="#features" className="block py-3 text-sm font-medium text-brand-muted">Features</a>
             <a href="#faq" className="block py-3 text-sm font-medium text-brand-muted">FAQ</a>
-            <a href="/signup" className="btn-primary text-sm w-full text-center mt-2">Get Started Free</a>
+            <a href="/login" className="block py-3 text-sm font-medium text-brand-muted">Sign In</a>
+            <a href="/signup" className="btn-primary text-sm w-full text-center mt-2">Start Free</a>
           </div>
         )}
       </nav>

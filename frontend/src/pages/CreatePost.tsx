@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
 const TONES = [
   { id: 'professional', label: 'Professional', emoji: '💼', desc: 'Polished & authoritative', color: 'brand-purple' },
@@ -44,7 +44,7 @@ export default function CreatePost() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) window.location.href = '/signup';
+      if (!data.user) window.location.href = '/login';
       else setUserId(data.user.id);
     });
   }, []);
@@ -54,7 +54,7 @@ export default function CreatePost() {
     setLoadingSuggestions(true);
     try {
       const res = await fetch(`${API_URL}/api/suggest-topics`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ query, userId }),
       });
       const data = await res.json();
@@ -75,7 +75,7 @@ export default function CreatePost() {
     setIsGenerating(true); setError(''); setGeneratedContent('');
     try {
       const res = await fetch(`${API_URL}/api/generate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ topic, tone, contentType, userId }),
       });
       const data = await res.json();

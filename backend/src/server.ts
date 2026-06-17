@@ -29,12 +29,12 @@ app.post('/api/generate', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, industry, goals')
+      .select('role, domain, goals')
       .eq('id', userId)
       .single();
 
     const role = profile?.role || 'professional';
-    const industry = profile?.industry || 'business';
+    const industry = profile?.domain || 'business';
     const goals = profile?.goals || [];
 
     const goalsText = goals.length > 0
@@ -99,12 +99,12 @@ app.post('/api/suggest-topics', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, industry, goals')
+      .select('role, domain, goals')
       .eq('id', userId)
       .single();
 
     const role = profile?.role || 'professional';
-    const industry = profile?.industry || 'business';
+    const industry = profile?.domain || 'business';
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6-20250514',
@@ -138,12 +138,12 @@ app.post('/api/guided-questions', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, industry, goals')
+      .select('role, domain, goals')
       .eq('id', userId)
       .single();
 
     const role = profile?.role || 'professional';
-    const industry = profile?.industry || 'business';
+    const industry = profile?.domain || 'business';
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6-20250514',
@@ -183,12 +183,12 @@ app.post('/api/guided-generate', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, industry, goals')
+      .select('role, domain, goals')
       .eq('id', userId)
       .single();
 
     const role = profile?.role || 'professional';
-    const industry = profile?.industry || 'business';
+    const industry = profile?.domain || 'business';
     const goals = profile?.goals || [];
 
     const goalsText = goals.length > 0

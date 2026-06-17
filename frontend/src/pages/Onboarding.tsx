@@ -187,7 +187,7 @@ export default function Onboarding() {
   const handleFinish = async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
-      await supabase.from('profiles').upsert({ id: data.user.id, role, industry, goals });
+      await supabase.from('profiles').upsert({ id: data.user.id, role, domain: industry, goals });
     }
     window.location.href = '/dashboard';
   };

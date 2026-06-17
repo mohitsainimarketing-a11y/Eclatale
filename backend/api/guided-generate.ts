@@ -35,12 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, industry, goals')
+      .select('role, domain, goals')
       .eq('id', userId)
       .single();
 
     const role = profile?.role || 'professional';
-    const industry = profile?.industry || 'business';
+    const industry = profile?.domain || 'business';
     const goals = profile?.goals || [];
 
     const goalsText = goals.length > 0

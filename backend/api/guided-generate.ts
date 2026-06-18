@@ -76,6 +76,12 @@ Writing style:
 - Weave in the specific details they provided naturally — don't just list them
 - Make every sentence earn its place — no filler
 
+CRITICAL OUTPUT RULES:
+- Return ONLY the post content itself. No preamble like "Here's a post for you". No introduction. No meta-commentary. No dividers like "---". Start directly with the hook line.
+- NEVER use markdown formatting: no ** for bold, no * for italic, no # for headers, no ` for code. LinkedIn and social platforms render these as literal characters, not formatting.
+- For emphasis, use CAPITALIZATION, line breaks, and emoji instead of markdown symbols.
+- Do not wrap the output in quotes or add any framing text around it.
+
 Content format:
 ${contentTypeInstructions[contentType] || contentTypeInstructions['linkedin-post']}`;
 

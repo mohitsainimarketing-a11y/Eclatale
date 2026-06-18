@@ -23,9 +23,13 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
         if (error) throw error;
         window.location.href = '/dashboard';
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage('Check your email to confirm your account! Then come back and login.');
+        if (data.session) {
+          window.location.href = '/onboarding';
+        } else {
+          setMessage('Check your email to confirm your account! Then come back and login.');
+        }
       }
     } catch (error: any) {
       setMessage(error.message);

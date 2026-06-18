@@ -88,7 +88,7 @@ ${qaPairs ? `Additional context from my answers:\n\n${qaPairs}` : ''}
 Write the content now. Make it compelling, specific, and authentic to my voice.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: userMessage }],
       system: systemPrompt,

@@ -73,7 +73,7 @@ Content format:
 ${contentTypeInstructions[contentType] || contentTypeInstructions['linkedin-post']}`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [
         {
@@ -107,7 +107,7 @@ app.post('/api/suggest-topics', async (req, res) => {
     const industry = profile?.domain || 'business';
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 512,
       messages: [
         {
@@ -146,7 +146,7 @@ app.post('/api/guided-questions', async (req, res) => {
     const industry = profile?.domain || 'business';
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       messages: [
         {
@@ -243,7 +243,7 @@ ${qaPairs ? `Additional context from my answers:\n\n${qaPairs}` : ''}
 Write the content now. Make it compelling, specific, and authentic to my voice.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: userMessage }],
       system: systemPrompt,

@@ -81,6 +81,9 @@ export default function CreatePost() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setGeneratedContent(data.content); setEditedContent(data.content);
+      await supabase.from('posts').insert({
+        user_id: userId, content: data.content, topic, tone, content_type: contentType, source: 'auto',
+      });
     } catch (err: any) { setError(err.message || 'Failed to generate.'); }
     setIsGenerating(false);
   };

@@ -81,6 +81,9 @@ export default function GuidedCreate() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setGeneratedContent(data.content); setEditedContent(data.content); setStep('result');
+      await supabase.from('posts').insert({
+        user_id: userId, content: data.content, topic: rawIdea.substring(0, 200), tone, content_type: contentType, source: 'guided',
+      });
     } catch (err: any) { setError(err.message || 'Failed to generate.'); }
     setLoading(false);
   };

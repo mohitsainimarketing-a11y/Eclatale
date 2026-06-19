@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { BarChart3, Users, Eye, Trophy, Sparkles, PenTool, LogOut, Home, Zap, User } from 'lucide-react';
+import { BarChart3, Users, Eye, Trophy, Sparkles, PenTool, LogOut, Home, Zap, User, Clock } from 'lucide-react';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -152,6 +152,20 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* History Link */}
+        <a href="/history" className="card card-hover p-5 md:p-6 mb-6 flex items-center justify-between block">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white">
+              <Clock size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-brand-dark">Content History</h3>
+              <p className="text-sm text-brand-muted">View and manage all your generated posts</p>
+            </div>
+          </div>
+          <span className="text-brand-muted text-sm font-medium hidden md:block">View all &rarr;</span>
+        </a>
+
         {/* Coming Up */}
         <div className="card p-6 md:p-8">
           <h2 className="text-lg font-bold text-brand-dark mb-4">Your Roadmap</h2>
@@ -181,7 +195,7 @@ export default function Dashboard() {
           {[
             { icon: <Home size={20} />, label: 'Home', href: '/dashboard', active: true },
             { icon: <Zap size={20} />, label: 'Create', href: '/create', active: false },
-            { icon: <BarChart3 size={20} />, label: 'Analytics', href: '/dashboard', active: false },
+            { icon: <Clock size={20} />, label: 'History', href: '/history', active: false },
             { icon: <User size={20} />, label: 'Profile', href: '/dashboard', active: false },
           ].map((tab, i) => (
             <a key={i} href={tab.href} className={`flex flex-col items-center gap-1 min-w-[60px] py-2 ${tab.active ? 'text-brand-purple' : 'text-brand-muted'}`}>

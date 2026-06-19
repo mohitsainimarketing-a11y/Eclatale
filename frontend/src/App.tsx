@@ -7,6 +7,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CreatePost = lazy(() => import('./pages/CreatePost'));
 const GuidedCreate = lazy(() => import('./pages/GuidedCreate'));
+const History = lazy(() => import('./pages/History'));
 
 function PageLoader() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create" element={<CreatePost />} />
           <Route path="/guided" element={<GuidedCreate />} />
+          <Route path="/history" element={<History />} />
         </Routes>
       </Suspense>
     </Router>

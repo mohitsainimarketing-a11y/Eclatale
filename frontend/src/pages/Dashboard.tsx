@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { BarChart3, Users, Eye, Trophy, Sparkles, PenTool, LogOut, Home, Zap, User, Clock } from 'lucide-react';
+import { BarChart3, Users, Eye, Trophy, Sparkles, PenTool, LogOut, Home, Zap, User, Clock, FileText, Flame } from 'lucide-react';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -41,9 +41,17 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`skeleton ${className || ''}`} />;
 }
 
+function CheckIcon() {
+  return <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [totalPosts, setTotalPosts] = useState(0);
+  const [postsThisWeek, setPostsThisWeek] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -51,21 +59,68 @@ export default function Dashboard() {
         window.location.href = '/login';
       } else {
         setUser(data.user);
-        setLoading(false);
+        loadDashboardData(data.user.id);
       }
     });
   }, []);
+
+  const loadDashboardData = async (userId: string) => {
+    const [profileRes, postsRes] = await Promise.all([
+      supabase.from('profiles').select('role, domain, goals').eq('id', userId).single(),
+      supabase.from('posts').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }),
+    ]);
+
+    const profile = profileRes.data;
+    setHasProfile(!!(profile?.role && profile?.domain && profile?.goals?.length));
+
+    const posts = postsRes.data || [];
+    setTotalPosts(posts.length);
+
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    setPostsThisWeek(posts.filter(p => new Date(p.created_at) >= weekAgo).length);
+
+    let currentStreak = 0;
+    if (posts.length > 0) {
+      const days = new Set(posts.map(p => new Date(p.created_at).toISOString().split('T')[0]));
+      const today = new Date();
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().split('T')[0];
+        if (days.has(key)) {
+          currentStreak++;
+        } else if (i > 0) {
+          break;
+        }
+      }
+    }
+    setStreak(currentStreak);
+    setLoading(false);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/';
   };
 
+  const growthScore = Math.min(100, Math.round(
+    (hasProfile ? 25 : 0) + Math.min(25, totalPosts * 5) + Math.min(25, streak * 5) + Math.min(25, postsThisWeek * 8)
+  ));
+
+  const roadmap = [
+    { text: 'Complete your persona setup', done: hasProfile },
+    { text: 'Connect LinkedIn for analytics', done: false },
+    { text: 'Generate your first AI post', done: totalPosts > 0 },
+    { text: 'Track your growth score', done: growthScore > 0 },
+  ];
+  const roadmapDone = roadmap.filter(r => r.done).length;
+
   const stats = [
-    { label: 'Profile Views', value: '0', trend: '+0%', icon: <Eye size={18} />, color: 'from-brand-purple to-[#9B7DFC]' },
-    { label: 'Engagement', value: '0%', trend: '+0%', icon: <BarChart3 size={18} />, color: 'from-brand-pink to-[#FF5CAD]' },
-    { label: 'Connections', value: '0', trend: '+0', icon: <Users size={18} />, color: 'from-brand-orange to-[#FF8F5E]' },
-    { label: 'Growth Score', value: '0/100', trend: 'New', icon: <Trophy size={18} />, color: 'from-brand-teal to-brand-blue' },
+    { label: 'Total Posts', value: String(totalPosts), trend: totalPosts > 0 ? `${totalPosts} created` : 'Get started', icon: <FileText size={18} />, color: 'from-brand-purple to-[#9B7DFC]' },
+    { label: 'This Week', value: String(postsThisWeek), trend: postsThisWeek > 0 ? `+${postsThisWeek} this week` : 'Create a post', icon: <BarChart3 size={18} />, color: 'from-brand-pink to-[#FF5CAD]' },
+    { label: 'Streak', value: `${streak}d`, trend: streak > 0 ? `${streak} day streak` : 'Start today', icon: <Flame size={18} />, color: 'from-brand-orange to-[#FF8F5E]' },
+    { label: 'Growth Score', value: `${growthScore}/100`, trend: growthScore > 0 ? 'Growing' : 'New', icon: <Trophy size={18} />, color: 'from-brand-teal to-brand-blue' },
   ];
 
   if (loading) {
@@ -113,7 +168,7 @@ export default function Dashboard() {
               </h1>
               <p className="text-sm text-brand-muted">Your personal brand growth journey is active.</p>
             </div>
-            <GrowthRing score={0} />
+            <GrowthRing score={growthScore} />
           </div>
         </div>
 
@@ -160,29 +215,36 @@ export default function Dashboard() {
             </div>
             <div>
               <h3 className="font-bold text-brand-dark">Content History</h3>
-              <p className="text-sm text-brand-muted">View and manage all your generated posts</p>
+              <p className="text-sm text-brand-muted">
+                {totalPosts > 0 ? `${totalPosts} post${totalPosts === 1 ? '' : 's'} generated` : 'View and manage all your generated posts'}
+              </p>
             </div>
           </div>
           <span className="text-brand-muted text-sm font-medium hidden md:block">View all &rarr;</span>
         </a>
 
-        {/* Coming Up */}
+        {/* Roadmap */}
         <div className="card p-6 md:p-8">
-          <h2 className="text-lg font-bold text-brand-dark mb-4">Your Roadmap</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-brand-dark">Your Roadmap</h2>
+            <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs">{roadmapDone} of {roadmap.length} complete</span>
+          </div>
+          {/* Progress bar */}
+          <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-5 overflow-hidden">
+            <div
+              className="h-full rounded-full gradient-primary transition-all duration-700"
+              style={{ width: `${(roadmapDone / roadmap.length) * 100}%` }}
+            />
+          </div>
           <div className="space-y-3">
-            {[
-              { text: 'Complete your persona setup', done: false },
-              { text: 'Connect LinkedIn for analytics', done: false },
-              { text: 'Generate your first AI post', done: false },
-              { text: 'Track your growth score', done: false },
-            ].map((item, i) => (
+            {roadmap.map((item, i) => (
               <div key={i} className="flex items-center gap-3 text-sm">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
                   item.done ? 'bg-brand-teal border-brand-teal' : 'border-[rgba(124,92,252,0.2)]'
                 }`}>
-                  {item.done && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  {item.done && <CheckIcon />}
                 </div>
-                <span className={`font-medium ${item.done ? 'text-brand-muted line-through' : 'text-brand-dark'}`}>{item.text}</span>
+                <span className={`font-medium transition-all ${item.done ? 'text-brand-muted line-through' : 'text-brand-dark'}`}>{item.text}</span>
               </div>
             ))}
           </div>

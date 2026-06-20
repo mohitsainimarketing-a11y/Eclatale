@@ -7,7 +7,7 @@ export default function Landing() {
 
   const features = [
     { icon: <Sparkles size={24} />, title: 'AI Content Engine', desc: 'Generate posts that sound like you, not a robot. Trained on your authentic voice and industry expertise.' },
-    { icon: <TrendingUp size={24} />, title: 'Growth Analytics', desc: 'Track what matters — not vanity metrics, but real career outcomes like leads, opportunities, and influence.' },
+    { icon: <TrendingUp size={24} />, title: 'Growth Analytics', desc: 'Track what matters. Not vanity metrics, but real career outcomes like leads, opportunities, and influence.' },
     { icon: <Zap size={24} />, title: 'Smart Scheduling', desc: 'Post at the perfect time. Our AI analyzes when your specific audience is most active and engaged.' },
     { icon: <Target size={24} />, title: 'Persona Builder', desc: 'Define your unique voice, values, and positioning. Every piece of content stays authentic to who you are.' },
     { icon: <Users size={24} />, title: 'Network Intelligence', desc: 'Identify and engage with the right people. Build meaningful connections that drive real opportunities.' },
@@ -15,7 +15,7 @@ export default function Landing() {
   ];
 
   const faqs = [
-    { q: 'How is this different from other LinkedIn tools?', a: 'Eclatale isn\'t a LinkedIn optimizer — it\'s a growth engine. We learn your authentic voice, track real career outcomes (not vanity metrics), and build a personalized strategy based on your goals.' },
+    { q: 'How is this different from other LinkedIn tools?', a: 'Eclatale isn\'t a LinkedIn optimizer. It\'s a growth engine. We learn your authentic voice, track real career outcomes (not vanity metrics), and build a personalized strategy based on your goals.' },
     { q: 'Will the content sound like me?', a: 'Yes. Our AI analyzes your writing style, industry expertise, and personality to generate content that sounds authentically you. Every post is unique to your voice.' },
     { q: 'What platforms do you support?', a: 'Currently LinkedIn posts, LinkedIn articles, Twitter/X threads, and Instagram captions. More platforms coming soon based on user feedback.' },
     { q: 'Is there a free plan?', a: 'Yes! Start with 10 AI generations per month for free. Upgrade when you\'re ready to scale your content creation.' },
@@ -62,7 +62,7 @@ export default function Landing() {
 
           <p className="body-text max-w-lg mx-auto mb-8 md:mb-10 animate-fadeIn" style={{ animationDelay: '0.2s' }}>
             Eclatale learns your authentic voice, generates content in your style,
-            and tracks real career outcomes. Not a LinkedIn optimizer — a growth engine.
+            and tracks real career outcomes. Not a LinkedIn optimizer. A growth engine.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fadeIn" style={{ animationDelay: '0.3s' }}>

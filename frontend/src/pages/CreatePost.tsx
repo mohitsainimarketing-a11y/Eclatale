@@ -252,7 +252,7 @@ export default function CreatePost() {
                 <textarea value={editedContent} onChange={(e) => setEditedContent(e.target.value)}
                   className="input !min-h-[280px] !resize-y !leading-relaxed !rounded-xl" />
               ) : (
-                <div className="whitespace-pre-wrap text-brand-dark leading-relaxed text-[15px]">{displayContent}</div>
+                <div className="whitespace-pre-wrap post-content">{displayContent}</div>
               )}
             </div>
 

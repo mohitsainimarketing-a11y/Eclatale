@@ -264,7 +264,7 @@ export default function Onboarding() {
                   <Sparkles size={13} /> Select Multiple
                 </div>
                 <h2 className="h2 text-brand-dark mb-2">Your <span className="gradient-text">growth goals</span></h2>
-                <p className="body-text text-sm">Pick all that apply — we'll build your roadmap.</p>
+                <p className="body-text text-sm">Pick all that apply. We'll build your roadmap.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {GROWTH_GOALS.map(goal => {

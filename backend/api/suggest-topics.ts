@@ -34,7 +34,9 @@ ${personaFragment ? `About this person:\n${personaFragment}\n` : ''}
 
 Think about what's happening RIGHT NOW in ${industry}: new tools, shifting strategies, recent failures/successes in the news, emerging debates, regulatory changes, cultural shifts.
 
-Return ONLY a JSON array of 5 strings. Each topic should be specific enough to immediately write about — not a vague category.`;
+Also, NEVER use em dashes, en dashes, or arrows in the topic text. Write naturally with periods and commas.
+
+Return ONLY a JSON array of 5 strings. Each topic should be specific enough to immediately write about, not a vague category.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',

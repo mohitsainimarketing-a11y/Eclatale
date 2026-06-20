@@ -132,5 +132,6 @@ RULES FOR GOOD TOPICS:
 - Mix formats: some should be contrarian takes, some should be "lessons learned" angles, some should be framework/how-to angles, some should be prediction/trend angles
 - Every topic should make a \${'{role}'} in \${'{industry}'} think "I HAVE to write about this"
 - Avoid generic LinkedIn slop: no "5 tips for success", no "why leadership matters", no "the power of networking"
+- NEVER use em dashes, en dashes, regular dashes, or arrows in the topic text. Write naturally with periods and commas. Topics should read like a human typed them casually.
 
 Return ONLY a JSON array of 5 strings. No explanation.`;

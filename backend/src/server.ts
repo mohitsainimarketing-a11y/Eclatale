@@ -80,7 +80,7 @@ app.post('/api/guided-questions', async (req, res) => {
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6', max_tokens: 1024,
-      messages: [{ role: 'user', content: `A ${role} in the ${industry} industry wants to create a ${contentType.replace(/-/g, ' ')} based on this rough idea:\n\n"${rawIdea}"\n\nGenerate exactly 4 smart, specific follow-up questions that will extract the GOLD from their experience — concrete details, specific numbers, personal stories, counterintuitive insights, and unique perspectives that will make the content impossible to ignore.\n\nReturn ONLY a JSON array of objects with "id" (q1-q4), "question" (the question text), and "placeholder" (a short example answer hint). No explanation.` }],
+      messages: [{ role: 'user', content: `A ${role} in the ${industry} industry wants to create a ${contentType.replace(/-/g, ' ')} based on this rough idea:\n\n"${rawIdea}"\n\nGenerate exactly 4 smart, specific follow-up questions that will extract the GOLD from their experience. Focus on concrete details, specific numbers, personal stories, counterintuitive insights, and unique perspectives that will make the content impossible to ignore.\n\nReturn ONLY a JSON array of objects with "id" (q1-q4), "question" (the question text), and "placeholder" (a short example answer hint). No explanation.` }],
     });
 
     const text = message.content[0].type === 'text' ? message.content[0].text : '[]';

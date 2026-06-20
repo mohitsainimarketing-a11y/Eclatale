@@ -258,7 +258,7 @@ export default function Dashboard() {
               { label: 'Streak', value: `${streak}d`, icon: <Flame size={16} />, color: 'from-brand-orange to-[#FF8F5E]' },
               { label: 'Growth Score', value: `${growthScore}/100`, icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
             ].map((s, i) => (
-              <div key={i} className="card p-4">
+              <div key={i} className="card stat-card p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white`}>{s.icon}</div>
                   <span className="text-[11px] text-brand-muted font-medium">{s.label}</span>
@@ -276,7 +276,7 @@ export default function Dashboard() {
                   <Target size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-brand-dark">Set up your voice profile — takes 90 seconds</h3>
+                  <h3 className="text-sm font-bold text-brand-dark">Set up your voice profile. Takes 90 seconds.</h3>
                   <p className="text-xs text-brand-muted">Content generated without it sounds generic.</p>
                 </div>
                 <ChevronRight size={16} className="text-brand-muted flex-shrink-0" />
@@ -317,10 +317,10 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-3">
                     {postIdeas.slice(0, 3).map((idea, i) => (
-                      <div key={i} className="p-4 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-purple/20 transition-all group">
-                        <p className="text-sm text-brand-dark leading-relaxed mb-3">{idea}</p>
+                      <div key={i} className="p-4 rounded-2xl border border-[rgba(124,92,252,0.06)] hover:border-brand-purple/20 hover:shadow-brand transition-all group bg-white">
+                        <p className="text-[13px] text-brand-dark leading-relaxed mb-3 font-medium">{idea}</p>
                         <a href={`/create?topic=${encodeURIComponent(idea)}`}
-                          className="flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline">
+                          className="inline-flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline opacity-70 group-hover:opacity-100 transition-opacity">
                           Generate post <ArrowRight size={12} />
                         </a>
                       </div>
@@ -363,7 +363,7 @@ export default function Dashboard() {
                             {copiedId === post.id ? <Check size={14} className="text-brand-teal" /> : <Copy size={14} />}
                           </button>
                         </div>
-                        <p className="text-sm text-brand-dark leading-relaxed line-clamp-3">{post.content}</p>
+                        <p className="text-[13px] text-brand-dark leading-relaxed line-clamp-3">{post.content}</p>
                       </div>
                     ))}
                   </div>

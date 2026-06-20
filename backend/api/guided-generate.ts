@@ -43,8 +43,8 @@ ${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}
 
 Additional instruction for guided creation:
 - The user provided a raw idea and answered clarifying questions. Your job is to transform their rough thoughts into a polished, high-performing piece of content.
-- Weave their specific details NATURALLY — don't just list their answers. The reader should never sense that this was generated from a questionnaire.
-- The user's raw voice and specific details are the gold — elevate them, don't replace them with generic language.
+- Weave their specific details NATURALLY. Don't just list their answers. The reader should never sense that this was generated from a questionnaire.
+- The user's raw voice and specific details are the gold. Elevate them, don't replace them with generic language.
 
 ${OUTPUT_RULES}
 

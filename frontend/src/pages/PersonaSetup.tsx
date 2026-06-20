@@ -198,7 +198,7 @@ export default function PersonaSetup() {
           <div className="animate-fadeIn">
             <div className="text-center mb-8">
               <h2 className="h2 text-brand-dark mb-2">What's your <span className="gradient-text">superpower</span>?</h2>
-              <p className="body-text text-sm">This becomes your content anchor — the thing you're known for.</p>
+              <p className="body-text text-sm">This becomes your content anchor. The thing you're known for.</p>
             </div>
 
             <div className="card p-5 mb-5">
@@ -242,7 +242,7 @@ export default function PersonaSetup() {
           <div className="animate-fadeIn">
             <div className="text-center mb-8">
               <h2 className="h2 text-brand-dark mb-2">Teach us your <span className="gradient-text">voice</span></h2>
-              <p className="body-text text-sm">Paste 1-3 things you've actually written. LinkedIn posts, emails, Slack messages — anything.</p>
+              <p className="body-text text-sm">Paste 1-3 things you've actually written. LinkedIn posts, emails, Slack messages, anything.</p>
             </div>
 
             <div className="card p-5 mb-4">
@@ -328,7 +328,7 @@ export default function PersonaSetup() {
                 <div>
                   <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wide">Voice Samples</span>
                   <p className="text-sm text-brand-dark mt-1">
-                    {parseSamples().length > 0 ? `${parseSamples().length} sample${parseSamples().length > 1 ? 's' : ''} provided` : 'None yet — using default voice'}
+                    {parseSamples().length > 0 ? `${parseSamples().length} sample${parseSamples().length > 1 ? 's' : ''} provided` : 'None yet, using default voice'}
                   </p>
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function PersonaSetup() {
 
               {samplePost && (
                 <div className="mt-2 p-4 rounded-xl bg-brand-bg border border-[rgba(124,92,252,0.1)]">
-                  <p className="text-[11px] font-semibold text-brand-purple uppercase tracking-wide mb-2">Preview — this is your voice</p>
+                  <p className="text-[11px] font-semibold text-brand-purple uppercase tracking-wide mb-2">Preview: this is your voice</p>
                   <div className="whitespace-pre-wrap text-sm text-brand-dark leading-relaxed">{samplePost}</div>
                 </div>
               )}

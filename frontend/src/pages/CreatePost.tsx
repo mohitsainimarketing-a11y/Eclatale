@@ -41,6 +41,9 @@ export default function CreatePost() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [error, setError] = useState('');
+  const [postId, setPostId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<{ success?: boolean; error?: string; urn?: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -85,9 +88,10 @@ export default function CreatePost() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setGeneratedContent(data.content); setEditedContent(data.content);
-      await supabase.from('posts').insert({
+      const { data: insertedPost } = await supabase.from('posts').insert({
         user_id: userId, content: data.content, topic, tone, content_type: contentType, source: 'auto',
-      });
+      }).select('id').single();
+      if (insertedPost) setPostId(insertedPost.id);
     } catch (err: any) { setError(err.message || 'Failed to generate.'); }
     setIsGenerating(false);
   };
@@ -101,6 +105,28 @@ export default function CreatePost() {
         body: JSON.stringify({ userId, action: 'kept', tone, contentType, topicSnippet: topic.substring(0, 100), postLength: generatedContent.length }),
       }).catch(() => {});
     }
+  };
+
+  const handlePublishLinkedIn = async () => {
+    if (!postId || !userId) return;
+    setPublishing(true); setPublishResult(null);
+    try {
+      const statusRes = await fetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
+      const statusData = await statusRes.json();
+      if (!statusData.connected) {
+        setPublishResult({ error: 'LinkedIn not connected. Connect it from your dashboard first.' });
+        setPublishing(false);
+        return;
+      }
+      const res = await fetch(`${API_URL}/api/linkedin/publish`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ postId, userId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setPublishResult({ success: true, urn: data.linkedinPostUrn });
+    } catch (err: any) { setPublishResult({ error: err.message }); }
+    setPublishing(false);
   };
 
   const canGenerate = topic && tone && contentType && !isGenerating;
@@ -243,8 +269,23 @@ export default function CreatePost() {
               <button onClick={() => { setGeneratedContent(''); setEditedContent(''); handleGenerate(); }} className="btn-secondary text-sm !py-3">
                 <RefreshCw size={16} /> Regenerate
               </button>
-              <button className="btn-primary text-sm !py-3"><Send size={16} /> Post to LinkedIn</button>
+              <button onClick={handlePublishLinkedIn} disabled={publishing || publishResult?.success} className="btn-primary text-sm !py-3">
+                {publishing ? <><Loader2 size={16} className="animate-spin" /> Publishing...</> :
+                 publishResult?.success ? <><Check size={16} /> Published!</> :
+                 <><Send size={16} /> Post to LinkedIn</>}
+              </button>
             </div>
+            {publishResult?.error && (
+              <div className="card !bg-red-50 !border-red-100 p-3 text-sm text-red-600 font-medium text-center mt-3 animate-shake">{publishResult.error}</div>
+            )}
+            {publishResult?.success && (
+              <div className="card !bg-[rgba(6,214,160,0.06)] !border-brand-teal/20 p-3 text-sm text-brand-teal font-medium text-center mt-3 animate-fadeIn">
+                Published to LinkedIn!
+                {publishResult.urn && (
+                  <a href={`https://www.linkedin.com/feed/update/${publishResult.urn}`} target="_blank" rel="noopener noreferrer" className="ml-2 underline">View post</a>
+                )}
+              </div>
+            )}
 
             <div className="text-center">
               <button onClick={() => { setGeneratedContent(''); setEditedContent(''); setTopic(''); setTone(''); setContentType(''); setSuggestions([]); setError(''); }}

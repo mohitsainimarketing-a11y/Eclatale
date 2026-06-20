@@ -70,6 +70,8 @@ export default function Dashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [weeklyGoal] = useState(5);
+  const [linkedinConnected, setLinkedinConnected] = useState(false);
+  const [linkedinName, setLinkedinName] = useState('');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -120,6 +122,13 @@ export default function Dashboard() {
     }
     setStreak(currentStreak);
     setLoading(false);
+
+    try {
+      const liRes = await fetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
+      const liData = await liRes.json();
+      setLinkedinConnected(liData.connected);
+      if (liData.name) setLinkedinName(liData.name);
+    } catch {}
 
     fetchPostIdeas(userId);
   };
@@ -419,6 +428,30 @@ export default function Dashboard() {
                     <ChevronRight size={14} className="text-brand-muted" />
                   </a>
                 </div>
+              </div>
+
+              {/* LinkedIn Connection */}
+              <div className="card p-5">
+                <h3 className="text-sm font-bold text-brand-dark mb-3">LinkedIn</h3>
+                {linkedinConnected ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#0A66C2] flex items-center justify-center text-white text-xs font-bold">in</div>
+                    <div>
+                      <p className="text-sm font-semibold text-brand-dark">{linkedinName || 'Connected'}</p>
+                      <p className="text-[10px] text-brand-teal font-medium">Ready to publish</p>
+                    </div>
+                  </div>
+                ) : (
+                  <a href={`${API_URL}/api/auth/linkedin/connect?userId=${user?.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#0A66C2]/20 hover:bg-[#0A66C2]/5 transition-all">
+                    <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white text-xs font-bold">in</div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-brand-dark">Connect LinkedIn</p>
+                      <p className="text-[10px] text-brand-muted">Publish posts directly</p>
+                    </div>
+                    <ChevronRight size={14} className="text-brand-muted" />
+                  </a>
+                )}
               </div>
 
               {/* Roadmap */}

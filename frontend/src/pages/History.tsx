@@ -14,6 +14,9 @@ interface Post {
   tone: string;
   content_type: string;
   source: string;
+  status: string;
+  published_at: string | null;
+  linkedin_post_urn: string | null;
   created_at: string;
 }
 
@@ -149,6 +152,9 @@ export default function History() {
                       {post.source === 'guided' && (
                         <span className="badge bg-[rgba(255,107,53,0.08)] text-brand-orange text-[11px]">Guided</span>
                       )}
+                      {post.status === 'published' && (
+                        <span className="badge bg-[rgba(6,214,160,0.08)] text-brand-teal text-[11px]">Published</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 text-brand-muted text-xs font-medium">
                       <Clock size={12} />
@@ -179,7 +185,12 @@ export default function History() {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-[rgba(124,92,252,0.06)]">
-                    <span className="text-xs text-brand-muted">{post.content.length} chars</span>
+                    <span className="text-xs text-brand-muted">
+                      {post.content.length} chars
+                      {post.status === 'published' && post.linkedin_post_urn && (
+                        <a href={`https://www.linkedin.com/feed/update/${post.linkedin_post_urn}`} target="_blank" rel="noopener noreferrer" className="ml-2 text-brand-teal hover:underline">View on LinkedIn</a>
+                      )}
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleCopy(post)}

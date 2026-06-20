@@ -103,7 +103,7 @@ export default function History() {
           <a href="/dashboard" className="p-2 -ml-2 text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back">
             <ArrowLeft size={18} />
           </a>
-          <span className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</span>
+          <a href="/dashboard" className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</a>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-brand-muted font-medium">{posts.length} posts</span>

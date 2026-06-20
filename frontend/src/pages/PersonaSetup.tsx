@@ -112,7 +112,7 @@ export default function PersonaSetup() {
           <a href="/dashboard" className="p-2 -ml-2 text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back">
             <ArrowLeft size={18} />
           </a>
-          <span className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</span>
+          <a href="/dashboard" className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</a>
         </div>
         <span className="text-xs font-semibold text-brand-muted">Step {step}/4</span>
       </nav>

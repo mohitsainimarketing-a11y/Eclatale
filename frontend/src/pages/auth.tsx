@@ -50,7 +50,7 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
         </a>
 
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold gradient-text mb-2">Eclatale</h1>
+          <a href="/" className="text-2xl md:text-3xl font-extrabold gradient-text mb-2 block">Eclatale</a>
           <p className="text-brand-muted text-sm font-medium">
             {isLogin ? 'Welcome back. Sign in to continue.' : 'Create your account to start growing.'}
           </p>

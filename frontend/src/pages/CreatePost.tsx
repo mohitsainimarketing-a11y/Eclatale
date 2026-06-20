@@ -140,7 +140,7 @@ export default function CreatePost() {
           <a href="/dashboard" className="p-2 -ml-2 text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back">
             <ArrowLeft size={18} />
           </a>
-          <span className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</span>
+          <a href="/dashboard" className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</a>
         </div>
         <div className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple">
           <Sparkles size={12} /> AI Generate

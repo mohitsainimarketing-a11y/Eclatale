@@ -196,7 +196,7 @@ export default function Dashboard() {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[rgba(124,92,252,0.06)] h-screen sticky top-0 z-40">
         <div className="px-5 h-16 flex items-center border-b border-[rgba(124,92,252,0.06)]">
-          <span className="text-xl font-extrabold gradient-text">Eclatale</span>
+          <a href="/dashboard" className="text-xl font-extrabold gradient-text">Eclatale</a>
         </div>
 
         <div className="px-3 pt-4 pb-2">
@@ -236,7 +236,7 @@ export default function Dashboard() {
       <div className="flex-1 min-w-0 pb-20 lg:pb-0">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between px-5 h-14 bg-white/90 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] sticky top-0 z-40">
-          <span className="text-lg font-extrabold gradient-text">Eclatale</span>
+          <a href="/dashboard" className="text-lg font-extrabold gradient-text">Eclatale</a>
           <button onClick={handleLogout} className="text-sm text-red-400 p-2"><LogOut size={18} /></button>
         </div>
 

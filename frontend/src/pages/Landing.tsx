@@ -26,7 +26,7 @@ export default function Landing() {
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">
-          <div className="text-xl md:text-2xl font-extrabold gradient-text">Eclatale</div>
+          <a href="/" className="text-xl md:text-2xl font-extrabold gradient-text">Eclatale</a>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Features</a>
             <a href="#faq" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">FAQ</a>
@@ -198,7 +198,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-8 px-5 md:px-8 border-t border-[rgba(124,92,252,0.06)]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-lg font-extrabold gradient-text">Eclatale</div>
+          <a href="/" className="text-lg font-extrabold gradient-text">Eclatale</a>
           <p className="text-sm text-brand-muted">&copy; 2026 Eclatale. All rights reserved.</p>
         </div>
       </footer>

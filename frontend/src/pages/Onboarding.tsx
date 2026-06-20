@@ -196,7 +196,7 @@ export default function Onboarding() {
     <div className="min-h-screen gradient-bg-page flex flex-col">
       {/* Header */}
       <div className="px-5 md:px-8 h-14 md:h-16 flex items-center justify-between flex-shrink-0">
-        <div className="text-lg md:text-xl font-extrabold gradient-text">Eclatale</div>
+        <a href="/dashboard" className="text-lg md:text-xl font-extrabold gradient-text">Eclatale</a>
         <span className="text-xs font-semibold text-brand-muted">Step {step}/3</span>
       </div>
 

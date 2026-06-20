@@ -52,6 +52,8 @@ export default function Dashboard() {
   const [postsThisWeek, setPostsThisWeek] = useState(0);
   const [streak, setStreak] = useState(0);
   const [hasProfile, setHasProfile] = useState(false);
+  const [hasPersona, setHasPersona] = useState(false);
+  const [learningInsight, setLearningInsight] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -65,13 +67,25 @@ export default function Dashboard() {
   }, []);
 
   const loadDashboardData = async (userId: string) => {
-    const [profileRes, postsRes] = await Promise.all([
+    const [profileRes, postsRes, personaRes, signalsRes] = await Promise.all([
       supabase.from('profiles').select('role, domain, goals').eq('id', userId).single(),
       supabase.from('posts').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }),
+      supabase.from('persona_profiles').select('persona_completed_at, communication_styles').eq('user_id', userId).single(),
+      supabase.from('persona_signals').select('tone, content_type').eq('user_id', userId).eq('action', 'kept').order('created_at', { ascending: false }).limit(5),
     ]);
 
     const profile = profileRes.data;
     setHasProfile(!!(profile?.role && profile?.domain && profile?.goals?.length));
+
+    const persona = personaRes.data;
+    setHasPersona(!!persona?.persona_completed_at);
+
+    const signals = signalsRes.data || [];
+    if (signals.length >= 3) {
+      const tones = signals.map((s: any) => s.tone).filter(Boolean);
+      const topTone = tones.length > 0 ? tones.sort((a: string, b: string) => tones.filter((t: string) => t === b).length - tones.filter((t: string) => t === a).length)[0] : null;
+      if (topTone) setLearningInsight(`Based on your last ${signals.length} posts, you tend to write in a ${topTone} voice. We've adjusted future suggestions accordingly.`);
+    }
 
     const posts = postsRes.data || [];
     setTotalPosts(posts.length);
@@ -110,7 +124,7 @@ export default function Dashboard() {
 
   const roadmap = [
     { text: 'Complete your persona setup', done: hasProfile },
-    { text: 'Connect LinkedIn for analytics', done: false },
+    { text: 'Set up your voice profile', done: hasPersona },
     { text: 'Generate your first AI post', done: totalPosts > 0 },
     { text: 'Track your growth score', done: growthScore > 0 },
   ];
@@ -185,6 +199,37 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+
+        {/* Persona CTA */}
+        {!hasPersona && (
+          <a href="/persona-setup" className="card card-hover p-5 md:p-6 mb-6 block !border-brand-purple/20 gradient-mesh relative overflow-hidden">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center text-white flex-shrink-0">
+                <Sparkles size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-brand-dark">Set up your voice profile</h3>
+                <p className="text-sm text-brand-muted">Takes 90 seconds. Content generated without it sounds generic.</p>
+              </div>
+              <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs hidden md:flex">Recommended</span>
+            </div>
+          </a>
+        )}
+
+        {/* Learning Insight */}
+        {learningInsight && (
+          <div className="card p-4 md:p-5 mb-6 !border-brand-teal/20">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white flex-shrink-0 mt-0.5">
+                <Sparkles size={14} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-brand-teal uppercase tracking-wide mb-1">Eclatale knows you</p>
+                <p className="text-sm text-brand-dark">{learningInsight}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Create Content */}
         <div className="card p-6 md:p-8 mb-6">

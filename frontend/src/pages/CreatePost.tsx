@@ -91,6 +91,12 @@ export default function CreatePost() {
   const handleCopy = () => {
     navigator.clipboard.writeText(isEditing ? editedContent : generatedContent);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
+    if (userId) {
+      fetch(`${API_URL}/api/persona-signal`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ userId, action: 'kept', tone, contentType, topicSnippet: topic.substring(0, 100), postLength: generatedContent.length }),
+      }).catch(() => {});
+    }
   };
 
   const canGenerate = topic && tone && contentType && !isGenerating;

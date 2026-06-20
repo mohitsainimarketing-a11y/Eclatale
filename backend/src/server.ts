@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 
 dotenv.config();
 
@@ -55,9 +56,11 @@ app.post('/api/generate', async (req, res) => {
       'data-driven': 'Use a fact-based, analytical tone. Lead with statistics, research, or data points. Back up claims with evidence. Use precise language.',
     };
 
+    const personaFragment = await buildPersonaPrompt(supabase, userId);
+
     const systemPrompt = `You are a world-class personal brand content strategist and ghostwriter. You write content that sounds authentically human — never robotic or generic.
 
-The person you're writing for:
+${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Role: ${role}
 - Industry: ${industry}
 ${goalsText}
@@ -112,13 +115,16 @@ app.post('/api/suggest-topics', async (req, res) => {
     const role = profile?.role || 'professional';
     const industry = profile?.domain || 'business';
 
+    const personaFragment = await buildPersonaPrompt(supabase, userId);
+    const expertiseContext = personaFragment ? `\n\nContext about this person:\n${personaFragment}` : '';
+
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 512,
       messages: [
         {
           role: 'user',
-          content: `Suggest 5 trending content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}. Return ONLY a JSON array of strings, no explanation. Each topic should be specific and actionable (not generic).`,
+          content: `Suggest 5 trending content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}.${expertiseContext}\n\nReturn ONLY a JSON array of strings, no explanation. Each topic should be specific and actionable (not generic). Tailor to their expertise and perspective if available.`,
         },
       ],
     });
@@ -223,9 +229,11 @@ app.post('/api/guided-generate', async (req, res) => {
       .filter(Boolean)
       .join('\n\n');
 
+    const personaFragment = await buildPersonaPrompt(supabase, userId);
+
     const systemPrompt = `You are a world-class personal brand content strategist and ghostwriter. You write content that sounds authentically human — never robotic or generic.
 
-The person you're writing for:
+${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Role: ${role}
 - Industry: ${industry}
 ${goalsText}
@@ -266,6 +274,21 @@ Write the content now. Make it compelling, specific, and authentic to my voice.`
   } catch (error: any) {
     console.error('Guided generation error:', error);
     res.status(500).json({ error: error.message || 'Failed to generate content' });
+  }
+});
+
+app.post('/api/persona-signal', async (req, res) => {
+  try {
+    const { userId, postId, action, tone, contentType, topicSnippet, postLength } = req.body;
+    if (!userId || !action) return res.status(400).json({ error: 'Missing required fields' });
+    await supabase.from('persona_signals').insert({
+      user_id: userId, post_id: postId || null, action, tone: tone || null,
+      content_type: contentType || null, topic_snippet: topicSnippet || null, post_length: postLength || null,
+    });
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Signal logging error:', error);
+    res.status(500).json({ error: error.message || 'Failed to log signal' });
   }
 });
 

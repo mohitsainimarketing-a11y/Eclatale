@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -62,9 +63,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .filter(Boolean)
       .join('\n\n');
 
+    const personaFragment = await buildPersonaPrompt(supabase, userId);
+
     const systemPrompt = `You are a world-class personal brand content strategist and ghostwriter. You write content that sounds authentically human — never robotic or generic.
 
-The person you're writing for:
+${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Role: ${role}
 - Industry: ${industry}
 ${goalsText}

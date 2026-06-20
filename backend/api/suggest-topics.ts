@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -31,13 +32,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const role = profile?.role || 'professional';
     const industry = profile?.domain || 'business';
 
+    const personaFragment = await buildPersonaPrompt(supabase, userId);
+    const expertiseContext = personaFragment ? `\n\nContext about this person:\n${personaFragment}` : '';
+
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 512,
       messages: [
         {
           role: 'user',
-          content: `Suggest 5 trending content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}. Return ONLY a JSON array of strings, no explanation. Each topic should be specific and actionable (not generic).`,
+          content: `Suggest 5 trending content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}.${expertiseContext}\n\nReturn ONLY a JSON array of strings, no explanation. Each topic should be specific and actionable (not generic). Tailor to their expertise and perspective if available.`,
         },
       ],
     });

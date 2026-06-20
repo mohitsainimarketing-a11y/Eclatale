@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   BarChart3, FileText, Flame, Trophy, Sparkles, PenTool, LogOut,
   Home, Zap, User, Clock, ArrowRight, RefreshCw, Copy, Check,
-  Loader2, Target, Settings, ChevronRight,
+  Loader2, Target, Settings, ChevronRight, Image,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -50,6 +50,7 @@ const SIDEBAR_ITEMS = [
   { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard', active: true },
   { icon: <Zap size={18} />, label: 'Write a Post', href: '/create', active: false, cta: true },
   { icon: <PenTool size={18} />, label: 'Guided Creation', href: '/guided', active: false },
+  { icon: <Image size={18} />, label: 'Visual Creator', href: '/create-visual', active: false },
   { icon: <Clock size={18} />, label: 'Content History', href: '/history', active: false },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup', active: false },
   { icon: <Settings size={18} />, label: 'Settings', href: '/settings', active: false },
@@ -305,7 +306,10 @@ export default function Dashboard() {
               {/* Post Ideas */}
               <div className="card p-5 md:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-bold text-brand-dark">Post ideas for you</h2>
+                  <div>
+                    <h2 className="text-base font-bold text-brand-dark">Post ideas for you</h2>
+                    <p className="text-[10px] text-brand-muted font-medium">AI-curated based on your industry and persona</p>
+                  </div>
                   <button onClick={() => user && fetchPostIdeas(user.id)} disabled={loadingIdeas}
                     className="flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline">
                     {loadingIdeas ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
@@ -424,6 +428,16 @@ export default function Dashboard() {
                     <div className="flex-1">
                       <p className="text-xs font-semibold text-brand-dark">Guided Creation</p>
                       <p className="text-[10px] text-brand-muted">We refine your rough idea</p>
+                    </div>
+                    <ChevronRight size={14} className="text-brand-muted" />
+                  </a>
+                  <a href="/create-visual" className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-teal/20 transition-all group">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+                      <Image size={14} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-brand-dark">Visual Creator</p>
+                      <p className="text-[10px] text-brand-muted">AI-generated graphics</p>
                     </div>
                     <ChevronRight size={14} className="text-brand-muted" />
                   </a>

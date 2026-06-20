@@ -10,6 +10,7 @@ const GuidedCreate = lazy(() => import('./pages/GuidedCreate'));
 const History = lazy(() => import('./pages/History'));
 const PersonaSetup = lazy(() => import('./pages/PersonaSetup'));
 const Settings = lazy(() => import('./pages/Settings'));
+const CreateVisual = lazy(() => import('./pages/CreateVisual'));
 
 function PageLoader() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/history" element={<History />} />
           <Route path="/persona-setup" element={<PersonaSetup />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/create-visual" element={<CreateVisual />} />
         </Routes>
       </Suspense>
     </Router>

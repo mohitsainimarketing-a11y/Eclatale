@@ -2,29 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
+import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES } from '../lib/contentPrompts';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-const contentTypeInstructions: Record<string, string> = {
-  'linkedin-post': 'Write a LinkedIn post (1300 characters max). Use short paragraphs, line breaks for readability, and include a hook in the first line. Do NOT use hashtags in the body — add 3-5 relevant hashtags at the very end separated by a blank line.',
-  'linkedin-article': 'Write a LinkedIn article (800-1200 words). Include a compelling headline, introduction, 3-4 main sections with subheadings, and a strong conclusion with a call to action.',
-  'twitter-thread': 'Write a Twitter/X thread (5-8 tweets, each under 280 characters). Number each tweet (1/, 2/, etc). First tweet should be a hook. Last tweet should be a call to action or summary.',
-  'instagram-caption': 'Write an Instagram caption (under 2200 characters). Start with a hook, use conversational tone, break into short paragraphs, end with a call to action, and add 20-30 relevant hashtags at the end.',
-};
-
-const toneInstructions: Record<string, string> = {
-  professional: 'Use a polished, authoritative tone. Sound knowledgeable and confident without being stiff. Use industry terminology where appropriate.',
-  casual: 'Use a conversational, relatable tone. Write like you\'re talking to a friend over coffee. Use contractions, simple language, and occasional humor.',
-  inspirational: 'Use an uplifting, motivational tone. Share insights that inspire action. Use powerful language, storytelling elements, and emotional resonance.',
-  'data-driven': 'Use a fact-based, analytical tone. Lead with statistics, research, or data points. Back up claims with evidence. Use precise language.',
-};
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,59 +17,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { topic, tone, contentType, userId } = req.body;
+    if (!topic || !tone || !contentType || !userId) return res.status(400).json({ error: 'Missing required fields' });
 
-    if (!topic || !tone || !contentType || !userId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, domain, goals')
-      .eq('id', userId)
-      .single();
-
+    const { data: profile } = await supabase.from('profiles').select('role, domain, goals').eq('id', userId).single();
     const role = profile?.role || 'professional';
     const industry = profile?.domain || 'business';
     const goals = profile?.goals || [];
-
-    const goalsText = goals.length > 0
-      ? `Their growth goals are: ${goals.join(', ')}.`
-      : '';
+    const goalsText = goals.length > 0 ? `Their growth goals are: ${goals.join(', ')}.` : '';
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);
 
-    const systemPrompt = `You are a world-class personal brand content strategist and ghostwriter. You write content that sounds authentically human — never robotic or generic.
+    const systemPrompt = `${SYSTEM_PROMPT_BASE}
 
 ${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Role: ${role}
 - Industry: ${industry}
 ${goalsText}
 
-Your writing style guidelines:
-- ${toneInstructions[tone] || toneInstructions.professional}
-- Write in first person as this professional
-- Sound like a real person sharing genuine insights, not a corporate PR team
-- Include specific, concrete examples or anecdotes when possible
-- Make every sentence earn its place — no filler
+${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}
 
-CRITICAL OUTPUT RULES:
-- Return ONLY the post content itself. No preamble like "Here's a post for you". No introduction. No meta-commentary. No dividers like "---". Start directly with the hook line.
-- NEVER use markdown formatting: no ** for bold, no * for italic, no # for headers, no backticks for code. LinkedIn and social platforms render these as literal characters, not formatting.
-- For emphasis, use CAPITALIZATION, line breaks, and emoji instead of markdown symbols.
-- Do not wrap the output in quotes or add any framing text around it.
+${OUTPUT_RULES}
 
-Content format:
-${contentTypeInstructions[contentType] || contentTypeInstructions['linkedin-post']}`;
+${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: `Write a ${contentType.replace('-', ' ')} about: ${topic}`,
-        },
-      ],
+      messages: [{ role: 'user', content: `Write a ${contentType.replace(/-/g, ' ')} about: ${topic}` }],
       system: systemPrompt,
     });
 

@@ -2,15 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
+import { TOPIC_SUGGESTION_PROMPT } from '../lib/contentPrompts';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,27 +18,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { query, userId } = req.body;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, domain, goals')
-      .eq('id', userId)
-      .single();
-
+    const { data: profile } = await supabase.from('profiles').select('role, domain, goals').eq('id', userId).single();
     const role = profile?.role || 'professional';
     const industry = profile?.domain || 'business';
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);
-    const expertiseContext = personaFragment ? `\n\nContext about this person:\n${personaFragment}` : '';
+
+    const topicPrompt = TOPIC_SUGGESTION_PROMPT
+      .replace("${'{role}'}", role)
+      .replace("${'{industry}'}", industry);
+
+    const userMessage = `Suggest 5 timely, high-signal content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}.
+
+${personaFragment ? `About this person:\n${personaFragment}\n` : ''}
+
+Think about what's happening RIGHT NOW in ${industry}: new tools, shifting strategies, recent failures/successes in the news, emerging debates, regulatory changes, cultural shifts.
+
+Return ONLY a JSON array of 5 strings. Each topic should be specific enough to immediately write about — not a vague category.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 512,
-      messages: [
-        {
-          role: 'user',
-          content: `Suggest 5 trending content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}.${expertiseContext}\n\nReturn ONLY a JSON array of strings, no explanation. Each topic should be specific and actionable (not generic). Tailor to their expertise and perspective if available.`,
-        },
-      ],
+      system: topicPrompt,
+      messages: [{ role: 'user', content: userMessage }],
     });
 
     const text = message.content[0].type === 'text' ? message.content[0].text : '[]';

@@ -43,6 +43,10 @@ export default function CreatePost() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const topicParam = params.get('topic');
+    if (topicParam) setTopic(topicParam);
+
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) window.location.href = '/login';
       else setUserId(data.user.id);

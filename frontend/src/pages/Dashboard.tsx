@@ -1,49 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { BarChart3, Users, Eye, Trophy, Sparkles, PenTool, LogOut, Home, Zap, User, Clock, FileText, Flame } from 'lucide-react';
+import {
+  BarChart3, FileText, Flame, Trophy, Sparkles, PenTool, LogOut,
+  Home, Zap, User, Clock, ArrowRight, RefreshCw, Copy, Check,
+  Loader2, Target, Settings, ChevronRight,
+} from 'lucide-react';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
 
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
+
+interface RecentPost {
+  id: string;
+  content: string;
+  topic: string;
+  tone: string;
+  content_type: string;
+  source: string;
+  created_at: string;
+}
+
 function GrowthRing({ score }: { score: number }) {
-  const circumference = 2 * Math.PI * 45;
-  const offset = circumference - (score / 100) * circumference;
+  const c = 2 * Math.PI * 45;
   return (
-    <div className="relative w-28 h-28 md:w-32 md:h-32">
+    <div className="relative w-20 h-20">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(124,92,252,0.08)" strokeWidth="8" />
-        <circle
-          cx="50" cy="50" r="45" fill="none"
-          stroke="url(#gradient)" strokeWidth="8" strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{ animation: 'ringProgress 1.2s ease forwards' }}
-        />
-        <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#7C5CFC" />
-            <stop offset="50%" stopColor="#F72585" />
-            <stop offset="100%" stopColor="#FF6B35" />
-          </linearGradient>
-        </defs>
+        <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gr)" strokeWidth="8" strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={c - (score / 100) * c} style={{ animation: 'ringProgress 1.2s ease forwards' }} />
+        <defs><linearGradient id="gr" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#7C5CFC" /><stop offset="50%" stopColor="#F72585" /><stop offset="100%" stopColor="#FF6B35" />
+        </linearGradient></defs>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl md:text-3xl font-extrabold text-brand-dark">{score}</span>
-        <span className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide">Score</span>
+        <span className="text-lg font-extrabold text-brand-dark">{score}</span>
       </div>
     </div>
   );
 }
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`skeleton ${className || ''}`} />;
-}
-
 function CheckIcon() {
   return <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
+
+const SIDEBAR_ITEMS = [
+  { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard', active: true },
+  { icon: <Zap size={18} />, label: 'Write a Post', href: '/create', active: false, cta: true },
+  { icon: <PenTool size={18} />, label: 'Guided Creation', href: '/guided', active: false },
+  { icon: <Clock size={18} />, label: 'Content History', href: '/history', active: false },
+  { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup', active: false },
+  { icon: <Settings size={18} />, label: 'Settings', href: '/dashboard', active: false },
+];
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
@@ -54,41 +64,45 @@ export default function Dashboard() {
   const [hasProfile, setHasProfile] = useState(false);
   const [hasPersona, setHasPersona] = useState(false);
   const [learningInsight, setLearningInsight] = useState<string | null>(null);
+  const [postIdeas, setPostIdeas] = useState<string[]>([]);
+  const [loadingIdeas, setLoadingIdeas] = useState(false);
+  const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [userName, setUserName] = useState('');
+  const [weeklyGoal] = useState(5);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        window.location.href = '/login';
-      } else {
-        setUser(data.user);
-        loadDashboardData(data.user.id);
-      }
+      if (!data.user) { window.location.href = '/login'; return; }
+      setUser(data.user);
+      setUserName(data.user.email?.split('@')[0] || 'there');
+      loadDashboardData(data.user.id);
     });
   }, []);
 
   const loadDashboardData = async (userId: string) => {
-    const [profileRes, postsRes, personaRes, signalsRes] = await Promise.all([
+    const [profileRes, postsRes, personaRes, signalsRes, recentRes] = await Promise.all([
       supabase.from('profiles').select('role, domain, goals').eq('id', userId).single(),
       supabase.from('posts').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }),
-      supabase.from('persona_profiles').select('persona_completed_at, communication_styles').eq('user_id', userId).single(),
+      supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', userId).single(),
       supabase.from('persona_signals').select('tone, content_type').eq('user_id', userId).eq('action', 'kept').order('created_at', { ascending: false }).limit(5),
+      supabase.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(3),
     ]);
 
     const profile = profileRes.data;
     setHasProfile(!!(profile?.role && profile?.domain && profile?.goals?.length));
-
-    const persona = personaRes.data;
-    setHasPersona(!!persona?.persona_completed_at);
+    setHasPersona(!!personaRes.data?.persona_completed_at);
 
     const signals = signalsRes.data || [];
     if (signals.length >= 3) {
       const tones = signals.map((s: any) => s.tone).filter(Boolean);
       const topTone = tones.length > 0 ? tones.sort((a: string, b: string) => tones.filter((t: string) => t === b).length - tones.filter((t: string) => t === a).length)[0] : null;
-      if (topTone) setLearningInsight(`Based on your last ${signals.length} posts, you tend to write in a ${topTone} voice. We've adjusted future suggestions accordingly.`);
+      if (topTone) setLearningInsight(`You tend to write in a ${topTone} voice. We've tuned suggestions to match.`);
     }
 
     const posts = postsRes.data || [];
     setTotalPosts(posts.length);
+    setRecentPosts(recentRes.data || []);
 
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -99,52 +113,69 @@ export default function Dashboard() {
       const days = new Set(posts.map(p => new Date(p.created_at).toISOString().split('T')[0]));
       const today = new Date();
       for (let i = 0; i < 365; i++) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().split('T')[0];
-        if (days.has(key)) {
-          currentStreak++;
-        } else if (i > 0) {
-          break;
-        }
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        if (days.has(d.toISOString().split('T')[0])) currentStreak++;
+        else if (i > 0) break;
       }
     }
     setStreak(currentStreak);
     setLoading(false);
+
+    fetchPostIdeas(userId);
   };
+
+  const fetchPostIdeas = useCallback(async (userId: string) => {
+    setLoadingIdeas(true);
+    try {
+      const res = await fetch(`${API_URL}/api/suggest-topics`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ query: '', userId }),
+      });
+      const data = await res.json();
+      if (data.topics) setPostIdeas(data.topics);
+    } catch {}
+    setLoadingIdeas(false);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/';
   };
 
+  const handleCopyPost = (post: RecentPost) => {
+    navigator.clipboard.writeText(post.content);
+    setCopiedId(post.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const formatDate = (d: string) => {
+    const diff = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return `${diff}m ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+  };
+
   const growthScore = Math.min(100, Math.round(
-    (hasProfile ? 25 : 0) + Math.min(25, totalPosts * 5) + Math.min(25, streak * 5) + Math.min(25, postsThisWeek * 8)
+    (hasProfile ? 15 : 0) + (hasPersona ? 15 : 0) + Math.min(20, totalPosts * 4) + Math.min(25, streak * 5) + Math.min(25, postsThisWeek * 8)
   ));
 
   const roadmap = [
     { text: 'Complete your persona setup', done: hasProfile },
-    { text: 'Set up your voice profile', done: hasPersona },
-    { text: 'Generate your first AI post', done: totalPosts > 0 },
+    { text: 'Set up your voice profile', done: hasPersona, href: '/persona-setup' },
+    { text: 'Generate your first AI post', done: totalPosts > 0, href: '/create' },
     { text: 'Track your growth score', done: growthScore > 0 },
   ];
   const roadmapDone = roadmap.filter(r => r.done).length;
-
-  const stats = [
-    { label: 'Total Posts', value: String(totalPosts), trend: totalPosts > 0 ? `${totalPosts} created` : 'Get started', icon: <FileText size={18} />, color: 'from-brand-purple to-[#9B7DFC]' },
-    { label: 'This Week', value: String(postsThisWeek), trend: postsThisWeek > 0 ? `+${postsThisWeek} this week` : 'Create a post', icon: <BarChart3 size={18} />, color: 'from-brand-pink to-[#FF5CAD]' },
-    { label: 'Streak', value: `${streak}d`, trend: streak > 0 ? `${streak} day streak` : 'Start today', icon: <Flame size={18} />, color: 'from-brand-orange to-[#FF8F5E]' },
-    { label: 'Growth Score', value: `${growthScore}/100`, trend: growthScore > 0 ? 'Growing' : 'New', icon: <Trophy size={18} />, color: 'from-brand-teal to-brand-blue' },
-  ];
 
   if (loading) {
     return (
       <div className="min-h-screen gradient-bg-page p-5 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-40 w-full" />
+          <div className="skeleton h-16 w-full" />
+          <div className="skeleton h-40 w-full" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 w-full" />)}
+            {[1,2,3,4].map(i => <div key={i} className="skeleton h-28 w-full" />)}
           </div>
         </div>
       </div>
@@ -152,158 +183,281 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen gradient-bg-page pb-20 md:pb-0">
-      {/* Desktop Nav */}
-      <nav className="hidden md:flex items-center justify-between px-8 h-[72px] bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] sticky top-0 z-40">
-        <div className="text-xl font-extrabold gradient-text">Eclatale</div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-brand-muted font-medium">{user?.email}</span>
-          <button onClick={handleLogout} className="btn-ghost !py-2 !px-4 text-sm !text-red-500 !border-red-100 hover:!bg-red-50">
-            <LogOut size={15} /> Logout
+    <div className="min-h-screen bg-[#FAFAFE] flex">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[rgba(124,92,252,0.06)] h-screen sticky top-0 z-40">
+        <div className="px-5 h-16 flex items-center border-b border-[rgba(124,92,252,0.06)]">
+          <span className="text-xl font-extrabold gradient-text">Eclatale</span>
+        </div>
+
+        <div className="px-3 pt-4 pb-2">
+          <a href="/create" className="btn-primary w-full text-sm !py-2.5 !rounded-xl">
+            <Sparkles size={16} /> Write a Post
+          </a>
+        </div>
+
+        <nav className="flex-1 px-3 py-2 space-y-0.5">
+          {SIDEBAR_ITEMS.filter(i => !i.cta).map((item, i) => (
+            <a key={i} href={item.href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                item.active ? 'bg-[rgba(124,92,252,0.06)] text-brand-purple' : 'text-brand-muted hover:bg-[rgba(124,92,252,0.03)] hover:text-brand-dark'
+              }`}>
+              {item.icon}
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="px-3 py-4 border-t border-[rgba(124,92,252,0.06)]">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-brand-dark truncate">{userName}</p>
+            </div>
+          </div>
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 w-full transition-all mt-1">
+            <LogOut size={16} /> Logout
           </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between px-5 h-14 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] sticky top-0 z-40">
-        <div className="text-lg font-extrabold gradient-text">Eclatale</div>
-        <button onClick={handleLogout} className="text-sm text-red-500 font-medium p-2" aria-label="Logout">
-          <LogOut size={18} />
-        </button>
-      </div>
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 pb-20 lg:pb-0">
+        {/* Mobile Header */}
+        <div className="lg:hidden flex items-center justify-between px-5 h-14 bg-white/90 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] sticky top-0 z-40">
+          <span className="text-lg font-extrabold gradient-text">Eclatale</span>
+          <button onClick={handleLogout} className="text-sm text-red-400 p-2"><LogOut size={18} /></button>
+        </div>
 
-      <div className="max-w-6xl mx-auto px-5 md:px-8 py-6 md:py-10">
-        {/* Welcome + Growth Score */}
-        <div className="card p-6 md:p-8 mb-6 gradient-mesh relative overflow-hidden">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="max-w-[960px] mx-auto px-5 md:px-8 py-6 md:py-8">
+          {/* Welcome Header */}
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-brand-dark mb-1">
-                Welcome back
-              </h1>
-              <p className="text-sm text-brand-muted">Your personal brand growth journey is active.</p>
+              <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Welcome back, {userName}</h1>
+              <p className="text-sm text-brand-muted mt-0.5">Here's your brand growth overview.</p>
             </div>
             <GrowthRing score={growthScore} />
           </div>
-        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-          {stats.map((stat, i) => (
-            <div key={i} className="card card-hover p-4 md:p-5">
-              <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-3`}>
-                {stat.icon}
-              </div>
-              <div className="text-xs text-brand-muted font-medium mb-1">{stat.label}</div>
-              <div className="text-xl md:text-2xl font-bold text-brand-dark">{stat.value}</div>
-              <div className="text-[11px] font-semibold text-brand-teal mt-1">{stat.trend}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Persona CTA */}
-        {!hasPersona && (
-          <a href="/persona-setup" className="card card-hover p-5 md:p-6 mb-6 block !border-brand-purple/20 gradient-mesh relative overflow-hidden">
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center text-white flex-shrink-0">
-                <Sparkles size={20} />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-brand-dark">Set up your voice profile</h3>
-                <p className="text-sm text-brand-muted">Takes 90 seconds. Content generated without it sounds generic.</p>
-              </div>
-              <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs hidden md:flex">Recommended</span>
-            </div>
-          </a>
-        )}
-
-        {/* Learning Insight */}
-        {learningInsight && (
-          <div className="card p-4 md:p-5 mb-6 !border-brand-teal/20">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white flex-shrink-0 mt-0.5">
-                <Sparkles size={14} />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-brand-teal uppercase tracking-wide mb-1">Eclatale knows you</p>
-                <p className="text-sm text-brand-dark">{learningInsight}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Create Content */}
-        <div className="card p-6 md:p-8 mb-6">
-          <h2 className="text-lg font-bold text-brand-dark mb-5">Create Content</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a href="/create" className="card card-hover p-5 md:p-6 block group !shadow-none !border-[rgba(124,92,252,0.1)] hover:!border-brand-purple/30">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-purple to-brand-pink flex items-center justify-center text-white mb-4 group-hover:scale-105 transition-transform">
-                <Sparkles size={20} />
-              </div>
-              <h3 className="font-bold text-brand-dark mb-1">AI Auto-Generate</h3>
-              <p className="text-sm text-brand-muted">Pick a topic and we'll create content in your voice instantly.</p>
-            </a>
-            <a href="/guided" className="card card-hover p-5 md:p-6 block group !shadow-none !border-[rgba(124,92,252,0.1)] hover:!border-brand-pink/30">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-pink to-brand-orange flex items-center justify-center text-white mb-4 group-hover:scale-105 transition-transform">
-                <PenTool size={20} />
-              </div>
-              <h3 className="font-bold text-brand-dark mb-1">Guided Creation</h3>
-              <p className="text-sm text-brand-muted">Have an idea? We'll ask smart questions to shape it perfectly.</p>
-            </a>
-          </div>
-        </div>
-
-        {/* History Link */}
-        <a href="/history" className="card card-hover p-5 md:p-6 mb-6 flex items-center justify-between block">
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white">
-              <Clock size={20} />
-            </div>
-            <div>
-              <h3 className="font-bold text-brand-dark">Content History</h3>
-              <p className="text-sm text-brand-muted">
-                {totalPosts > 0 ? `${totalPosts} post${totalPosts === 1 ? '' : 's'} generated` : 'View and manage all your generated posts'}
-              </p>
-            </div>
-          </div>
-          <span className="text-brand-muted text-sm font-medium hidden md:block">View all &rarr;</span>
-        </a>
-
-        {/* Roadmap */}
-        <div className="card p-6 md:p-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-brand-dark">Your Roadmap</h2>
-            <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs">{roadmapDone} of {roadmap.length} complete</span>
-          </div>
-          {/* Progress bar */}
-          <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-5 overflow-hidden">
-            <div
-              className="h-full rounded-full gradient-primary transition-all duration-700"
-              style={{ width: `${(roadmapDone / roadmap.length) * 100}%` }}
-            />
-          </div>
-          <div className="space-y-3">
-            {roadmap.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                  item.done ? 'bg-brand-teal border-brand-teal' : 'border-[rgba(124,92,252,0.2)]'
-                }`}>
-                  {item.done && <CheckIcon />}
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {[
+              { label: 'Total Posts', value: totalPosts, icon: <FileText size={16} />, color: 'from-brand-purple to-[#9B7DFC]' },
+              { label: 'This Week', value: postsThisWeek, icon: <BarChart3 size={16} />, color: 'from-brand-pink to-[#FF5CAD]' },
+              { label: 'Streak', value: `${streak}d`, icon: <Flame size={16} />, color: 'from-brand-orange to-[#FF8F5E]' },
+              { label: 'Growth Score', value: `${growthScore}/100`, icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
+            ].map((s, i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white`}>{s.icon}</div>
+                  <span className="text-[11px] text-brand-muted font-medium">{s.label}</span>
                 </div>
-                <span className={`font-medium transition-all ${item.done ? 'text-brand-muted line-through' : 'text-brand-dark'}`}>{item.text}</span>
+                <span className="text-xl font-bold text-brand-dark">{s.value}</span>
               </div>
             ))}
+          </div>
+
+          {/* Persona CTA */}
+          {!hasPersona && (
+            <a href="/persona-setup" className="card card-hover p-4 mb-6 block !border-brand-purple/15 gradient-mesh">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-white flex-shrink-0">
+                  <Target size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-brand-dark">Set up your voice profile — takes 90 seconds</h3>
+                  <p className="text-xs text-brand-muted">Content generated without it sounds generic.</p>
+                </div>
+                <ChevronRight size={16} className="text-brand-muted flex-shrink-0" />
+              </div>
+            </a>
+          )}
+
+          {/* Learning Insight */}
+          {learningInsight && (
+            <div className="card p-4 mb-6 !border-brand-teal/15">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white flex-shrink-0">
+                  <Sparkles size={14} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-brand-teal uppercase tracking-wide">Eclatale knows you</p>
+                  <p className="text-sm text-brand-dark">{learningInsight}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column (2/3) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Post Ideas */}
+              <div className="card p-5 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-bold text-brand-dark">Post ideas for you</h2>
+                  <button onClick={() => user && fetchPostIdeas(user.id)} disabled={loadingIdeas}
+                    className="flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline">
+                    {loadingIdeas ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                    New ideas
+                  </button>
+                </div>
+                {loadingIdeas && postIdeas.length === 0 ? (
+                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-20 w-full" />)}</div>
+                ) : (
+                  <div className="space-y-3">
+                    {postIdeas.slice(0, 3).map((idea, i) => (
+                      <div key={i} className="p-4 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-purple/20 transition-all group">
+                        <p className="text-sm text-brand-dark leading-relaxed mb-3">{idea}</p>
+                        <a href={`/create?topic=${encodeURIComponent(idea)}`}
+                          className="flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline">
+                          Generate post <ArrowRight size={12} />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {postIdeas.length === 0 && !loadingIdeas && (
+                  <p className="text-sm text-brand-muted text-center py-6">Create your first post to get personalized ideas.</p>
+                )}
+              </div>
+
+              {/* Recent Posts */}
+              <div className="card p-5 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-bold text-brand-dark">Recent posts</h2>
+                  {recentPosts.length > 0 && (
+                    <a href="/history" className="text-xs text-brand-purple font-semibold hover:underline">View all</a>
+                  )}
+                </div>
+                {recentPosts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center text-white mx-auto mb-3 opacity-50">
+                      <FileText size={20} />
+                    </div>
+                    <p className="text-sm text-brand-muted mb-4">No posts yet. Create your first one!</p>
+                    <a href="/create" className="btn-primary text-xs !py-2 !px-5">Write a Post</a>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentPosts.map(post => (
+                      <div key={post.id} className="p-4 rounded-xl border border-[rgba(124,92,252,0.06)] hover:border-[rgba(124,92,252,0.12)] transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(124,92,252,0.06)] text-brand-purple">
+                              {post.content_type === 'linkedin-post' ? 'LinkedIn' : post.content_type === 'twitter-thread' ? 'X Thread' : post.content_type === 'instagram-caption' ? 'Instagram' : 'Article'}
+                            </span>
+                            <span className="text-[10px] text-brand-muted">{formatDate(post.created_at)}</span>
+                          </div>
+                          <button onClick={() => handleCopyPost(post)} className="text-brand-muted hover:text-brand-purple transition-colors p-1">
+                            {copiedId === post.id ? <Check size={14} className="text-brand-teal" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                        <p className="text-sm text-brand-dark leading-relaxed line-clamp-3">{post.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column (1/3) */}
+            <div className="space-y-6">
+              {/* Weekly Progress */}
+              <div className="card p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-[rgba(124,92,252,0.06)] flex items-center justify-center">
+                    <BarChart3 size={16} className="text-brand-purple" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-brand-dark">Weekly progress</h3>
+                    <p className="text-[11px] text-brand-muted">{postsThisWeek}/{weeklyGoal} posts</p>
+                  </div>
+                </div>
+                <div className="h-2 rounded-full bg-[rgba(124,92,252,0.08)] mb-3 overflow-hidden">
+                  <div className="h-full rounded-full gradient-primary transition-all duration-700"
+                    style={{ width: `${Math.min(100, (postsThisWeek / weeklyGoal) * 100)}%` }} />
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                    const dayLabel = d.toLocaleDateString('en', { weekday: 'short' }).charAt(0);
+                    const filled = i < postsThisWeek;
+                    return (
+                      <div key={i} className="flex-1 text-center">
+                        <div className={`w-full h-6 rounded-md mb-1 ${filled ? 'gradient-primary' : 'bg-[rgba(124,92,252,0.06)]'}`} />
+                        <span className="text-[9px] text-brand-muted font-medium">{dayLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quick Create */}
+              <div className="card p-5">
+                <h3 className="text-sm font-bold text-brand-dark mb-3">Quick create</h3>
+                <div className="space-y-2">
+                  <a href="/create" className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-purple/20 transition-all group">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple to-brand-pink flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+                      <Sparkles size={14} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-brand-dark">AI Auto-Generate</p>
+                      <p className="text-[10px] text-brand-muted">From topic to post in seconds</p>
+                    </div>
+                    <ChevronRight size={14} className="text-brand-muted" />
+                  </a>
+                  <a href="/guided" className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-pink/20 transition-all group">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-pink to-brand-orange flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+                      <PenTool size={14} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-brand-dark">Guided Creation</p>
+                      <p className="text-[10px] text-brand-muted">We refine your rough idea</p>
+                    </div>
+                    <ChevronRight size={14} className="text-brand-muted" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Roadmap */}
+              <div className="card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-brand-dark">Your roadmap</h3>
+                  <span className="text-[10px] font-semibold text-brand-purple bg-[rgba(124,92,252,0.06)] px-2 py-0.5 rounded-full">{roadmapDone}/{roadmap.length}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-4 overflow-hidden">
+                  <div className="h-full rounded-full gradient-primary transition-all duration-700"
+                    style={{ width: `${(roadmapDone / roadmap.length) * 100}%` }} />
+                </div>
+                <div className="space-y-2.5">
+                  {roadmap.map((item, i) => (
+                    <a key={i} href={item.done ? undefined : (item as any).href || '#'}
+                      className={`flex items-center gap-2.5 text-[13px] ${!item.done && (item as any).href ? 'cursor-pointer hover:text-brand-purple' : ''}`}>
+                      <div className={`w-4.5 h-4.5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 ${
+                        item.done ? 'bg-brand-teal border-brand-teal' : 'border-[rgba(124,92,252,0.2)]'
+                      }`} style={{ width: 18, height: 18 }}>
+                        {item.done && <CheckIcon />}
+                      </div>
+                      <span className={`font-medium ${item.done ? 'text-brand-muted line-through' : 'text-brand-dark'}`}>{item.text}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[rgba(124,92,252,0.06)] z-50">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[rgba(124,92,252,0.06)] z-50">
         <div className="flex items-center justify-around h-16">
           {[
             { icon: <Home size={20} />, label: 'Home', href: '/dashboard', active: true },
             { icon: <Zap size={20} />, label: 'Create', href: '/create', active: false },
             { icon: <Clock size={20} />, label: 'History', href: '/history', active: false },
-            { icon: <User size={20} />, label: 'Profile', href: '/dashboard', active: false },
+            { icon: <User size={20} />, label: 'Profile', href: '/persona-setup', active: false },
           ].map((tab, i) => (
             <a key={i} href={tab.href} className={`flex flex-col items-center gap-1 min-w-[60px] py-2 ${tab.active ? 'text-brand-purple' : 'text-brand-muted'}`}>
               {tab.icon}

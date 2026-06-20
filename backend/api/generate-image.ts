@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'black-forest-labs/FLUX.1-schnell-Free',
+        model: 'black-forest-labs/FLUX.1-schnell',
         prompt: imagePrompt,
         width: size.width,
         height: size.height,

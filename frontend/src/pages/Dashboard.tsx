@@ -52,7 +52,7 @@ const SIDEBAR_ITEMS = [
   { icon: <PenTool size={18} />, label: 'Guided Creation', href: '/guided', active: false },
   { icon: <Clock size={18} />, label: 'Content History', href: '/history', active: false },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup', active: false },
-  { icon: <Settings size={18} />, label: 'Settings', href: '/dashboard', active: false },
+  { icon: <Settings size={18} />, label: 'Settings', href: '/settings', active: false },
 ];
 
 export default function Dashboard() {

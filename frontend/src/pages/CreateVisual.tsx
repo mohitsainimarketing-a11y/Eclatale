@@ -68,20 +68,12 @@ export default function CreateVisual() {
     setGenerating(false);
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!imageUrl) return;
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `eclatale-${format}-${Date.now()}.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      window.open(imageUrl, '_blank');
-    }
+    const a = document.createElement('a');
+    a.href = imageUrl;
+    a.download = `eclatale-${format}-${Date.now()}.png`;
+    a.click();
   };
 
   const handleAttachToPost = async () => {

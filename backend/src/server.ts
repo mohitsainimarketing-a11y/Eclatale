@@ -54,7 +54,7 @@ app.post('/api/suggest-topics', async (req, res) => {
     const topicPrompt = TOPIC_SUGGESTION_PROMPT.replace("${'{role}'}", role).replace("${'{industry}'}", industry);
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 512,
+      model: 'claude-haiku-4-5', max_tokens: 512,
       system: topicPrompt,
       messages: [{ role: 'user', content: `Suggest 5 timely, high-signal content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}.\n\n${personaFragment ? `About this person:\n${personaFragment}\n\n` : ''}Think about what's happening RIGHT NOW in ${industry}. Return ONLY a JSON array of 5 strings.` }],
     });
@@ -79,7 +79,7 @@ app.post('/api/guided-questions', async (req, res) => {
     const industry = profile?.domain || 'business';
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 1024,
+      model: 'claude-haiku-4-5', max_tokens: 1024,
       messages: [{ role: 'user', content: `A ${role} in the ${industry} industry wants to create a ${contentType.replace(/-/g, ' ')} based on this rough idea:\n\n"${rawIdea}"\n\nGenerate exactly 4 smart, specific follow-up questions that will extract the GOLD from their experience. Focus on concrete details, specific numbers, personal stories, counterintuitive insights, and unique perspectives that will make the content impossible to ignore.\n\nReturn ONLY a JSON array of objects with "id" (q1-q4), "question" (the question text), and "placeholder" (a short example answer hint). No explanation.` }],
     });
 

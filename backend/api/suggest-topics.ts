@@ -39,7 +39,7 @@ Also, NEVER use em dashes, en dashes, or arrows in the topic text. Write natural
 Return ONLY a JSON array of 5 strings. Each topic should be specific enough to immediately write about, not a vague category.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5',
       max_tokens: 512,
       system: topicPrompt,
       messages: [{ role: 'user', content: userMessage }],

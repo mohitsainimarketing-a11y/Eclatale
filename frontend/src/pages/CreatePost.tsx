@@ -106,6 +106,7 @@ export default function CreatePost() {
   const [ideasView, setIdeasView]             = useState(false);
   const [ideasList, setIdeasList]             = useState<string[]>([]);
   const [loadingIdeas, setLoadingIdeas]       = useState(false);
+  const [writeTopic, setWriteTopic]           = useState('');
 
   // Conversational assistant
   const [chatMsgs, setChatMsgs]   = useState<ChatMsg[]>([]);
@@ -204,23 +205,30 @@ export default function CreatePost() {
   };
 
   const handleCardWrite = () => {
-    addMsg('bot', "What would you like to write about? I'll use your current format and tone settings.", 'text');
+    setWriteTopic('');
     setActiveFlow('write');
   };
 
   const handleCardRepurpose = () => {
-    addMsg('bot', `Paste the content you'd like to repurpose. I'll rewrite it as a ${CONTENT_TYPES.find(c => c.id === contentType)?.label || 'LinkedIn Post'} in a ${TONES.find(t => t.id === tone)?.label || 'Professional'} tone.`, 'repurpose-input');
+    setRepurposeText('');
     setActiveFlow('repurpose');
   };
 
   const handleCardImprove = () => {
     if (composerContent) {
-      addMsg('bot', 'How would you like to improve it? Pick a quick edit or type your own instruction below.', 'improve-options');
       setActiveFlow('improve');
     } else {
-      addMsg('bot', "Let's write something first. What would you like to post about?", 'text');
+      setWriteTopic('');
       setActiveFlow('write');
     }
+  };
+
+  const handleWriteGenerate = () => {
+    if (!writeTopic.trim()) return;
+    addMsg('user', writeTopic, 'text');
+    setActiveFlow(null);
+    handleGenerate(writeTopic);
+    setWriteTopic('');
   };
 
   // ── Generate ──────────────────────────────────────────────────────────────
@@ -301,17 +309,11 @@ export default function CreatePost() {
 
   const handleChatSubmit = async () => {
     const input = chatInput.trim();
-    if (!input) return;
+    if (!input || !composerContent) return;
     setChatInput('');
     addMsg('user', input, 'text');
-
-    if (activeFlow === 'write') {
-      setActiveFlow(null);
-      await handleGenerate(input);
-    } else if (activeFlow === 'improve' || (activeFlow === null && composerContent)) {
-      setActiveFlow(null);
-      await handleRefineWithInstruction(input);
-    }
+    setActiveFlow(null);
+    await handleRefineWithInstruction(input);
   };
 
   const handleIdeaSelect = (idea: string) => {
@@ -452,13 +454,13 @@ export default function CreatePost() {
   const barColor  = charLen > 2900 ? 'bg-red-400' : charLen > 2500 ? 'bg-amber-400' : 'bg-brand-purple';
   const currentTone = TONES.find(t => t.id === tone);
 
-  const chatDisabled = !composerContent && activeFlow === null;
-  const chatPlaceholder = activeFlow === 'write'
-    ? 'Type your topic or idea…'
-    : activeFlow === 'repurpose'
-    ? ''
-    : chatDisabled
+  const chatDisabled = !composerContent || activeFlow === 'write' || activeFlow === 'repurpose';
+  const chatPlaceholder = activeFlow === 'write' || activeFlow === 'repurpose'
+    ? 'Use the panel on the right →'
+    : !composerContent
     ? 'Generate a post first, then ask me to refine it'
+    : activeFlow === 'improve'
+    ? 'Or type a custom improvement instruction…'
     : 'e.g. make the hook stronger, add a stat, shorten this…';
 
   const composerPlaceholder = contentType !== 'linkedin-post' && !composerContent
@@ -566,9 +568,10 @@ export default function CreatePost() {
               </div>
             </div>
 
-            {/* Chat thread */}
+            {/* Activity log — running record of what's happened */}
             {chatMsgs.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-1">
+                <p className="text-[10px] text-brand-muted uppercase tracking-widest font-semibold mb-2">Activity</p>
                 {chatMsgs.map(msg => {
                   if (msg.type === 'activity') {
                     return (
@@ -576,84 +579,34 @@ export default function CreatePost() {
                         <div className="w-5 h-5 rounded-lg bg-[rgba(124,92,252,0.06)] flex items-center justify-center flex-shrink-0">
                           {msg.activityIcon && <AIcon type={msg.activityIcon} />}
                         </div>
-                        <span className="text-[11px] text-brand-muted flex-1 leading-tight truncate">{msg.content}</span>
+                        <span className="text-[11px] text-brand-muted flex-1 leading-tight">{msg.content}</span>
                         <span className="text-[10px] text-brand-muted/40 flex-shrink-0 tabular-nums">{msg.time}</span>
                       </div>
                     );
                   }
-
                   if (msg.role === 'user') {
                     return (
-                      <div key={msg.id} className="flex justify-end">
-                        <div className="max-w-[85%] bg-[rgba(124,92,252,0.08)] text-brand-dark text-[12px] leading-relaxed rounded-2xl rounded-br-sm px-3 py-2">
+                      <div key={msg.id} className="flex justify-end px-1">
+                        <div className="max-w-[85%] bg-[rgba(124,92,252,0.07)] text-brand-dark text-[11px] leading-relaxed rounded-xl px-2.5 py-1.5">
                           {msg.content}
                         </div>
                       </div>
                     );
                   }
-
-                  // Bot message
                   return (
-                    <div key={msg.id} className="flex items-start gap-2">
-                      <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Sparkles size={9} className="text-white" />
+                    <div key={msg.id} className="flex items-start gap-2 px-1">
+                      <div className="w-4 h-4 rounded-full gradient-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Sparkles size={8} className="text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="bg-white border border-[rgba(124,92,252,0.08)] rounded-2xl rounded-bl-sm px-3 py-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-
-                          {msg.type === 'ideas' && msg.ideas ? (
-                            <div>
-                              <p className="text-[12px] text-brand-dark mb-2 leading-relaxed">{msg.content}</p>
-                              <div className="space-y-1.5">
-                                {msg.ideas.map((idea, i) => (
-                                  <button key={i} onClick={() => handleIdeaSelect(idea)}
-                                    className="w-full text-left text-[11px] px-3 py-2 rounded-xl bg-[rgba(124,92,252,0.04)] border border-[rgba(124,92,252,0.1)] text-brand-dark hover:border-brand-purple/30 hover:bg-[rgba(124,92,252,0.07)] transition-all leading-snug">
-                                    {idea}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          ) : msg.type === 'improve-options' ? (
-                            <div>
-                              <p className="text-[12px] text-brand-dark mb-2.5 leading-relaxed">{msg.content}</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {IMPROVE_CHIPS.map(s => (
-                                  <button key={s} onClick={() => handleImproveChip(s)}
-                                    className="text-[10px] px-2.5 py-1.5 rounded-full border border-[rgba(124,92,252,0.2)] text-brand-purple hover:bg-[rgba(124,92,252,0.06)] transition-colors font-medium">
-                                    {s}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          ) : msg.type === 'repurpose-input' ? (
-                            <div>
-                              <p className="text-[12px] text-brand-dark mb-2 leading-relaxed">{msg.content}</p>
-                              <textarea
-                                value={repurposeText}
-                                onChange={e => setRepurposeText(e.target.value)}
-                                placeholder="Paste article, newsletter, transcript, or thread…"
-                                className="input !text-[11px] !min-h-[100px] !resize-none w-full !leading-relaxed mb-2"
-                              />
-                              <button onClick={handleRepurpose} disabled={!repurposeText.trim() || repurposing}
-                                className="btn-primary w-full text-xs !py-2">
-                                {repurposing ? <><Loader2 size={12} className="animate-spin" /> Repurposing…</> : <><Scissors size={12} /> Repurpose this</>}
-                              </button>
-                            </div>
-                          ) : (
-                            <p className="text-[12px] text-brand-dark leading-relaxed">{msg.content}</p>
-                          )}
-                        </div>
-                      </div>
+                      <p className="text-[11px] text-brand-muted leading-relaxed flex-1">{msg.content}</p>
                     </div>
                   );
                 })}
                 {(generating || refining || repurposing) && (
-                  <div className="flex items-center gap-2 pl-7">
-                    <div className="flex gap-1 px-3 py-2 bg-white border border-[rgba(124,92,252,0.08)] rounded-2xl rounded-bl-sm shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
+                  <div className="flex items-center gap-1.5 px-2 py-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 )}
                 <div ref={chatEndRef} />
@@ -725,8 +678,10 @@ export default function CreatePost() {
             </div>
           </div>
 
-          {/* Composer — conditionally shows ideas panel or post editor */}
+          {/* Right panel — 4 modes: ideas / write / repurpose / composer (with optional improve strip) */}
           {ideasView ? (
+
+            /* ── IDEAS (LinkedIn-style cards) ─────────────────────────── */
             <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
               <div className="flex items-center gap-2 mb-4">
                 <button onClick={() => setIdeasView(false)}
@@ -743,28 +698,133 @@ export default function CreatePost() {
               ) : (
                 <div className="space-y-3">
                   {ideasList.map((idea, i) => (
-                    <div key={i} className="border border-[rgba(0,0,0,0.07)] rounded-2xl p-4 hover:shadow-sm transition-all bg-white/60">
-                      <div className="flex items-center gap-2 mb-2.5">
-                        <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
-                          {userInitials || 'Y'}
+                    <div key={i} className="bg-white rounded-2xl overflow-hidden transition-shadow cursor-default"
+                      style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)' }}
+                      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.09)')}
+                      onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)')}>
+                      <div className="px-4 pt-4 pb-3">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 select-none"
+                            style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
+                            {userInitials || 'Y'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold leading-tight" style={{ color: 'rgba(0,0,0,0.9)' }}>{userName || 'Your Name'}</div>
+                            {userRole && <div className="text-[11px] leading-snug mt-0.5 line-clamp-1" style={{ color: 'rgba(0,0,0,0.6)' }}>{userRole}</div>}
+                            <div className="text-[11px] mt-0.5" style={{ color: 'rgba(0,0,0,0.6)' }}>Just now · 🌐</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-[11px] font-semibold text-brand-dark leading-none">{userName || 'Your Name'}</div>
-                          <div className="text-[9px] text-brand-muted mt-0.5">LinkedIn · Just now</div>
-                        </div>
+                        <p className="text-[14px] leading-[1.6] line-clamp-4" style={{ color: 'rgba(0,0,0,0.9)' }}>{idea}</p>
                       </div>
-                      <p className="text-[13px] text-brand-dark leading-snug mb-3 line-clamp-3">{idea}</p>
-                      <button onClick={() => handleIdeaSelect(idea)}
-                        className="btn-primary text-xs !py-1.5 !px-4">
-                        <Sparkles size={11} /> Generate from this
-                      </button>
+                      <div className="px-4 py-2.5 flex items-center justify-between border-t" style={{ borderColor: '#E0E0E0' }}>
+                        <div className="flex items-center gap-4">
+                          <span className="text-[12px] font-medium select-none" style={{ color: '#666' }}>👍 Like</span>
+                          <span className="text-[12px] font-medium select-none" style={{ color: '#666' }}>💬 Comment</span>
+                        </div>
+                        <button onClick={() => handleIdeaSelect(idea)}
+                          className="text-[12px] font-semibold text-white px-4 py-1.5 rounded-full transition-all hover:brightness-110 active:scale-95"
+                          style={{ background: '#0A66C2' }}>
+                          Use this idea →
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+
+          ) : activeFlow === 'write' ? (
+
+            /* ── WRITE A POST ──────────────────────────────────────────── */
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
+              <div className="flex items-center gap-2 mb-5">
+                <button onClick={() => setActiveFlow(null)}
+                  className="p-1 -ml-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
+                  <ArrowLeft size={15} />
+                </button>
+                <span className="text-[12px] font-bold text-brand-dark">Write a post</span>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[14px] font-semibold text-brand-dark mb-1">What's this post about?</p>
+                  <p className="text-[12px] text-brand-muted mb-3 leading-relaxed">Give me a topic, idea, or perspective you want to share. The more specific, the better.</p>
+                  <textarea
+                    value={writeTopic}
+                    onChange={e => setWriteTopic(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleWriteGenerate(); } }}
+                    placeholder="e.g. Why most B2B content fails, lessons from 100 customer calls, how I grew my newsletter to 10k…"
+                    className="input !text-[13px] !min-h-[110px] !resize-none w-full !leading-relaxed"
+                    autoFocus
+                  />
+                  <p className="text-[10px] text-brand-muted/50 mt-1.5">⌘ Enter to generate</p>
+                </div>
+                <button onClick={handleWriteGenerate} disabled={!writeTopic.trim() || generating}
+                  className="btn-primary w-full !py-3 text-sm">
+                  {generating
+                    ? <><Loader2 size={14} className="animate-spin" /> Generating…</>
+                    : <><Sparkles size={14} /> Generate post</>}
+                </button>
+              </div>
+            </div>
+
+          ) : activeFlow === 'repurpose' ? (
+
+            /* ── REPURPOSE ─────────────────────────────────────────────── */
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
+              <div className="flex items-center gap-2 mb-5">
+                <button onClick={() => setActiveFlow(null)}
+                  className="p-1 -ml-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
+                  <ArrowLeft size={15} />
+                </button>
+                <span className="text-[12px] font-bold text-brand-dark">Repurpose content</span>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[14px] font-semibold text-brand-dark mb-1">Paste content to repurpose</p>
+                  <p className="text-[12px] text-brand-muted mb-3 leading-relaxed">Article, newsletter, transcript, tweet thread — I'll rewrite it as a {CONTENT_TYPES.find(c => c.id === contentType)?.label || 'LinkedIn Post'} in your voice.</p>
+                  <textarea
+                    value={repurposeText}
+                    onChange={e => setRepurposeText(e.target.value)}
+                    placeholder="Paste article, newsletter, transcript, or thread…"
+                    className="input !text-[13px] !min-h-[180px] !resize-none w-full !leading-relaxed"
+                    autoFocus
+                  />
+                </div>
+                <button onClick={handleRepurpose} disabled={!repurposeText.trim() || repurposing}
+                  className="btn-primary w-full !py-3 text-sm">
+                  {repurposing
+                    ? <><Loader2 size={14} className="animate-spin" /> Repurposing…</>
+                    : <><Scissors size={14} /> Repurpose this</>}
+                </button>
+              </div>
+            </div>
+
           ) : (
+
+            /* ── COMPOSER (+ optional improve strip) ───────────────────── */
             <div className="flex-1 min-h-0 overflow-y-auto">
+
+              {activeFlow === 'improve' && (
+                <div className="px-5 pt-4 pb-3.5 border-b border-[rgba(124,92,252,0.1)] bg-[rgba(124,92,252,0.025)]">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-[11px] font-bold text-brand-dark">How would you like to improve it?</span>
+                    <button onClick={() => setActiveFlow(null)}
+                      className="w-5 h-5 rounded-md hover:bg-[rgba(124,92,252,0.08)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {IMPROVE_CHIPS.map(s => (
+                      <button key={s} onClick={() => handleImproveChip(s)}
+                        className="text-[11px] px-3 py-1.5 rounded-full border border-[rgba(124,92,252,0.2)] text-brand-purple hover:bg-[rgba(124,92,252,0.08)] transition-colors font-medium">
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-brand-muted/60">Or type a custom instruction in the chat below ↓</p>
+                </div>
+              )}
+
               <div className="px-5 pt-5 pb-2">
                 {adapting ? (
                   <div className="min-h-[200px] flex flex-col items-center justify-center gap-3">
@@ -829,61 +889,63 @@ export default function CreatePost() {
             </div>
           )}
 
-          {/* Char counter */}
-          <div className="flex-shrink-0 px-5 py-2.5 flex items-center gap-3 border-t border-[rgba(124,92,252,0.04)] bg-white/20">
-            <div className="flex-1 h-1 rounded-full bg-[rgba(124,92,252,0.06)]">
-              <div className={`h-full rounded-full transition-all duration-300 ${barColor}`} style={{ width: `${charPct}%` }} />
-            </div>
-            <span className={`text-[11px] font-semibold tabular-nums flex-shrink-0 ${charColor}`}>
-              {charLen.toLocaleString()} / {CHAR_LIMIT.toLocaleString()}
-            </span>
-            {contentHistory.length > 0 && (
-              <button onClick={handleUndo} className="text-[11px] text-brand-purple flex items-center gap-1 hover:underline flex-shrink-0 font-medium">
-                <Undo2 size={11} /> Undo
-              </button>
-            )}
-          </div>
+          {/* Char counter + action bar — hidden during write / repurpose / ideas flows */}
+          {!ideasView && activeFlow !== 'write' && activeFlow !== 'repurpose' && (
+            <>
+              <div className="flex-shrink-0 px-5 py-2.5 flex items-center gap-3 border-t border-[rgba(124,92,252,0.04)] bg-white/20">
+                <div className="flex-1 h-1 rounded-full bg-[rgba(124,92,252,0.06)]">
+                  <div className={`h-full rounded-full transition-all duration-300 ${barColor}`} style={{ width: `${charPct}%` }} />
+                </div>
+                <span className={`text-[11px] font-semibold tabular-nums flex-shrink-0 ${charColor}`}>
+                  {charLen.toLocaleString()} / {CHAR_LIMIT.toLocaleString()}
+                </span>
+                {contentHistory.length > 0 && (
+                  <button onClick={handleUndo} className="text-[11px] text-brand-purple flex items-center gap-1 hover:underline flex-shrink-0 font-medium">
+                    <Undo2 size={11} /> Undo
+                  </button>
+                )}
+              </div>
 
-          {/* Action bar — Copy/Save/Schedule left · Post to LinkedIn right */}
-          <div className="flex-shrink-0 px-5 py-3 border-t border-[rgba(124,92,252,0.06)] bg-white/40 flex items-center gap-2">
-            <button onClick={handleCopy} disabled={!composerContent}
-              className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
-              {copied ? <><Check size={12} className="text-brand-teal" /> Copied</> : <><Copy size={12} /> Copy</>}
-            </button>
-            <button onClick={handleSaveDraft} disabled={!composerContent}
-              className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
-              {saved ? <><Check size={12} className="text-brand-teal" /> Saved</> : <><FileText size={12} /> Save Draft</>}
-            </button>
-            <button disabled={!composerContent} title="Scheduled posting coming soon"
-              className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
-              <Calendar size={12} /> Schedule
-            </button>
-            <div className="flex-1" />
-            <button onClick={handlePublish}
-              disabled={!composerContent || publishing || !!publishResult?.success}
-              className="btn-primary !py-2.5 !px-5 text-xs disabled:opacity-40 shadow-[0_2px_12px_rgba(124,92,252,0.25)]">
-              {publishing ? <><Loader2 size={13} className="animate-spin" /> Publishing…</>
-                : publishResult?.success ? <><Check size={13} /> Published!</>
-                : <><Send size={13} /> Post to LinkedIn</>}
-            </button>
-          </div>
+              <div className="flex-shrink-0 px-5 py-3 border-t border-[rgba(124,92,252,0.06)] bg-white/40 flex items-center gap-2">
+                <button onClick={handleCopy} disabled={!composerContent}
+                  className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
+                  {copied ? <><Check size={12} className="text-brand-teal" /> Copied</> : <><Copy size={12} /> Copy</>}
+                </button>
+                <button onClick={handleSaveDraft} disabled={!composerContent}
+                  className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
+                  {saved ? <><Check size={12} className="text-brand-teal" /> Saved</> : <><FileText size={12} /> Save Draft</>}
+                </button>
+                <button disabled={!composerContent} title="Scheduled posting coming soon"
+                  className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
+                  <Calendar size={12} /> Schedule
+                </button>
+                <div className="flex-1" />
+                <button onClick={handlePublish}
+                  disabled={!composerContent || publishing || !!publishResult?.success}
+                  className="btn-primary !py-2.5 !px-5 text-xs disabled:opacity-40 shadow-[0_2px_12px_rgba(124,92,252,0.25)]">
+                  {publishing ? <><Loader2 size={13} className="animate-spin" /> Publishing…</>
+                    : publishResult?.success ? <><Check size={13} /> Published!</>
+                    : <><Send size={13} /> Post to LinkedIn</>}
+                </button>
+              </div>
 
-          {/* Publish feedback */}
-          {publishResult?.error && (
-            <div className="flex-shrink-0 mx-5 mb-3 card !bg-red-50 !border-red-100 p-3 text-xs text-red-600 font-medium text-center animate-shake">
-              {publishResult.error}
-            </div>
-          )}
-          {publishResult?.success && (
-            <div className="flex-shrink-0 mx-5 mb-3 card !bg-[rgba(6,214,160,0.06)] !border-brand-teal/20 p-3 text-xs text-brand-teal font-medium text-center animate-fadeIn flex items-center justify-center gap-2">
-              Published to LinkedIn!
-              {publishResult.urn && (
-                <a href={`https://www.linkedin.com/feed/update/${publishResult.urn}`} target="_blank" rel="noopener noreferrer"
-                  className="underline flex items-center gap-1">
-                  View post <ExternalLink size={11} />
-                </a>
+              {publishResult?.error && (
+                <div className="flex-shrink-0 mx-5 mb-3 card !bg-red-50 !border-red-100 p-3 text-xs text-red-600 font-medium text-center animate-shake">
+                  {publishResult.error}
+                </div>
               )}
-            </div>
+              {publishResult?.success && (
+                <div className="flex-shrink-0 mx-5 mb-3 card !bg-[rgba(6,214,160,0.06)] !border-brand-teal/20 p-3 text-xs text-brand-teal font-medium text-center animate-fadeIn flex items-center justify-center gap-2">
+                  Published to LinkedIn!
+                  {publishResult.urn && (
+                    <a href={`https://www.linkedin.com/feed/update/${publishResult.urn}`} target="_blank" rel="noopener noreferrer"
+                      className="underline flex items-center gap-1">
+                      View post <ExternalLink size={11} />
+                    </a>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </main>
         </div>

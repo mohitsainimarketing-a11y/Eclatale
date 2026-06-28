@@ -614,8 +614,16 @@ export default function CreatePost() {
             )}
           </div>
 
-          {/* Persistent chat input */}
-          <div className="flex-shrink-0 px-4 py-3 border-t border-[rgba(124,92,252,0.06)] bg-white/40">
+        </aside>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px flex-shrink-0" style={{ background: 'linear-gradient(to bottom,transparent,rgba(124,92,252,0.1) 20%,rgba(124,92,252,0.1) 80%,transparent)' }} />
+
+        {/* ── RIGHT: POST COMPOSER ───────────────────────────────────────────── */}
+        <main className={`${mobileView === 'compose' ? 'flex' : 'hidden'} md:flex flex-col flex-1 min-w-0 overflow-hidden`}>
+
+          {/* Refinement input — top of right panel, directly above content */}
+          <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.05)] bg-white/70">
             <div className="relative">
               <input
                 type="text"
@@ -624,24 +632,17 @@ export default function CreatePost() {
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !chatDisabled) { e.preventDefault(); handleChatSubmit(); } }}
                 placeholder={chatPlaceholder}
                 disabled={chatDisabled || generating || refining}
-                className={`input !pr-12 !py-2.5 !text-sm w-full transition-opacity ${chatDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`input !pr-10 !py-2 !text-[12px] w-full transition-opacity ${chatDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
               />
               <button
                 onClick={handleChatSubmit}
                 disabled={!chatInput.trim() || chatDisabled || generating || refining}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg gradient-primary flex items-center justify-center text-white disabled:opacity-30 transition-opacity">
-                {(generating || refining) ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg gradient-primary flex items-center justify-center text-white disabled:opacity-30 transition-opacity">
+                {(generating || refining) ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
               </button>
             </div>
-            {error && <p className="text-[10px] text-red-500 mt-1.5 px-1">{error}</p>}
+            {error && <p className="text-[10px] text-red-500 mt-1 px-1">{error}</p>}
           </div>
-        </aside>
-
-        {/* Divider */}
-        <div className="hidden md:block w-px flex-shrink-0" style={{ background: 'linear-gradient(to bottom,transparent,rgba(124,92,252,0.1) 20%,rgba(124,92,252,0.1) 80%,transparent)' }} />
-
-        {/* ── RIGHT: POST COMPOSER ───────────────────────────────────────────── */}
-        <main className={`${mobileView === 'compose' ? 'flex' : 'hidden'} md:flex flex-col flex-1 min-w-0 overflow-hidden`}>
 
           {/* Single-row header: avatar · name · tone */}
           <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2.5 bg-white">
@@ -696,35 +697,35 @@ export default function CreatePost() {
                   <p className="text-[12px] text-brand-muted">Finding ideas based on your profile…</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {ideasList.map((idea, i) => (
-                    <div key={i} className="bg-white rounded-2xl overflow-hidden transition-shadow cursor-default"
+                    <div key={i} className="bg-white rounded-2xl overflow-hidden flex flex-col transition-shadow"
                       style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)' }}
                       onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.09)')}
                       onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)')}>
-                      <div className="px-4 pt-4 pb-3">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 select-none"
+                      <div className="px-3 pt-3 pb-2 flex-1 flex flex-col">
+                        <div className="flex items-start gap-2 mb-2 flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
                             style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
                             {userInitials || 'Y'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-semibold leading-tight" style={{ color: 'rgba(0,0,0,0.9)' }}>{userName || 'Your Name'}</div>
-                            {userRole && <div className="text-[11px] leading-snug mt-0.5 line-clamp-1" style={{ color: 'rgba(0,0,0,0.6)' }}>{userRole}</div>}
-                            <div className="text-[11px] mt-0.5" style={{ color: 'rgba(0,0,0,0.6)' }}>Just now · 🌐</div>
+                            <div className="text-[12px] font-semibold leading-tight truncate" style={{ color: 'rgba(0,0,0,0.9)' }}>{userName || 'Your Name'}</div>
+                            {userRole && <div className="text-[10px] leading-snug mt-0.5 line-clamp-1" style={{ color: 'rgba(0,0,0,0.6)' }}>{userRole}</div>}
+                            <div className="text-[10px] mt-0.5" style={{ color: 'rgba(0,0,0,0.6)' }}>Just now · 🌐</div>
                           </div>
                         </div>
-                        <p className="text-[14px] leading-[1.6] line-clamp-4" style={{ color: 'rgba(0,0,0,0.9)' }}>{idea}</p>
+                        <p className="text-[13px] leading-[1.55] line-clamp-3 flex-1" style={{ color: 'rgba(0,0,0,0.9)' }}>{idea}</p>
                       </div>
-                      <div className="px-4 py-2.5 flex items-center justify-between border-t" style={{ borderColor: '#E0E0E0' }}>
-                        <div className="flex items-center gap-4">
-                          <span className="text-[12px] font-medium select-none" style={{ color: '#666' }}>👍 Like</span>
-                          <span className="text-[12px] font-medium select-none" style={{ color: '#666' }}>💬 Comment</span>
+                      <div className="px-3 py-2 flex items-center justify-between border-t flex-shrink-0" style={{ borderColor: '#E0E0E0' }}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[11px] font-medium select-none" style={{ color: '#666' }}>👍 Like</span>
+                          <span className="text-[11px] font-medium select-none" style={{ color: '#666' }}>💬</span>
                         </div>
                         <button onClick={() => handleIdeaSelect(idea)}
-                          className="text-[12px] font-semibold text-white px-4 py-1.5 rounded-full transition-all hover:brightness-110 active:scale-95"
+                          className="text-[11px] font-semibold text-white px-3 py-1 rounded-full transition-all hover:brightness-110 active:scale-95 flex-shrink-0"
                           style={{ background: '#0A66C2' }}>
-                          Use this idea →
+                          Use idea →
                         </button>
                       </div>
                     </div>

@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   ArrowLeft, Sparkles, Search, Copy, RefreshCw, Edit3, Send,
-  Briefcase, Coffee, Heart, BarChart3, Check, Loader2,
-  FileText, MessageCircle, Image, Globe,
+  Check, Loader2, FileText, MessageCircle, Image, Globe, Download,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -127,6 +126,37 @@ export default function CreatePost() {
       setPublishResult({ success: true, urn: data.linkedinPostUrn });
     } catch (err: any) { setPublishResult({ error: err.message }); }
     setPublishing(false);
+  };
+
+  // Visual generation state
+  const [showVisual, setShowVisual] = useState(false);
+  const [visualFormat, setVisualFormat] = useState('square');
+  const [visualStyle, setVisualStyle] = useState('bold');
+  const [generatingVisual, setGeneratingVisual] = useState(false);
+  const [visualUrl, setVisualUrl] = useState('');
+  const [visualError, setVisualError] = useState('');
+
+  const handleGenerateVisual = async () => {
+    if (!userId || !topic) return;
+    setGeneratingVisual(true); setVisualError(''); setVisualUrl('');
+    try {
+      const res = await fetch(`${API_URL}/api/generate-image`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ topic, format: visualFormat, style: visualStyle, userId, postId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setVisualUrl(data.imageUrl);
+    } catch (err: any) { setVisualError(err.message || 'Failed to generate visual.'); }
+    setGeneratingVisual(false);
+  };
+
+  const handleDownloadVisual = () => {
+    if (!visualUrl) return;
+    const a = document.createElement('a');
+    a.href = visualUrl;
+    a.download = `eclatale-visual-${Date.now()}.png`;
+    a.click();
   };
 
   const canGenerate = topic && tone && contentType && !isGenerating;
@@ -290,6 +320,96 @@ export default function CreatePost() {
             <div className="text-center">
               <button onClick={() => { setGeneratedContent(''); setEditedContent(''); setTopic(''); setTone(''); setContentType(''); setSuggestions([]); setError(''); }}
                 className="text-sm text-brand-muted hover:text-brand-purple font-medium transition-colors">Start over</button>
+            </div>
+
+            {/* Visual Generator Panel */}
+            <div className="card p-5 md:p-6 mt-2">
+              <button onClick={() => setShowVisual(v => !v)}
+                className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white">
+                    <Image size={15} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-bold text-brand-dark">Generate a visual for this post</h3>
+                    <p className="text-[11px] text-brand-muted">AI-generated graphic to pair with your content</p>
+                  </div>
+                </div>
+                <span className="text-brand-muted text-xs font-medium">{showVisual ? 'Hide' : 'Show'}</span>
+              </button>
+
+              {showVisual && (
+                <div className="mt-5 animate-fadeIn">
+                  {/* Format + Style row */}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Format</label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { id: 'square', label: 'Square', w: 24, h: 24 },
+                          { id: 'vertical', label: 'Vertical', w: 18, h: 28 },
+                          { id: 'landscape', label: 'Wide', w: 28, h: 18 },
+                        ].map(f => (
+                          <button key={f.id} onClick={() => setVisualFormat(f.id)}
+                            className={`p-2 rounded-xl border-[1.5px] transition-all text-center ${
+                              visualFormat === f.id ? 'border-brand-teal bg-[rgba(6,214,160,0.04)]' : 'border-[rgba(124,92,252,0.08)] hover:border-brand-teal/30'
+                            }`}>
+                            <div className="flex items-center justify-center mb-1" style={{ height: 28 }}>
+                              <div className={`rounded ${visualFormat === f.id ? 'bg-brand-teal' : 'bg-[rgba(124,92,252,0.1)]'}`}
+                                style={{ width: f.w, height: f.h }} />
+                            </div>
+                            <div className="text-[10px] font-semibold text-brand-dark">{f.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Style</label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { id: 'minimal', label: 'Clean', emoji: '🤍' },
+                          { id: 'bold', label: 'Bold', emoji: '🔥' },
+                          { id: 'professional', label: 'Pro', emoji: '💼' },
+                        ].map(s => (
+                          <button key={s.id} onClick={() => setVisualStyle(s.id)}
+                            className={`p-2 rounded-xl border-[1.5px] transition-all text-center ${
+                              visualStyle === s.id ? 'border-brand-teal bg-[rgba(6,214,160,0.04)]' : 'border-[rgba(124,92,252,0.08)] hover:border-brand-teal/30'
+                            }`}>
+                            <div className="text-base mb-0.5">{s.emoji}</div>
+                            <div className="text-[10px] font-semibold text-brand-dark">{s.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Generate button */}
+                  {!visualUrl ? (
+                    <button onClick={handleGenerateVisual} disabled={generatingVisual}
+                      className="btn-secondary text-sm w-full !border-brand-teal/30 !text-brand-teal hover:!bg-[rgba(6,214,160,0.04)]">
+                      {generatingVisual ? <><Loader2 size={15} className="animate-spin" /> Creating visual...</> : <><Image size={15} /> Generate Visual</>}
+                    </button>
+                  ) : (
+                    <div className="animate-fadeIn">
+                      <img src={visualUrl} alt="Generated visual"
+                        className="rounded-xl w-full object-cover mb-3"
+                        style={{ maxHeight: 300, objectFit: 'contain', background: '#f8f7ff' }}
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={handleDownloadVisual} className="btn-secondary text-sm flex-1 !py-2.5">
+                          <Download size={14} /> Download
+                        </button>
+                        <button onClick={() => { setVisualUrl(''); handleGenerateVisual(); }}
+                          className="btn-ghost text-sm flex-1 !py-2.5">
+                          <RefreshCw size={14} /> New
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {visualError && <p className="text-xs text-red-500 mt-2 text-center">{visualError}</p>}
+                </div>
+              )}
             </div>
           </div>
         )}

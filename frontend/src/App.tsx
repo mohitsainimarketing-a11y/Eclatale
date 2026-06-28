@@ -1,12 +1,11 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Auth = lazy(() => import('./pages/auth'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CreatePost = lazy(() => import('./pages/CreatePost'));
-const GuidedCreate = lazy(() => import('./pages/GuidedCreate'));
 const History = lazy(() => import('./pages/History'));
 const PersonaSetup = lazy(() => import('./pages/PersonaSetup'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -34,7 +33,7 @@ function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create" element={<CreatePost />} />
-          <Route path="/guided" element={<GuidedCreate />} />
+          <Route path="/guided" element={<Navigate to="/create" replace />} />
           <Route path="/history" element={<History />} />
           <Route path="/persona-setup" element={<PersonaSetup />} />
           <Route path="/settings" element={<Settings />} />

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   ArrowLeft, Sparkles, Copy, RefreshCw, Send, Check, Loader2,
-  FileText, Image, Globe, Lightbulb, Scissors,
+  FileText, Image, Lightbulb, Scissors,
   Wand2, Undo2, Calendar, PenTool, ExternalLink,
   ChevronDown, X, Download,
 } from 'lucide-react';
@@ -457,7 +457,7 @@ export default function CreatePost() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg,#FFFFFF 0%,#FDF4FF 60%,#F5F0FF 100%)' }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-[#EAE5F5]">
 
       {/* Nav */}
       <nav className="flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-6 h-14 flex items-center justify-between z-40">
@@ -478,11 +478,12 @@ export default function CreatePost() {
           className={`flex-1 py-2.5 text-xs font-semibold transition-all ${mobileView === 'assistant' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-brand-muted'}`}>AI Assistant</button>
       </div>
 
-      {/* Two-panel workspace */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      {/* Centered workspace — floats on page bg on wide screens */}
+      <div className="flex-1 min-h-0 overflow-hidden flex items-stretch justify-center md:px-6 md:py-5">
+        <div className="w-full max-w-[960px] flex min-h-0 bg-white rounded-none md:rounded-2xl md:border md:border-[rgba(0,0,0,0.08)] md:shadow-[0_4px_32px_rgba(0,0,0,0.1)] overflow-hidden">
 
         {/* ── LEFT: AI ASSISTANT ────────────────────────────────────────────── */}
-        <aside className={`${mobileView === 'assistant' ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-[360px] lg:w-[400px] flex-shrink-0 border-r border-[rgba(124,92,252,0.07)] bg-white/50 overflow-hidden`}>
+        <aside className={`${mobileView === 'assistant' ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-[340px] flex-shrink-0 border-r border-[rgba(124,92,252,0.07)] bg-white/50 overflow-hidden`}>
 
           {/* Header */}
           <div className="flex-shrink-0 px-5 py-3.5 border-b border-[rgba(124,92,252,0.06)] flex items-center justify-between">
@@ -676,15 +677,21 @@ export default function CreatePost() {
         <div className="hidden md:block w-px flex-shrink-0" style={{ background: 'linear-gradient(to bottom,transparent,rgba(124,92,252,0.1) 20%,rgba(124,92,252,0.1) 80%,transparent)' }} />
 
         {/* ── RIGHT: POST COMPOSER ───────────────────────────────────────────── */}
-        <main className={`${mobileView === 'compose' ? 'flex' : 'hidden'} md:flex flex-col flex-1 min-w-0 overflow-hidden bg-white/30`}>
+        <main className={`${mobileView === 'compose' ? 'flex' : 'hidden'} md:flex flex-col flex-1 min-w-0 overflow-hidden`}>
 
-          {/* Format segmented control + tone badge */}
-          <div className="flex-shrink-0 px-5 py-2.5 border-b border-[rgba(124,92,252,0.06)] flex items-center gap-3 bg-white/40">
-            <div className="inline-flex bg-[rgba(0,0,0,0.04)] rounded-xl p-0.5 gap-0.5">
+          {/* Single-row header: avatar · name · format · tone */}
+          <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2.5 bg-white">
+            <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">
+              {userInitials || 'Y'}
+            </div>
+            <span className="text-[12px] font-semibold text-brand-dark leading-none truncate max-w-[130px]">{userName || 'Your Name'}</span>
+            <ChevronDown size={11} className="text-brand-muted/40 flex-shrink-0 -ml-1.5" />
+            <div className="flex-1 min-w-0" />
+            <div className="inline-flex bg-[rgba(0,0,0,0.04)] rounded-xl p-0.5 gap-0.5 flex-shrink-0">
               {CONTENT_TYPES.map(ct => (
                 <button key={ct.id} onClick={() => handleAdaptFormat(ct.id)}
                   title={!composerContent && ct.id !== 'linkedin-post' ? 'Generate a post first to adapt to this format' : undefined}
-                  className={`px-3 py-1.5 rounded-[9px] text-[11px] font-semibold transition-all whitespace-nowrap ${
+                  className={`px-2.5 py-1.5 rounded-[9px] text-[11px] font-semibold transition-all whitespace-nowrap ${
                     contentType === ct.id
                       ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] text-brand-purple'
                       : `text-brand-muted hover:text-brand-dark ${!composerContent && ct.id !== 'linkedin-post' ? 'opacity-40' : ''}`
@@ -693,9 +700,7 @@ export default function CreatePost() {
                 </button>
               ))}
             </div>
-
-            {/* Interactive tone badge */}
-            <div className="ml-auto relative" ref={toneRef}>
+            <div className="relative flex-shrink-0" ref={toneRef}>
               <button onClick={() => setToneOpen(o => !o)}
                 className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px] hover:bg-[rgba(124,92,252,0.1)] transition-colors cursor-pointer flex items-center gap-1">
                 {currentTone?.emoji} {currentTone?.label}
@@ -722,77 +727,57 @@ export default function CreatePost() {
             </div>
           </div>
 
-          {/* Post card canvas */}
+          {/* Composer — single frame, no inner card wrapper */}
           <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="p-5 md:p-8">
-              <div className="max-w-[640px] mx-auto">
-                <div className="bg-white rounded-2xl border border-[rgba(0,0,0,0.07)] shadow-[0_2px_16px_rgba(0,0,0,0.04),0_1px_4px_rgba(0,0,0,0.03)]">
-
-                  {/* Profile header */}
-                  <div className="px-5 pt-5 pb-3 flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-sm flex-shrink-0 select-none">
-                      {userInitials || 'Y'}
-                    </div>
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <div className="text-sm font-bold text-brand-dark leading-tight truncate">{userName || 'Your Name'}</div>
-                      <div className="text-[11px] text-brand-muted leading-tight mt-0.5 truncate">{userRole || 'Complete your voice profile to personalize this'}</div>
-                      <div className="text-[10px] text-brand-muted/50 mt-1 flex items-center gap-1">Just now · <Globe size={8} /></div>
-                    </div>
+            <div className="px-5 pt-5 pb-2">
+              {adapting ? (
+                <div className="min-h-[200px] flex flex-col items-center justify-center gap-3">
+                  <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
+                    <Loader2 size={17} className="animate-spin text-white" />
                   </div>
+                  <p className="text-xs text-brand-muted font-medium">
+                    Adapting to {CONTENT_TYPES.find(c => c.id === contentType)?.label}…
+                  </p>
+                </div>
+              ) : (
+                <textarea
+                  value={composerContent}
+                  onChange={e => setComposerContent(e.target.value)}
+                  placeholder={composerPlaceholder}
+                  className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-brand-muted/30 font-[inherit] min-h-[220px]"
+                />
+              )}
+            </div>
 
-                  {/* Editable content */}
-                  <div className="px-5 pb-3">
-                    {adapting ? (
-                      <div className="min-h-[200px] flex flex-col items-center justify-center gap-3">
-                        <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
-                          <Loader2 size={17} className="animate-spin text-white" />
-                        </div>
-                        <p className="text-xs text-brand-muted font-medium">
-                          Adapting to {CONTENT_TYPES.find(c => c.id === contentType)?.label}…
-                        </p>
-                      </div>
-                    ) : (
-                      <textarea
-                        value={composerContent}
-                        onChange={e => setComposerContent(e.target.value)}
-                        placeholder={composerPlaceholder}
-                        className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-brand-muted/30 font-[inherit] min-h-[220px]"
-                      />
-                    )}
-                  </div>
-
-                  {/* Visual attachment slot */}
-                  <div className="px-5 pb-5">
-                    {attachedImage ? (
-                      <div className="relative rounded-xl overflow-hidden group">
-                        <img src={attachedImage} alt="Post visual" className="w-full rounded-xl object-cover max-h-[240px]" />
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
-                          <button onClick={() => { setVisualModalOpen(true); setVisualPreview(null); }}
-                            className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm">
-                            Change
-                          </button>
-                          <button onClick={() => setAttachedImage(null)}
-                            className="w-6 h-6 rounded-lg bg-black/60 text-white flex items-center justify-center backdrop-blur-sm">
-                            <X size={11} />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => composerContent ? setVisualModalOpen(true) : undefined}
-                        disabled={!composerContent}
-                        className={`w-full border-2 border-dashed rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all text-[12px] font-medium ${
-                          composerContent
-                            ? 'border-[rgba(124,92,252,0.2)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-purple cursor-pointer'
-                            : 'border-[rgba(0,0,0,0.06)] text-brand-muted/30 cursor-not-allowed'
-                        }`}>
-                        <Image size={14} />
-                        Add visual
-                      </button>
-                    )}
+            {/* Visual attachment */}
+            <div className="px-5 pb-5">
+              {attachedImage ? (
+                <div className="relative rounded-xl overflow-hidden group">
+                  <img src={attachedImage} alt="Post visual" className="w-full rounded-xl object-cover max-h-[240px]" />
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
+                    <button onClick={() => { setVisualModalOpen(true); setVisualPreview(null); }}
+                      className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm">
+                      Change
+                    </button>
+                    <button onClick={() => setAttachedImage(null)}
+                      className="w-6 h-6 rounded-lg bg-black/60 text-white flex items-center justify-center backdrop-blur-sm">
+                      <X size={11} />
+                    </button>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <button
+                  onClick={() => composerContent ? setVisualModalOpen(true) : undefined}
+                  disabled={!composerContent}
+                  className={`w-full border-2 border-dashed rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[12px] font-medium ${
+                    composerContent
+                      ? 'border-[rgba(124,92,252,0.2)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-purple cursor-pointer'
+                      : 'border-[rgba(0,0,0,0.06)] text-brand-muted/30 cursor-not-allowed'
+                  }`}>
+                  <Image size={14} />
+                  Add visual
+                </button>
+              )}
             </div>
           </div>
 
@@ -853,6 +838,7 @@ export default function CreatePost() {
             </div>
           )}
         </main>
+        </div>
       </div>
 
       {/* ── VISUAL CREATION MODAL ─────────────────────────────────────────────── */}

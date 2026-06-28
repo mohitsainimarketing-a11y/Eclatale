@@ -4,7 +4,7 @@ import {
   ArrowLeft, Sparkles, Copy, RefreshCw, Send, Check, Loader2,
   FileText, Image, Lightbulb, Scissors,
   Wand2, Undo2, Calendar, PenTool, ExternalLink,
-  ChevronDown, X, Download,
+  ChevronDown, X, Download, Eye, EyeOff,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -102,6 +102,10 @@ export default function CreatePost() {
   const [visualStyle, setVisualStyle]         = useState('minimal');
   const [generatingVisual, setGeneratingVisual] = useState(false);
   const [visualError, setVisualError]         = useState('');
+  const [showTextOverlay, setShowTextOverlay] = useState(true);
+  const [ideasView, setIdeasView]             = useState(false);
+  const [ideasList, setIdeasList]             = useState<string[]>([]);
+  const [loadingIdeas, setLoadingIdeas]       = useState(false);
 
   // Conversational assistant
   const [chatMsgs, setChatMsgs]   = useState<ChatMsg[]>([]);
@@ -185,22 +189,18 @@ export default function CreatePost() {
   // ── Card clicks ───────────────────────────────────────────────────────────
 
   const handleCardIdeas = async () => {
-    const loadId = `ideas-${uid()}`;
-    setChatMsgs(prev => [...prev, { id: loadId, role: 'bot', content: 'Finding topic ideas for your industry…', type: 'text', time: nowTime() }]);
+    setIdeasView(true);
+    setIdeasList([]);
+    setLoadingIdeas(true);
     try {
       const res = await fetch(`${API_URL}/api/suggest-topics`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ query: '', userId }),
       });
       const data = await res.json();
-      if (data.topics) {
-        setChatMsgs(prev => prev.map(m => m.id === loadId
-          ? { ...m, content: 'Here are some ideas based on your profile:', type: 'ideas', ideas: data.topics }
-          : m));
-      }
-    } catch {
-      setChatMsgs(prev => prev.filter(m => m.id !== loadId));
-    }
+      if (data.topics) setIdeasList(data.topics);
+    } catch { }
+    setLoadingIdeas(false);
   };
 
   const handleCardWrite = () => {
@@ -315,6 +315,7 @@ export default function CreatePost() {
   };
 
   const handleIdeaSelect = (idea: string) => {
+    setIdeasView(false);
     addMsg('user', idea, 'text');
     setActiveFlow(null);
     handleGenerate(idea);
@@ -365,7 +366,7 @@ export default function CreatePost() {
     if (!userId) return;
     setGeneratingVisual(true); setVisualError(''); setVisualPreview(null);
     try {
-      const topic = composerContent.substring(0, 300);
+      const topic = (composerContent.split('\n').find(l => l.trim()) || composerContent).substring(0, 80);
       const res = await fetch(`${API_URL}/api/generate-image`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ topic, format: 'square', style: visualStyle, userId }),
@@ -411,7 +412,7 @@ export default function CreatePost() {
   };
 
   const handlePublish = async () => {
-    if (!postId || !userId) return;
+    if (!composerContent || !userId) return;
     setPublishing(true); setPublishResult(null);
     try {
       const statusRes = await fetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
@@ -420,10 +421,20 @@ export default function CreatePost() {
         setPublishResult({ error: 'LinkedIn not connected. Connect it from your dashboard.' });
         setPublishing(false); return;
       }
-      await supabase.from('posts').update({ content: composerContent, tone, content_type: contentType }).eq('id', postId);
+      let activePostId = postId;
+      if (activePostId) {
+        await supabase.from('posts').update({ content: composerContent, tone, content_type: contentType }).eq('id', activePostId);
+      } else {
+        const { data: inserted } = await supabase.from('posts').insert({
+          user_id: userId, content: composerContent, topic: 'Draft',
+          tone, content_type: contentType, source: 'manual',
+        }).select('id').single();
+        if (inserted) { activePostId = inserted.id; setPostId(inserted.id); }
+      }
+      if (!activePostId) throw new Error('Failed to save post. Please try again.');
       const res = await fetch(`${API_URL}/api/linkedin/publish`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ postId, userId }),
+        body: JSON.stringify({ postId: activePostId, userId }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -714,59 +725,109 @@ export default function CreatePost() {
             </div>
           </div>
 
-          {/* Composer — single frame, no inner card wrapper */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="px-5 pt-5 pb-2">
-              {adapting ? (
-                <div className="min-h-[200px] flex flex-col items-center justify-center gap-3">
-                  <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
-                    <Loader2 size={17} className="animate-spin text-white" />
-                  </div>
-                  <p className="text-xs text-brand-muted font-medium">
-                    Adapting to {CONTENT_TYPES.find(c => c.id === contentType)?.label}…
-                  </p>
-                </div>
-              ) : (
-                <textarea
-                  value={composerContent}
-                  onChange={e => setComposerContent(e.target.value)}
-                  placeholder={composerPlaceholder}
-                  className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-brand-muted/30 font-[inherit] min-h-[220px]"
-                />
-              )}
-            </div>
-
-            {/* Visual attachment */}
-            <div className="px-5 pb-5">
-              {attachedImage ? (
-                <div className="relative rounded-xl overflow-hidden group">
-                  <img src={attachedImage} alt="Post visual" className="w-full rounded-xl object-cover max-h-[240px]" />
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
-                    <button onClick={() => { setVisualModalOpen(true); setVisualPreview(null); }}
-                      className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm">
-                      Change
-                    </button>
-                    <button onClick={() => setAttachedImage(null)}
-                      className="w-6 h-6 rounded-lg bg-black/60 text-white flex items-center justify-center backdrop-blur-sm">
-                      <X size={11} />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => composerContent ? setVisualModalOpen(true) : undefined}
-                  disabled={!composerContent}
-                  className={`w-full border-2 border-dashed rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[12px] font-medium ${
-                    composerContent
-                      ? 'border-[rgba(124,92,252,0.2)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-purple cursor-pointer'
-                      : 'border-[rgba(0,0,0,0.06)] text-brand-muted/30 cursor-not-allowed'
-                  }`}>
-                  <Image size={14} />
-                  Add visual
+          {/* Composer — conditionally shows ideas panel or post editor */}
+          {ideasView ? (
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
+              <div className="flex items-center gap-2 mb-4">
+                <button onClick={() => setIdeasView(false)}
+                  className="p-1 -ml-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
+                  <ArrowLeft size={15} />
                 </button>
+                <span className="text-[12px] font-bold text-brand-dark">Topic ideas for you</span>
+              </div>
+              {loadingIdeas ? (
+                <div className="flex flex-col items-center justify-center h-48 gap-3">
+                  <Loader2 size={20} className="animate-spin text-brand-purple" />
+                  <p className="text-[12px] text-brand-muted">Finding ideas based on your profile…</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {ideasList.map((idea, i) => (
+                    <div key={i} className="border border-[rgba(0,0,0,0.07)] rounded-2xl p-4 hover:shadow-sm transition-all bg-white/60">
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                          {userInitials || 'Y'}
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold text-brand-dark leading-none">{userName || 'Your Name'}</div>
+                          <div className="text-[9px] text-brand-muted mt-0.5">LinkedIn · Just now</div>
+                        </div>
+                      </div>
+                      <p className="text-[13px] text-brand-dark leading-snug mb-3 line-clamp-3">{idea}</p>
+                      <button onClick={() => handleIdeaSelect(idea)}
+                        className="btn-primary text-xs !py-1.5 !px-4">
+                        <Sparkles size={11} /> Generate from this
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="px-5 pt-5 pb-2">
+                {adapting ? (
+                  <div className="min-h-[200px] flex flex-col items-center justify-center gap-3">
+                    <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
+                      <Loader2 size={17} className="animate-spin text-white" />
+                    </div>
+                    <p className="text-xs text-brand-muted font-medium">
+                      Adapting to {CONTENT_TYPES.find(c => c.id === contentType)?.label}…
+                    </p>
+                  </div>
+                ) : (
+                  <textarea
+                    value={composerContent}
+                    onChange={e => setComposerContent(e.target.value)}
+                    placeholder={composerPlaceholder}
+                    className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-brand-muted/30 font-[inherit] min-h-[220px]"
+                  />
+                )}
+              </div>
+
+              {/* Visual attachment */}
+              <div className="px-5 pb-5">
+                {attachedImage ? (
+                  <div className="relative rounded-xl overflow-hidden group">
+                    <img src={attachedImage} alt="Post visual" className="w-full rounded-xl object-cover max-h-[240px]" />
+                    {showTextOverlay && composerContent && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-4 pt-10 pb-4 rounded-b-xl pointer-events-none">
+                        <p className="text-white text-[13px] font-semibold leading-snug line-clamp-2">
+                          {(composerContent.split('\n').find(l => l.trim()) || '').substring(0, 100)}
+                        </p>
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
+                      <button onClick={() => setShowTextOverlay(o => !o)}
+                        className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm flex items-center gap-1">
+                        {showTextOverlay ? <EyeOff size={9} /> : <Eye size={9} />} Text
+                      </button>
+                      <button onClick={() => { setVisualModalOpen(true); setVisualPreview(null); }}
+                        className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm">
+                        Change
+                      </button>
+                      <button onClick={() => setAttachedImage(null)}
+                        className="w-6 h-6 rounded-lg bg-black/60 text-white flex items-center justify-center backdrop-blur-sm">
+                        <X size={11} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => composerContent ? setVisualModalOpen(true) : undefined}
+                    disabled={!composerContent}
+                    className={`w-full border-2 border-dashed rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[12px] font-medium ${
+                      composerContent
+                        ? 'border-[rgba(124,92,252,0.2)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-purple cursor-pointer'
+                        : 'border-[rgba(0,0,0,0.06)] text-brand-muted/30 cursor-not-allowed'
+                    }`}>
+                    <Image size={14} />
+                    Add visual
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Char counter */}
           <div className="flex-shrink-0 px-5 py-2.5 flex items-center gap-3 border-t border-[rgba(124,92,252,0.04)] bg-white/20">
@@ -799,7 +860,7 @@ export default function CreatePost() {
             </button>
             <div className="flex-1" />
             <button onClick={handlePublish}
-              disabled={!composerContent || !postId || publishing || !!publishResult?.success}
+              disabled={!composerContent || publishing || !!publishResult?.success}
               className="btn-primary !py-2.5 !px-5 text-xs disabled:opacity-40 shadow-[0_2px_12px_rgba(124,92,252,0.25)]">
               {publishing ? <><Loader2 size={13} className="animate-spin" /> Publishing…</>
                 : publishResult?.success ? <><Check size={13} /> Published!</>
@@ -885,7 +946,20 @@ export default function CreatePost() {
               {/* Preview */}
               {visualPreview && (
                 <div className="space-y-3 animate-fadeIn">
-                  <img src={visualPreview} alt="Generated visual" className="w-full rounded-xl object-cover" />
+                  <div className="relative rounded-xl overflow-hidden">
+                    <img src={visualPreview} alt="Generated visual" className="w-full rounded-xl object-cover" />
+                    {showTextOverlay && composerContent && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-4 pt-10 pb-4 rounded-b-xl pointer-events-none">
+                        <p className="text-white text-[13px] font-semibold leading-snug line-clamp-2">
+                          {(composerContent.split('\n').find(l => l.trim()) || '').substring(0, 100)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setShowTextOverlay(o => !o)}
+                    className="btn-ghost text-[10px] !py-1.5 flex items-center gap-1.5 justify-center w-full">
+                    {showTextOverlay ? <><EyeOff size={10} /> Hide text overlay</> : <><Eye size={10} /> Show text overlay</>}
+                  </button>
                   <div className="flex gap-2">
                     <button onClick={handleUseVisual}
                       className="btn-primary flex-1 text-sm !py-2.5">

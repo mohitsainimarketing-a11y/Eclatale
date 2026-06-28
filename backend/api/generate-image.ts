@@ -15,11 +15,11 @@ const SIZES: Record<string, { width: number; height: number }> = {
 };
 
 const STYLE_PROMPTS: Record<string, string> = {
-  'minimal': 'Clean, minimalist design with lots of white space, simple geometric shapes, modern sans-serif typography feel, muted color palette',
-  'bold': 'Bold, vibrant colors, dynamic composition, high contrast, eye-catching gradient backgrounds, energetic modern design',
-  'professional': 'Corporate professional style, clean layout, business-appropriate, subtle gradients, navy/white/grey color scheme, polished and trustworthy',
-  'illustrated': 'Hand-drawn illustration style, organic lines, warm colors, friendly approachable feel, sketch-like artistic quality',
-  'dataviz': 'Data visualization aesthetic, clean charts and graphs style, information-dense but readable, tech-forward, geometric patterns representing data',
+  'minimal': 'Clean minimalist composition, abundant white space, simple geometric shapes, thin elegant lines, soft pastel color fields, uncluttered abstract layout',
+  'bold': 'Bold vibrant colors, dynamic abstract shapes, high-contrast gradient washes, overlapping geometric forms, energetic visual rhythm',
+  'professional': 'Corporate abstract background, clean geometric grid, layered navy and grey gradient fields, polished translucent planes, understated business aesthetic',
+  'illustrated': 'Hand-drawn illustration style, organic abstract shapes, botanical or geometric motifs, warm earth tones, sketchy artistic texture, friendly decorative feel',
+  'dataviz': 'Abstract data visualization background, stylized bar-chart silhouettes, circular diagram shapes, tech-forward geometric grid, abstract flow-lines and dot-matrix patterns',
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -54,7 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const size = SIZES[format] || SIZES['square'];
     const stylePrompt = STYLE_PROMPTS[style] || STYLE_PROMPTS['minimal'];
 
-    const imagePrompt = `Social media graphic about: "${topic}". Style: ${stylePrompt}. Professional, visually striking. NO text or words in the image. Focus on abstract shapes, patterns, icons, and visual metaphors. High quality, modern design.`;
+    const topicSummary = topic.replace(/[^\w\s]/g, ' ').substring(0, 60).trim();
+    const imagePrompt = `Abstract social media background graphic inspired by the theme: ${topicSummary}. Style: ${stylePrompt}. ABSOLUTE REQUIREMENT: zero text, zero letters, zero numbers, zero words anywhere in the image — none whatsoever. The image will have a text layer composited on top separately. Generate ONLY visual elements: abstract color fields, geometric shapes, gradients, illustrative icons, organic forms, textures. High quality, professional, visually striking composition.`;
 
     const togetherRes = await fetch('https://api.together.xyz/v1/images/generations', {
       method: 'POST',

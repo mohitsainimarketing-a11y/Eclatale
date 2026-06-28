@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   ArrowLeft, User, Mic, Link2, CreditCard, Key, Bell, Shield,
-  Check, Loader2, ChevronRight, ExternalLink, LogOut, Trash2, Save,
+  Check, Loader2, ChevronRight, ExternalLink, LogOut, Trash2, Save, Camera,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -38,6 +38,9 @@ export default function Settings() {
   const [goals, setGoals] = useState<string[]>([]);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Voice state
   const [personaStyles, setPersonaStyles] = useState<string[]>([]);
@@ -74,7 +77,7 @@ export default function Settings() {
 
   const loadSettings = async (uid: string) => {
     const [profileRes, personaRes, postsRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals, first_name, last_name').eq('id', uid).single(),
+      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url').eq('id', uid).single(),
       supabase.from('persona_profiles').select('*').eq('user_id', uid).single(),
       supabase.from('posts').select('id').eq('user_id', uid).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     ]);
@@ -85,6 +88,7 @@ export default function Settings() {
       setRole(profileRes.data.role || '');
       setDomain(profileRes.data.domain || '');
       setGoals(profileRes.data.goals || []);
+      setProfilePhoto(profileRes.data.profile_photo_url || '');
     }
 
     if (personaRes.data) {
@@ -115,6 +119,34 @@ export default function Settings() {
     setProfileSaving(false);
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 2000);
+  };
+
+  const uploadPhoto = async (file: File) => {
+    if (!userId) return;
+    setPhotoUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${userId}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('profile-photos')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from('profiles').upsert({ id: userId, profile_photo_url: url });
+      setProfilePhoto(url);
+    } catch (e) {
+      console.error('Photo upload failed:', e);
+    }
+    setPhotoUploading(false);
+  };
+
+  const useLinkedInPhoto = async () => {
+    if (!userId || !linkedinPicture) return;
+    setPhotoUploading(true);
+    await supabase.from('profiles').upsert({ id: userId, profile_photo_url: linkedinPicture });
+    setProfilePhoto(linkedinPicture);
+    setPhotoUploading(false);
   };
 
   const disconnectLinkedIn = async () => {
@@ -179,15 +211,58 @@ export default function Settings() {
 
                 <div className="card p-6 mb-6">
                   <div className="flex items-center gap-4 mb-6">
-                    {linkedinPicture
-                      ? <img src={linkedinPicture} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
-                      : <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-white text-xl font-bold">
-                          {firstName && lastName ? (firstName[0] + lastName[0]).toUpperCase() : (firstName || lastName || userEmail).charAt(0).toUpperCase()}
+                    {/* Clickable avatar — opens file picker */}
+                    <div className="relative group flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        className="relative w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2"
+                        title="Upload profile photo"
+                      >
+                        {profilePhoto || linkedinPicture
+                          ? <img src={profilePhoto || linkedinPicture} alt="Profile" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full gradient-primary flex items-center justify-center text-white text-xl font-bold">
+                              {firstName && lastName ? (firstName[0] + lastName[0]).toUpperCase() : (firstName || lastName || userEmail).charAt(0).toUpperCase()}
+                            </div>
+                        }
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          {photoUploading ? <Loader2 size={18} className="text-white animate-spin" /> : <Camera size={18} className="text-white" />}
                         </div>
-                    }
+                      </button>
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }}
+                      />
+                    </div>
                     <div>
                       <p className="font-bold text-brand-dark">{firstName || lastName ? [firstName, lastName].filter(Boolean).join(' ') : userEmail.split('@')[0]}</p>
                       <p className="text-sm text-brand-muted">{userEmail}</p>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current?.click()}
+                          disabled={photoUploading}
+                          className="text-xs font-semibold text-brand-purple hover:underline disabled:opacity-50"
+                        >
+                          {photoUploading ? 'Uploading…' : 'Upload photo'}
+                        </button>
+                        {linkedinPicture && !profilePhoto && (
+                          <>
+                            <span className="text-brand-muted text-xs">·</span>
+                            <button
+                              type="button"
+                              onClick={useLinkedInPhoto}
+                              disabled={photoUploading}
+                              className="text-xs font-semibold text-[#0A66C2] hover:underline disabled:opacity-50"
+                            >
+                              Use LinkedIn photo
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 

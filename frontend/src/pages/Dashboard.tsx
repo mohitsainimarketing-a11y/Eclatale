@@ -69,6 +69,7 @@ export default function Dashboard() {
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
+  const [userAvatar, setUserAvatar] = useState('');
   const [weeklyGoal] = useState(5);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [linkedinName, setLinkedinName] = useState('');
@@ -83,7 +84,7 @@ export default function Dashboard() {
 
   const loadDashboardData = async (userId: string, userEmail = '') => {
     const [profileRes, postsRes, personaRes, signalsRes, recentRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals, first_name, last_name').eq('id', userId).single(),
+      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url').eq('id', userId).single(),
       supabase.from('posts').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', userId).single(),
       supabase.from('persona_signals').select('tone, content_type').eq('user_id', userId).eq('action', 'kept').order('created_at', { ascending: false }).limit(5),
@@ -97,6 +98,7 @@ export default function Dashboard() {
     } else {
       setUserName(userEmail.split('@')[0] || 'there');
     }
+    if (profile?.profile_photo_url) setUserAvatar(profile.profile_photo_url);
     setHasPersona(!!personaRes.data?.persona_completed_at);
 
     const signals = signalsRes.data || [];
@@ -132,6 +134,7 @@ export default function Dashboard() {
       const liData = await liRes.json();
       setLinkedinConnected(liData.connected);
       if (liData.name) setLinkedinName(liData.name);
+      if (liData.picture) setUserAvatar(prev => prev || liData.picture);
     } catch {}
 
     fetchPostIdeas(userId);
@@ -223,9 +226,12 @@ export default function Dashboard() {
 
         <div className="px-3 py-4 border-t border-[rgba(124,92,252,0.06)]">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold">
-              {(() => { const p = userName.split(' ').filter(Boolean); return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : userName.substring(0,2).toUpperCase(); })()}
-            </div>
+            {userAvatar
+              ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+              : <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  {(() => { const p = userName.split(' ').filter(Boolean); return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : userName.substring(0,2).toUpperCase(); })()}
+                </div>
+            }
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-brand-dark truncate">{userName}</p>
             </div>

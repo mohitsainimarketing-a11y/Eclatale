@@ -140,10 +140,11 @@ export default function CreatePost() {
       if (!data.user) { window.location.href = '/login'; return; }
       const u = data.user;
       setUserId(u.id);
-      supabase.from('profiles').select('role, domain, first_name, last_name').eq('id', u.id).single()
+      supabase.from('profiles').select('role, domain, first_name, last_name, profile_photo_url').eq('id', u.id).single()
         .then(({ data: p }) => {
           if (p) {
             setUserRole([p.role, p.domain].filter(Boolean).join(' · '));
+            if (p.profile_photo_url) setUserAvatar(p.profile_photo_url);
             if (p.first_name || p.last_name) {
               const full = [p.first_name, p.last_name].filter(Boolean).join(' ');
               setUserName(full);
@@ -163,9 +164,10 @@ export default function CreatePost() {
         });
       supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', u.id).single()
         .then(({ data: persona }) => setHasPersona(!!persona?.persona_completed_at));
+      // LinkedIn picture is secondary fallback — only used if no profile_photo_url
       fetch(`${API_URL}/api/linkedin/status?userId=${u.id}`)
         .then(r => r.json())
-        .then(d => { if (d.picture) setUserAvatar(d.picture); })
+        .then(d => { if (d.picture) setUserAvatar(prev => prev || d.picture); })
         .catch(() => {});
     });
   }, []);

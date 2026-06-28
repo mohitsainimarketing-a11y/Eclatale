@@ -95,6 +95,20 @@ export const SENIORITY_LEVELS = [
   'Executive / C-suite',
 ];
 
+// Use the browser's native IANA timezone list where available, fall back to a curated set
+const _nativeTZ: string[] | null = (() => {
+  try { return (Intl as any).supportedValuesOf?.('timeZone') ?? null; } catch { return null; }
+})();
+
+export const TIMEZONES: string[] = _nativeTZ ?? [
+  'Pacific/Midway','Pacific/Honolulu','America/Anchorage','America/Los_Angeles',
+  'America/Denver','America/Chicago','America/New_York','America/Sao_Paulo',
+  'America/Argentina/Buenos_Aires','Atlantic/Azores','Europe/London','Europe/Paris',
+  'Europe/Berlin','Europe/Helsinki','Europe/Istanbul','Asia/Dubai','Asia/Karachi',
+  'Asia/Kolkata','Asia/Dhaka','Asia/Bangkok','Asia/Singapore','Asia/Tokyo',
+  'Asia/Seoul','Australia/Sydney','Pacific/Auckland',
+];
+
 export function SearchableDropdown({ options, value, onChange, placeholder }: {
   options: string[];
   value: string;

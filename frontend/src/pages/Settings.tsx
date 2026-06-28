@@ -4,7 +4,7 @@ import {
   ArrowLeft, User, Mic, Link2, CreditCard, Key, Bell, Shield,
   Check, Loader2, ChevronRight, ExternalLink, LogOut, Trash2, Save, Camera,
 } from 'lucide-react';
-import { SearchableDropdown, ROLES, INDUSTRIES, SENIORITY_LEVELS } from '../components/ProfileDropdowns';
+import { SearchableDropdown, ROLES, INDUSTRIES, SENIORITY_LEVELS, TIMEZONES } from '../components/ProfileDropdowns';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -41,6 +41,9 @@ export default function Settings() {
   const [linkedinUrlManual, setLinkedinUrlManual] = useState('');
   const [bio, setBio] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
+  const [usernameSlug, setUsernameSlug] = useState('');
+  const [slugError, setSlugError] = useState('');
+  const [timezone, setTimezone] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState('');
@@ -82,22 +85,43 @@ export default function Settings() {
 
   const loadSettings = async (uid: string) => {
     const [profileRes, personaRes, postsRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, seniority_level, company_name, linkedin_url_manual, bio').eq('id', uid).single(),
+      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, seniority_level, company_name, linkedin_url_manual, bio, username_slug, timezone').eq('id', uid).single(),
       supabase.from('persona_profiles').select('*').eq('user_id', uid).single(),
       supabase.from('posts').select('id').eq('user_id', uid).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     ]);
 
     if (profileRes.data) {
-      setFirstName(profileRes.data.first_name || '');
-      setLastName(profileRes.data.last_name || '');
-      setRole(profileRes.data.role || '');
-      setDomain(profileRes.data.domain || '');
-      setSeniorityLevel(profileRes.data.seniority_level || '');
-      setCompanyName(profileRes.data.company_name || '');
-      setLinkedinUrlManual(profileRes.data.linkedin_url_manual || '');
-      setBio(profileRes.data.bio || '');
-      setGoals(profileRes.data.goals || []);
-      setProfilePhoto(profileRes.data.profile_photo_url || '');
+      const p = profileRes.data;
+      setFirstName(p.first_name || '');
+      setLastName(p.last_name || '');
+      setRole(p.role || '');
+      setDomain(p.domain || '');
+      setSeniorityLevel(p.seniority_level || '');
+      setCompanyName(p.company_name || '');
+      setLinkedinUrlManual(p.linkedin_url_manual || '');
+      setBio(p.bio || '');
+      setGoals(p.goals || []);
+      setProfilePhoto(p.profile_photo_url || '');
+
+      // Slug: load existing or auto-suggest from name
+      if (p.username_slug) {
+        setUsernameSlug(p.username_slug);
+      } else if (p.first_name || p.last_name) {
+        const suggested = [p.first_name, p.last_name]
+          .filter(Boolean).join('-')
+          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        setUsernameSlug(suggested);
+      }
+
+      // Timezone: load existing or auto-detect and save
+      if (p.timezone) {
+        setTimezone(p.timezone);
+      } else {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setTimezone(detected);
+        // Auto-save silently so the user doesn't need to act
+        supabase.from('profiles').upsert({ id: uid, timezone: detected }).then(() => {});
+      }
     }
 
     if (personaRes.data) {
@@ -124,7 +148,41 @@ export default function Settings() {
   const saveProfile = async () => {
     if (!userId) return;
     setProfileSaving(true);
-    await supabase.from('profiles').upsert({ id: userId, first_name: firstName, last_name: lastName, role, domain, seniority_level: seniorityLevel, company_name: companyName, linkedin_url_manual: linkedinUrlManual, bio, goals });
+    setSlugError('');
+
+    // Validate + check uniqueness of slug
+    const cleanSlug = usernameSlug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/--+/g, '-').replace(/^-|-$/g, '');
+    if (cleanSlug && cleanSlug !== usernameSlug) setUsernameSlug(cleanSlug);
+
+    if (cleanSlug) {
+      const { data: existing } = await supabase
+        .from('profiles').select('id').eq('username_slug', cleanSlug).neq('id', userId).maybeSingle();
+      if (existing) {
+        // Find next available alternative
+        let suggestion = cleanSlug;
+        for (let i = 2; i <= 20; i++) {
+          const alt = `${cleanSlug}-${i}`;
+          const { data: altExisting } = await supabase
+            .from('profiles').select('id').eq('username_slug', alt).neq('id', userId).maybeSingle();
+          if (!altExisting) { suggestion = alt; break; }
+        }
+        setSlugError(`"${cleanSlug}" is already taken. Try "${suggestion}" instead.`);
+        setProfileSaving(false);
+        return;
+      }
+    }
+
+    await supabase.from('profiles').upsert({
+      id: userId,
+      first_name: firstName, last_name: lastName,
+      role, domain,
+      seniority_level: seniorityLevel,
+      company_name: companyName,
+      linkedin_url_manual: linkedinUrlManual,
+      bio, goals,
+      username_slug: cleanSlug || null,
+      timezone,
+    });
     setProfileSaving(false);
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 2000);
@@ -291,6 +349,24 @@ export default function Settings() {
                       <input type="email" value={userEmail} disabled className="input !bg-[rgba(124,92,252,0.03)] !text-brand-muted" />
                       <p className="text-[11px] text-brand-muted mt-1">Email is tied to your authentication and cannot be changed here.</p>
                     </div>
+                    <div>
+                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Your Eclatale URL</label>
+                      <div className="flex items-center rounded-2xl border border-[rgba(0,0,0,0.1)] overflow-hidden focus-within:border-brand-purple focus-within:ring-2 focus-within:ring-brand-purple/20 transition-all">
+                        <span className="px-3 py-2.5 text-sm text-brand-muted bg-[rgba(124,92,252,0.03)] border-r border-[rgba(0,0,0,0.08)] whitespace-nowrap flex-shrink-0">eclatale.com/p/</span>
+                        <input
+                          type="text"
+                          value={usernameSlug}
+                          onChange={e => { setUsernameSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/--+/g, '-')); setSlugError(''); }}
+                          placeholder="your-name"
+                          className="flex-1 px-3 py-2.5 text-sm bg-white outline-none text-brand-dark"
+                          maxLength={40}
+                        />
+                      </div>
+                      {slugError
+                        ? <p className="text-[11px] text-red-500 mt-1">{slugError}</p>
+                        : usernameSlug && <p className="text-[11px] text-brand-muted mt-1">eclatale.com/p/{usernameSlug}</p>
+                      }
+                    </div>
 
                     <div className="pt-1 border-t border-[rgba(0,0,0,0.05)]">
                       <p className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-4">Professional Details</p>
@@ -319,6 +395,11 @@ export default function Settings() {
                           <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Bio / Tagline</label>
                           <input type="text" value={bio} onChange={e => setBio(e.target.value)} className="input" placeholder="1–2 sentence professional summary" maxLength={200} />
                           <p className="text-[11px] text-brand-muted mt-1">{bio.length}/200</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Timezone</label>
+                          <SearchableDropdown options={TIMEZONES} value={timezone} onChange={setTimezone} placeholder="Search timezone..." />
+                          <p className="text-[11px] text-brand-muted mt-1">Auto-detected from your browser. Used for scheduled posts.</p>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Growth Goals</label>

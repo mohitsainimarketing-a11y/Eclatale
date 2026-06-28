@@ -679,7 +679,7 @@ export default function CreatePost() {
         {/* ── RIGHT: POST COMPOSER ───────────────────────────────────────────── */}
         <main className={`${mobileView === 'compose' ? 'flex' : 'hidden'} md:flex flex-col flex-1 min-w-0 overflow-hidden`}>
 
-          {/* Single-row header: avatar · name · format · tone */}
+          {/* Single-row header: avatar · name · tone */}
           <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2.5 bg-white">
             <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">
               {userInitials || 'Y'}
@@ -687,19 +687,6 @@ export default function CreatePost() {
             <span className="text-[12px] font-semibold text-brand-dark leading-none truncate max-w-[130px]">{userName || 'Your Name'}</span>
             <ChevronDown size={11} className="text-brand-muted/40 flex-shrink-0 -ml-1.5" />
             <div className="flex-1 min-w-0" />
-            <div className="inline-flex bg-[rgba(0,0,0,0.04)] rounded-xl p-0.5 gap-0.5 flex-shrink-0">
-              {CONTENT_TYPES.map(ct => (
-                <button key={ct.id} onClick={() => handleAdaptFormat(ct.id)}
-                  title={!composerContent && ct.id !== 'linkedin-post' ? 'Generate a post first to adapt to this format' : undefined}
-                  className={`px-2.5 py-1.5 rounded-[9px] text-[11px] font-semibold transition-all whitespace-nowrap ${
-                    contentType === ct.id
-                      ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] text-brand-purple'
-                      : `text-brand-muted hover:text-brand-dark ${!composerContent && ct.id !== 'linkedin-post' ? 'opacity-40' : ''}`
-                  }`}>
-                  {ct.short}
-                </button>
-              ))}
-            </div>
             <div className="relative flex-shrink-0" ref={toneRef}>
               <button onClick={() => setToneOpen(o => !o)}
                 className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px] hover:bg-[rgba(124,92,252,0.1)] transition-colors cursor-pointer flex items-center gap-1">

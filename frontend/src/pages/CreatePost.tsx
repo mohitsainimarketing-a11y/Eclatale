@@ -81,6 +81,7 @@ export default function CreatePost() {
   const [userName, setUserName]   = useState('');
   const [userRole, setUserRole]   = useState('');
   const [userInitials, setUserInitials] = useState('');
+  const [userAvatar, setUserAvatar]   = useState('');
 
   // Composer
   const [composerContent, setComposerContent] = useState('');
@@ -149,6 +150,10 @@ export default function CreatePost() {
         .then(({ data: p }) => { if (p) setUserRole([p.role, p.domain].filter(Boolean).join(' · ')); });
       supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', u.id).single()
         .then(({ data: persona }) => setHasPersona(!!persona?.persona_completed_at));
+      fetch(`${API_URL}/api/linkedin/status?userId=${u.id}`)
+        .then(r => r.json())
+        .then(d => { if (d.picture) setUserAvatar(d.picture); })
+        .catch(() => {});
     });
   }, []);
 
@@ -646,9 +651,10 @@ export default function CreatePost() {
 
           {/* Single-row header: avatar · name · tone */}
           <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2.5 bg-white">
-            <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">
-              {userInitials || 'Y'}
-            </div>
+            {userAvatar
+              ? <img src={userAvatar} alt={userName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+              : <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">{userInitials || 'Y'}</div>
+            }
             <span className="text-[12px] font-semibold text-brand-dark leading-none truncate max-w-[130px]">{userName || 'Your Name'}</span>
             <ChevronDown size={11} className="text-brand-muted/40 flex-shrink-0 -ml-1.5" />
             <div className="flex-1 min-w-0" />
@@ -705,10 +711,13 @@ export default function CreatePost() {
                       onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)')}>
                       <div className="px-3 pt-3 pb-2 flex-1 flex flex-col">
                         <div className="flex items-start gap-2 mb-2 flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
-                            style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
-                            {userInitials || 'Y'}
-                          </div>
+                          {userAvatar
+                            ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                            : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
+                                style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
+                                {userInitials || 'Y'}
+                              </div>
+                          }
                           <div className="flex-1 min-w-0">
                             <div className="text-[12px] font-semibold leading-tight truncate" style={{ color: 'rgba(0,0,0,0.9)' }}>{userName || 'Your Name'}</div>
                             {userRole && <div className="text-[10px] leading-snug mt-0.5 line-clamp-1" style={{ color: 'rgba(0,0,0,0.6)' }}>{userRole}</div>}

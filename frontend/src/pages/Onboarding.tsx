@@ -174,6 +174,8 @@ function SearchableDropdown({ options, value, onChange, placeholder }: {
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('');
   const [industry, setIndustry] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
@@ -182,12 +184,12 @@ export default function Onboarding() {
     setGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 
-  const canProceed = (step === 1 && role) || (step === 2 && industry) || (step === 3 && goals.length > 0);
+  const canProceed = (step === 1 && firstName.trim() && lastName.trim() && role) || (step === 2 && industry) || (step === 3 && goals.length > 0);
 
   const handleFinish = async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
-      await supabase.from('profiles').upsert({ id: data.user.id, role, domain: industry, goals });
+      await supabase.from('profiles').upsert({ id: data.user.id, first_name: firstName.trim(), last_name: lastName.trim(), role, domain: industry, goals });
     }
     window.location.href = '/dashboard';
   };
@@ -223,13 +225,39 @@ export default function Onboarding() {
                 <div className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple mb-4">
                   <Sparkles size={13} /> AI-Powered
                 </div>
-                <h2 className="h2 text-brand-dark mb-2">What's your <span className="gradient-text">role</span>?</h2>
+                <h2 className="h2 text-brand-dark mb-2">Tell us about <span className="gradient-text">yourself</span></h2>
                 <p className="body-text text-sm">We'll personalize your content strategy.</p>
               </div>
-              <div className="card p-5 md:p-6">
-                <SearchableDropdown options={ROLES} value={role} onChange={setRole} placeholder="Search your role..." />
+              <div className="card p-5 md:p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-1.5 block">First Name</label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
+                      placeholder="First name"
+                      className="input"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-1.5 block">Last Name</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={e => setLastName(e.target.value)}
+                      placeholder="Last name"
+                      className="input"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-1.5 block">Your Role</label>
+                  <SearchableDropdown options={ROLES} value={role} onChange={setRole} placeholder="Search your role..." />
+                </div>
                 {role && (
-                  <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brand-purple animate-checkmark">
+                  <div className="flex items-center gap-2 text-sm font-medium text-brand-purple animate-checkmark">
                     <Check size={16} className="text-brand-teal" /> {role}
                   </div>
                 )}

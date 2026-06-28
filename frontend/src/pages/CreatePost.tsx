@@ -140,14 +140,27 @@ export default function CreatePost() {
       if (!data.user) { window.location.href = '/login'; return; }
       const u = data.user;
       setUserId(u.id);
-      const meta = (u.user_metadata || {}) as Record<string, string>;
-      const raw = meta.full_name || meta.name || (u.email?.split('@')[0] || '');
-      const display = raw.replace(/[._-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()).trim();
-      setUserName(display);
-      const parts = display.split(' ').filter(Boolean);
-      setUserInitials(parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : display.substring(0, 2).toUpperCase());
-      supabase.from('profiles').select('role, domain').eq('id', u.id).single()
-        .then(({ data: p }) => { if (p) setUserRole([p.role, p.domain].filter(Boolean).join(' · ')); });
+      supabase.from('profiles').select('role, domain, first_name, last_name').eq('id', u.id).single()
+        .then(({ data: p }) => {
+          if (p) {
+            setUserRole([p.role, p.domain].filter(Boolean).join(' · '));
+            if (p.first_name || p.last_name) {
+              const full = [p.first_name, p.last_name].filter(Boolean).join(' ');
+              setUserName(full);
+              const fn = (p.first_name || '').trim();
+              const ln = (p.last_name || '').trim();
+              setUserInitials(fn && ln ? (fn[0] + ln[0]).toUpperCase() : (fn || ln).substring(0, 2).toUpperCase());
+              return;
+            }
+          }
+          // Fall back to email-derived name if no profile name set
+          const meta = (u.user_metadata || {}) as Record<string, string>;
+          const raw = meta.full_name || meta.name || (u.email?.split('@')[0] || '');
+          const display = raw.replace(/[._-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()).trim();
+          setUserName(display);
+          const parts = display.split(' ').filter(Boolean);
+          setUserInitials(parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : display.substring(0, 2).toUpperCase());
+        });
       supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', u.id).single()
         .then(({ data: persona }) => setHasPersona(!!persona?.persona_completed_at));
       fetch(`${API_URL}/api/linkedin/status?userId=${u.id}`)

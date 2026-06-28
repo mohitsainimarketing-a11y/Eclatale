@@ -31,6 +31,8 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
 
   // Profile state
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('');
   const [domain, setDomain] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
@@ -72,12 +74,14 @@ export default function Settings() {
 
   const loadSettings = async (uid: string) => {
     const [profileRes, personaRes, postsRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals').eq('id', uid).single(),
+      supabase.from('profiles').select('role, domain, goals, first_name, last_name').eq('id', uid).single(),
       supabase.from('persona_profiles').select('*').eq('user_id', uid).single(),
       supabase.from('posts').select('id').eq('user_id', uid).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     ]);
 
     if (profileRes.data) {
+      setFirstName(profileRes.data.first_name || '');
+      setLastName(profileRes.data.last_name || '');
       setRole(profileRes.data.role || '');
       setDomain(profileRes.data.domain || '');
       setGoals(profileRes.data.goals || []);
@@ -107,7 +111,7 @@ export default function Settings() {
   const saveProfile = async () => {
     if (!userId) return;
     setProfileSaving(true);
-    await supabase.from('profiles').upsert({ id: userId, role, domain, goals });
+    await supabase.from('profiles').upsert({ id: userId, first_name: firstName, last_name: lastName, role, domain, goals });
     setProfileSaving(false);
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 2000);
@@ -175,16 +179,29 @@ export default function Settings() {
 
                 <div className="card p-6 mb-6">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-white text-xl font-bold">
-                      {userEmail.charAt(0).toUpperCase()}
-                    </div>
+                    {linkedinPicture
+                      ? <img src={linkedinPicture} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
+                      : <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-white text-xl font-bold">
+                          {firstName && lastName ? (firstName[0] + lastName[0]).toUpperCase() : (firstName || lastName || userEmail).charAt(0).toUpperCase()}
+                        </div>
+                    }
                     <div>
-                      <p className="font-bold text-brand-dark">{userEmail.split('@')[0]}</p>
+                      <p className="font-bold text-brand-dark">{firstName || lastName ? [firstName, lastName].filter(Boolean).join(' ') : userEmail.split('@')[0]}</p>
                       <p className="text-sm text-brand-muted">{userEmail}</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">First Name</label>
+                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" placeholder="First name" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Last Name</label>
+                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="input" placeholder="Last name" />
+                      </div>
+                    </div>
                     <div>
                       <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Email</label>
                       <input type="email" value={userEmail} disabled className="input !bg-[rgba(124,92,252,0.03)] !text-brand-muted" />

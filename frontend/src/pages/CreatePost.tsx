@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   ArrowLeft, Sparkles, Copy, RefreshCw, Send, Check, Loader2,
-  FileText, MessageCircle, Image, Globe, Lightbulb, Scissors,
+  FileText, Image, Globe, Lightbulb, Scissors,
   Wand2, Undo2, Calendar, PenTool, ExternalLink,
   ChevronDown, X, Download,
 } from 'lucide-react';
@@ -21,10 +21,10 @@ const TONES = [
 ];
 
 const CONTENT_TYPES = [
-  { id: 'linkedin-post',    label: 'LinkedIn Post', icon: <Globe size={13} /> },
-  { id: 'linkedin-article', label: 'Article',       icon: <FileText size={13} /> },
-  { id: 'twitter-thread',   label: 'X Thread',      icon: <MessageCircle size={13} /> },
-  { id: 'instagram-caption',label: 'Instagram',     icon: <Image size={13} /> },
+  { id: 'linkedin-post',     label: 'LinkedIn Post', short: 'LinkedIn'  },
+  { id: 'linkedin-article',  label: 'Article',       short: 'Article'   },
+  { id: 'twitter-thread',    label: 'X Thread',      short: 'X Thread'  },
+  { id: 'instagram-caption', label: 'Instagram',     short: 'Instagram' },
 ];
 
 const VISUAL_STYLES = [
@@ -678,19 +678,21 @@ export default function CreatePost() {
         {/* ── RIGHT: POST COMPOSER ───────────────────────────────────────────── */}
         <main className={`${mobileView === 'compose' ? 'flex' : 'hidden'} md:flex flex-col flex-1 min-w-0 overflow-hidden bg-white/30`}>
 
-          {/* Format tabs + tone badge */}
-          <div className="flex-shrink-0 px-5 py-3 border-b border-[rgba(124,92,252,0.06)] flex items-center gap-1.5 flex-wrap bg-white/40">
-            {CONTENT_TYPES.map(ct => (
-              <button key={ct.id} onClick={() => handleAdaptFormat(ct.id)}
-                title={!composerContent && ct.id !== 'linkedin-post' ? 'Generate a post first to adapt to this format' : undefined}
-                className={`text-[11px] px-3 py-1.5 rounded-full border transition-all font-semibold flex items-center gap-1.5 ${
-                  contentType === ct.id
-                    ? 'border-brand-purple bg-[rgba(124,92,252,0.06)] text-brand-purple'
-                    : `border-[rgba(124,92,252,0.1)] text-brand-muted hover:border-brand-purple/30 hover:text-brand-dark ${!composerContent && ct.id !== 'linkedin-post' ? 'opacity-50' : ''}`
-                }`}>
-                <span className="opacity-70">{ct.icon}</span> {ct.label}
-              </button>
-            ))}
+          {/* Format segmented control + tone badge */}
+          <div className="flex-shrink-0 px-5 py-2.5 border-b border-[rgba(124,92,252,0.06)] flex items-center gap-3 bg-white/40">
+            <div className="inline-flex bg-[rgba(0,0,0,0.04)] rounded-xl p-0.5 gap-0.5">
+              {CONTENT_TYPES.map(ct => (
+                <button key={ct.id} onClick={() => handleAdaptFormat(ct.id)}
+                  title={!composerContent && ct.id !== 'linkedin-post' ? 'Generate a post first to adapt to this format' : undefined}
+                  className={`px-3 py-1.5 rounded-[9px] text-[11px] font-semibold transition-all whitespace-nowrap ${
+                    contentType === ct.id
+                      ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] text-brand-purple'
+                      : `text-brand-muted hover:text-brand-dark ${!composerContent && ct.id !== 'linkedin-post' ? 'opacity-40' : ''}`
+                  }`}>
+                  {ct.short}
+                </button>
+              ))}
+            </div>
 
             {/* Interactive tone badge */}
             <div className="ml-auto relative" ref={toneRef}>

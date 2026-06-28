@@ -4,6 +4,7 @@ import {
   ArrowLeft, User, Mic, Link2, CreditCard, Key, Bell, Shield,
   Check, Loader2, ChevronRight, ExternalLink, LogOut, Trash2, Save, Camera,
 } from 'lucide-react';
+import { SearchableDropdown, ROLES, INDUSTRIES, SENIORITY_LEVELS } from '../components/ProfileDropdowns';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -35,6 +36,10 @@ export default function Settings() {
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('');
   const [domain, setDomain] = useState('');
+  const [seniorityLevel, setSeniorityLevel] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [linkedinUrlManual, setLinkedinUrlManual] = useState('');
+  const [bio, setBio] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -77,7 +82,7 @@ export default function Settings() {
 
   const loadSettings = async (uid: string) => {
     const [profileRes, personaRes, postsRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url').eq('id', uid).single(),
+      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, seniority_level, company_name, linkedin_url_manual, bio').eq('id', uid).single(),
       supabase.from('persona_profiles').select('*').eq('user_id', uid).single(),
       supabase.from('posts').select('id').eq('user_id', uid).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     ]);
@@ -87,6 +92,10 @@ export default function Settings() {
       setLastName(profileRes.data.last_name || '');
       setRole(profileRes.data.role || '');
       setDomain(profileRes.data.domain || '');
+      setSeniorityLevel(profileRes.data.seniority_level || '');
+      setCompanyName(profileRes.data.company_name || '');
+      setLinkedinUrlManual(profileRes.data.linkedin_url_manual || '');
+      setBio(profileRes.data.bio || '');
       setGoals(profileRes.data.goals || []);
       setProfilePhoto(profileRes.data.profile_photo_url || '');
     }
@@ -115,7 +124,7 @@ export default function Settings() {
   const saveProfile = async () => {
     if (!userId) return;
     setProfileSaving(true);
-    await supabase.from('profiles').upsert({ id: userId, first_name: firstName, last_name: lastName, role, domain, goals });
+    await supabase.from('profiles').upsert({ id: userId, first_name: firstName, last_name: lastName, role, domain, seniority_level: seniorityLevel, company_name: companyName, linkedin_url_manual: linkedinUrlManual, bio, goals });
     setProfileSaving(false);
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 2000);
@@ -266,7 +275,7 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">First Name</label>
@@ -282,18 +291,41 @@ export default function Settings() {
                       <input type="email" value={userEmail} disabled className="input !bg-[rgba(124,92,252,0.03)] !text-brand-muted" />
                       <p className="text-[11px] text-brand-muted mt-1">Email is tied to your authentication and cannot be changed here.</p>
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Role</label>
-                      <input type="text" value={role} onChange={e => setRole(e.target.value)} className="input" placeholder="e.g. CEO, Marketing Manager" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Industry</label>
-                      <input type="text" value={domain} onChange={e => setDomain(e.target.value)} className="input" placeholder="e.g. Technology, Marketing" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Growth Goals</label>
-                      <p className="text-sm text-brand-muted">{goals.length > 0 ? goals.join(', ') : 'None set'}</p>
-                      <a href="/onboarding" className="text-xs text-brand-purple font-semibold hover:underline mt-1 inline-block">Update goals</a>
+
+                    <div className="pt-1 border-t border-[rgba(0,0,0,0.05)]">
+                      <p className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-4">Professional Details</p>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Role</label>
+                          <SearchableDropdown options={ROLES} value={role} onChange={setRole} placeholder="Search your role..." />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Industry</label>
+                          <SearchableDropdown options={INDUSTRIES} value={domain} onChange={setDomain} placeholder="Search your industry..." />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Seniority Level</label>
+                          <SearchableDropdown options={SENIORITY_LEVELS} value={seniorityLevel} onChange={setSeniorityLevel} placeholder="Select level..." />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Company / Organization</label>
+                          <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="input" placeholder="e.g. Acme Corp, Freelance" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">LinkedIn Profile URL</label>
+                          <input type="url" value={linkedinUrlManual} onChange={e => setLinkedinUrlManual(e.target.value)} className="input" placeholder="https://linkedin.com/in/yourname" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Bio / Tagline</label>
+                          <input type="text" value={bio} onChange={e => setBio(e.target.value)} className="input" placeholder="1–2 sentence professional summary" maxLength={200} />
+                          <p className="text-[11px] text-brand-muted mt-1">{bio.length}/200</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Growth Goals</label>
+                          <p className="text-sm text-brand-muted">{goals.length > 0 ? goals.join(', ') : 'None set'}</p>
+                          <a href="/onboarding" className="text-xs text-brand-purple font-semibold hover:underline mt-1 inline-block">Update goals</a>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

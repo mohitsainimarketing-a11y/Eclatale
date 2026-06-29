@@ -140,11 +140,12 @@ export default function CreatePost() {
       if (!data.user) { window.location.href = '/login'; return; }
       const u = data.user;
       setUserId(u.id);
-      supabase.from('profiles').select('role, domain, first_name, last_name, profile_photo_url').eq('id', u.id).single()
+      supabase.from('profiles').select('role, domain, first_name, last_name, profile_photo_url, default_tone').eq('id', u.id).single()
         .then(({ data: p }) => {
           if (p) {
             setUserRole([p.role, p.domain].filter(Boolean).join(' · '));
             if (p.profile_photo_url) setUserAvatar(p.profile_photo_url);
+            if (p.default_tone) setTone(p.default_tone);
             if (p.first_name || p.last_name) {
               const full = [p.first_name, p.last_name].filter(Boolean).join(' ');
               setUserName(full);

@@ -34,16 +34,19 @@ export default function Settings() {
   // Profile state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [pronouns, setPronouns] = useState('');
   const [role, setRole] = useState('');
   const [domain, setDomain] = useState('');
   const [seniorityLevel, setSeniorityLevel] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [linkedinUrlManual, setLinkedinUrlManual] = useState('');
   const [bio, setBio] = useState('');
+  const [defaultTone, setDefaultTone] = useState('professional');
   const [goals, setGoals] = useState<string[]>([]);
   const [usernameSlug, setUsernameSlug] = useState('');
   const [slugError, setSlugError] = useState('');
   const [timezone, setTimezone] = useState('');
+  const [profilePublic, setProfilePublic] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState('');
@@ -85,7 +88,7 @@ export default function Settings() {
 
   const loadSettings = async (uid: string) => {
     const [profileRes, personaRes, postsRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, seniority_level, company_name, linkedin_url_manual, bio, username_slug, timezone').eq('id', uid).single(),
+      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, seniority_level, company_name, linkedin_url_manual, bio, username_slug, timezone, default_tone, pronouns, profile_public').eq('id', uid).single(),
       supabase.from('persona_profiles').select('*').eq('user_id', uid).single(),
       supabase.from('posts').select('id').eq('user_id', uid).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     ]);
@@ -94,13 +97,16 @@ export default function Settings() {
       const p = profileRes.data;
       setFirstName(p.first_name || '');
       setLastName(p.last_name || '');
+      setPronouns(p.pronouns || '');
       setRole(p.role || '');
       setDomain(p.domain || '');
       setSeniorityLevel(p.seniority_level || '');
       setCompanyName(p.company_name || '');
       setLinkedinUrlManual(p.linkedin_url_manual || '');
       setBio(p.bio || '');
+      setDefaultTone(p.default_tone || 'professional');
       setGoals(p.goals || []);
+      setProfilePublic(!!p.profile_public);
       setProfilePhoto(p.profile_photo_url || '');
 
       // Slug: load existing or auto-suggest from name
@@ -175,13 +181,17 @@ export default function Settings() {
     await supabase.from('profiles').upsert({
       id: userId,
       first_name: firstName, last_name: lastName,
+      pronouns,
       role, domain,
       seniority_level: seniorityLevel,
       company_name: companyName,
       linkedin_url_manual: linkedinUrlManual,
-      bio, goals,
+      bio,
+      default_tone: defaultTone,
+      goals,
       username_slug: cleanSlug || null,
       timezone,
+      profile_public: profilePublic,
     });
     setProfileSaving(false);
     setProfileSaved(true);
@@ -272,68 +282,62 @@ export default function Settings() {
           <div className="flex-1 min-w-0">
             {/* PROFILE */}
             {section === 'profile' && (
-              <div className="animate-fadeIn">
-                <h2 className="text-xl font-bold text-brand-dark mb-1">Profile</h2>
-                <p className="text-sm text-brand-muted mb-6">Manage your account details and onboarding preferences.</p>
+              <div className="animate-fadeIn space-y-5">
+                <div>
+                  <h2 className="text-xl font-bold text-brand-dark mb-1">Profile</h2>
+                  <p className="text-sm text-brand-muted">Manage your identity, professional details, and content preferences.</p>
+                </div>
 
-                <div className="card p-6 mb-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    {/* Clickable avatar — opens file picker */}
+                {/* ── IDENTITY ──────────────────────────────────────── */}
+                <div className="card p-6">
+                  <p className="text-[11px] font-semibold text-brand-muted uppercase tracking-widest mb-5">Identity</p>
+
+                  {/* Profile card header */}
+                  <div className="flex gap-4 mb-6 pb-6 border-b border-[rgba(0,0,0,0.05)]">
                     <div className="relative group flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => photoInputRef.current?.click()}
-                        className="relative w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2"
-                        title="Upload profile photo"
-                      >
+                      <button type="button" onClick={() => photoInputRef.current?.click()}
+                        className="relative w-20 h-20 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2"
+                        title="Upload profile photo">
                         {profilePhoto || linkedinPicture
                           ? <img src={profilePhoto || linkedinPicture} alt="Profile" className="w-full h-full object-cover" />
-                          : <div className="w-full h-full gradient-primary flex items-center justify-center text-white text-xl font-bold">
+                          : <div className="w-full h-full gradient-primary flex items-center justify-center text-white text-2xl font-bold">
                               {firstName && lastName ? (firstName[0] + lastName[0]).toUpperCase() : (firstName || lastName || userEmail).charAt(0).toUpperCase()}
                             </div>
                         }
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          {photoUploading ? <Loader2 size={18} className="text-white animate-spin" /> : <Camera size={18} className="text-white" />}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                          {photoUploading ? <Loader2 size={20} className="text-white animate-spin" /> : <Camera size={20} className="text-white" />}
                         </div>
                       </button>
-                      <input
-                        ref={photoInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/gif,image/webp"
-                        className="hidden"
-                        onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }}
-                      />
+                      <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
                     </div>
-                    <div>
-                      <p className="font-bold text-brand-dark">{firstName || lastName ? [firstName, lastName].filter(Boolean).join(' ') : userEmail.split('@')[0]}</p>
-                      <p className="text-sm text-brand-muted">{userEmail}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <button
-                          type="button"
-                          onClick={() => photoInputRef.current?.click()}
-                          disabled={photoUploading}
-                          className="text-xs font-semibold text-brand-purple hover:underline disabled:opacity-50"
-                        >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-bold text-brand-dark leading-tight">
+                        {firstName || lastName ? [firstName, lastName].filter(Boolean).join(' ') : userEmail.split('@')[0]}
+                        {pronouns && <span className="text-sm font-normal text-brand-muted ml-2">({pronouns})</span>}
+                      </p>
+                      {(role || companyName) && (
+                        <p className="text-sm text-brand-muted mt-0.5">{[role, companyName].filter(Boolean).join(' · ')}</p>
+                      )}
+                      {bio && <p className="text-sm text-brand-dark/70 mt-1.5 leading-relaxed line-clamp-2">{bio}</p>}
+                      <p className="text-xs text-brand-muted mt-1.5">{userEmail}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <button type="button" onClick={() => photoInputRef.current?.click()} disabled={photoUploading}
+                          className="text-xs font-semibold text-brand-purple hover:underline disabled:opacity-50">
                           {photoUploading ? 'Uploading…' : 'Upload photo'}
                         </button>
                         {linkedinPicture && !profilePhoto && (
-                          <>
-                            <span className="text-brand-muted text-xs">·</span>
-                            <button
-                              type="button"
-                              onClick={useLinkedInPhoto}
-                              disabled={photoUploading}
-                              className="text-xs font-semibold text-[#0A66C2] hover:underline disabled:opacity-50"
-                            >
-                              Use LinkedIn photo
-                            </button>
-                          </>
+                          <><span className="text-brand-muted text-xs">·</span>
+                          <button type="button" onClick={useLinkedInPhoto} disabled={photoUploading}
+                            className="text-xs font-semibold text-[#0A66C2] hover:underline disabled:opacity-50">
+                            Use LinkedIn photo
+                          </button></>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-5">
+                  <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">First Name</label>
@@ -345,6 +349,13 @@ export default function Settings() {
                       </div>
                     </div>
                     <div>
+                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">
+                        Pronouns <span className="normal-case font-normal text-brand-muted">(optional)</span>
+                      </label>
+                      <input type="text" value={pronouns} onChange={e => setPronouns(e.target.value)}
+                        className="input" placeholder="e.g. he/him, she/her, they/them" maxLength={40} />
+                    </div>
+                    <div>
                       <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Email</label>
                       <input type="email" value={userEmail} disabled className="input !bg-[rgba(124,92,252,0.03)] !text-brand-muted" />
                       <p className="text-[11px] text-brand-muted mt-1">Email is tied to your authentication and cannot be changed here.</p>
@@ -353,67 +364,117 @@ export default function Settings() {
                       <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Your Eclatale URL</label>
                       <div className="flex items-center rounded-2xl border border-[rgba(0,0,0,0.1)] overflow-hidden focus-within:border-brand-purple focus-within:ring-2 focus-within:ring-brand-purple/20 transition-all">
                         <span className="px-3 py-2.5 text-sm text-brand-muted bg-[rgba(124,92,252,0.03)] border-r border-[rgba(0,0,0,0.08)] whitespace-nowrap flex-shrink-0">eclatale.com/p/</span>
-                        <input
-                          type="text"
-                          value={usernameSlug}
+                        <input type="text" value={usernameSlug}
                           onChange={e => { setUsernameSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/--+/g, '-')); setSlugError(''); }}
-                          placeholder="your-name"
-                          className="flex-1 px-3 py-2.5 text-sm bg-white outline-none text-brand-dark"
-                          maxLength={40}
-                        />
+                          placeholder="your-name" className="flex-1 px-3 py-2.5 text-sm bg-white outline-none text-brand-dark" maxLength={40} />
                       </div>
                       {slugError
                         ? <p className="text-[11px] text-red-500 mt-1">{slugError}</p>
                         : usernameSlug && <p className="text-[11px] text-brand-muted mt-1">eclatale.com/p/{usernameSlug}</p>
                       }
                     </div>
-
-                    <div className="pt-1 border-t border-[rgba(0,0,0,0.05)]">
-                      <p className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-4">Professional Details</p>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Role</label>
-                          <SearchableDropdown options={ROLES} value={role} onChange={setRole} placeholder="Search your role..." />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Industry</label>
-                          <SearchableDropdown options={INDUSTRIES} value={domain} onChange={setDomain} placeholder="Search your industry..." />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Seniority Level</label>
-                          <SearchableDropdown options={SENIORITY_LEVELS} value={seniorityLevel} onChange={setSeniorityLevel} placeholder="Select level..." />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Company / Organization</label>
-                          <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="input" placeholder="e.g. Acme Corp, Freelance" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">LinkedIn Profile URL</label>
-                          <input type="url" value={linkedinUrlManual} onChange={e => setLinkedinUrlManual(e.target.value)} className="input" placeholder="https://linkedin.com/in/yourname" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Bio / Tagline</label>
-                          <input type="text" value={bio} onChange={e => setBio(e.target.value)} className="input" placeholder="1–2 sentence professional summary" maxLength={200} />
-                          <p className="text-[11px] text-brand-muted mt-1">{bio.length}/200</p>
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Timezone</label>
-                          <SearchableDropdown options={TIMEZONES} value={timezone} onChange={setTimezone} placeholder="Search timezone..." />
-                          <p className="text-[11px] text-brand-muted mt-1">Auto-detected from your browser. Used for scheduled posts.</p>
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Growth Goals</label>
-                          <p className="text-sm text-brand-muted">{goals.length > 0 ? goals.join(', ') : 'None set'}</p>
-                          <a href="/onboarding" className="text-xs text-brand-purple font-semibold hover:underline mt-1 inline-block">Update goals</a>
-                        </div>
+                    <div className="flex items-center justify-between py-3 px-4 rounded-2xl bg-[rgba(124,92,252,0.03)] border border-[rgba(124,92,252,0.08)]">
+                      <div className="flex-1 min-w-0 mr-4">
+                        <p className="text-sm font-semibold text-brand-dark">Make my portfolio page public</p>
+                        <p className="text-xs text-brand-muted mt-0.5">
+                          {usernameSlug
+                            ? <>Visible at <span className="text-brand-purple">eclatale.com/p/{usernameSlug}</span> when enabled</>
+                            : 'Set a public handle above to enable your portfolio page'}
+                        </p>
                       </div>
+                      <button type="button" onClick={() => setProfilePublic(v => !v)} disabled={!usernameSlug}
+                        className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 flex-shrink-0 disabled:opacity-40 ${profilePublic ? 'bg-brand-purple justify-end' : 'bg-[rgba(124,92,252,0.15)] justify-start'}`}>
+                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-all" />
+                      </button>
                     </div>
                   </div>
+                </div>
 
-                  <button onClick={saveProfile} disabled={profileSaving} className="btn-primary text-sm mt-6">
+                {/* ── PROFESSIONAL DETAILS ──────────────────────────── */}
+                <div className="card p-6">
+                  <p className="text-[11px] font-semibold text-brand-muted uppercase tracking-widest mb-5">Professional Details</p>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Role</label>
+                        <SearchableDropdown options={ROLES} value={role} onChange={setRole} placeholder="Search your role..." />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Company / Organization</label>
+                        <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="input" placeholder="e.g. Acme Corp, Freelance" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Industry</label>
+                        <SearchableDropdown options={INDUSTRIES} value={domain} onChange={setDomain} placeholder="Search your industry..." />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Seniority Level</label>
+                        <SearchableDropdown options={SENIORITY_LEVELS} value={seniorityLevel} onChange={setSeniorityLevel} placeholder="Select level..." />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Bio / Tagline</label>
+                      <input type="text" value={bio} onChange={e => setBio(e.target.value)} className="input" placeholder="1–2 sentence professional summary" maxLength={200} />
+                      <p className="text-[11px] text-brand-muted mt-1">{bio.length}/200</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">LinkedIn Profile URL</label>
+                      <input type="url" value={linkedinUrlManual} onChange={e => setLinkedinUrlManual(e.target.value)} className="input" placeholder="https://linkedin.com/in/yourname" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Default Post Tone</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {[
+                          { id: 'professional', label: 'Professional', emoji: '💼' },
+                          { id: 'casual',       label: 'Casual',       emoji: '☕' },
+                          { id: 'inspirational',label: 'Inspirational',emoji: '🚀' },
+                          { id: 'data-driven',  label: 'Data-driven',  emoji: '📊' },
+                        ].map(t => (
+                          <button key={t.id} type="button" onClick={() => setDefaultTone(t.id)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                              defaultTone === t.id
+                                ? 'bg-[rgba(124,92,252,0.08)] border-brand-purple text-brand-purple'
+                                : 'bg-white border-[rgba(0,0,0,0.1)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-dark'
+                            }`}>
+                            {t.emoji} {t.label}
+                            {defaultTone === t.id && <Check size={11} className="ml-0.5" />}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-brand-muted mt-1.5">Pre-selected when you open the post composer.</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Timezone</label>
+                      <SearchableDropdown options={TIMEZONES} value={timezone} onChange={setTimezone} placeholder="Search timezone..." />
+                      <p className="text-[11px] text-brand-muted mt-1">Auto-detected from your browser. Used for scheduled posts.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── GROWTH GOALS ──────────────────────────────────── */}
+                <div className="card p-6">
+                  <p className="text-[11px] font-semibold text-brand-muted uppercase tracking-widest mb-4">Growth Goals</p>
+                  {goals.length > 0 ? (
+                    <div className="flex gap-2 flex-wrap mb-3">
+                      {goals.map(g => (
+                        <span key={g} className="badge bg-[rgba(124,92,252,0.07)] text-brand-purple text-xs capitalize">{g.replace(/-/g, ' ')}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-brand-muted mb-3">No goals set yet.</p>
+                  )}
+                  <a href="/onboarding" className="text-xs text-brand-purple font-semibold hover:underline">Update goals →</a>
+                </div>
+
+                {/* ── SAVE ──────────────────────────────────────────── */}
+                <div className="flex items-center gap-3">
+                  <button onClick={saveProfile} disabled={profileSaving} className="btn-primary text-sm">
                     {profileSaving ? <Loader2 size={15} className="animate-spin" /> : profileSaved ? <Check size={15} /> : <Save size={15} />}
                     {profileSaving ? 'Saving...' : profileSaved ? 'Saved!' : 'Save Changes'}
                   </button>
+                  {profileSaved && <p className="text-xs text-brand-teal font-semibold animate-fadeIn">All changes saved successfully.</p>}
                 </div>
               </div>
             )}

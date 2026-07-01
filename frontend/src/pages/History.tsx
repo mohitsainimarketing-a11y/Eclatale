@@ -1,11 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2 } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles } from 'lucide-react';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
+
+interface Analysis {
+  post_id: string;
+  hook_type: string;
+  tone_detected: string;
+  readability_score: number;
+  topic_tags: string[];
+}
+
+const HOOK_LABELS: Record<string, string> = {
+  question: 'Question hook',
+  bold_statement: 'Bold statement',
+  story: 'Story',
+  statistic: 'Statistic',
+  contrarian: 'Contrarian',
+  list_preview: 'List preview',
+};
+
+const TONE_DETECTED_LABELS: Record<string, string> = {
+  professional: 'Professional',
+  casual: 'Casual',
+  inspirational: 'Inspirational',
+  data_driven: 'Data-driven',
+};
+
+function readabilityColor(score: number): string {
+  if (score >= 70) return 'bg-[rgba(6,214,160,0.1)] text-brand-teal';
+  if (score >= 40) return 'bg-[rgba(255,159,10,0.12)] text-amber-600';
+  return 'bg-[rgba(255,69,58,0.1)] text-red-500';
+}
 
 interface Post {
   id: string;
@@ -47,6 +77,11 @@ export default function History() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<Record<string, Analysis>>({});
+  const [filterHook, setFilterHook] = useState('');
+  const [filterTone, setFilterTone] = useState('');
+  const [filterTopic, setFilterTopic] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'readability'>('date');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -66,6 +101,19 @@ export default function History() {
       .order('created_at', { ascending: false });
     setPosts(data || []);
     setLoading(false);
+
+    // Load semantic analysis (guarded: table may not exist yet).
+    try {
+      const { data: rows } = await supabase
+        .from('post_analytics')
+        .select('post_id, hook_type, tone_detected, readability_score, topic_tags')
+        .eq('user_id', userId);
+      if (rows) {
+        const map: Record<string, Analysis> = {};
+        for (const r of rows as any[]) map[r.post_id] = r;
+        setAnalytics(map);
+      }
+    } catch { /* analytics not available yet */ }
   };
 
   const handleCopy = (post: Post) => {
@@ -80,6 +128,32 @@ export default function History() {
     setPosts(prev => prev.filter(p => p.id !== postId));
     setDeleting(null);
   };
+
+  // Available filter options derived from loaded analytics.
+  const { hookOptions, toneOptions, topicOptions } = useMemo(() => {
+    const hooks = new Set<string>(), tones = new Set<string>(), topics = new Set<string>();
+    Object.values(analytics).forEach(a => {
+      if (a.hook_type) hooks.add(a.hook_type);
+      if (a.tone_detected) tones.add(a.tone_detected);
+      (a.topic_tags || []).forEach(t => topics.add(t));
+    });
+    return { hookOptions: Array.from(hooks), toneOptions: Array.from(tones), topicOptions: Array.from(topics) };
+  }, [analytics]);
+
+  const visiblePosts = useMemo(() => {
+    let list = [...posts];
+    if (filterHook) list = list.filter(p => analytics[p.id]?.hook_type === filterHook);
+    if (filterTone) list = list.filter(p => analytics[p.id]?.tone_detected === filterTone);
+    if (filterTopic) list = list.filter(p => (analytics[p.id]?.topic_tags || []).includes(filterTopic));
+    if (sortBy === 'readability') {
+      list.sort((a, b) => (analytics[b.id]?.readability_score || 0) - (analytics[a.id]?.readability_score || 0));
+    } else {
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+    return list;
+  }, [posts, analytics, filterHook, filterTone, filterTopic, sortBy]);
+
+  const hasAnalytics = Object.keys(analytics).length > 0;
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -132,8 +206,41 @@ export default function History() {
           </div>
         ) : (
           <div className="space-y-4">
-            {posts.map(post => {
+            {/* Filter / sort bar (shown once semantic analysis exists) */}
+            {hasAnalytics && (
+              <div className="card p-3 flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wide flex items-center gap-1"><Sparkles size={11} /> Filter</span>
+                {hookOptions.length > 0 && (
+                  <select value={filterHook} onChange={e => setFilterHook(e.target.value)} className="text-xs rounded-lg border border-[rgba(124,92,252,0.15)] px-2 py-1.5 bg-white text-brand-dark">
+                    <option value="">All hooks</option>
+                    {hookOptions.map(h => <option key={h} value={h}>{HOOK_LABELS[h] || h}</option>)}
+                  </select>
+                )}
+                {toneOptions.length > 0 && (
+                  <select value={filterTone} onChange={e => setFilterTone(e.target.value)} className="text-xs rounded-lg border border-[rgba(124,92,252,0.15)] px-2 py-1.5 bg-white text-brand-dark">
+                    <option value="">All tones</option>
+                    {toneOptions.map(t => <option key={t} value={t}>{TONE_DETECTED_LABELS[t] || t}</option>)}
+                  </select>
+                )}
+                {topicOptions.length > 0 && (
+                  <select value={filterTopic} onChange={e => setFilterTopic(e.target.value)} className="text-xs rounded-lg border border-[rgba(124,92,252,0.15)] px-2 py-1.5 bg-white text-brand-dark max-w-[160px]">
+                    <option value="">All topics</option>
+                    {topicOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                )}
+                <div className="flex-1" />
+                <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} className="text-xs rounded-lg border border-[rgba(124,92,252,0.15)] px-2 py-1.5 bg-white text-brand-dark">
+                  <option value="date">Newest first</option>
+                  <option value="readability">Highest readability</option>
+                </select>
+                {(filterHook || filterTone || filterTopic) && (
+                  <button onClick={() => { setFilterHook(''); setFilterTone(''); setFilterTopic(''); }} className="text-xs text-brand-purple font-semibold hover:underline">Clear</button>
+                )}
+              </div>
+            )}
+            {visiblePosts.map(post => {
               const isExpanded = expandedId === post.id;
+              const analysis = analytics[post.id];
               const preview = post.content.length > 200 && !isExpanded
                 ? post.content.substring(0, 200) + '...'
                 : post.content;
@@ -181,6 +288,30 @@ export default function History() {
                     >
                       {isExpanded ? 'Show less' : 'Show more'}
                     </button>
+                  )}
+
+                  {/* Semantic tag row */}
+                  {analysis ? (
+                    <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                      {analysis.hook_type && (
+                        <span className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px]">🪝 {HOOK_LABELS[analysis.hook_type] || analysis.hook_type}</span>
+                      )}
+                      {analysis.tone_detected && (
+                        <span className="badge bg-[rgba(124,92,252,0.06)] text-brand-dark text-[10px]">🎙 {TONE_DETECTED_LABELS[analysis.tone_detected] || analysis.tone_detected}</span>
+                      )}
+                      {typeof analysis.readability_score === 'number' && (
+                        <span className={`badge text-[10px] ${readabilityColor(analysis.readability_score)}`}>📖 {analysis.readability_score}</span>
+                      )}
+                      {(analysis.topic_tags || []).map(t => (
+                        <span key={t} className="badge bg-[rgba(247,37,133,0.06)] text-brand-pink text-[10px]">{t}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <span className="badge bg-[rgba(124,92,252,0.05)] text-brand-muted text-[10px] inline-flex items-center gap-1">
+                        <Loader2 size={9} className="animate-spin" /> Analyzing…
+                      </span>
+                    </div>
                   )}
 
                   {/* Footer */}

@@ -35,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { userId, postId, action, tone, contentType, topicSnippet, postLength } = req.body;
     if (!userId || !action) return res.status(400).json({ error: 'Missing required fields' });
 
-    await supabase.from('persona_signals').insert({
+    const { error } = await supabase.from('persona_signals').insert({
       user_id: userId,
       post_id: postId || null,
       action,
@@ -44,6 +44,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       topic_snippet: topicSnippet || null,
       post_length: postLength || null,
     });
+    if (error) {
+      console.error('Signal insert failed:', error);
+      return res.status(500).json({ error: error.message || 'Insert failed' });
+    }
 
     res.json({ success: true });
   } catch (error: any) {

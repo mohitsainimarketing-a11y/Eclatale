@@ -80,10 +80,21 @@ export default function Settings() {
   const [linkedinPicture, setLinkedinPicture] = useState('');
   const [linkedinDisconnecting, setLinkedinDisconnecting] = useState(false);
 
-  // Notifications state (local only)
+  // Notifications state (persisted best-effort to profiles)
   const [notifDigest, setNotifDigest] = useState(true);
   const [notifReminders, setNotifReminders] = useState(true);
   const [notifPublish, setNotifPublish] = useState(true);
+  const [notifSaved, setNotifSaved] = useState(false);
+
+  // Persist a notification preference. Guarded so a missing column can't break Settings.
+  const persistNotif = async (patch: Record<string, boolean>) => {
+    if (!userId) return;
+    try {
+      await supabase.from('profiles').upsert({ id: userId, ...patch });
+      setNotifSaved(true);
+      setTimeout(() => setNotifSaved(false), 1500);
+    } catch { /* column may not exist yet */ }
+  };
 
   // Billing state
   const [totalPostsThisMonth, setTotalPostsThisMonth] = useState(0);
@@ -163,6 +174,21 @@ export default function Settings() {
     } catch {}
 
     loadVoiceScore(uid);
+
+    // Guarded load of notification prefs (columns may not exist yet).
+    try {
+      const { data: notifRow } = await supabase
+        .from('profiles')
+        .select('notif_weekly_digest, notif_post_reminders, notif_publish_confirm')
+        .eq('id', uid)
+        .maybeSingle();
+      if (notifRow) {
+        if (typeof notifRow.notif_weekly_digest === 'boolean') setNotifDigest(notifRow.notif_weekly_digest);
+        if (typeof notifRow.notif_post_reminders === 'boolean') setNotifReminders(notifRow.notif_post_reminders);
+        if (typeof notifRow.notif_publish_confirm === 'boolean') setNotifPublish(notifRow.notif_publish_confirm);
+      }
+    } catch { /* columns not present yet */ }
+
     setLoading(false);
   };
 
@@ -753,14 +779,19 @@ export default function Settings() {
             {/* NOTIFICATIONS */}
             {section === 'notifications' && (
               <div className="animate-fadeIn">
-                <h2 className="text-xl font-bold text-brand-dark mb-1">Notifications</h2>
-                <p className="text-sm text-brand-muted mb-6">Control how and when Eclatale reaches out to you.</p>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-brand-dark mb-1">Notifications</h2>
+                    <p className="text-sm text-brand-muted">Control how and when Eclatale reaches out to you.</p>
+                  </div>
+                  {notifSaved && <span className="text-xs text-brand-teal font-semibold animate-fadeIn">Saved</span>}
+                </div>
 
                 <div className="card p-6 space-y-5">
                   {[
-                    { label: 'Weekly email digest', desc: 'Summary of your content performance and suggestions', value: notifDigest, set: setNotifDigest },
-                    { label: 'Post reminders', desc: 'Gentle nudge when you haven\'t posted in a while', value: notifReminders, set: setNotifReminders },
-                    { label: 'Publish confirmations', desc: 'Email confirmation when a post is published to LinkedIn', value: notifPublish, set: setNotifPublish },
+                    { label: 'Weekly email digest', desc: 'A personalized Monday summary with your stats and 3 fresh topic ideas', value: notifDigest, set: setNotifDigest, col: 'notif_weekly_digest' },
+                    { label: 'Post reminders', desc: 'Gentle nudge when you haven\'t posted in a while', value: notifReminders, set: setNotifReminders, col: 'notif_post_reminders' },
+                    { label: 'Publish confirmations', desc: 'Email confirmation when a post is published to LinkedIn', value: notifPublish, set: setNotifPublish, col: 'notif_publish_confirm' },
                   ].map((n, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div>
@@ -768,7 +799,7 @@ export default function Settings() {
                         <p className="text-xs text-brand-muted mt-0.5">{n.desc}</p>
                       </div>
                       <button
-                        onClick={() => n.set(!n.value)}
+                        onClick={() => { const next = !n.value; n.set(next); persistNotif({ [n.col]: next }); }}
                         className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 ${
                           n.value ? 'bg-brand-purple justify-end' : 'bg-[rgba(124,92,252,0.15)] justify-start'
                         }`}

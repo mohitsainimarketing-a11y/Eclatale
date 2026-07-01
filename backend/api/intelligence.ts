@@ -6,6 +6,7 @@ import {
   BEST_TIME_SYSTEM, buildBestTimeUserPrompt,
 } from '../lib/intelligencePrompts';
 import { readCache, writeCache } from '../lib/intelligenceCache';
+import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/digest';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -133,6 +134,57 @@ async function bestTimeToPost(userId: string, forceRefresh: boolean) {
   return payload;
 }
 
+// Admin-triggered digest for a single user (testing). Optionally sends the email.
+async function triggerDigest(targetUserId: string, doSend: boolean) {
+  const data = await buildDigestData(anthropic, supabase, targetUserId);
+  if (!data) return { ok: false, error: 'Could not build digest (missing user or email)' };
+  const html = renderDigestHTML(data);
+  let delivery: { sent: boolean; reason?: string } = { sent: false, reason: 'send not requested' };
+  if (doSend) delivery = await sendDigestEmail(data);
+  return {
+    ok: true,
+    subject: data.subject,
+    to: data.email,
+    data: {
+      firstName: data.firstName, role: data.role, industry: data.industry,
+      postsLastWeek: data.postsLastWeek, streak: data.streak, growthScore: data.growthScore,
+      topicSuggestions: data.topicSuggestions, tipOfWeek: data.tipOfWeek, intro: data.intro,
+    },
+    html,
+    delivery,
+  };
+}
+
+// Weekly cron: send to opted-in users for whom it is currently Monday ~8am local time.
+async function weeklyDigestCron() {
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, timezone, notif_weekly_digest');
+
+  const results: { userId: string; sent: boolean; reason?: string }[] = [];
+  for (const p of profiles || []) {
+    // Respect the opt-out (default is opted-in when the column is absent/null).
+    if ((p as any).notif_weekly_digest === false) continue;
+    const tz = (p as any).timezone || 'UTC';
+    let weekday = '', hour = -1;
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long', hour: 'numeric', hour12: false }).formatToParts(new Date());
+      weekday = parts.find(x => x.type === 'weekday')?.value || '';
+      hour = parseInt(parts.find(x => x.type === 'hour')?.value || '-1', 10);
+    } catch { continue; }
+    if (weekday !== 'Monday' || hour !== 8) continue;
+    try {
+      const data = await buildDigestData(anthropic, supabase, (p as any).id);
+      if (!data) { results.push({ userId: (p as any).id, sent: false, reason: 'no data' }); continue; }
+      const delivery = await sendDigestEmail(data);
+      results.push({ userId: (p as any).id, sent: delivery.sent, reason: delivery.reason });
+    } catch (e: any) {
+      results.push({ userId: (p as any).id, sent: false, reason: e.message });
+    }
+  }
+  return { ok: true, considered: (profiles || []).length, results };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -145,6 +197,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const action = String(body.action || req.query.action || '');
     const userId = String(body.userId || req.query.userId || '');
     const forceRefresh = !!body.refresh || req.query.refresh === 'true';
+
+    // Digest actions (no per-request userId required for the cron).
+    if (action === 'weekly-digest-cron') {
+      const secret = String(body.secret || req.query.secret || '');
+      if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+        // Vercel Cron sends an Authorization: Bearer <CRON_SECRET> header.
+        const auth = req.headers.authorization || '';
+        if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const result = await weeklyDigestCron();
+      return res.json(result);
+    }
+
+    if (action === 'trigger-digest') {
+      const adminSecret = String(body.adminSecret || req.query.adminSecret || '');
+      if (process.env.ADMIN_SECRET && adminSecret !== process.env.ADMIN_SECRET) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const targetUserId = String(body.targetUserId || body.userId || req.query.userId || '');
+      if (!targetUserId) return res.status(400).json({ error: 'Missing targetUserId' });
+      const doSend = body.send === true || req.query.send === 'true';
+      const result = await triggerDigest(targetUserId, doSend);
+      return res.json(result);
+    }
 
     if (!userId) return res.status(400).json({ error: 'Missing userId' });
 

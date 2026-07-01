@@ -276,6 +276,16 @@ export default function CreatePost() {
     setWriteTopic('');
   };
 
+  // Fire-and-forget background semantic analysis after a post is saved.
+  // Never awaited in the UI path, so save/publish never waits on it.
+  const queueAnalysis = (postId: string | null, content: string) => {
+    if (!postId || !userId || !content.trim()) return;
+    fetch(`${API_URL}/api/intelligence`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ action: 'analyze-post', userId, postId, postContent: content }),
+    }).catch(() => {});
+  };
+
   // ── Generate ──────────────────────────────────────────────────────────────
 
   const handleGenerate = async (topic: string) => {
@@ -297,7 +307,7 @@ export default function CreatePost() {
         user_id: userId, content: data.content, topic,
         tone, content_type: contentType, source: 'auto',
       }).select('id').single();
-      if (inserted) setPostId(inserted.id);
+      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); }
     } catch (err: any) {
       addMsg('bot', `Sorry, couldn't generate: ${err.message || 'unknown error'}`, 'text');
     }
@@ -325,7 +335,7 @@ export default function CreatePost() {
         user_id: userId, content: data.content, topic: 'Repurposed content',
         tone, content_type: contentType, source: 'repurpose',
       }).select('id').single();
-      if (inserted) setPostId(inserted.id);
+      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); }
     } catch (err: any) {
       addMsg('bot', `Repurpose failed: ${err.message || 'unknown error'}`, 'text');
     }
@@ -480,12 +490,13 @@ export default function CreatePost() {
     try {
       if (postId) {
         await supabase.from('posts').update({ content: composerContent, tone, content_type: contentType }).eq('id', postId);
+        queueAnalysis(postId, composerContent);
       } else {
         const { data: inserted } = await supabase.from('posts').insert({
           user_id: userId, content: composerContent, topic: 'Draft',
           tone, content_type: contentType, source: 'auto',
         }).select('id').single();
-        if (inserted) setPostId(inserted.id);
+        if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, composerContent); }
       }
       setSaved(true); setTimeout(() => setSaved(false), 2000);
       addActivity('save', 'Saved as draft');
@@ -512,6 +523,7 @@ export default function CreatePost() {
         }).select('id').single();
         if (inserted) { activePostId = inserted.id; setPostId(inserted.id); }
       }
+      queueAnalysis(activePostId, composerContent);
       if (!activePostId) throw new Error('Failed to save post. Please try again.');
       const res = await fetch(`${API_URL}/api/linkedin/publish`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },

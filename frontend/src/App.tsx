@@ -10,6 +10,7 @@ const History = lazy(() => import('./pages/History'));
 const PersonaSetup = lazy(() => import('./pages/PersonaSetup'));
 const Settings = lazy(() => import('./pages/Settings'));
 const CreateVisual = lazy(() => import('./pages/CreateVisual'));
+const Intelligence = lazy(() => import('./pages/Intelligence'));
 
 function PageLoader() {
   return (
@@ -38,6 +39,7 @@ function App() {
           <Route path="/persona-setup" element={<PersonaSetup />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/create-visual" element={<CreateVisual />} />
+          <Route path="/intelligence" element={<Intelligence />} />
         </Routes>
       </Suspense>
     </Router>

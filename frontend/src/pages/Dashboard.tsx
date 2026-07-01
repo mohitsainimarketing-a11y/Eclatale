@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   BarChart3, FileText, Flame, Trophy, Sparkles, LogOut,
   Home, Zap, User, Clock, ArrowRight, RefreshCw, Copy, Check,
-  Loader2, Target, Settings, ChevronRight, Image,
+  Loader2, Target, Settings, ChevronRight, Image, TrendingUp,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -50,6 +50,7 @@ const SIDEBAR_ITEMS = [
   { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard', active: true },
   { icon: <Zap size={18} />, label: 'Write a Post', href: '/create', active: false, cta: true },
   { icon: <Image size={18} />, label: 'Visual Creator', href: '/create-visual', active: false },
+  { icon: <TrendingUp size={18} />, label: 'Competitor Intel', href: '/intelligence', active: false },
   { icon: <Clock size={18} />, label: 'Content History', href: '/history', active: false },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup', active: false },
   { icon: <Settings size={18} />, label: 'Settings', href: '/settings', active: false },

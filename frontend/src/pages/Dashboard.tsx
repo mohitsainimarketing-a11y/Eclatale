@@ -75,6 +75,9 @@ export default function Dashboard() {
   const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [linkedinName, setLinkedinName] = useState('');
   const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string } | null>(null);
+  const [aiGrowth, setAiGrowth] = useState<any>(null);
+  const [growthOpen, setGrowthOpen] = useState(false);
+  const [growthRefreshing, setGrowthRefreshing] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -148,6 +151,21 @@ export default function Dashboard() {
       .then(r => r.json())
       .then(d => { if (d && !d.error) setBestTime(d); })
       .catch(() => {});
+
+    loadGrowthScore(userId, false);
+  };
+
+  const loadGrowthScore = async (uid: string, refresh: boolean) => {
+    if (refresh) setGrowthRefreshing(true);
+    try {
+      const res = await fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'growth-score', userId: uid, refresh }),
+      });
+      const d = await res.json();
+      if (d && !d.error) setAiGrowth(d);
+    } catch {}
+    setGrowthRefreshing(false);
   };
 
   const fetchPostIdeas = useCallback(async (userId: string) => {
@@ -185,6 +203,8 @@ export default function Dashboard() {
   const growthScore = Math.min(100, Math.round(
     (hasProfile ? 15 : 0) + (hasPersona ? 15 : 0) + Math.min(20, totalPosts * 4) + Math.min(25, streak * 5) + Math.min(25, postsThisWeek * 8)
   ));
+  // Prefer the genuine AI-assessed score; fall back to the arithmetic baseline until it loads.
+  const displayGrowthScore = typeof aiGrowth?.overallScore === 'number' ? aiGrowth.overallScore : growthScore;
 
   const roadmap = [
     { text: 'Complete your persona setup', done: hasProfile },
@@ -262,13 +282,74 @@ export default function Dashboard() {
 
         <div className="max-w-[960px] mx-auto px-5 md:px-8 py-6 md:py-8">
           {/* Welcome Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-2">
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Welcome back, {userName}</h1>
               <p className="text-sm text-brand-muted mt-0.5">Here's your brand growth overview.</p>
             </div>
-            <GrowthRing score={growthScore} />
+            <button onClick={() => setGrowthOpen(o => !o)} className="flex flex-col items-center group" title="View Growth Score breakdown">
+              <GrowthRing score={displayGrowthScore} />
+              <span className="text-[10px] font-semibold text-brand-purple mt-0.5 flex items-center gap-0.5 opacity-70 group-hover:opacity-100">
+                {aiGrowth ? 'AI-assessed' : 'Growth'} <ChevronRight size={10} className={`transition-transform ${growthOpen ? 'rotate-90' : ''}`} />
+              </span>
+            </button>
           </div>
+
+          {/* Growth Score breakdown panel */}
+          {growthOpen && (
+            <div className="card p-5 mb-6 animate-fadeIn">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-brand-dark">Growth Score: {displayGrowthScore}/100</h3>
+                  <p className="text-[11px] text-brand-muted">{aiGrowth ? 'AI-assessed from your real activity' : 'Complete your profile and post to unlock AI assessment'}</p>
+                </div>
+                <button onClick={() => user && loadGrowthScore(user.id, true)} disabled={growthRefreshing}
+                  className="btn-ghost text-[11px] !py-1.5 !px-2.5 disabled:opacity-50">
+                  {growthRefreshing ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />} Recalculate
+                </button>
+              </div>
+              {aiGrowth?.overallReasoning && (
+                <p className="text-[13px] text-brand-dark/80 leading-relaxed mb-4 bg-[rgba(124,92,252,0.04)] rounded-xl p-3">{aiGrowth.overallReasoning}</p>
+              )}
+              {aiGrowth?.subComponents && (
+                <div className="space-y-3">
+                  {/* Content Consistency */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-brand-dark">Content Consistency <span className="text-brand-muted font-normal">· 40%</span></span>
+                      <span className="text-xs font-bold text-brand-purple">{aiGrowth.subComponents.contentConsistency.score}/100</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-1 overflow-hidden">
+                      <div className="h-full rounded-full gradient-primary" style={{ width: `${aiGrowth.subComponents.contentConsistency.score}%` }} />
+                    </div>
+                    <p className="text-[11px] text-brand-muted leading-snug">{aiGrowth.subComponents.contentConsistency.reasoning}</p>
+                  </div>
+                  {/* Engagement Rate */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-brand-dark">Engagement Rate <span className="text-brand-muted font-normal">· 30%</span></span>
+                      <span className="text-[10px] font-semibold text-brand-muted bg-[rgba(124,92,252,0.06)] px-2 py-0.5 rounded-full">Locked</span>
+                    </div>
+                    <p className="text-[11px] text-brand-muted leading-snug">{aiGrowth.subComponents.engagementRate.reasoning}.
+                      {!linkedinConnected && <a href="/settings" className="text-brand-purple font-semibold hover:underline"> Connect →</a>}
+                    </p>
+                  </div>
+                  {/* Profile Completeness */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-brand-dark">Profile Completeness <span className="text-brand-muted font-normal">· 30%</span></span>
+                      <span className="text-xs font-bold text-brand-teal">{aiGrowth.subComponents.profileCompleteness.score}/100</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-1 overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-brand-teal to-brand-blue" style={{ width: `${aiGrowth.subComponents.profileCompleteness.score}%` }} />
+                    </div>
+                    <p className="text-[11px] text-brand-muted leading-snug">{aiGrowth.subComponents.profileCompleteness.reasoning}</p>
+                  </div>
+                </div>
+              )}
+              {!aiGrowth && <p className="text-[12px] text-brand-muted">Assessment loads once you have profile data and activity.</p>}
+            </div>
+          )}
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -276,7 +357,7 @@ export default function Dashboard() {
               { label: 'Total Posts', value: totalPosts, icon: <FileText size={16} />, color: 'from-brand-purple to-[#9B7DFC]' },
               { label: 'This Week', value: postsThisWeek, icon: <BarChart3 size={16} />, color: 'from-brand-pink to-[#FF5CAD]' },
               { label: 'Streak', value: `${streak}d`, icon: <Flame size={16} />, color: 'from-brand-orange to-[#FF8F5E]' },
-              { label: 'Growth Score', value: `${growthScore}/100`, icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
+              { label: 'Growth Score', value: `${displayGrowthScore}/100`, icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
             ].map((s, i) => (
               <div key={i} className="card stat-card p-4">
                 <div className="flex items-center gap-2 mb-2">

@@ -7,6 +7,7 @@ import {
 } from '../lib/intelligencePrompts';
 import { readCache, writeCache } from '../lib/intelligenceCache';
 import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/digest';
+import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -58,6 +59,71 @@ async function competitorIntelligence(userId: string, forceRefresh: boolean) {
     role,
     industry,
     basedOn: payload.basedOn,
+  });
+
+  return payload;
+}
+
+async function growthScore(userId: string, forceRefresh: boolean) {
+  if (!forceRefresh) {
+    const cached = await readCache(supabase, userId, 'growth-score', 6 * 60 * 60 * 1000);
+    if (cached) return cached;
+  }
+
+  const d = await gatherGrowthData(supabase, userId);
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 500,
+    messages: [{ role: 'user', content: buildGrowthScorePrompt(d) }],
+  });
+  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
+  const parsed = parseJsonObject(text);
+
+  const contentConsistency = Math.max(0, Math.min(100, Math.round(parsed.contentConsistency?.score ?? 0)));
+  const profileCompleteness = d.profileCompleteness.score;
+  // Engagement is unmeasurable without a LinkedIn analytics connection.
+  const engagementMeasured = false;
+
+  // Weights: content 40, engagement 30, profile 30. When engagement is
+  // unmeasurable, renormalize across the two measurable components (40 + 30).
+  const overallScore = Math.round(
+    (contentConsistency * 0.4 + profileCompleteness * 0.3) / 0.7
+  );
+
+  const payload = {
+    overallScore,
+    overallReasoning: parsed.overallReasoning || '',
+    subComponents: {
+      contentConsistency: {
+        score: contentConsistency,
+        weight: 40,
+        reasoning: parsed.contentConsistency?.reasoning || '',
+      },
+      engagementRate: {
+        score: null,
+        weight: 30,
+        measured: engagementMeasured,
+        reasoning: 'Connect LinkedIn to track real engagement',
+      },
+      profileCompleteness: {
+        score: profileCompleteness,
+        weight: 30,
+        present: d.profileCompleteness.present,
+        missing: d.profileCompleteness.missing,
+        reasoning: d.profileCompleteness.missing.length
+          ? `Missing: ${d.profileCompleteness.missing.join(', ')}`
+          : 'All profile elements complete',
+      },
+    },
+    generatedAt: new Date().toISOString(),
+    cached: false,
+  };
+
+  await writeCache(supabase, userId, 'growth-score', {
+    overallScore: payload.overallScore,
+    overallReasoning: payload.overallReasoning,
+    subComponents: payload.subComponents,
   });
 
   return payload;
@@ -235,6 +301,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'best-time':
       case 'best-time-to-post': {
         const result = await bestTimeToPost(userId, forceRefresh);
+        return res.json(result);
+      }
+      case 'growth-score': {
+        const result = await growthScore(userId, forceRefresh);
         return res.json(result);
       }
       default:

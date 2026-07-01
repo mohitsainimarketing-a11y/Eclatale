@@ -8,6 +8,7 @@ import {
 import { readCache, writeCache } from '../lib/intelligenceCache';
 import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/digest';
 import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
+import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -127,6 +128,48 @@ async function growthScore(userId: string, forceRefresh: boolean) {
   });
 
   return payload;
+}
+
+// User writing-pattern analysis with best-effort user_pattern_cache.
+// Refreshes when the user has 3+ newly analyzed posts since last analysis.
+async function userPatterns(userId: string, forceRefresh: boolean) {
+  const { count } = await supabase
+    .from('post_analytics')
+    .select('post_id', { count: 'exact', head: true })
+    .eq('user_id', userId);
+  const analyzedCount = count || 0;
+
+  if (analyzedCount < 3) {
+    return { ready: false, postsAnalyzed: analyzedCount, needed: 3 };
+  }
+
+  if (!forceRefresh) {
+    try {
+      const { data: cache } = await supabase
+        .from('user_pattern_cache')
+        .select('pattern_analysis, posts_analyzed_count')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (cache && analyzedCount - (cache.posts_analyzed_count || 0) < 3) {
+        return { ready: true, ...(cache.pattern_analysis as any), cached: true, postsAnalyzed: analyzedCount };
+      }
+    } catch { /* table may not exist yet */ }
+  }
+
+  const analysis = await analyzeUserPatterns(anthropic, supabase, userId);
+  if (!analysis) return { ready: false, postsAnalyzed: analyzedCount, needed: 3 };
+
+  try {
+    await supabase.from('user_pattern_cache').upsert({
+      user_id: userId,
+      pattern_analysis: analysis,
+      posts_analyzed_count: analyzedCount,
+      last_analyzed_at: new Date().toISOString(),
+      next_refresh_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+  } catch { /* table may not exist yet; still return fresh analysis */ }
+
+  return { ready: true, ...analysis, cached: false };
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -305,6 +348,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       case 'growth-score': {
         const result = await growthScore(userId, forceRefresh);
+        return res.json(result);
+      }
+      case 'analyze-post': {
+        const postId = String(body.postId || '');
+        const postContent = String(body.postContent || '');
+        if (!postId || !postContent) return res.status(400).json({ error: 'Missing postId or postContent' });
+        const analysis = await analyzePost(anthropic, supabase, postContent, userId, postId);
+        return res.json({ ok: true, analysis });
+      }
+      case 'user-patterns': {
+        const result = await userPatterns(userId, forceRefresh);
+        return res.json(result);
+      }
+      case 'tone-match': {
+        const intendedTone = String(body.intendedTone || '');
+        const postContent = String(body.postContent || '');
+        if (!intendedTone || !postContent) return res.status(400).json({ error: 'Missing intendedTone or postContent' });
+        const result = await compareIntendedVsActualTone(anthropic, intendedTone, postContent);
         return res.json(result);
       }
       default:

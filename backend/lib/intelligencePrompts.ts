@@ -29,3 +29,43 @@ Produce a JSON object with EXACTLY these fields:
 
 Return ONLY valid JSON, no other text.`;
 }
+
+export const BEST_TIME_SYSTEM = `You are a LinkedIn timing strategist who advises personal brands on exactly when to publish for maximum reach.
+
+You reason about a specific person's audience: when the people who follow a given role in a given industry are actually on LinkedIn and in a mindset to engage. A CEO in Technology, a Nurse Manager in Healthcare, and a Financial Analyst in Banking have genuinely different audience rhythms. Never give generic "post Tuesday at 9am" advice that ignores their specific audience.
+
+Rules:
+- Recommend 1 to 3 days and 1 to 2 time windows, tuned to their audience.
+- Reasoning must be plain-language and specific to their role and industry.
+- No em dashes, en dashes, or arrows. Write naturally.`;
+
+export function buildBestTimeUserPrompt(
+  role: string,
+  industry: string,
+  hasHistory: boolean,
+  historySummary: string
+): string {
+  const basis = hasHistory
+    ? `Here is this person's actual posting history (day-of-week and hour, local time):
+${historySummary}
+
+Analyze BOTH their real posting patterns AND what is optimal for their audience, and recommend when they should post going forward. Set "basedOn" to "your posting history".`
+    : `This person does not have enough posting history yet. Recommend optimal timing based on audience benchmarks for their specific role and industry. Set "basedOn" to "industry benchmarks".`;
+
+  return `Person:
+- Role: ${role}
+- Industry: ${industry}
+
+${basis}
+
+Return a JSON object with EXACTLY these fields:
+{
+  "recommendedDays": ["1 to 3 weekday names, e.g. Tuesday, Thursday"],
+  "recommendedTimes": ["1 to 2 human time windows, e.g. 7:00 AM - 9:00 AM"],
+  "confidence": "high | medium | low",
+  "reasoning": "one or two plain-language sentences explaining why, specific to this role and industry",
+  "basedOn": "your posting history | industry benchmarks"
+}
+
+Return ONLY valid JSON, no other text.`;
+}

@@ -123,6 +123,14 @@ export default function CreatePost() {
   const [mobileView, setMobileView] = useState<'compose' | 'assistant'>('compose');
   const [error, setError] = useState('');
 
+  // Best time to post (AI-recommended)
+  const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string; confidence: string } | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDay, setScheduleDay] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleConfirmed, setScheduleConfirmed] = useState(false);
+  const scheduleRef = useRef<HTMLDivElement>(null);
+
   const toneRef    = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -171,12 +179,27 @@ export default function CreatePost() {
         .then(r => r.json())
         .then(d => { if (d.picture) setUserAvatar(prev => prev || d.picture); })
         .catch(() => {});
+      // AI-recommended best time to post (per-user, cached server-side)
+      fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'best-time', userId: u.id }),
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d && !d.error) {
+            setBestTime(d);
+            if (d.recommendedDays?.[0]) setScheduleDay(d.recommendedDays[0]);
+            if (d.recommendedTimes?.[0]) setScheduleTime(d.recommendedTimes[0]);
+          }
+        })
+        .catch(() => {});
     });
   }, []);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (toneRef.current && !toneRef.current.contains(e.target as Node)) setToneOpen(false);
+      if (scheduleRef.current && !scheduleRef.current.contains(e.target as Node)) setScheduleOpen(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -980,10 +1003,41 @@ export default function CreatePost() {
                   className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
                   {saved ? <><Check size={12} className="text-brand-teal" /> Saved</> : <><FileText size={12} /> Save Draft</>}
                 </button>
-                <button disabled={!composerContent} title="Scheduled posting coming soon"
-                  className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
-                  <Calendar size={12} /> Schedule
-                </button>
+                <div className="relative" ref={scheduleRef}>
+                  <button disabled={!composerContent} onClick={() => setScheduleOpen(o => !o)}
+                    className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
+                    <Calendar size={12} /> {scheduleConfirmed && scheduleDay ? `${scheduleDay}, ${scheduleTime}` : 'Schedule'}
+                  </button>
+                  {scheduleOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-4 z-50 animate-fadeIn">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Calendar size={12} className="text-brand-purple" />
+                        <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">Schedule</span>
+                      </div>
+                      {bestTime && bestTime.recommendedDays.length > 0 && (
+                        <p className="text-[11px] text-brand-purple bg-[rgba(124,92,252,0.05)] rounded-lg px-2.5 py-2 mb-3 leading-relaxed">
+                          Best time ({bestTime.basedOn}): <span className="font-semibold">{bestTime.recommendedDays.join(', ')}</span> at <span className="font-semibold">{bestTime.recommendedTimes.join(', ')}</span>. Pre-filled below.
+                        </p>
+                      )}
+                      <label className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-1 block">Day</label>
+                      <select value={scheduleDay} onChange={e => { setScheduleDay(e.target.value); setScheduleConfirmed(false); }}
+                        className="input !text-sm !py-2 mb-2">
+                        <option value="">Select a day…</option>
+                        {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <label className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-1 block">Time window</label>
+                      <input type="text" value={scheduleTime} onChange={e => { setScheduleTime(e.target.value); setScheduleConfirmed(false); }}
+                        placeholder="e.g. 8:00 AM" className="input !text-sm !py-2 mb-3" />
+                      <button
+                        onClick={() => { setScheduleConfirmed(true); setScheduleOpen(false); addActivity('save', `Scheduled for ${scheduleDay || 'chosen day'}, ${scheduleTime || 'chosen time'}`); }}
+                        disabled={!scheduleDay || !scheduleTime}
+                        className="btn-primary w-full text-xs !py-2 disabled:opacity-40">
+                        <Check size={12} /> Set schedule
+                      </button>
+                      <p className="text-[10px] text-brand-muted mt-2 leading-relaxed">Auto-publishing at the scheduled time is coming soon. For now this saves your intended slot.</p>
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1" />
                 <button onClick={handlePublish}
                   disabled={!composerContent || publishing || !!publishResult?.success}
@@ -993,6 +1047,17 @@ export default function CreatePost() {
                     : <><Send size={13} /> Post to LinkedIn</>}
                 </button>
               </div>
+
+              {composerContent && bestTime && bestTime.recommendedDays.length > 0 && (
+                <button onClick={() => setScheduleOpen(true)}
+                  className="flex-shrink-0 mx-5 mb-3 flex items-center gap-2 text-left w-[calc(100%-2.5rem)] rounded-xl bg-[rgba(124,92,252,0.04)] border border-[rgba(124,92,252,0.08)] px-3 py-2 hover:border-brand-purple/25 transition-all">
+                  <span className="text-sm">📅</span>
+                  <span className="text-[11px] text-brand-dark leading-snug">
+                    <span className="font-semibold">Best time to post:</span> {bestTime.recommendedDays[0]} {bestTime.recommendedTimes[0]}
+                    <span className="text-brand-muted"> · tap to schedule</span>
+                  </span>
+                </button>
+              )}
 
               {publishResult?.error && (
                 <div className="flex-shrink-0 mx-5 mb-3 card !bg-red-50 !border-red-100 p-3 text-xs text-red-600 font-medium text-center animate-shake">

@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [weeklyGoal] = useState(5);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [linkedinName, setLinkedinName] = useState('');
+  const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -139,6 +140,14 @@ export default function Dashboard() {
     } catch {}
 
     fetchPostIdeas(userId);
+
+    fetch(`${API_URL}/api/intelligence`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ action: 'best-time', userId }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d && !d.error) setBestTime(d); })
+      .catch(() => {});
   };
 
   const fetchPostIdeas = useCallback(async (userId: string) => {
@@ -416,6 +425,32 @@ export default function Dashboard() {
                   })}
                 </div>
               </div>
+
+              {/* Post Timing (AI-recommended) */}
+              {bestTime && bestTime.recommendedDays.length > 0 && (
+                <div className="card p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white">
+                      <Clock size={16} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-brand-dark">Post timing</h3>
+                      <p className="text-[10px] text-brand-muted">AI-recommended · {bestTime.basedOn}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {bestTime.recommendedDays.map(d => (
+                      <span key={d} className="badge bg-[rgba(124,92,252,0.07)] text-brand-purple text-[11px]">{d}</span>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {bestTime.recommendedTimes.map(t => (
+                      <span key={t} className="badge bg-[rgba(6,214,160,0.08)] text-brand-teal text-[11px]">{t}</span>
+                    ))}
+                  </div>
+                  {bestTime.reasoning && <p className="text-[11px] text-brand-muted leading-relaxed">{bestTime.reasoning}</p>}
+                </div>
+              )}
 
               {/* Quick Create */}
               <div className="card p-5">

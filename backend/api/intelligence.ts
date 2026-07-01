@@ -155,7 +155,10 @@ async function triggerDigest(targetUserId: string, doSend: boolean) {
   };
 }
 
-// Weekly cron: send to opted-in users for whom it is currently Monday ~8am local time.
+// Weekly cron. Hobby plan only permits daily/weekly crons (not hourly), so we
+// cannot fire at each user's local 8am precisely. We run once weekly (Mondays
+// 13:00 UTC) and send to opted-in users for whom it is Monday in THEIR timezone
+// (day-granularity timezone respect, the best achievable without Pro cron).
 async function weeklyDigestCron() {
   const { data: profiles } = await supabase
     .from('profiles')
@@ -166,13 +169,12 @@ async function weeklyDigestCron() {
     // Respect the opt-out (default is opted-in when the column is absent/null).
     if ((p as any).notif_weekly_digest === false) continue;
     const tz = (p as any).timezone || 'UTC';
-    let weekday = '', hour = -1;
+    let weekday = '';
     try {
-      const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long', hour: 'numeric', hour12: false }).formatToParts(new Date());
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' }).formatToParts(new Date());
       weekday = parts.find(x => x.type === 'weekday')?.value || '';
-      hour = parseInt(parts.find(x => x.type === 'hour')?.value || '-1', 10);
     } catch { continue; }
-    if (weekday !== 'Monday' || hour !== 8) continue;
+    if (weekday !== 'Monday') continue;
     try {
       const data = await buildDigestData(anthropic, supabase, (p as any).id);
       if (!data) { results.push({ userId: (p as any).id, sent: false, reason: 'no data' }); continue; }

@@ -73,6 +73,8 @@ export default function Settings() {
   const [voiceScore, setVoiceScore] = useState<number | null>(null);
   const [voiceFactors, setVoiceFactors] = useState<VoiceMatchFactors | null>(null);
   const [voiceScoreLoading, setVoiceScoreLoading] = useState(false);
+  const [patterns, setPatterns] = useState<any>(null);
+  const [patternsLoading, setPatternsLoading] = useState(false);
 
   // LinkedIn state
   const [linkedinConnected, setLinkedinConnected] = useState(false);
@@ -174,6 +176,7 @@ export default function Settings() {
     } catch {}
 
     loadVoiceScore(uid);
+    loadPatterns(uid, false);
 
     // Guarded load of notification prefs (columns may not exist yet).
     try {
@@ -203,6 +206,19 @@ export default function Settings() {
       }
     } catch {}
     setVoiceScoreLoading(false);
+  };
+
+  const loadPatterns = async (uid: string, refresh: boolean) => {
+    setPatternsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'user-patterns', userId: uid, refresh }),
+      });
+      const data = await res.json();
+      if (!data.error) setPatterns(data);
+    } catch {}
+    setPatternsLoading(false);
   };
 
   const saveProfile = async () => {
@@ -637,6 +653,104 @@ export default function Settings() {
                     </p>
                   )}
                 </div>
+
+                {/* ── WRITING PATTERNS (semantic) ─────────────────────── */}
+                {patterns?.ready && (
+                  <div className="card p-6 mt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-[11px] font-semibold text-brand-muted uppercase tracking-widest">Writing Patterns</p>
+                        <p className="text-xs text-brand-muted mt-0.5">AI analysis across your last {patterns.postsAnalyzed} posts.</p>
+                      </div>
+                      <button onClick={() => userId && loadPatterns(userId, true)} disabled={patternsLoading}
+                        className="btn-ghost text-xs !py-1.5 !px-3 disabled:opacity-50">
+                        {patternsLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Refresh analysis
+                      </button>
+                    </div>
+
+                    {/* Hook distribution + effectiveness */}
+                    <div className="mb-4">
+                      <span className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide">Hook Style</span>
+                      <p className="text-sm text-brand-dark mt-1">{patterns.dominantHookType}</p>
+                      {patterns.hookEffectiveness && <p className="text-[12px] text-brand-muted mt-0.5">{patterns.hookEffectiveness}</p>}
+                    </div>
+
+                    {/* Readability trend */}
+                    <div className="mb-4 flex items-center gap-2">
+                      <span className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide">Readability</span>
+                      <span className={`badge text-[11px] ${patterns.readabilityTrend === 'improving' ? 'bg-[rgba(6,214,160,0.1)] text-brand-teal' : patterns.readabilityTrend === 'declining' ? 'bg-[rgba(255,69,58,0.1)] text-red-500' : 'bg-[rgba(124,92,252,0.08)] text-brand-purple'}`}>
+                        {patterns.readabilityTrend === 'improving' ? '↗ Improving' : patterns.readabilityTrend === 'declining' ? '↘ Declining' : '→ Stable'}
+                      </span>
+                    </div>
+
+                    {/* Strengths */}
+                    {patterns.writingStrengths?.length > 0 && (
+                      <div className="mb-4">
+                        <span className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide">Strengths</span>
+                        <ul className="mt-1.5 space-y-1.5">
+                          {patterns.writingStrengths.map((s: string, i: number) => (
+                            <li key={i} className="text-[13px] text-brand-dark flex items-start gap-2"><Check size={13} className="text-brand-teal mt-0.5 flex-shrink-0" />{s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Opportunities */}
+                    {patterns.writingOpportunities?.length > 0 && (
+                      <div className="mb-4">
+                        <span className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide">Opportunities</span>
+                        <ul className="mt-1.5 space-y-1.5">
+                          {patterns.writingOpportunities.map((s: string, i: number) => (
+                            <li key={i} className="text-[13px] text-brand-dark flex items-start gap-2"><span className="text-brand-orange mt-0.5">→</span>{s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Content pillars */}
+                    {patterns.contentPillars?.length > 0 && (
+                      <div className="mb-4">
+                        <span className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide">Content Pillars</span>
+                        <div className="flex gap-1.5 flex-wrap mt-1.5">
+                          {patterns.contentPillars.map((p: string, i: number) => (
+                            <span key={i} className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[11px]">{p}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Unused angles */}
+                    {patterns.unusedAngles?.length > 0 && (
+                      <div className="mb-4">
+                        <span className="text-[11px] font-semibold text-brand-dark uppercase tracking-wide">Unused Angles</span>
+                        <div className="mt-1.5 space-y-1.5">
+                          {patterns.unusedAngles.map((a: string, i: number) => (
+                            <a key={i} href={`/create?topic=${encodeURIComponent(a)}`} className="block text-[13px] text-brand-dark bg-[rgba(247,37,133,0.05)] rounded-lg px-3 py-2 hover:bg-[rgba(247,37,133,0.09)] transition-colors">{a}</a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Voice drift + best pattern */}
+                    <div className="pt-3 border-t border-[rgba(0,0,0,0.05)] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-brand-muted">Voice consistency (drift score)</span>
+                        <span className="text-sm font-bold text-brand-purple">{patterns.voiceDriftScore}/100</span>
+                      </div>
+                      <p className="text-[12px] text-brand-dark">
+                        Your voice has been {patterns.voiceDriftScore >= 75 ? 'very consistent' : patterns.voiceDriftScore >= 50 ? 'mostly consistent' : 'drifting'} across your last {patterns.postsAnalyzed} posts.
+                      </p>
+                      {patterns.bestPerformingPattern && (
+                        <p className="text-[12px] text-brand-muted italic">Strongest posts: {patterns.bestPerformingPattern}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {patterns && !patterns.ready && personaCompleted && (
+                  <div className="card p-5 mt-6 text-center">
+                    <p className="text-sm text-brand-muted">Not enough data yet. {patterns.postsAnalyzed || 0}/3 posts analyzed. Generate {Math.max(0, 3 - (patterns.postsAnalyzed || 0))} more to unlock your writing patterns.</p>
+                  </div>
+                )}
 
                 {!personaCompleted && (
                   <div className="card p-8 text-center">

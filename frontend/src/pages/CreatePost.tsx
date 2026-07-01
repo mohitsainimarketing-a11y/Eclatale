@@ -322,6 +322,10 @@ export default function CreatePost() {
       if (data.error) throw new Error(data.error);
       updateContent(data.content);
       addActivity('wand', label || `Applied: "${instruction.substring(0, 45)}${instruction.length > 45 ? '…' : ''}"`);
+      fetch(`${API_URL}/api/persona-signal`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ userId, postId, action: 'refined', tone, contentType }),
+      }).catch(() => {});
     } catch (err: any) { setError(err.message || 'Refinement failed'); }
     setRefining(false);
   };
@@ -415,6 +419,12 @@ export default function CreatePost() {
     navigator.clipboard.writeText(composerContent);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
     addActivity('copy', 'Copied to clipboard');
+    if (userId) {
+      fetch(`${API_URL}/api/persona-signal`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ userId, postId, action: 'kept', tone, contentType, postLength: composerContent.length }),
+      }).catch(() => {});
+    }
   };
 
   const handleSaveDraft = async () => {
@@ -463,6 +473,10 @@ export default function CreatePost() {
       if (data.error) throw new Error(data.error);
       setPublishResult({ success: true, urn: data.linkedinPostUrn });
       addActivity('send', 'Published to LinkedIn');
+      fetch(`${API_URL}/api/persona-signal`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ userId, postId: activePostId, action: 'kept', tone, contentType, postLength: composerContent.length }),
+      }).catch(() => {});
     } catch (err: any) { setPublishResult({ error: err.message }); }
     setPublishing(false);
   };

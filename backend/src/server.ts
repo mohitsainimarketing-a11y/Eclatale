@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES, TOPIC_SUGGESTION_PROMPT } from '../lib/contentPrompts';
+import { calculateVoiceMatchScore } from '../lib/voiceMatchScore';
 
 dotenv.config();
 
@@ -137,6 +138,18 @@ app.post('/api/persona-signal', async (req, res) => {
   } catch (error: any) {
     console.error('Signal logging error:', error);
     res.status(500).json({ error: error.message || 'Failed to log signal' });
+  }
+});
+
+app.get('/api/voice-match-score', async (req, res) => {
+  try {
+    const userId = (req.query.userId as string) || '';
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    const result = await calculateVoiceMatchScore(supabase, userId);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Voice match score error:', error);
+    res.status(500).json({ error: error.message || 'Failed to calculate voice match score' });
   }
 });
 

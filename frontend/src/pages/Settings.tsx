@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   ArrowLeft, User, Mic, Link2, CreditCard, Key, Bell, Shield,
-  Check, Loader2, ChevronRight, ExternalLink, LogOut, Trash2, Save, Camera,
+  Check, Loader2, ChevronRight, ExternalLink, LogOut, Trash2, Save, Camera, RefreshCw,
 } from 'lucide-react';
 import { SearchableDropdown, ROLES, INDUSTRIES, SENIORITY_LEVELS, TIMEZONES } from '../components/ProfileDropdowns';
 
@@ -14,6 +14,17 @@ const supabase = createClient(
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
 type Section = 'profile' | 'voice' | 'integrations' | 'billing' | 'api' | 'notifications' | 'security';
+
+interface VoiceMatchFactors {
+  hasVoiceSamples: boolean;
+  voiceSampleCount: number;
+  baseline: number;
+  postsKept: number;
+  postsKeptRecent: number;
+  postsKeptOlder: number;
+  refinementsUsed: number;
+  refinementsUsedRecent: number;
+}
 
 const SECTIONS: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: 'profile', label: 'Profile', icon: <User size={16} /> },
@@ -59,6 +70,9 @@ export default function Settings() {
   const [personaHotTake, setPersonaHotTake] = useState('');
   const [personaSamples, setPersonaSamples] = useState<string[]>([]);
   const [personaCompleted, setPersonaCompleted] = useState(false);
+  const [voiceScore, setVoiceScore] = useState<number | null>(null);
+  const [voiceFactors, setVoiceFactors] = useState<VoiceMatchFactors | null>(null);
+  const [voiceScoreLoading, setVoiceScoreLoading] = useState(false);
 
   // LinkedIn state
   const [linkedinConnected, setLinkedinConnected] = useState(false);
@@ -148,7 +162,21 @@ export default function Settings() {
       setLinkedinPicture(liData.picture || '');
     } catch {}
 
+    loadVoiceScore(uid);
     setLoading(false);
+  };
+
+  const loadVoiceScore = async (uid: string) => {
+    setVoiceScoreLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/voice-match-score?userId=${uid}`);
+      const data = await res.json();
+      if (!data.error) {
+        setVoiceScore(data.score);
+        setVoiceFactors(data.factors);
+      }
+    } catch {}
+    setVoiceScoreLoading(false);
   };
 
   const saveProfile = async () => {
@@ -312,10 +340,20 @@ export default function Settings() {
                         onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-bold text-brand-dark leading-tight">
-                        {firstName || lastName ? [firstName, lastName].filter(Boolean).join(' ') : userEmail.split('@')[0]}
-                        {pronouns && <span className="text-sm font-normal text-brand-muted ml-2">({pronouns})</span>}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-base font-bold text-brand-dark leading-tight">
+                          {firstName || lastName ? [firstName, lastName].filter(Boolean).join(' ') : userEmail.split('@')[0]}
+                          {pronouns && <span className="text-sm font-normal text-brand-muted ml-2">({pronouns})</span>}
+                        </p>
+                        {voiceScore !== null && (
+                          <span
+                            title="How closely your kept posts match your voice profile"
+                            className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[11px] font-semibold inline-flex items-center gap-1"
+                          >
+                            <Mic size={10} /> Voice Match {voiceScore}%
+                          </span>
+                        )}
+                      </div>
                       {(role || companyName) && (
                         <p className="text-sm text-brand-muted mt-0.5">{[role, companyName].filter(Boolean).join(' · ')}</p>
                       )}
@@ -515,7 +553,66 @@ export default function Settings() {
                     </div>
                     <a href="/persona-setup" className="btn-secondary text-sm mt-6 inline-flex">Edit Voice Profile</a>
                   </div>
-                ) : (
+                ) : null}
+
+                {/* ── VOICE MATCH SCORE ──────────────────────────────── */}
+                <div className="card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-[11px] font-semibold text-brand-muted uppercase tracking-widest">Voice Match Score</p>
+                      <p className="text-xs text-brand-muted mt-0.5">How closely your kept posts reflect your real voice.</p>
+                    </div>
+                    <button
+                      onClick={() => userId && loadVoiceScore(userId)}
+                      disabled={voiceScoreLoading}
+                      className="btn-ghost text-xs !py-1.5 !px-3 disabled:opacity-50"
+                    >
+                      {voiceScoreLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                      Refresh
+                    </button>
+                  </div>
+
+                  {voiceScore !== null && voiceFactors ? (
+                    <>
+                      <div className="flex items-end gap-2 mb-5">
+                        <span className="text-4xl font-extrabold gradient-text">{voiceScore}</span>
+                        <span className="text-sm text-brand-muted mb-1">/ 100</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-[rgba(124,92,252,0.08)] mb-5 overflow-hidden">
+                        <div className="h-full rounded-full gradient-primary" style={{ width: `${voiceScore}%` }} />
+                      </div>
+                      <div className="space-y-2.5 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-brand-muted">Voice samples</span>
+                          <span className="font-semibold text-brand-dark">
+                            {voiceFactors.hasVoiceSamples ? `${voiceFactors.voiceSampleCount} provided` : 'Not provided'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-brand-muted">Based on posts you've kept</span>
+                          <span className="font-semibold text-brand-dark">{voiceFactors.postsKept} posts</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-brand-muted">Kept in the last 30 days (weighted 3×)</span>
+                          <span className="font-semibold text-brand-dark">{voiceFactors.postsKeptRecent}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-brand-muted">Heavy refinements used</span>
+                          <span className="font-semibold text-brand-dark">{voiceFactors.refinementsUsed}</span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-brand-muted mt-4 leading-relaxed">
+                        Baseline of {voiceFactors.baseline} from {voiceFactors.hasVoiceSamples ? 'having voice samples on file' : 'no voice samples on file'}, plus points for every post you keep (recent posts count 3× more), minus points when you rely heavily on refinements. Capped at 95.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-brand-muted">
+                      {voiceScoreLoading ? 'Calculating…' : 'Generate and keep a few posts to build your voice match score.'}
+                    </p>
+                  )}
+                </div>
+
+                {!personaCompleted && (
                   <div className="card p-8 text-center">
                     <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-white mx-auto mb-4 opacity-60">
                       <Mic size={24} />

@@ -455,7 +455,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ) : (
-                  <a href={`${API_URL}/api/auth/linkedin/connect?userId=${user?.id}`}
+                  <a href={`${API_URL}/api/auth/linkedin/callback?userId=${user?.id}`}
                     className="flex items-center gap-3 p-3 rounded-xl border border-[#0A66C2]/20 hover:bg-[#0A66C2]/5 transition-all">
                     <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white text-xs font-bold">in</div>
                     <div className="flex-1">

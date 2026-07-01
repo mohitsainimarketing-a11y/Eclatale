@@ -258,7 +258,7 @@ export default function Settings() {
     if (!userId) return;
     setLinkedinDisconnecting(true);
     try {
-      await fetch(`${API_URL}/api/linkedin/disconnect`, {
+      await fetch(`${API_URL}/api/linkedin/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId }),
@@ -656,7 +656,7 @@ export default function Settings() {
                           Disconnect
                         </button>
                       ) : (
-                        <a href={`${API_URL}/api/auth/linkedin/connect?userId=${userId}`} className="btn-primary text-xs !py-2 !px-4">
+                        <a href={`${API_URL}/api/auth/linkedin/callback?userId=${userId}`} className="btn-primary text-xs !py-2 !px-4">
                           Connect
                         </a>
                       )}

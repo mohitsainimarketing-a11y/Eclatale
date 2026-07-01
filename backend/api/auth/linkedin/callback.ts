@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -7,7 +8,22 @@ const supabase = createClient(
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { code, state, error: oauthError } = req.query;
+  const { code, state, error: oauthError, userId: connectUserId } = req.query;
+
+  // No `code` present and a userId is given: this is the "start OAuth" step,
+  // kick the user to LinkedIn's authorization screen.
+  if (!code && !oauthError && connectUserId) {
+    const state = crypto.randomBytes(16).toString('hex') + ':' + String(connectUserId);
+    const scopes = ['openid', 'profile', 'email', 'w_member_social'];
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: process.env.LINKEDIN_CLIENT_ID!,
+      redirect_uri: process.env.LINKEDIN_REDIRECT_URI!,
+      state,
+      scope: scopes.join(' '),
+    });
+    return res.redirect(302, `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`);
+  }
 
   if (oauthError) {
     return res.redirect(302, `https://eclatale.com/dashboard?linkedin=error&message=${encodeURIComponent(String(oauthError))}`);

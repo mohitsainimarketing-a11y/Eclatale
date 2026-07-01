@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const stylePrompt = STYLE_PROMPTS[style] || STYLE_PROMPTS['minimal'];
 
     const topicSummary = topic.replace(/[^\w\s]/g, ' ').substring(0, 60).trim();
-    const imagePrompt = `Abstract social media background graphic inspired by the theme: ${topicSummary}. Style: ${stylePrompt}. ABSOLUTE REQUIREMENT: zero text, zero letters, zero numbers, zero words anywhere in the image — none whatsoever. The image will have a text layer composited on top separately. Generate ONLY visual elements: abstract color fields, geometric shapes, gradients, illustrative icons, organic forms, textures. High quality, professional, visually striking composition.`;
+    const imagePrompt = `Abstract social media background graphic inspired by the theme: ${topicSummary}. Style: ${stylePrompt}. ABSOLUTE REQUIREMENT: zero text, zero letters, zero numbers, zero words anywhere in the image, none whatsoever. Do NOT render any typography, headlines, captions, labels, axis labels, chart legends, signage, watermarks, logos, or UI text. Any chart or diagram shapes must be completely unlabeled. The image will have a real text layer composited on top separately. Generate ONLY pure visual elements: abstract color fields, geometric shapes, gradients, illustrative icons, organic forms, textures. High quality, professional, visually striking composition.`;
 
     const togetherRes = await fetch('https://api.together.xyz/v1/images/generations', {
       method: 'POST',

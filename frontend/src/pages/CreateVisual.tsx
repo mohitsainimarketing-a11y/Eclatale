@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
-  ArrowLeft, Sparkles, Check, Loader2, Download, RefreshCw, Link2, Image,
+  ArrowLeft, Sparkles, Check, Loader2, Download, RefreshCw, Link2, Image, Type,
 } from 'lucide-react';
+import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -27,6 +28,7 @@ const STYLES = [
   { id: 'dataviz', label: 'Data Viz', emoji: '📊', desc: 'Charts, patterns' },
 ];
 
+
 export default function CreateVisual() {
   const [userId, setUserId] = useState<string | null>(null);
   const [topic, setTopic] = useState('');
@@ -37,6 +39,12 @@ export default function CreateVisual() {
   const [assetId, setAssetId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [attached, setAttached] = useState(false);
+  const [overlayText, setOverlayText] = useState('');
+  const [compositedUrl, setCompositedUrl] = useState('');
+  const compositeSeq = useRef(0);
+
+  const hasOverlay = OVERLAY_STYLES.has(style);
+  const displayUrl = hasOverlay && compositedUrl ? compositedUrl : imageUrl;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -62,16 +70,26 @@ export default function CreateVisual() {
       if (data.error) throw new Error(data.error);
       setImageUrl(data.imageUrl);
       setAssetId(data.assetId);
+      if (OVERLAY_STYLES.has(style)) setOverlayText(deriveHeadline(topic));
     } catch (err: any) {
       setError(err.message || 'Failed to generate image.');
     }
     setGenerating(false);
   };
 
+  // Re-composite whenever the base image, headline, or style changes (overlay styles only).
+  useEffect(() => {
+    if (!imageUrl || !hasOverlay) { setCompositedUrl(''); return; }
+    const seq = ++compositeSeq.current;
+    compositeOverlay(imageUrl, overlayText, { position: style === 'dataviz' ? 'top' : 'bottom' })
+      .then(url => { if (seq === compositeSeq.current) setCompositedUrl(url); })
+      .catch(() => { if (seq === compositeSeq.current) setCompositedUrl(''); });
+  }, [imageUrl, overlayText, style, hasOverlay]);
+
   const handleDownload = () => {
-    if (!imageUrl) return;
+    if (!displayUrl) return;
     const a = document.createElement('a');
-    a.href = imageUrl;
+    a.href = displayUrl;
     a.download = `eclatale-${format}-${Date.now()}.png`;
     a.click();
   };
@@ -195,7 +213,7 @@ export default function CreateVisual() {
             {/* Image Preview */}
             <div className="card p-3 md:p-4 flex items-center justify-center">
               <img
-                src={imageUrl}
+                src={displayUrl || imageUrl}
                 alt="Generated visual"
                 className="rounded-xl max-w-full"
                 style={{
@@ -206,12 +224,32 @@ export default function CreateVisual() {
               />
             </div>
 
+            {/* Text overlay editor (Bold / Data Viz) */}
+            {hasOverlay && (
+              <div className="card p-4">
+                <label className="text-[11px] font-semibold text-brand-muted uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Type size={12} /> Headline overlay
+                </label>
+                <input
+                  type="text"
+                  value={overlayText}
+                  onChange={e => setOverlayText(e.target.value)}
+                  placeholder="Add a headline or key stat…"
+                  maxLength={90}
+                  className="input !text-sm"
+                />
+                <p className="text-[11px] text-brand-muted mt-1.5">
+                  Rendered as crisp Eclatale typography over the graphic (never baked into the AI image). Edit it, and the preview and download update instantly. Clear it for a text-free visual.
+                </p>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex flex-wrap gap-2.5 justify-center">
               <button onClick={handleDownload} className="btn-primary text-sm !py-3">
                 <Download size={16} /> Download
               </button>
-              <button onClick={() => { setImageUrl(''); setAssetId(null); setAttached(false); handleGenerate(); }}
+              <button onClick={() => { setImageUrl(''); setCompositedUrl(''); setAssetId(null); setAttached(false); handleGenerate(); }}
                 className="btn-secondary text-sm !py-3">
                 <RefreshCw size={16} /> Regenerate
               </button>
@@ -222,7 +260,7 @@ export default function CreateVisual() {
             </div>
 
             <div className="text-center">
-              <button onClick={() => { setImageUrl(''); setAssetId(null); setAttached(false); setTopic(''); setFormat(''); setStyle(''); setError(''); }}
+              <button onClick={() => { setImageUrl(''); setCompositedUrl(''); setOverlayText(''); setAssetId(null); setAttached(false); setTopic(''); setFormat(''); setStyle(''); setError(''); }}
                 className="text-sm text-brand-muted hover:text-brand-purple font-medium transition-colors">Start over</button>
             </div>
           </div>

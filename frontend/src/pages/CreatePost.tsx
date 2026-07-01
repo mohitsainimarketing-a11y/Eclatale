@@ -6,6 +6,7 @@ import {
   Wand2, Undo2, Calendar, PenTool, ExternalLink,
   ChevronDown, X, Download, Eye, EyeOff,
 } from 'lucide-react';
+import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -401,15 +402,39 @@ export default function CreatePost() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setVisualPreview(data.imageUrl);
+      // Default the overlay on for styles that carry a headline.
+      setShowTextOverlay(OVERLAY_STYLES.has(visualStyle));
     } catch (err: any) { setVisualError(err.message || 'Image generation failed'); }
     setGeneratingVisual(false);
   };
 
-  const handleUseVisual = () => {
-    setAttachedImage(visualPreview);
+  // Produce the final image, baking the real headline overlay into the pixels
+  // when the overlay is enabled (so it persists on attach/download, not just preview).
+  const buildFinalVisual = async (): Promise<string | null> => {
+    if (!visualPreview) return null;
+    if (showTextOverlay && composerContent.trim()) {
+      try {
+        return await compositeOverlay(visualPreview, deriveHeadline(composerContent), { position: 'bottom' });
+      } catch { return visualPreview; }
+    }
+    return visualPreview;
+  };
+
+  const handleUseVisual = async () => {
+    const final = await buildFinalVisual();
+    setAttachedImage(final);
     setVisualModalOpen(false);
     setVisualPreview(null);
     addActivity('sparkles', 'Added a visual to the post');
+  };
+
+  const handleDownloadVisual = async () => {
+    const final = await buildFinalVisual();
+    if (!final) return;
+    const a = document.createElement('a');
+    a.href = final;
+    a.download = `visual-${Date.now()}.png`;
+    a.click();
   };
 
   // ── Composer actions ──────────────────────────────────────────────────────
@@ -1071,10 +1096,10 @@ export default function CreatePost() {
                       className="btn-secondary !py-2.5 !px-3.5">
                       <RefreshCw size={13} />
                     </button>
-                    <a href={visualPreview} download={`visual-${Date.now()}.png`}
+                    <button onClick={handleDownloadVisual}
                       className="btn-secondary !py-2.5 !px-3.5 flex items-center">
                       <Download size={13} />
-                    </a>
+                    </button>
                   </div>
                 </div>
               )}

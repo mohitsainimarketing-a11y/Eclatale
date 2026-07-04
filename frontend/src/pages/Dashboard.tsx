@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   BarChart3, FileText, Flame, Trophy, Sparkles, LogOut,
   Home, Zap, User, Clock, ArrowRight, RefreshCw, Copy, Check,
-  Loader2, Target, Settings, ChevronRight, Image, TrendingUp,
+  Loader2, Target, Settings, ChevronRight, Image, TrendingUp, PenTool,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -78,6 +78,7 @@ export default function Dashboard() {
   const [aiGrowth, setAiGrowth] = useState<any>(null);
   const [growthOpen, setGrowthOpen] = useState(false);
   const [growthRefreshing, setGrowthRefreshing] = useState(false);
+  const [patterns, setPatterns] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -153,6 +154,14 @@ export default function Dashboard() {
       .catch(() => {});
 
     loadGrowthScore(userId, false);
+
+    fetch(`${API_URL}/api/intelligence`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ action: 'user-patterns', userId }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d && !d.error) setPatterns(d); })
+      .catch(() => {});
   };
 
   const loadGrowthScore = async (uid: string, refresh: boolean) => {
@@ -367,6 +376,57 @@ export default function Dashboard() {
                 <span className="text-xl font-bold text-brand-dark">{s.value}</span>
               </div>
             ))}
+          </div>
+
+          {/* Writing Insights (Piece 12 — semantic engine, Surface 3) */}
+          <div className="card p-5 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple to-brand-pink flex items-center justify-center text-white">
+                <PenTool size={16} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-brand-dark">Writing insights</h3>
+                <p className="text-[11px] text-brand-muted">Patterns from your own posts</p>
+              </div>
+            </div>
+            {patterns?.ready ? (
+              <div className="space-y-3">
+                {patterns.writingStrengths?.[0] && (
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[rgba(6,214,160,0.05)] border border-brand-teal/10">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-brand-teal uppercase tracking-wide mb-0.5">Strength</p>
+                      <p className="text-[13px] text-brand-dark leading-relaxed">{patterns.writingStrengths[0]}</p>
+                    </div>
+                    <a href={`/create?topic=${encodeURIComponent(patterns.writingStrengths[0])}`}
+                      className="text-[11px] text-brand-teal font-semibold hover:underline flex-shrink-0 whitespace-nowrap">Write about this →</a>
+                  </div>
+                )}
+                {patterns.writingOpportunities?.[0] && (
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[rgba(255,107,53,0.05)] border border-brand-orange/10">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-brand-orange uppercase tracking-wide mb-0.5">Opportunity</p>
+                      <p className="text-[13px] text-brand-dark leading-relaxed">{patterns.writingOpportunities[0]}</p>
+                    </div>
+                    <a href={`/create?topic=${encodeURIComponent(patterns.writingOpportunities[0])}`}
+                      className="text-[11px] text-brand-orange font-semibold hover:underline flex-shrink-0 whitespace-nowrap">Write about this →</a>
+                  </div>
+                )}
+                {(patterns.unusedAngles?.[0] || patterns.recommendedNextPost) && (
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[rgba(124,92,252,0.05)] border border-brand-purple/10">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-brand-purple uppercase tracking-wide mb-0.5">Next post angle</p>
+                      <p className="text-[13px] text-brand-dark leading-relaxed">{patterns.recommendedNextPost || patterns.unusedAngles[0]}</p>
+                    </div>
+                    <a href={`/create?topic=${encodeURIComponent(patterns.recommendedNextPost || patterns.unusedAngles[0])}`}
+                      className="text-[11px] text-brand-purple font-semibold hover:underline flex-shrink-0 whitespace-nowrap">Write about this →</a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-brand-muted text-center py-4">
+                Not enough data yet — generate {Math.max(0, 3 - (patterns?.postsAnalyzed || 0))} more posts to unlock your writing insights.
+              </p>
+            )}
           </div>
 
           {/* Persona CTA */}

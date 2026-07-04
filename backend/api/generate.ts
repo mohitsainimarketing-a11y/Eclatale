@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { topic, tone, contentType, userId } = req.body;
+    const { topic, tone, contentType, userId, styleNudge } = req.body;
     if (!topic || !tone || !contentType || !userId) return res.status(400).json({ error: 'Missing required fields' });
 
     const { data: profile } = await supabase.from('profiles').select('role, domain, goals').eq('id', userId).single();
@@ -36,6 +36,7 @@ ${goalsText}
 
 ${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}
 
+${styleNudge ? `Additional instruction based on this person's own writing patterns: ${styleNudge}\n` : ''}
 ${OUTPUT_RULES}
 
 ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}`;

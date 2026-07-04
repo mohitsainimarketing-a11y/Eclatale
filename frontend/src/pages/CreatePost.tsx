@@ -73,6 +73,34 @@ function AIcon({ type, size = 11 }: { type: ActivityIcon; size?: number }) {
 function uid() { return Math.random().toString(36).slice(2); }
 function nowTime() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
 
+// Pre-generation pattern nudge (Piece 13) — picks one contextual suggestion from
+// the user's own writing-pattern analysis, in priority order.
+function computeNudge(patterns: any): { text: string; instruction: string } | null {
+  if (!patterns?.ready) return null;
+  if (patterns.dominantHookType && !/bold[_ ]?statement/i.test(String(patterns.dominantHookType))) {
+    return {
+      text: `Your recent posts lean on ${patterns.dominantHookType} hooks — want to try a bold statement hook for variety?`,
+      instruction: 'Open with a bold, declarative statement hook instead of the usual style, for variety.',
+    };
+  }
+  if (patterns.unusedAngles?.[0]) {
+    return {
+      text: `You haven't posted about "${patterns.unusedAngles[0]}" yet — this could be a good time.`,
+      instruction: `Where it fits naturally, bring in a perspective on: ${patterns.unusedAngles[0]}.`,
+    };
+  }
+  if (Array.isArray(patterns.writingStrengths) && patterns.writingStrengths.some((s: string) => /data|stat/i.test(s))) {
+    return {
+      text: 'Posts where you included specific data performed strongly for you — consider adding a stat.',
+      instruction: 'Include at least one specific, concrete data point or statistic.',
+    };
+  }
+  if (patterns.writingOpportunities?.[0]) {
+    return { text: patterns.writingOpportunities[0], instruction: patterns.writingOpportunities[0] };
+  }
+  return null;
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function CreatePost() {
@@ -125,6 +153,13 @@ export default function CreatePost() {
 
   // Best time to post (AI-recommended)
   const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string; confidence: string } | null>(null);
+
+  // Writing-pattern nudge (Piece 13) + tone match feedback (Piece 14)
+  const [patterns, setPatterns] = useState<any>(null);
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
+  const [nudgeApplied, setNudgeApplied] = useState(false);
+  const [toneMatch, setToneMatch] = useState<{ match: boolean; matchScore: number; drift: string; suggestion: string } | null>(null);
+  const [checkingToneMatch, setCheckingToneMatch] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleDay, setScheduleDay] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
@@ -192,6 +227,14 @@ export default function CreatePost() {
             if (d.recommendedTimes?.[0]) setScheduleTime(d.recommendedTimes[0]);
           }
         })
+        .catch(() => {});
+      // Writing-pattern analysis, used to power the pre-generation nudge (Piece 13)
+      fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'user-patterns', userId: u.id }),
+      })
+        .then(r => r.json())
+        .then(d => { if (d && !d.error) setPatterns(d); })
         .catch(() => {});
     });
   }, []);
@@ -288,19 +331,36 @@ export default function CreatePost() {
 
   // ── Generate ──────────────────────────────────────────────────────────────
 
+  // Tone match feedback (Piece 14) — compares intended vs actual tone after any
+  // AI generation/refinement, never blocks the composer.
+  const checkToneMatch = useCallback(async (content: string, toneToCheck: string) => {
+    if (!content.trim() || !userId) return;
+    setCheckingToneMatch(true);
+    try {
+      const res = await fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'tone-match', userId, intendedTone: toneToCheck, postContent: content }),
+      });
+      const d = await res.json();
+      if (d && !d.error) setToneMatch(d);
+    } catch { }
+    setCheckingToneMatch(false);
+  }, [userId]);
+
   const handleGenerate = async (topic: string) => {
     if (!topic.trim() || !userId) return;
     setGenerating(true); setError('');
     try {
       const res = await fetch(`${API_URL}/api/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ topic, tone, contentType, userId }),
+        body: JSON.stringify({ topic, tone, contentType, userId, styleNudge: nudgeApplied ? nudge?.instruction : undefined }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       updateContent(data.content);
       setPublishResult(null);
       setActiveFlow(null);
+      setNudgeDismissed(true);
       const label = CONTENT_TYPES.find(c => c.id === contentType)?.label || contentType;
       addActivity('sparkles', `Generated a ${label} about "${topic.substring(0, 50)}${topic.length > 50 ? '…' : ''}"`);
       const { data: inserted } = await supabase.from('posts').insert({
@@ -308,6 +368,7 @@ export default function CreatePost() {
         tone, content_type: contentType, source: 'auto',
       }).select('id').single();
       if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); }
+      checkToneMatch(data.content, tone);
     } catch (err: any) {
       addMsg('bot', `Sorry, couldn't generate: ${err.message || 'unknown error'}`, 'text');
     }
@@ -336,6 +397,7 @@ export default function CreatePost() {
         tone, content_type: contentType, source: 'repurpose',
       }).select('id').single();
       if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); }
+      checkToneMatch(data.content, tone);
     } catch (err: any) {
       addMsg('bot', `Repurpose failed: ${err.message || 'unknown error'}`, 'text');
     }
@@ -344,7 +406,7 @@ export default function CreatePost() {
 
   // ── Refine ────────────────────────────────────────────────────────────────
 
-  const handleRefineWithInstruction = async (instruction: string, label?: string) => {
+  const handleRefineWithInstruction = async (instruction: string, label?: string, toneOverride?: string) => {
     if (!composerContent || !instruction.trim() || !userId) return;
     setRefining(true);
     try {
@@ -360,8 +422,18 @@ export default function CreatePost() {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId, postId, action: 'refined', tone, contentType }),
       }).catch(() => {});
+      checkToneMatch(data.content, toneOverride || tone);
     } catch (err: any) { setError(err.message || 'Refinement failed'); }
     setRefining(false);
+  };
+
+  // One-click tone adjustment from the tone-match inline suggestion (Piece 14).
+  const handleAdjustTone = () => {
+    if (!toneMatch) return;
+    handleRefineWithInstruction(
+      `Adjust the tone to better align with ${currentTone?.label}. ${toneMatch.suggestion}`,
+      'Adjusted tone alignment'
+    );
   };
 
   // ── Chat submit ───────────────────────────────────────────────────────────
@@ -417,7 +489,8 @@ export default function CreatePost() {
     const label = TONES.find(t => t.id === newTone)?.label || newTone;
     handleRefineWithInstruction(
       `Rewrite this in a ${label.toLowerCase()} tone. Keep the same structure, story, and key points.`,
-      `Shifted tone to ${label}`
+      `Shifted tone to ${label}`,
+      newTone
     );
   };
 
@@ -548,6 +621,7 @@ export default function CreatePost() {
   const charColor = charLen > 2900 ? 'text-red-500' : charLen > 2500 ? 'text-amber-500' : 'text-brand-muted';
   const barColor  = charLen > 2900 ? 'bg-red-400' : charLen > 2500 ? 'bg-amber-400' : 'bg-brand-purple';
   const currentTone = TONES.find(t => t.id === tone);
+  const nudge = computeNudge(patterns);
 
   const chatDisabled = !composerContent || activeFlow === 'write' || activeFlow === 'repurpose';
   const chatPlaceholder = activeFlow === 'write' || activeFlow === 'repurpose'
@@ -748,6 +822,15 @@ export default function CreatePost() {
             <span className="text-[12px] font-semibold text-brand-dark leading-none truncate max-w-[130px]">{userName || 'Your Name'}</span>
             <ChevronDown size={11} className="text-brand-muted/40 flex-shrink-0 -ml-1.5" />
             <div className="flex-1 min-w-0" />
+            {toneMatch && composerContent && !checkingToneMatch && (
+              <span
+                title={toneMatch.suggestion || toneMatch.drift || undefined}
+                className={`text-[10px] font-semibold flex items-center gap-0.5 flex-shrink-0 cursor-help ${
+                  toneMatch.matchScore >= 70 ? 'text-brand-teal' : 'text-amber-500'
+                }`}>
+                {currentTone?.label} {toneMatch.matchScore >= 70 ? <>✓ matched</> : <>≈ partial match</>}
+              </span>
+            )}
             <div className="relative flex-shrink-0" ref={toneRef}>
               <button onClick={() => setToneOpen(o => !o)}
                 className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px] hover:bg-[rgba(124,92,252,0.1)] transition-colors cursor-pointer flex items-center gap-1">
@@ -858,6 +941,24 @@ export default function CreatePost() {
                   />
                   <p className="text-[10px] text-brand-muted/50 mt-1.5">⌘ Enter to generate</p>
                 </div>
+                {nudge && !nudgeDismissed && (
+                  <div className={`rounded-xl border p-3 flex items-start gap-2.5 transition-colors ${
+                    nudgeApplied ? 'border-brand-purple/30 bg-[rgba(124,92,252,0.07)]' : 'border-[rgba(124,92,252,0.15)] bg-[rgba(124,92,252,0.03)]'
+                  }`}>
+                    <Lightbulb size={14} className="text-brand-purple flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] text-brand-dark leading-relaxed">{nudge.text}</p>
+                      <button onClick={() => setNudgeApplied(a => !a)}
+                        className={`text-[11px] font-semibold mt-1.5 transition-colors ${nudgeApplied ? 'text-brand-purple' : 'text-brand-muted hover:text-brand-purple'}`}>
+                        {nudgeApplied ? '✓ Will apply to this post' : 'Yes, try it →'}
+                      </button>
+                    </div>
+                    <button onClick={() => setNudgeDismissed(true)}
+                      className="text-brand-muted hover:text-brand-purple flex-shrink-0 p-0.5">
+                      <X size={13} />
+                    </button>
+                  </div>
+                )}
                 <button onClick={handleWriteGenerate} disabled={!writeTopic.trim() || generating}
                   className="btn-primary w-full !py-3 text-sm">
                   {generating
@@ -944,6 +1045,19 @@ export default function CreatePost() {
                   />
                 )}
               </div>
+
+              {/* Tone match suggestion (Piece 14) */}
+              {toneMatch && toneMatch.matchScore < 70 && composerContent && !checkingToneMatch && (
+                <div className="mx-5 mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5">
+                  <p className="text-[12px] text-amber-700 leading-snug">
+                    {toneMatch.drift || `This reads a bit different from ${currentTone?.label}`} — want me to adjust?
+                  </p>
+                  <button onClick={handleAdjustTone} disabled={refining}
+                    className="text-[11px] font-semibold text-amber-700 hover:underline flex-shrink-0 whitespace-nowrap disabled:opacity-50">
+                    Adjust →
+                  </button>
+                </div>
+              )}
 
               {/* Visual attachment */}
               <div className="px-5 pb-5">

@@ -1,10 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import Anthropic from '@anthropic-ai/sdk';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// FLUX.1-schnell hallucinates garbled pseudo-text when the prompt reads like a
+// caption/headline it should "depict" (e.g. "inspired by the theme: <topic>").
+// Abstracting the topic into non-caption-shaped visual/mood concepts first
+// removes anything phrase-like for the model to echo back as fake typography.
+async function abstractVisualTheme(topic: string): Promise<string> {
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5',
+    max_tokens: 100,
+    messages: [{
+      role: 'user',
+      content: `Convert this post topic into 5-7 abstract visual/mood descriptors for a background graphic (colors, shapes, motion, emotional tone). Do NOT write a sentence, caption, or headline. Comma-separated concept fragments only, no punctuation besides commas, nothing that reads like text meant to be displayed. Topic: "${topic}"`,
+    }],
+  });
+  const text = message.content[0].type === 'text' ? message.content[0].text : '';
+  return text.replace(/[."\n]/g, ' ').trim().substring(0, 200) || topic.replace(/[^\w\s]/g, ' ').substring(0, 60).trim();
+}
 
 const SIZES: Record<string, { width: number; height: number }> = {
   'square': { width: 1024, height: 1024 },
@@ -54,8 +73,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const size = SIZES[format] || SIZES['square'];
     const stylePrompt = STYLE_PROMPTS[style] || STYLE_PROMPTS['minimal'];
 
-    const topicSummary = topic.replace(/[^\w\s]/g, ' ').substring(0, 60).trim();
-    const imagePrompt = `Abstract social media background graphic inspired by the theme: ${topicSummary}. Style: ${stylePrompt}. ABSOLUTE REQUIREMENT: zero text, zero letters, zero numbers, zero words anywhere in the image, none whatsoever. Do NOT render any typography, headlines, captions, labels, axis labels, chart legends, signage, watermarks, logos, or UI text. Any chart or diagram shapes must be completely unlabeled. The image will have a real text layer composited on top separately. Generate ONLY pure visual elements: abstract color fields, geometric shapes, gradients, illustrative icons, organic forms, textures. High quality, professional, visually striking composition.`;
+    let visualTheme: string;
+    try {
+      visualTheme = await abstractVisualTheme(topic);
+    } catch {
+      visualTheme = topic.replace(/[^\w\s]/g, ' ').substring(0, 60).trim();
+    }
+    const imagePrompt = `Abstract social media background graphic evoking these visual concepts: ${visualTheme}. Style: ${stylePrompt}. ABSOLUTE REQUIREMENT: zero text, zero letters, zero numbers, zero words anywhere in the image, none whatsoever. Do NOT render any typography, headlines, captions, labels, axis labels, chart legends, signage, watermarks, logos, or UI text. Any chart or diagram shapes must be completely unlabeled. The image will have a real text layer composited on top separately. Generate ONLY pure visual elements: abstract color fields, geometric shapes, gradients, illustrative icons, organic forms, textures. High quality, professional, visually striking composition.`;
 
     const togetherRes = await fetch('https://api.together.xyz/v1/images/generations', {
       method: 'POST',

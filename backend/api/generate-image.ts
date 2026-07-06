@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+import { getDateContext } from '../lib/dateContext';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -16,6 +17,7 @@ async function abstractVisualTheme(topic: string): Promise<string> {
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
     max_tokens: 100,
+    system: getDateContext(),
     messages: [{
       role: 'user',
       content: `Convert this post topic into 5-7 abstract visual/mood descriptors for a background graphic (colors, shapes, motion, emotional tone). Do NOT write a sentence, caption, or headline. Comma-separated concept fragments only, no punctuation besides commas, nothing that reads like text meant to be displayed. Topic: "${topic}"`,

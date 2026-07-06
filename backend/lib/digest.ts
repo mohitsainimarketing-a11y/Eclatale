@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { getDateContext } from './dateContext';
 
 export interface DigestData {
   userId: string;
@@ -108,6 +109,7 @@ No em dashes, en dashes, or arrows. Return ONLY valid JSON.`;
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 900,
+    system: getDateContext(),
     messages: [{ role: 'user', content: prompt }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';

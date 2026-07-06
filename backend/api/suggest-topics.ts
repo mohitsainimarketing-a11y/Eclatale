@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { TOPIC_SUGGESTION_PROMPT } from '../lib/contentPrompts';
+import { getDateContext } from '../lib/dateContext';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -24,9 +25,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);
 
-    const topicPrompt = TOPIC_SUGGESTION_PROMPT
+    const topicPrompt = `${getDateContext()}
+
+${TOPIC_SUGGESTION_PROMPT
       .replace("${'{role}'}", role)
-      .replace("${'{industry}'}", industry);
+      .replace("${'{industry}'}", industry)}`;
 
     const userMessage = `Suggest 5 timely, high-signal content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}.
 

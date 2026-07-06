@@ -9,6 +9,7 @@ import { readCache, writeCache } from '../lib/intelligenceCache';
 import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/digest';
 import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
 import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
+import { getDateContext } from '../lib/dateContext';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -38,7 +39,7 @@ async function competitorIntelligence(userId: string, forceRefresh: boolean) {
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1500,
-    system: COMPETITOR_INTELLIGENCE_SYSTEM,
+    system: `${getDateContext()}\n\n${COMPETITOR_INTELLIGENCE_SYSTEM}`,
     messages: [{ role: 'user', content: buildCompetitorIntelligenceUserPrompt(role, industry, goalsText) }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
@@ -76,6 +77,7 @@ async function growthScore(userId: string, forceRefresh: boolean) {
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 500,
+    system: getDateContext(),
     messages: [{ role: 'user', content: buildGrowthScorePrompt(d) }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
@@ -210,7 +212,7 @@ async function bestTimeToPost(userId: string, forceRefresh: boolean) {
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
     max_tokens: 600,
-    system: BEST_TIME_SYSTEM,
+    system: `${getDateContext()}\n\n${BEST_TIME_SYSTEM}`,
     messages: [{ role: 'user', content: buildBestTimeUserPrompt(role, industry, hasHistory, historySummary) }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';

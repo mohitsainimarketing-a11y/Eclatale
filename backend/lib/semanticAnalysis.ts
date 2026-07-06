@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { getDateContext } from './dateContext';
 
 function parseJsonObject(text: string): any {
   const match = text.match(/\{[\s\S]*\}/);
@@ -76,7 +77,7 @@ export async function analyzePost(
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
-    system: ANALYZE_POST_PROMPT,
+    system: `${getDateContext()}\n\n${ANALYZE_POST_PROMPT}`,
     messages: [{ role: 'user', content: `Post to analyze:\n\n${postContent}` }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
@@ -208,7 +209,7 @@ export async function analyzeUserPatterns(
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1200,
-    system: USER_PATTERNS_INSTRUCTIONS,
+    system: `${getDateContext()}\n\n${USER_PATTERNS_INSTRUCTIONS}`,
     messages: [{ role: 'user', content: `${context}\n\nWriting pattern data across their last ${rows.length} posts (oldest to newest):\n${JSON.stringify(compact)}` }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
@@ -254,6 +255,7 @@ Return ONLY valid JSON, no other text.`;
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
     max_tokens: 400,
+    system: getDateContext(),
     messages: [{ role: 'user', content: prompt }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';

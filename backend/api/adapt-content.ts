@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, OUTPUT_RULES } from '../lib/contentPrompts';
+import { getDateContext } from '../lib/dateContext';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -31,7 +32,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const targetLabel = FORMAT_LABELS[targetFormat] || targetFormat;
     const formatInstructions = CONTENT_TYPE_INSTRUCTIONS[targetFormat] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post'];
 
-    const systemPrompt = `${SYSTEM_PROMPT_BASE}
+    const systemPrompt = `${getDateContext()}
+
+${SYSTEM_PROMPT_BASE}
 
 ${personaFragment ? personaFragment + '\n' : ''}You are adapting existing content to a new format. Your job is to preserve the core insight, specific facts, and the author's authentic voice — while restructuring completely for the target platform's conventions.
 

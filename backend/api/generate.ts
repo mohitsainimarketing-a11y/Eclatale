@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES } from '../lib/contentPrompts';
+import { getDateContext } from '../lib/dateContext';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -27,7 +28,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);
 
-    const systemPrompt = `${SYSTEM_PROMPT_BASE}
+    const systemPrompt = `${getDateContext()}
+
+${SYSTEM_PROMPT_BASE}
 
 ${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Role: ${role}

@@ -10,6 +10,8 @@ import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/diges
 import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
 import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
 import { getDateContext } from '../lib/dateContext';
+import { calculateAuthenticityScore } from '../lib/authenticityScore';
+import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -245,6 +247,29 @@ async function bestTimeToPost(userId: string, forceRefresh: boolean) {
   return payload;
 }
 
+// Content Authenticity Score: factual accuracy + topic freshness + voice match,
+// run as three parallel Claude calls. Cached per-post for 10 minutes so a quick
+// "regenerate" click doesn't re-run all three checks.
+async function authenticityScore(
+  userId: string, postId: string, postContent: string, topic: string, forceRefresh: boolean
+) {
+  const cacheKind = `authenticity-${postId}`;
+  if (!forceRefresh) {
+    const cached = await readCache(supabase, userId, cacheKind, 10 * 60 * 1000);
+    if (cached) return cached;
+  }
+
+  const { role, industry } = await getProfile(userId);
+  const personaContext = await buildPersonaPrompt(supabase, userId);
+
+  const result = await calculateAuthenticityScore(anthropic, postContent, role, industry, personaContext);
+  const payload = { ...result, generatedAt: new Date().toISOString(), cached: false };
+
+  await writeCache(supabase, userId, cacheKind, result);
+
+  return payload;
+}
+
 // Admin-triggered digest for a single user (testing). Optionally sends the email.
 async function triggerDigest(targetUserId: string, doSend: boolean) {
   const data = await buildDigestData(anthropic, supabase, targetUserId);
@@ -368,6 +393,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const postContent = String(body.postContent || '');
         if (!intendedTone || !postContent) return res.status(400).json({ error: 'Missing intendedTone or postContent' });
         const result = await compareIntendedVsActualTone(anthropic, intendedTone, postContent);
+        return res.json(result);
+      }
+      case 'authenticity-score': {
+        const postId = String(body.postId || '');
+        const postContent = String(body.postContent || '');
+        const topic = String(body.topic || '');
+        if (!postId || !postContent) return res.status(400).json({ error: 'Missing postId or postContent' });
+        const result = await authenticityScore(userId, postId, postContent, topic, forceRefresh);
         return res.json(result);
       }
       default:

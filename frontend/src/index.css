@@ -122,7 +122,7 @@ body {
   width: 100%;
   min-height: 44px;
 }
-.input::placeholder { color: #C4C4C4; }
+.input::placeholder { color: #9CA3AF; }
 .input:focus {
   outline: none;
   border-color: #7C5CFC;

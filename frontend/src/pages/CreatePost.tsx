@@ -59,6 +59,37 @@ interface ChatMsg {
   ideas?: string[];
 }
 
+interface AuthenticityScore {
+  overallScore: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+  readyToPost: boolean;
+  topSuggestion: string;
+  accuracy: { score: number; claims: { claim: string; status: string; note: string }[]; summary: string };
+  freshness: { score: number; assessment: string; topicSaturation: string; suggestion: string; reasoning: string };
+  voice: { score: number; matchLevel: string; specificMatches: string[]; specificMismatches: string[]; suggestion: string };
+}
+
+function scoreColor(score: number): string {
+  return score >= 80 ? '#06D6A0' : score >= 60 ? '#F59E0B' : '#EF4444';
+}
+
+function AuthenticityRing({ score }: { score: number }) {
+  const c = 2 * Math.PI * 45;
+  const color = scoreColor(score);
+  return (
+    <div className="relative w-16 h-16 flex-shrink-0">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="9" />
+        <circle cx="50" cy="50" r="45" fill="none" stroke={color} strokeWidth="9" strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={c - (score / 100) * c} style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-base font-extrabold text-brand-dark">{score}</span>
+      </div>
+    </div>
+  );
+}
+
 function AIcon({ type, size = 11 }: { type: ActivityIcon; size?: number }) {
   const cls = 'text-brand-purple';
   if (type === 'sparkles') return <Sparkles size={size} className={cls} />;
@@ -160,6 +191,9 @@ export default function CreatePost() {
   const [nudgeApplied, setNudgeApplied] = useState(false);
   const [toneMatch, setToneMatch] = useState<{ match: boolean; matchScore: number; drift: string; suggestion: string } | null>(null);
   const [checkingToneMatch, setCheckingToneMatch] = useState(false);
+  const [authScore, setAuthScore] = useState<AuthenticityScore | null>(null);
+  const [showAuthLoading, setShowAuthLoading] = useState(false);
+  const [lastTopic, setLastTopic] = useState('');
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleDay, setScheduleDay] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
@@ -278,6 +312,7 @@ export default function CreatePost() {
   // ── Card clicks ───────────────────────────────────────────────────────────
 
   const handleCardIdeas = async () => {
+    setActiveFlow(null);
     setIdeasView(true);
     setIdeasList([]);
     setLoadingIdeas(true);
@@ -293,22 +328,30 @@ export default function CreatePost() {
   };
 
   const handleCardWrite = () => {
+    setIdeasView(false);
     setWriteTopic('');
     setActiveFlow('write');
   };
 
   const handleCardRepurpose = () => {
+    setIdeasView(false);
     setRepurposeText('');
     setActiveFlow('repurpose');
   };
 
   const handleCardImprove = () => {
+    setIdeasView(false);
     if (composerContent) {
       setActiveFlow('improve');
     } else {
       setWriteTopic('');
       setActiveFlow('write');
     }
+  };
+
+  const closeActionPanel = () => {
+    setActiveFlow(null);
+    setIdeasView(false);
   };
 
   const handleWriteGenerate = () => {
@@ -347,6 +390,28 @@ export default function CreatePost() {
     setCheckingToneMatch(false);
   }, [userId]);
 
+  // Content Authenticity Score (factual accuracy + topic freshness + voice match).
+  // Runs in the background after generation — never blocks reading/editing the post.
+  const checkAuthenticityScore = useCallback((postIdToCheck: string | null, content: string, topic: string) => {
+    if (!postIdToCheck || !content.trim() || !userId) return;
+    setAuthScore(null);
+    const loadingTimer = setTimeout(() => setShowAuthLoading(true), 1200);
+    fetch(`${API_URL}/api/intelligence`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ action: 'authenticity-score', userId, postId: postIdToCheck, postContent: content, topic }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d && !d.error) setAuthScore(d); })
+      .catch(() => {})
+      .finally(() => { clearTimeout(loadingTimer); setShowAuthLoading(false); });
+  }, [userId]);
+
+  const handleFixSuggestion = (suggestion: string) => {
+    if (!suggestion) return;
+    setChatInput(suggestion);
+    setMobileView('compose');
+  };
+
   const handleGenerate = async (topic: string) => {
     if (!topic.trim() || !userId) return;
     setGenerating(true); setError('');
@@ -367,7 +432,7 @@ export default function CreatePost() {
         user_id: userId, content: data.content, topic,
         tone, content_type: contentType, source: 'auto',
       }).select('id').single();
-      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); }
+      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); setLastTopic(topic); checkAuthenticityScore(inserted.id, data.content, topic); }
       checkToneMatch(data.content, tone);
     } catch (err: any) {
       addMsg('bot', `Sorry, couldn't generate: ${err.message || 'unknown error'}`, 'text');
@@ -396,7 +461,7 @@ export default function CreatePost() {
         user_id: userId, content: data.content, topic: 'Repurposed content',
         tone, content_type: contentType, source: 'repurpose',
       }).select('id').single();
-      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); }
+      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); setLastTopic('Repurposed content'); checkAuthenticityScore(inserted.id, data.content, 'Repurposed content'); }
       checkToneMatch(data.content, tone);
     } catch (err: any) {
       addMsg('bot', `Repurpose failed: ${err.message || 'unknown error'}`, 'text');
@@ -423,6 +488,7 @@ export default function CreatePost() {
         body: JSON.stringify({ userId, postId, action: 'refined', tone, contentType }),
       }).catch(() => {});
       checkToneMatch(data.content, toneOverride || tone);
+      checkAuthenticityScore(postId, data.content, lastTopic);
     } catch (err: any) { setError(err.message || 'Refinement failed'); }
     setRefining(false);
   };
@@ -627,10 +693,8 @@ export default function CreatePost() {
   const chatPlaceholder = activeFlow === 'write' || activeFlow === 'repurpose'
     ? 'Use the panel on the right →'
     : !composerContent
-    ? 'Generate a post first, then ask me to refine it'
-    : activeFlow === 'improve'
-    ? 'Or type a custom improvement instruction…'
-    : 'e.g. make the hook stronger, add a stat, shorten this…';
+    ? 'Ask me to find ideas, write a post, or repurpose content…'
+    : 'Ask me to improve this post, make it shorter, change the tone…';
 
   const composerPlaceholder = contentType !== 'linkedin-post' && !composerContent
     ? `Generate a post first — switch here to see it adapted as a ${CONTENT_TYPES.find(c => c.id === contentType)?.label}.`
@@ -749,7 +813,7 @@ export default function CreatePost() {
                           {msg.activityIcon && <AIcon type={msg.activityIcon} />}
                         </div>
                         <span className="text-[11px] text-brand-muted flex-1 leading-tight">{msg.content}</span>
-                        <span className="text-[10px] text-brand-muted/40 flex-shrink-0 tabular-nums">{msg.time}</span>
+                        <span className="text-[10px] text-brand-muted flex-shrink-0 tabular-nums">{msg.time}</span>
                       </div>
                     );
                   }
@@ -820,7 +884,7 @@ export default function CreatePost() {
               : <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">{userInitials || 'Y'}</div>
             }
             <span className="text-[12px] font-semibold text-brand-dark leading-none truncate max-w-[130px]">{userName || 'Your Name'}</span>
-            <ChevronDown size={11} className="text-brand-muted/40 flex-shrink-0 -ml-1.5" />
+            <ChevronDown size={11} className="text-brand-muted flex-shrink-0 -ml-1.5" />
             <div className="flex-1 min-w-0" />
             {toneMatch && composerContent && !checkingToneMatch && (
               <span
@@ -858,17 +922,36 @@ export default function CreatePost() {
             </div>
           </div>
 
+          {/* Action switcher pill strip — shown whenever an action panel is open */}
+          {(ideasView || activeFlow === 'write' || activeFlow === 'repurpose' || activeFlow === 'improve') && (
+            <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.05)] flex items-center gap-1.5 bg-white/70 overflow-x-auto">
+              {[
+                { key: 'ideas', emoji: '💡', label: 'Ideas', onClick: handleCardIdeas, active: ideasView, dim: false },
+                { key: 'write', emoji: '✍️', label: 'Write', onClick: handleCardWrite, active: activeFlow === 'write', dim: false },
+                { key: 'repurpose', emoji: '♻️', label: 'Repurpose', onClick: handleCardRepurpose, active: activeFlow === 'repurpose', dim: false },
+                { key: 'improve', emoji: '⚡', label: 'Improve', onClick: handleCardImprove, active: activeFlow === 'improve', dim: !composerContent },
+              ].map(tab => (
+                <button key={tab.key} onClick={tab.onClick}
+                  className={`text-[11px] font-semibold px-3 py-1.5 rounded-full flex items-center gap-1 flex-shrink-0 transition-all ${
+                    tab.active ? 'gradient-primary text-white' : tab.dim ? 'text-brand-muted bg-[rgba(0,0,0,0.03)] opacity-50' : 'text-brand-dark bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(124,92,252,0.08)]'
+                  }`}>
+                  <span>{tab.emoji}</span> {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Right panel — 4 modes: ideas / write / repurpose / composer (with optional improve strip) */}
           {ideasView ? (
 
             /* ── IDEAS (LinkedIn-style cards) ─────────────────────────── */
             <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
-              <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => setIdeasView(false)}
-                  className="p-1 -ml-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
-                  <ArrowLeft size={15} />
-                </button>
+              <div className="flex items-center justify-between mb-4">
                 <span className="text-[12px] font-bold text-brand-dark">Topic ideas for you</span>
+                <button onClick={closeActionPanel}
+                  className="p-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
+                  <X size={15} />
+                </button>
               </div>
               {loadingIdeas ? (
                 <div className="flex flex-col items-center justify-center h-48 gap-3">
@@ -892,17 +975,17 @@ export default function CreatePost() {
                               </div>
                           }
                           <div className="flex-1 min-w-0">
-                            <div className="text-[12px] font-semibold leading-tight truncate" style={{ color: 'rgba(0,0,0,0.9)' }}>{userName || 'Your Name'}</div>
-                            {userRole && <div className="text-[10px] leading-snug mt-0.5 line-clamp-1" style={{ color: 'rgba(0,0,0,0.6)' }}>{userRole}</div>}
-                            <div className="text-[10px] mt-0.5" style={{ color: 'rgba(0,0,0,0.6)' }}>Just now · 🌐</div>
+                            <div className="text-[12px] font-semibold leading-tight truncate" style={{ color: '#1A1A2E' }}>{userName || 'Your Name'}</div>
+                            {userRole && <div className="text-[10px] leading-snug mt-0.5 line-clamp-1" style={{ color: '#6B7280' }}>{userRole}</div>}
+                            <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Just now · 🌐</div>
                           </div>
                         </div>
-                        <p className="text-[13px] leading-[1.55] line-clamp-3 flex-1" style={{ color: 'rgba(0,0,0,0.9)' }}>{idea}</p>
+                        <p className="text-[13px] leading-[1.55] line-clamp-3 flex-1" style={{ color: '#1A1A2E' }}>{idea}</p>
                       </div>
                       <div className="px-3 py-2 flex items-center justify-between border-t flex-shrink-0" style={{ borderColor: '#E0E0E0' }}>
                         <div className="flex items-center gap-3">
-                          <span className="text-[11px] font-medium select-none" style={{ color: '#666' }}>👍 Like</span>
-                          <span className="text-[11px] font-medium select-none" style={{ color: '#666' }}>💬</span>
+                          <span className="text-[11px] font-medium select-none" style={{ color: '#6B7280' }}>👍 Like</span>
+                          <span className="text-[11px] font-medium select-none" style={{ color: '#6B7280' }}>💬</span>
                         </div>
                         <button onClick={() => handleIdeaSelect(idea)}
                           className="text-[11px] font-semibold text-white px-3 py-1 rounded-full transition-all hover:brightness-110 active:scale-95 flex-shrink-0"
@@ -920,12 +1003,12 @@ export default function CreatePost() {
 
             /* ── WRITE A POST ──────────────────────────────────────────── */
             <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
-              <div className="flex items-center gap-2 mb-5">
-                <button onClick={() => setActiveFlow(null)}
-                  className="p-1 -ml-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
-                  <ArrowLeft size={15} />
-                </button>
+              <div className="flex items-center justify-between mb-5">
                 <span className="text-[12px] font-bold text-brand-dark">Write a post</span>
+                <button onClick={closeActionPanel}
+                  className="p-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
+                  <X size={15} />
+                </button>
               </div>
               <div className="space-y-4">
                 <div>
@@ -939,7 +1022,7 @@ export default function CreatePost() {
                     className="input !text-[13px] !min-h-[110px] !resize-none w-full !leading-relaxed"
                     autoFocus
                   />
-                  <p className="text-[10px] text-brand-muted/50 mt-1.5">⌘ Enter to generate</p>
+                  <p className="text-[10px] text-brand-muted mt-1.5">⌘ Enter to generate</p>
                 </div>
                 {nudge && !nudgeDismissed && (
                   <div className={`rounded-xl border p-3 flex items-start gap-2.5 transition-colors ${
@@ -972,12 +1055,12 @@ export default function CreatePost() {
 
             /* ── REPURPOSE ─────────────────────────────────────────────── */
             <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
-              <div className="flex items-center gap-2 mb-5">
-                <button onClick={() => setActiveFlow(null)}
-                  className="p-1 -ml-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
-                  <ArrowLeft size={15} />
-                </button>
+              <div className="flex items-center justify-between mb-5">
                 <span className="text-[12px] font-bold text-brand-dark">Repurpose content</span>
+                <button onClick={closeActionPanel}
+                  className="p-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
+                  <X size={15} />
+                </button>
               </div>
               <div className="space-y-4">
                 <div>
@@ -1009,7 +1092,7 @@ export default function CreatePost() {
                 <div className="px-5 pt-4 pb-3.5 border-b border-[rgba(124,92,252,0.1)] bg-[rgba(124,92,252,0.025)]">
                   <div className="flex items-center justify-between mb-2.5">
                     <span className="text-[11px] font-bold text-brand-dark">How would you like to improve it?</span>
-                    <button onClick={() => setActiveFlow(null)}
+                    <button onClick={closeActionPanel}
                       className="w-5 h-5 rounded-md hover:bg-[rgba(124,92,252,0.08)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
                       <X size={12} />
                     </button>
@@ -1022,7 +1105,7 @@ export default function CreatePost() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-[10px] text-brand-muted/60">Or type a custom instruction in the chat below ↓</p>
+                  <p className="text-[10px] text-brand-muted">Or type a custom instruction in the chat below ↓</p>
                 </div>
               )}
 
@@ -1041,7 +1124,7 @@ export default function CreatePost() {
                     value={composerContent}
                     onChange={e => setComposerContent(e.target.value)}
                     placeholder={composerPlaceholder}
-                    className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-brand-muted/30 font-[inherit] min-h-[220px]"
+                    className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-[#9CA3AF] font-[inherit] min-h-[220px]"
                   />
                 )}
               </div>
@@ -1056,6 +1139,60 @@ export default function CreatePost() {
                     className="text-[11px] font-semibold text-amber-700 hover:underline flex-shrink-0 whitespace-nowrap disabled:opacity-50">
                     Adjust →
                   </button>
+                </div>
+              )}
+
+              {/* Content Authenticity Score */}
+              {composerContent && (showAuthLoading || authScore) && (
+                <div className="mx-5 mb-4">
+                  {showAuthLoading && !authScore ? (
+                    <div className="flex items-center gap-1.5 text-[11px] text-brand-muted px-1">
+                      <span>Checking authenticity</span>
+                      <span className="flex gap-0.5">
+                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </span>
+                    </div>
+                  ) : authScore && (
+                    <div className="card !p-4 animate-fadeIn">
+                      <div className="flex items-start gap-4">
+                        <AuthenticityRing score={authScore.overallScore} />
+                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0 mt-1"
+                          style={{ background: scoreColor(authScore.overallScore) }}>
+                          {authScore.grade}
+                        </span>
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-[11px] font-bold text-brand-dark uppercase tracking-wide">Authenticity Score</span>
+                            <span title="Eclatale checks your post for factual accuracy, topic freshness, and voice consistency before you publish. This helps you post with confidence."
+                              className="w-3.5 h-3.5 rounded-full bg-[rgba(124,92,252,0.1)] text-brand-purple text-[9px] font-bold flex items-center justify-center cursor-help flex-shrink-0">?</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.accuracy.score) }} />
+                            <span>✓ Factual Accuracy: {authScore.accuracy.score}/100</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.freshness.score) }} />
+                            <span>↻ Topic Freshness: {authScore.freshness.score}/100</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.voice.score) }} />
+                            <span>◉ Voice Match: {authScore.voice.score}/100</span>
+                          </div>
+                        </div>
+                      </div>
+                      {authScore.overallScore < 70 && authScore.topSuggestion && (
+                        <div className="mt-3 pt-3 border-t border-[rgba(124,92,252,0.08)] flex items-center justify-between gap-3">
+                          <p className="text-[11px] text-brand-muted leading-relaxed">Tip: {authScore.topSuggestion}</p>
+                          <button onClick={() => handleFixSuggestion(authScore.topSuggestion)}
+                            className="text-[11px] font-semibold text-brand-purple hover:underline flex-shrink-0 whitespace-nowrap">
+                            Fix this →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1093,7 +1230,7 @@ export default function CreatePost() {
                     className={`w-full border-2 border-dashed rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[12px] font-medium ${
                       composerContent
                         ? 'border-[rgba(124,92,252,0.2)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-purple cursor-pointer'
-                        : 'border-[rgba(0,0,0,0.06)] text-brand-muted/30 cursor-not-allowed'
+                        : 'border-[rgba(0,0,0,0.06)] text-[#9CA3AF] cursor-not-allowed'
                     }`}>
                     <Image size={14} />
                     Add visual
@@ -1165,13 +1302,27 @@ export default function CreatePost() {
                   )}
                 </div>
                 <div className="flex-1" />
-                <button onClick={handlePublish}
-                  disabled={!composerContent || publishing || !!publishResult?.success}
-                  className="btn-primary !py-2.5 !px-5 text-xs disabled:opacity-40 shadow-[0_2px_12px_rgba(124,92,252,0.25)]">
-                  {publishing ? <><Loader2 size={13} className="animate-spin" /> Publishing…</>
-                    : publishResult?.success ? <><Check size={13} /> Published!</>
-                    : <><Send size={13} /> Post to LinkedIn</>}
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button onClick={handlePublish}
+                    disabled={!composerContent || publishing || !!publishResult?.success}
+                    className="btn-primary !py-2.5 !px-5 text-xs disabled:opacity-40 shadow-[0_2px_12px_rgba(124,92,252,0.25)]">
+                    {publishing ? <><Loader2 size={13} className="animate-spin" /> Publishing…</>
+                      : publishResult?.success ? <><Check size={13} /> Published!</>
+                      : <><Send size={13} /> Post to LinkedIn</>}
+                  </button>
+                  {authScore && !publishResult?.success && (
+                    authScore.overallScore >= 80 ? (
+                      <span className="text-[10px] font-semibold text-brand-teal">✓ Authenticity verified</span>
+                    ) : authScore.overallScore >= 60 ? (
+                      <span className="text-[10px] font-semibold text-amber-500">⚠ Review suggestions before posting</span>
+                    ) : (
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-semibold text-red-500">✗ Low authenticity score</span>
+                        <button onClick={handlePublish} className="text-[10px] font-semibold text-brand-muted hover:text-brand-dark underline">Post anyway</button>
+                      </span>
+                    )
+                  )}
+                </div>
               </div>
 
               {composerContent && bestTime && bestTime.recommendedDays.length > 0 && (

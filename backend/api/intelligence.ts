@@ -10,6 +10,7 @@ import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/diges
 import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
 import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
 import { getDateContext } from '../lib/dateContext';
+import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { calculateAuthenticityScore } from '../lib/authenticityScore';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 
@@ -38,10 +39,12 @@ async function competitorIntelligence(userId: string, forceRefresh: boolean) {
   }
 
   const { role, industry, goalsText } = await getProfile(userId);
+  const trendResult = await getTrendContext(anthropic, supabase, industry, role);
+  const trendFragment = buildTrendPromptFragment(trendResult, industry);
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1500,
-    system: `${getDateContext()}\n\n${COMPETITOR_INTELLIGENCE_SYSTEM}`,
+    system: `${getDateContext()}\n\n${trendFragment ? trendFragment + '\n\n' : ''}${COMPETITOR_INTELLIGENCE_SYSTEM}`,
     messages: [{ role: 'user', content: buildCompetitorIntelligenceUserPrompt(role, industry, goalsText) }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES } from '../lib/contentPrompts';
 import { getDateContext } from '../lib/dateContext';
+import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -28,6 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const goalsText = goals.length > 0 ? `Their growth goals are: ${goals.join(', ')}.` : '';
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);
+    const trendResult = await getTrendContext(anthropic, supabase, industry, role);
+    const trendFragment = buildTrendPromptFragment(trendResult, industry);
 
     const systemPrompt = `${getDateContext()}
 
@@ -38,6 +41,7 @@ ${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Industry: ${industry}
 ${goalsText}
 
+${trendFragment ? trendFragment + '\n' : ''}
 ${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}
 
 ${OUTPUT_RULES}

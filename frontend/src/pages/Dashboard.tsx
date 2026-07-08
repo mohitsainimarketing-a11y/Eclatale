@@ -65,7 +65,7 @@ export default function Dashboard() {
   const [hasProfile, setHasProfile] = useState(false);
   const [hasPersona, setHasPersona] = useState(false);
   const [learningInsight, setLearningInsight] = useState<string | null>(null);
-  const [postIdeas, setPostIdeas] = useState<string[]>([]);
+  const [postIdeas, setPostIdeas] = useState<{ topic: string; whyNow: string; trending: boolean }[]>([]);
   const [loadingIdeas, setLoadingIdeas] = useState(false);
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -185,7 +185,7 @@ export default function Dashboard() {
         body: JSON.stringify({ query: '', userId }),
       });
       const data = await res.json();
-      if (data.topics) setPostIdeas(data.topics);
+      if (Array.isArray(data.topics)) setPostIdeas(data.topics);
     } catch {}
     setLoadingIdeas(false);
   }, []);
@@ -482,8 +482,20 @@ export default function Dashboard() {
                   <div className="space-y-3">
                     {postIdeas.slice(0, 3).map((idea, i) => (
                       <div key={i} className="p-4 rounded-2xl border border-[rgba(124,92,252,0.06)] hover:border-brand-purple/20 hover:shadow-brand transition-all group bg-white">
-                        <p className="text-[13px] text-brand-dark leading-relaxed mb-3 font-medium">{idea}</p>
-                        <a href={`/create?topic=${encodeURIComponent(idea)}`}
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <p className="text-[13px] text-brand-dark leading-relaxed font-medium flex-1">{idea.topic}</p>
+                          <span className={`text-[9px] font-bold px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap ${
+                            idea.trending ? 'bg-[rgba(255,107,53,0.1)] text-brand-orange' : 'bg-[rgba(107,114,128,0.1)] text-brand-muted'
+                          }`}>
+                            {idea.trending ? '🔥 Trending' : '💡 Evergreen'}
+                          </span>
+                        </div>
+                        {idea.whyNow && (
+                          <p className="text-[11px] leading-snug mb-3" style={{ color: '#6B7280' }}>
+                            <span className="font-semibold">Why now:</span> {idea.whyNow}
+                          </p>
+                        )}
+                        <a href={`/create?topic=${encodeURIComponent(idea.topic)}`}
                           className="inline-flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline opacity-70 group-hover:opacity-100 transition-opacity">
                           Generate post <ArrowRight size={12} />
                         </a>

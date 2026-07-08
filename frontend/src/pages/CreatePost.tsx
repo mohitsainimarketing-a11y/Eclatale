@@ -4,9 +4,10 @@ import {
   ArrowLeft, Sparkles, Copy, RefreshCw, Send, Check, Loader2,
   FileText, Image, Lightbulb, Scissors,
   Wand2, Undo2, Calendar, PenTool, ExternalLink,
-  ChevronDown, X, Download, Eye, EyeOff,
+  ChevronDown, X, Download, Eye, EyeOff, ArrowRight,
 } from 'lucide-react';
 import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
+import { STYLES, formalityLabel } from '../lib/personaOptions';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -143,6 +144,21 @@ export default function CreatePost() {
   const [userInitials, setUserInitials] = useState('');
   const [userAvatar, setUserAvatar]   = useState('');
 
+  // Voice profile quick-edit (Piece: /create quick-access voice panel)
+  const [personaData, setPersonaData] = useState<{
+    communication_styles: string[]; formality_score: number;
+    expertise_topic: string | null; contrarian_take: string | null; voice_samples: string[];
+  } | null>(null);
+  const [voiceEditOpen, setVoiceEditOpen] = useState(false);
+  const [voiceEditClosing, setVoiceEditClosing] = useState(false);
+  const [editStyles, setEditStyles] = useState<string[]>([]);
+  const [editFormality, setEditFormality] = useState(50);
+  const [editExpertise, setEditExpertise] = useState('');
+  const [voiceMatchScore, setVoiceMatchScore] = useState<number | null>(null);
+  const [loadingVoiceScore, setLoadingVoiceScore] = useState(false);
+  const [savingVoice, setSavingVoice] = useState(false);
+  const [voiceToast, setVoiceToast] = useState(false);
+
   // Composer
   const [composerContent, setComposerContent] = useState('');
   const [contentHistory, setContentHistory]   = useState<string[]>([]);
@@ -165,7 +181,7 @@ export default function CreatePost() {
   const [visualError, setVisualError]         = useState('');
   const [showTextOverlay, setShowTextOverlay] = useState(true);
   const [ideasView, setIdeasView]             = useState(false);
-  const [ideasList, setIdeasList]             = useState<string[]>([]);
+  const [ideasList, setIdeasList]             = useState<{ topic: string; whyNow: string; trending: boolean }[]>([]);
   const [loadingIdeas, setLoadingIdeas]       = useState(false);
   const [writeTopic, setWriteTopic]           = useState('');
 
@@ -241,8 +257,19 @@ export default function CreatePost() {
           const parts = display.split(' ').filter(Boolean);
           setUserInitials(parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : display.substring(0, 2).toUpperCase());
         });
-      supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', u.id).single()
-        .then(({ data: persona }) => setHasPersona(!!persona?.persona_completed_at));
+      supabase.from('persona_profiles').select('*').eq('user_id', u.id).single()
+        .then(({ data: persona }) => {
+          setHasPersona(!!persona?.persona_completed_at);
+          if (persona) {
+            setPersonaData({
+              communication_styles: persona.communication_styles || [],
+              formality_score: typeof persona.formality_score === 'number' ? persona.formality_score : 50,
+              expertise_topic: persona.expertise_topic || null,
+              contrarian_take: persona.contrarian_take || null,
+              voice_samples: persona.voice_samples || [],
+            });
+          }
+        });
       // LinkedIn picture is secondary fallback — only used if no profile_photo_url
       fetch(`${API_URL}/api/linkedin/status?userId=${u.id}`)
         .then(r => r.json())
@@ -322,7 +349,7 @@ export default function CreatePost() {
         body: JSON.stringify({ query: '', userId }),
       });
       const data = await res.json();
-      if (data.topics) setIdeasList(data.topics);
+      if (Array.isArray(data.topics)) setIdeasList(data.topics);
     } catch { }
     setLoadingIdeas(false);
   };
@@ -353,6 +380,70 @@ export default function CreatePost() {
     setActiveFlow(null);
     setIdeasView(false);
   };
+
+  // ── Voice profile quick-edit ─────────────────────────────────────────────
+
+  const openVoiceEdit = () => {
+    setEditStyles(personaData?.communication_styles || []);
+    setEditFormality(personaData?.formality_score ?? 50);
+    setEditExpertise(personaData?.expertise_topic || '');
+    setVoiceEditClosing(false);
+    setVoiceEditOpen(true);
+    if (userId) {
+      setLoadingVoiceScore(true);
+      fetch(`${API_URL}/api/voice-match-score?userId=${userId}`)
+        .then(r => r.json())
+        .then(d => { if (typeof d.score === 'number') setVoiceMatchScore(d.score); })
+        .catch(() => {})
+        .finally(() => setLoadingVoiceScore(false));
+    }
+  };
+
+  const closeVoiceEdit = () => {
+    setVoiceEditClosing(true);
+    setTimeout(() => { setVoiceEditOpen(false); setVoiceEditClosing(false); }, 220);
+  };
+
+  const toggleEditStyle = (id: string) => {
+    setEditStyles(prev => {
+      if (prev.includes(id)) return prev.filter(s => s !== id);
+      if (prev.length >= 3) return prev;
+      return [...prev, id];
+    });
+  };
+
+  const handleSaveVoice = async () => {
+    if (!userId) return;
+    setSavingVoice(true);
+    try {
+      const { error } = await supabase.from('persona_profiles').upsert({
+        user_id: userId,
+        communication_styles: editStyles,
+        formality_score: editFormality,
+        expertise_topic: editExpertise || null,
+      }, { onConflict: 'user_id' });
+      if (error) throw error;
+      setPersonaData(prev => ({
+        communication_styles: editStyles,
+        formality_score: editFormality,
+        expertise_topic: editExpertise || null,
+        contrarian_take: prev?.contrarian_take ?? null,
+        voice_samples: prev?.voice_samples ?? [],
+      }));
+      setVoiceToast(true);
+      setTimeout(() => setVoiceToast(false), 3500);
+      closeVoiceEdit();
+    } catch { /* silent — user can retry */ }
+    setSavingVoice(false);
+  };
+
+  const voiceSummary = personaData && (personaData.communication_styles.length || personaData.expertise_topic)
+    ? [
+        personaData.communication_styles.slice(0, 2).map(id => STYLES.find(s => s.id === id)?.label || id).join(', '),
+        formalityLabel(personaData.formality_score),
+        personaData.expertise_topic ? (personaData.expertise_topic.length > 24 ? personaData.expertise_topic.slice(0, 24) + '…' : personaData.expertise_topic) : '',
+      ].filter(Boolean).join(' · ')
+    : '';
 
   const handleWriteGenerate = () => {
     if (!writeTopic.trim()) return;
@@ -726,7 +817,7 @@ export default function CreatePost() {
 
       {/* Centered workspace — floats on page bg on wide screens */}
       <div className="flex-1 min-h-0 overflow-hidden flex items-stretch justify-center md:px-6 md:py-5">
-        <div className="w-full max-w-[960px] flex min-h-0 bg-white rounded-none md:rounded-2xl md:border md:border-[rgba(0,0,0,0.08)] md:shadow-[0_4px_32px_rgba(0,0,0,0.1)] overflow-hidden">
+        <div className="relative w-full max-w-[960px] flex min-h-0 bg-white rounded-none md:rounded-2xl md:border md:border-[rgba(0,0,0,0.08)] md:shadow-[0_4px_32px_rgba(0,0,0,0.1)] overflow-hidden">
 
         {/* ── LEFT: AI ASSISTANT ────────────────────────────────────────────── */}
         <aside className={`${mobileView === 'assistant' ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-[340px] flex-shrink-0 border-r border-[rgba(124,92,252,0.07)] bg-white/50 overflow-hidden`}>
@@ -745,6 +836,17 @@ export default function CreatePost() {
               <a href="/persona-setup" className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[10px] !py-1 hover:bg-[rgba(124,92,252,0.12)] transition-colors">Set up voice</a>
             )}
           </div>
+
+          {/* Voice summary row — quick-access to the voice profile quick-edit panel */}
+          {hasPersona && (
+            <div className="flex-shrink-0 px-5 py-2 border-b border-[rgba(124,92,252,0.06)] flex items-center justify-between gap-2 bg-white/40">
+              <span className="text-[10px] text-brand-muted truncate">{voiceSummary || 'Voice profile set up'}</span>
+              <button onClick={openVoiceEdit}
+                className="text-[10px] font-semibold text-brand-purple hover:underline flex-shrink-0 whitespace-nowrap">
+                Edit voice →
+              </button>
+            </div>
+          )}
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
@@ -966,28 +1068,40 @@ export default function CreatePost() {
                       onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.09)')}
                       onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)')}>
                       <div className="px-3 pt-3 pb-2 flex-1 flex flex-col">
-                        <div className="flex items-start gap-2 mb-2 flex-shrink-0">
-                          {userAvatar
-                            ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                            : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
-                                style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
-                                {userInitials || 'Y'}
-                              </div>
-                          }
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[12px] font-semibold leading-tight truncate" style={{ color: '#1A1A2E' }}>{userName || 'Your Name'}</div>
-                            {userRole && <div className="text-[10px] leading-snug mt-0.5 line-clamp-1" style={{ color: '#6B7280' }}>{userRole}</div>}
-                            <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Just now · 🌐</div>
+                        <div className="flex items-start justify-between gap-2 mb-2 flex-shrink-0">
+                          <div className="flex items-start gap-2 min-w-0">
+                            {userAvatar
+                              ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                              : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
+                                  style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
+                                  {userInitials || 'Y'}
+                                </div>
+                            }
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[12px] font-semibold leading-tight truncate" style={{ color: '#1A1A2E' }}>{userName || 'Your Name'}</div>
+                              {userRole && <div className="text-[10px] leading-snug mt-0.5 line-clamp-1" style={{ color: '#6B7280' }}>{userRole}</div>}
+                              <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Just now · 🌐</div>
+                            </div>
                           </div>
+                          <span className={`text-[9px] font-bold px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap ${
+                            idea.trending ? 'bg-[rgba(255,107,53,0.1)] text-brand-orange' : 'bg-[rgba(107,114,128,0.1)] text-brand-muted'
+                          }`}>
+                            {idea.trending ? '🔥 Trending' : '💡 Evergreen'}
+                          </span>
                         </div>
-                        <p className="text-[13px] leading-[1.55] line-clamp-3 flex-1" style={{ color: '#1A1A2E' }}>{idea}</p>
+                        <p className="text-[13px] leading-[1.55] line-clamp-3 flex-1" style={{ color: '#1A1A2E' }}>{idea.topic}</p>
+                        {idea.whyNow && (
+                          <p className="text-[10px] leading-snug mt-1.5 line-clamp-2" style={{ color: '#6B7280' }}>
+                            <span className="font-semibold">Why now:</span> {idea.whyNow}
+                          </p>
+                        )}
                       </div>
                       <div className="px-3 py-2 flex items-center justify-between border-t flex-shrink-0" style={{ borderColor: '#E0E0E0' }}>
                         <div className="flex items-center gap-3">
                           <span className="text-[11px] font-medium select-none" style={{ color: '#6B7280' }}>👍 Like</span>
                           <span className="text-[11px] font-medium select-none" style={{ color: '#6B7280' }}>💬</span>
                         </div>
-                        <button onClick={() => handleIdeaSelect(idea)}
+                        <button onClick={() => handleIdeaSelect(idea.topic)}
                           className="text-[11px] font-semibold text-white px-3 py-1 rounded-full transition-all hover:brightness-110 active:scale-95 flex-shrink-0"
                           style={{ background: '#0A66C2' }}>
                           Use idea →
@@ -1355,6 +1469,99 @@ export default function CreatePost() {
             </>
           )}
         </main>
+
+        {/* ── VOICE PROFILE QUICK-EDIT SLIDE-OVER ─────────────────────────────── */}
+        {voiceEditOpen && (
+          <>
+            <div className="absolute inset-0 z-40 bg-transparent" onClick={closeVoiceEdit} />
+            <div className={`absolute inset-y-0 left-0 z-50 w-full sm:w-[400px] bg-white shadow-2xl overflow-y-auto ${voiceEditClosing ? 'animate-slideOutLeft' : 'animate-slideInLeft'}`}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(124,92,252,0.08)] sticky top-0 bg-white z-10">
+                <span className="text-sm font-bold text-brand-dark">Your Voice Profile</span>
+                <button onClick={closeVoiceEdit}
+                  className="w-8 h-8 rounded-xl hover:bg-[rgba(124,92,252,0.06)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="px-5 py-5 space-y-6">
+                {/* Communication styles */}
+                <div>
+                  <label className="text-[10px] font-semibold text-brand-dark uppercase tracking-wide mb-3 block">Communication styles</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STYLES.map(s => {
+                      const selected = editStyles.includes(s.id);
+                      const disabled = !selected && editStyles.length >= 3;
+                      return (
+                        <button key={s.id} onClick={() => toggleEditStyle(s.id)} disabled={disabled}
+                          className={`card !p-3 text-center transition-all ${selected ? '!border-brand-purple !shadow-brand-md' : disabled ? 'opacity-40' : 'card-hover'}`}>
+                          <span className="text-lg block mb-1">{s.emoji}</span>
+                          <span className="text-[11px] font-bold text-brand-dark block">{s.label}</span>
+                          {selected && (
+                            <div className="w-4 h-4 rounded-full gradient-primary flex items-center justify-center mx-auto mt-1.5">
+                              <Check size={9} className="text-white" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Formality slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-[10px] font-semibold text-brand-dark uppercase tracking-wide">Formality</label>
+                    <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs">{formalityLabel(editFormality)}</span>
+                  </div>
+                  <input type="range" min="0" max="100" value={editFormality}
+                    onChange={e => setEditFormality(parseInt(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                    style={{ background: `linear-gradient(to right, #7C5CFC ${editFormality}%, rgba(124,92,252,0.1) ${editFormality}%)` }} />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-[10px] text-brand-muted">Casual</span>
+                    <span className="text-[10px] text-brand-muted">Formal</span>
+                  </div>
+                </div>
+
+                {/* Expertise topic */}
+                <div>
+                  <label className="text-[10px] font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Expertise topic</label>
+                  <input type="text" value={editExpertise} onChange={e => setEditExpertise(e.target.value)}
+                    placeholder="e.g., Scaling B2B SaaS from $1M to $10M ARR" className="input !text-sm" />
+                </div>
+
+                {/* Voice match score */}
+                <div className="card !p-4 flex items-center gap-3">
+                  {loadingVoiceScore ? (
+                    <Loader2 size={16} className="animate-spin text-brand-purple" />
+                  ) : voiceMatchScore !== null ? (
+                    <>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-extrabold flex-shrink-0"
+                        style={{ background: voiceMatchScore >= 80 ? '#06D6A0' : voiceMatchScore >= 60 ? '#F59E0B' : '#EF4444' }}>
+                        {voiceMatchScore}
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-bold text-brand-dark">Voice Match Score</div>
+                        <div className="text-[10px] text-brand-muted">How closely your posts match this profile</div>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-brand-muted">Voice match score unavailable</span>
+                  )}
+                </div>
+
+                <button onClick={handleSaveVoice} disabled={savingVoice || editStyles.length === 0}
+                  className="btn-primary w-full !py-3 text-sm disabled:opacity-40">
+                  {savingVoice ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Save changes'}
+                </button>
+
+                <a href="/persona-setup" className="flex items-center justify-center gap-1 text-[11px] font-semibold text-brand-purple hover:underline">
+                  Full voice profile <ArrowRight size={11} />
+                </a>
+              </div>
+            </div>
+          </>
+        )}
         </div>
       </div>
 
@@ -1447,6 +1654,13 @@ export default function CreatePost() {
               )}
             </div>
           </div>
+        </div>
+      )}
+      {/* Voice updated toast */}
+      {voiceToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-brand-dark text-white text-[12px] font-medium px-4 py-3 rounded-xl shadow-2xl animate-fadeIn flex items-center gap-2 whitespace-nowrap">
+          <Check size={14} className="text-brand-teal" />
+          Voice updated — your next post will reflect these changes
         </div>
       )}
     </div>

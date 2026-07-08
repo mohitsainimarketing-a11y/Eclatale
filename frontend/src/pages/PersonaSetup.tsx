@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, ArrowRight, Sparkles, Check, Loader2, MessageSquare } from 'lucide-react';
+import { STYLES, formalityLabel } from '../lib/personaOptions';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -8,16 +9,6 @@ const supabase = createClient(
 );
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
-
-const STYLES = [
-  { id: 'direct', label: 'Direct', emoji: '🎯', desc: 'Straight to the point' },
-  { id: 'warm', label: 'Warm', emoji: '🤝', desc: 'Empathetic and personal' },
-  { id: 'analytical', label: 'Analytical', emoji: '🔬', desc: 'Data and logic first' },
-  { id: 'witty', label: 'Witty', emoji: '😏', desc: 'Clever and sharp' },
-  { id: 'visionary', label: 'Visionary', emoji: '🔮', desc: 'Big-picture thinking' },
-  { id: 'contrarian', label: 'Contrarian', emoji: '⚡', desc: 'Against the grain' },
-  { id: 'storyteller', label: 'Storyteller', emoji: '📖', desc: 'Narrative-driven' },
-];
 
 export default function PersonaSetup() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -44,14 +35,6 @@ export default function PersonaSetup() {
       if (prev.length >= 3) return prev;
       return [...prev, id];
     });
-  };
-
-  const formalityLabel = (v: number) => {
-    if (v <= 20) return 'Very casual';
-    if (v <= 40) return 'Casual';
-    if (v <= 60) return 'Balanced';
-    if (v <= 80) return 'Professional';
-    return 'Very formal';
   };
 
   const parseSamples = (): string[] => {
@@ -93,7 +76,7 @@ export default function PersonaSetup() {
       contrarian_take: hotTake || null,
       voice_samples: samples,
       ...(markComplete ? { persona_completed_at: new Date().toISOString() } : {}),
-    });
+    }, { onConflict: 'user_id' });
   };
 
   const handleFinish = async () => {

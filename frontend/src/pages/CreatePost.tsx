@@ -74,6 +74,23 @@ function scoreColor(score: number): string {
   return score >= 80 ? '#06D6A0' : score >= 60 ? '#F59E0B' : '#EF4444';
 }
 
+// Actionable items behind an authenticity score, most important first — mirrors
+// the priority order the backend uses to pick a single topSuggestion.
+function getActionableItems(authScore: AuthenticityScore): { label: string; text: string }[] {
+  const items: { label: string; text: string }[] = [];
+  if (authScore.accuracy.score < 70) {
+    const flagged = authScore.accuracy.claims.find(c => c.status === 'Questionable' || c.status === 'False');
+    items.push({ label: 'Accuracy', text: flagged ? `"${flagged.claim}"${flagged.note ? ` — ${flagged.note}` : ' could not be verified.'}` : authScore.accuracy.summary });
+  }
+  if (authScore.freshness.score < 70 && authScore.freshness.suggestion) {
+    items.push({ label: 'Freshness', text: authScore.freshness.suggestion });
+  }
+  if (authScore.voice.score < 75 && authScore.voice.suggestion) {
+    items.push({ label: 'Voice', text: authScore.voice.suggestion });
+  }
+  return items;
+}
+
 function AuthenticityRing({ score }: { score: number }) {
   const c = 2 * Math.PI * 45;
   const color = scoreColor(score);
@@ -207,8 +224,11 @@ export default function CreatePost() {
   const [nudgeApplied, setNudgeApplied] = useState(false);
   const [toneMatch, setToneMatch] = useState<{ match: boolean; matchScore: number; drift: string; suggestion: string } | null>(null);
   const [checkingToneMatch, setCheckingToneMatch] = useState(false);
+  const [toneMatchOpen, setToneMatchOpen] = useState(false);
   const [authScore, setAuthScore] = useState<AuthenticityScore | null>(null);
   const [showAuthLoading, setShowAuthLoading] = useState(false);
+  const [authScoreExpanded, setAuthScoreExpanded] = useState(false);
+  const [postSuggestionsOpen, setPostSuggestionsOpen] = useState(false);
   const [lastTopic, setLastTopic] = useState('');
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleDay, setScheduleDay] = useState('');
@@ -216,7 +236,9 @@ export default function CreatePost() {
   const [scheduleConfirmed, setScheduleConfirmed] = useState(false);
   const scheduleRef = useRef<HTMLDivElement>(null);
 
-  const toneRef    = useRef<HTMLDivElement>(null);
+  const toneRef        = useRef<HTMLDivElement>(null);
+  const toneMatchRef   = useRef<HTMLDivElement>(null);
+  const postSuggestionsRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -304,6 +326,8 @@ export default function CreatePost() {
     const h = (e: MouseEvent) => {
       if (toneRef.current && !toneRef.current.contains(e.target as Node)) setToneOpen(false);
       if (scheduleRef.current && !scheduleRef.current.contains(e.target as Node)) setScheduleOpen(false);
+      if (toneMatchRef.current && !toneMatchRef.current.contains(e.target as Node)) setToneMatchOpen(false);
+      if (postSuggestionsRef.current && !postSuggestionsRef.current.contains(e.target as Node)) setPostSuggestionsOpen(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -989,13 +1013,30 @@ export default function CreatePost() {
             <ChevronDown size={11} className="text-brand-muted flex-shrink-0 -ml-1.5" />
             <div className="flex-1 min-w-0" />
             {toneMatch && composerContent && !checkingToneMatch && (
-              <span
-                title={toneMatch.suggestion || toneMatch.drift || undefined}
-                className={`text-[10px] font-semibold flex items-center gap-0.5 flex-shrink-0 cursor-help ${
-                  toneMatch.matchScore >= 70 ? 'text-brand-teal' : 'text-amber-500'
-                }`}>
-                {currentTone?.label} {toneMatch.matchScore >= 70 ? <>✓ matched</> : <>≈ partial match</>}
-              </span>
+              toneMatch.matchScore >= 70 ? (
+                <span className="text-[10px] font-semibold flex items-center gap-0.5 flex-shrink-0 text-brand-teal">
+                  {currentTone?.label} ✓ matched
+                </span>
+              ) : (
+              <div className="relative flex-shrink-0" ref={toneMatchRef}>
+                <button
+                  onClick={() => setToneMatchOpen(o => !o)}
+                  className="text-[10px] font-semibold flex items-center gap-0.5 text-amber-500 hover:underline">
+                  {currentTone?.label} ≈ partial match
+                </button>
+                {toneMatchOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 w-64 bg-white rounded-2xl shadow-brand-md border border-amber-200 p-3.5 z-30 animate-fadeIn">
+                    <p className="text-[12px] text-amber-700 leading-snug mb-2.5">
+                      {toneMatch.drift || `This reads a bit different from ${currentTone?.label}`} — want me to adjust?
+                    </p>
+                    <button onClick={() => { handleAdjustTone(); setToneMatchOpen(false); }} disabled={refining}
+                      className="text-[11px] font-semibold text-amber-700 hover:underline disabled:opacity-50">
+                      Adjust →
+                    </button>
+                  </div>
+                )}
+              </div>
+              )
             )}
             <div className="relative flex-shrink-0" ref={toneRef}>
               <button onClick={() => setToneOpen(o => !o)}
@@ -1243,72 +1284,6 @@ export default function CreatePost() {
                 )}
               </div>
 
-              {/* Tone match suggestion (Piece 14) */}
-              {toneMatch && toneMatch.matchScore < 70 && composerContent && !checkingToneMatch && (
-                <div className="mx-5 mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5">
-                  <p className="text-[12px] text-amber-700 leading-snug">
-                    {toneMatch.drift || `This reads a bit different from ${currentTone?.label}`} — want me to adjust?
-                  </p>
-                  <button onClick={handleAdjustTone} disabled={refining}
-                    className="text-[11px] font-semibold text-amber-700 hover:underline flex-shrink-0 whitespace-nowrap disabled:opacity-50">
-                    Adjust →
-                  </button>
-                </div>
-              )}
-
-              {/* Content Authenticity Score */}
-              {composerContent && (showAuthLoading || authScore) && (
-                <div className="mx-5 mb-4">
-                  {showAuthLoading && !authScore ? (
-                    <div className="flex items-center gap-1.5 text-[11px] text-brand-muted px-1">
-                      <span>Checking authenticity</span>
-                      <span className="flex gap-0.5">
-                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </span>
-                    </div>
-                  ) : authScore && (
-                    <div className="card !p-4 animate-fadeIn">
-                      <div className="flex items-start gap-4">
-                        <AuthenticityRing score={authScore.overallScore} />
-                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0 mt-1"
-                          style={{ background: scoreColor(authScore.overallScore) }}>
-                          {authScore.grade}
-                        </span>
-                        <div className="flex-1 min-w-0 space-y-1.5">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[11px] font-bold text-brand-dark uppercase tracking-wide">Authenticity Score</span>
-                            <span title="Eclatale checks your post for factual accuracy, topic freshness, and voice consistency before you publish. This helps you post with confidence."
-                              className="w-3.5 h-3.5 rounded-full bg-[rgba(124,92,252,0.1)] text-brand-purple text-[9px] font-bold flex items-center justify-center cursor-help flex-shrink-0">?</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.accuracy.score) }} />
-                            <span>✓ Factual Accuracy: {authScore.accuracy.score}/100</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.freshness.score) }} />
-                            <span>↻ Topic Freshness: {authScore.freshness.score}/100</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.voice.score) }} />
-                            <span>◉ Voice Match: {authScore.voice.score}/100</span>
-                          </div>
-                        </div>
-                      </div>
-                      {authScore.overallScore < 70 && authScore.topSuggestion && (
-                        <div className="mt-3 pt-3 border-t border-[rgba(124,92,252,0.08)] flex items-center justify-between gap-3">
-                          <p className="text-[11px] text-brand-muted leading-relaxed">Tip: {authScore.topSuggestion}</p>
-                          <button onClick={() => handleFixSuggestion(authScore.topSuggestion)}
-                            className="text-[11px] font-semibold text-brand-purple hover:underline flex-shrink-0 whitespace-nowrap">
-                            Fix this →
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Visual attachment */}
               <div className="px-5 pb-5">
@@ -1371,6 +1346,70 @@ export default function CreatePost() {
                 )}
               </div>
 
+              {/* Authenticity — single compact line by default, expands to the full score card on click */}
+              {composerContent && (showAuthLoading || authScore) && (
+                <div className="flex-shrink-0 px-5 pb-2.5">
+                  {showAuthLoading && !authScore ? (
+                    <div className="flex items-center gap-1.5 text-[11px] text-brand-muted">
+                      <span>Checking authenticity</span>
+                      <span className="flex gap-0.5">
+                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </span>
+                    </div>
+                  ) : authScore && (
+                    <div>
+                      <button onClick={() => setAuthScoreExpanded(o => !o)}
+                        className="text-[11px] font-semibold flex items-center gap-1 hover:underline"
+                        style={{ color: scoreColor(authScore.overallScore) }}>
+                        Authenticity: {authScore.overallScore} {authScore.overallScore >= 80 ? '✓' : authScore.overallScore >= 60 ? '⚠' : '✗'}
+                        <ChevronDown size={11} className={`transition-transform ${authScoreExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+                      {authScoreExpanded && (
+                        <div className="card !p-4 mt-2 animate-fadeIn">
+                          <div className="flex items-start gap-4">
+                            <AuthenticityRing score={authScore.overallScore} />
+                            <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0 mt-1"
+                              style={{ background: scoreColor(authScore.overallScore) }}>
+                              {authScore.grade}
+                            </span>
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="text-[11px] font-bold text-brand-dark uppercase tracking-wide">Authenticity Score</span>
+                                <span title="Eclatale checks your post for factual accuracy, topic freshness, and voice consistency before you publish. This helps you post with confidence."
+                                  className="w-3.5 h-3.5 rounded-full bg-[rgba(124,92,252,0.1)] text-brand-purple text-[9px] font-bold flex items-center justify-center cursor-help flex-shrink-0">?</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.accuracy.score) }} />
+                                <span>✓ Factual Accuracy: {authScore.accuracy.score}/100</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.freshness.score) }} />
+                                <span>↻ Topic Freshness: {authScore.freshness.score}/100</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.voice.score) }} />
+                                <span>◉ Voice Match: {authScore.voice.score}/100</span>
+                              </div>
+                            </div>
+                          </div>
+                          {authScore.overallScore < 70 && authScore.topSuggestion && (
+                            <div className="mt-3 pt-3 border-t border-[rgba(124,92,252,0.08)] flex items-center justify-between gap-3">
+                              <p className="text-[11px] text-brand-muted leading-relaxed">Tip: {authScore.topSuggestion}</p>
+                              <button onClick={() => handleFixSuggestion(authScore.topSuggestion)}
+                                className="text-[11px] font-semibold text-brand-purple hover:underline flex-shrink-0 whitespace-nowrap">
+                                Fix this →
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex-shrink-0 px-5 py-3 border-t border-[rgba(124,92,252,0.06)] bg-white/40 flex items-center gap-2">
                 <button onClick={handleCopy} disabled={!composerContent}
                   className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
@@ -1424,17 +1463,32 @@ export default function CreatePost() {
                       : publishResult?.success ? <><Check size={13} /> Published!</>
                       : <><Send size={13} /> Post to LinkedIn</>}
                   </button>
-                  {authScore && !publishResult?.success && (
-                    authScore.overallScore >= 80 ? (
-                      <span className="text-[10px] font-semibold text-brand-teal">✓ Authenticity verified</span>
-                    ) : authScore.overallScore >= 60 ? (
-                      <span className="text-[10px] font-semibold text-amber-500">⚠ Review suggestions before posting</span>
-                    ) : (
-                      <span className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-semibold text-red-500">✗ Low authenticity score</span>
-                        <button onClick={handlePublish} className="text-[10px] font-semibold text-brand-muted hover:text-brand-dark underline">Post anyway</button>
-                      </span>
-                    )
+                  {authScore && !publishResult?.success && authScore.overallScore < 80 && (
+                    <div className="relative" ref={postSuggestionsRef}>
+                      <button onClick={() => setPostSuggestionsOpen(o => !o)}
+                        className="text-[10px] font-semibold flex items-center gap-1.5 hover:underline">
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.overallScore) }} />
+                        {authScore.overallScore >= 60 ? (
+                          <span className="text-amber-500">{getActionableItems(authScore).length} suggestion{getActionableItems(authScore).length === 1 ? '' : 's'} available</span>
+                        ) : (
+                          <span className="text-red-500">Low authenticity score — see details</span>
+                        )}
+                      </button>
+                      {postSuggestionsOpen && (
+                        <div className="absolute bottom-full right-0 mb-2 w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-3.5 z-50 animate-fadeIn space-y-2.5">
+                          {getActionableItems(authScore).slice(0, 2).map((item, i) => (
+                            <div key={i}>
+                              <span className="text-[10px] font-bold text-brand-dark uppercase tracking-wide">{item.label}</span>
+                              <p className="text-[11px] text-brand-muted leading-relaxed">{item.text}</p>
+                            </div>
+                          ))}
+                          <button onClick={() => { handleFixSuggestion(authScore.topSuggestion); setPostSuggestionsOpen(false); }}
+                            className="text-[11px] font-semibold text-brand-purple hover:underline">
+                            Fix this →
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

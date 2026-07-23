@@ -324,7 +324,7 @@ export default function Settings() {
     <div className="min-h-screen bg-[#FAFAFE]">
       {/* Header */}
       <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center gap-3">
-        <a href="/dashboard" className="p-2 -ml-2 text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
+        <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
         <a href="/dashboard" className="text-lg font-extrabold gradient-text">Eclatale</a>
         <span className="text-brand-muted text-sm font-medium ml-2">/ Settings</span>
       </nav>
@@ -369,12 +369,14 @@ export default function Settings() {
                         className="relative w-20 h-20 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2"
                         title="Upload profile photo">
                         {profilePhoto || linkedinPicture
-                          ? <img src={profilePhoto || linkedinPicture} alt="Profile" className="w-full h-full object-cover" />
+                          ? <img src={profilePhoto || linkedinPicture} alt="Profile"
+                              onError={() => { setProfilePhoto(''); setLinkedinPicture(''); }}
+                              className="w-full h-full object-cover" />
                           : <div className="w-full h-full gradient-primary flex items-center justify-center text-white text-2xl font-bold">
                               {firstName && lastName ? (firstName[0] + lastName[0]).toUpperCase() : (firstName || lastName || userEmail).charAt(0).toUpperCase()}
                             </div>
                         }
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity rounded-full">
                           {photoUploading ? <Loader2 size={20} className="text-white animate-spin" /> : <Camera size={20} className="text-white" />}
                         </div>
                       </button>
@@ -463,8 +465,11 @@ export default function Settings() {
                         </p>
                       </div>
                       <button type="button" onClick={() => setProfilePublic(v => !v)} disabled={!usernameSlug}
-                        className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 flex-shrink-0 disabled:opacity-40 ${profilePublic ? 'bg-brand-purple justify-end' : 'bg-[rgba(124,92,252,0.15)] justify-start'}`}>
-                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-all" />
+                        className="flex items-center justify-center w-11 min-h-[44px] -my-[10px] flex-shrink-0 disabled:opacity-40"
+                        aria-pressed={profilePublic}>
+                        <div className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 ${profilePublic ? 'bg-brand-purple justify-end' : 'bg-[rgba(124,92,252,0.15)] justify-start'}`}>
+                          <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-all" />
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -549,8 +554,8 @@ export default function Settings() {
                 </div>
 
                 {/* ── SAVE ──────────────────────────────────────────── */}
-                <div className="flex items-center gap-3">
-                  <button onClick={saveProfile} disabled={profileSaving} className="btn-primary text-sm">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button onClick={saveProfile} disabled={profileSaving} className="btn-primary text-sm w-full sm:w-auto">
                     {profileSaving ? <Loader2 size={15} className="animate-spin" /> : profileSaved ? <Check size={15} /> : <Save size={15} />}
                     {profileSaving ? 'Saving...' : profileSaved ? 'Saved!' : 'Save Changes'}
                   </button>
@@ -914,11 +919,14 @@ export default function Settings() {
                       </div>
                       <button
                         onClick={() => { const next = !n.value; n.set(next); persistNotif({ [n.col]: next }); }}
-                        className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 ${
-                          n.value ? 'bg-brand-purple justify-end' : 'bg-[rgba(124,92,252,0.15)] justify-start'
-                        }`}
+                        className="flex items-center justify-center w-11 min-h-[44px] -my-[10px] flex-shrink-0"
+                        aria-pressed={n.value}
                       >
-                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-all" />
+                        <div className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 ${
+                          n.value ? 'bg-brand-purple justify-end' : 'bg-[rgba(124,92,252,0.15)] justify-start'
+                        }`}>
+                          <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-all" />
+                        </div>
                       </button>
                     </div>
                   ))}

@@ -3,12 +3,50 @@
 @tailwind utilities;
 
 /* ── Base ── */
+html {
+  height: -webkit-fill-available;
+}
 body {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   color: #1A1A2E;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #FFFFFF;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+}
+
+/* ── Mobile / touch device fixes ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
+[class*="overflow-y-auto"], [class*="overflow-auto"], [class*="overflow-x-auto"] {
+  -webkit-overflow-scrolling: touch;
+}
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.safe-top {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+/* Fixed-height app shells: 100vh doesn't account for the collapsing mobile
+   address bar, causing layout jumps. dvh tracks the actual visible viewport;
+   the vh line is a fallback for browsers that don't support dvh. */
+.h-app-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* iOS Safari auto-zooms any focused form control smaller than 16px — keep a
+   16px floor on mobile regardless of Tailwind text-size utilities applied to it. */
+@media (max-width: 767px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
 
 /* ── Gradients ── */
@@ -118,10 +156,12 @@ body {
   padding: 14px 16px;
   font-size: 16px;
   color: #1A1A2E;
+  caret-color: #7C5CFC;
   transition: all 0.2s ease;
   width: 100%;
   min-height: 44px;
 }
+textarea, input[type="text"] { caret-color: #7C5CFC; }
 .input::placeholder { color: #9CA3AF; }
 .input:focus {
   outline: none;
@@ -236,6 +276,7 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(124, 92, 252, 0.15); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(124, 92, 252, 0.3); }
+* { scrollbar-width: thin; scrollbar-color: rgba(124, 92, 252, 0.15) transparent; }
 
 /* ── Range Slider ── */
 input[type="range"] {
@@ -266,6 +307,12 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(124, 92, 252, 0.3);
   border: 3px solid white;
+}
+/* Touch devices: bigger thumb + taller track so the slider is easier to grab and drag. */
+@media (pointer: coarse) {
+  input[type="range"] { height: 10px; }
+  input[type="range"]::-webkit-slider-thumb { width: 30px; height: 30px; }
+  input[type="range"]::-moz-range-thumb { width: 30px; height: 30px; }
 }
 
 /* ── Post Content Display ── */

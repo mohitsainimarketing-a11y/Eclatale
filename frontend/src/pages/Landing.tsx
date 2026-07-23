@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Sparkles, TrendingUp, Zap, ArrowRight, ChevronDown, Menu, X, Target, Users, BarChart3 } from 'lucide-react';
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setMobileMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+    };
+  }, [mobileMenuOpen]);
 
   const features = [
     { icon: <Sparkles size={24} />, title: 'AI Content Engine', desc: 'Generate posts that sound like you, not a robot. Trained on your authentic voice and industry expertise.' },
@@ -24,7 +38,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
+      <nav ref={navRef} className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">
           <a href="/" className="text-xl md:text-2xl font-extrabold gradient-text">Eclatale</a>
           <div className="hidden md:flex items-center gap-8">
@@ -33,14 +47,14 @@ export default function Landing() {
             <a href="/login" className="text-sm font-medium text-brand-muted hover:text-brand-purple hover:underline transition-colors">Sign In</a>
             <a href="/signup" className="btn-primary text-sm !py-2.5 !px-6">Start Free</a>
           </div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 -mr-2" aria-label="Toggle menu">
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden min-w-[44px] min-h-[44px] -mr-2 flex items-center justify-center" aria-label="Toggle menu" aria-expanded={mobileMenuOpen}>
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-[rgba(124,92,252,0.06)] px-5 py-4 space-y-3 animate-fadeIn">
-            <a href="#features" className="block py-3 text-sm font-medium text-brand-muted">Features</a>
-            <a href="#faq" className="block py-3 text-sm font-medium text-brand-muted">FAQ</a>
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">Features</a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">FAQ</a>
             <a href="/login" className="block py-3 text-sm font-medium text-brand-muted">Sign In</a>
             <a href="/signup" className="btn-primary text-sm w-full text-center mt-2">Start Free</a>
           </div>

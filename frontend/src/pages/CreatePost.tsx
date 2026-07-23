@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
 import { STYLES, formalityLabel } from '../lib/personaOptions';
+import { copyToClipboard } from '../utils/clipboard';
+import { useModalBackButton } from '../hooks/useModalBackButton';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -60,26 +62,39 @@ interface ChatMsg {
   ideas?: string[];
 }
 
+interface ReferenceItem {
+  title: string;
+  url: string;
+  publication: string;
+  publishedDate: string;
+  relevance: string;
+  type: 'news' | 'research' | 'data' | 'opinion';
+}
+
 interface AuthenticityScore {
   overallScore: number;
-  grade: 'A' | 'B' | 'C' | 'D';
   readyToPost: boolean;
   topSuggestion: string;
-  accuracy: { score: number; claims: { claim: string; status: string; note: string }[]; summary: string };
+  accuracy: { score: number; claims: { claim: string; status: string; note: string; sourceUrl?: string }[]; summary: string; isOpinionBased: boolean };
   freshness: { score: number; assessment: string; topicSaturation: string; suggestion: string; reasoning: string };
   voice: { score: number; matchLevel: string; specificMatches: string[]; specificMismatches: string[]; suggestion: string };
+  references: { references: ReferenceItem[]; searchedFor: string; note: string };
 }
 
 function scoreColor(score: number): string {
   return score >= 80 ? '#06D6A0' : score >= 60 ? '#F59E0B' : '#EF4444';
 }
 
-// Actionable items behind an authenticity score, most important first — mirrors
+function confidenceLabel(score: number): string {
+  return score >= 80 ? 'Ready to post' : score >= 60 ? 'Good to post' : 'Review before posting';
+}
+
+// Actionable items behind a confidence score, most important first — mirrors
 // the priority order the backend uses to pick a single topSuggestion.
 function getActionableItems(authScore: AuthenticityScore): { label: string; text: string }[] {
   const items: { label: string; text: string }[] = [];
-  if (authScore.accuracy.score < 70) {
-    const flagged = authScore.accuracy.claims.find(c => c.status === 'Questionable' || c.status === 'False');
+  if (!authScore.accuracy.isOpinionBased && authScore.accuracy.score < 70) {
+    const flagged = authScore.accuracy.claims.find(c => c.status === 'Unverifiable' || c.status === 'False');
     items.push({ label: 'Accuracy', text: flagged ? `"${flagged.claim}"${flagged.note ? ` — ${flagged.note}` : ' could not be verified.'}` : authScore.accuracy.summary });
   }
   if (authScore.freshness.score < 70 && authScore.freshness.suggestion) {
@@ -117,6 +132,15 @@ function AIcon({ type, size = 11 }: { type: ActivityIcon; size?: number }) {
   if (type === 'copy')     return <Copy     size={size} className={cls} />;
   if (type === 'save')     return <FileText size={size} className={cls} />;
   return <Send size={size} className={cls} />;
+}
+
+// Translates the structured api_credits_exhausted error (or any other backend
+// error shape) into a message safe to show the user directly.
+function friendlyErrorMessage(data: any): string {
+  if (data?.error === 'api_credits_exhausted') {
+    return 'AI features are temporarily paused. Please try again shortly.';
+  }
+  return data?.error || 'Something went wrong';
 }
 
 function uid() { return Math.random().toString(36).slice(2); }
@@ -229,6 +253,11 @@ export default function CreatePost() {
   const [showAuthLoading, setShowAuthLoading] = useState(false);
   const [authScoreExpanded, setAuthScoreExpanded] = useState(false);
   const [postSuggestionsOpen, setPostSuggestionsOpen] = useState(false);
+  const [referencesExpanded, setReferencesExpanded] = useState(false);
+  const [referenceUsed, setReferenceUsed] = useState(false);
+  const [referenceHintDismissed, setReferenceHintDismissed] = useState(false);
+  const [usingReferenceUrl, setUsingReferenceUrl] = useState<string | null>(null);
+  const [copiedRefUrl, setCopiedRefUrl] = useState<string | null>(null);
   const [lastTopic, setLastTopic] = useState('');
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleDay, setScheduleDay] = useState('');
@@ -427,6 +456,14 @@ export default function CreatePost() {
     setVoiceEditClosing(true);
     setTimeout(() => { setVoiceEditOpen(false); setVoiceEditClosing(false); }, 220);
   };
+  useModalBackButton(voiceEditOpen, closeVoiceEdit);
+
+  const closeVisualModal = () => {
+    setVisualModalOpen(false);
+    setVisualPreview(null);
+    setVisualError('');
+  };
+  useModalBackButton(visualModalOpen, closeVisualModal);
 
   const toggleEditStyle = (id: string) => {
     setEditStyles(prev => {
@@ -527,6 +564,22 @@ export default function CreatePost() {
     setMobileView('compose');
   };
 
+  const handleUseReference = async (ref: ReferenceItem) => {
+    setUsingReferenceUrl(ref.url);
+    await handleRefineWithInstruction(
+      `Add a reference to "${ref.title}" by ${ref.publication} to strengthen the post's credibility. Weave it in naturally, don't just append it.`,
+      `Added a reference to ${ref.publication}`
+    );
+    setReferenceUsed(true);
+    setUsingReferenceUrl(null);
+  };
+
+  const handleCopyReferenceLink = (url: string) => {
+    copyToClipboard(url);
+    setCopiedRefUrl(url);
+    setTimeout(() => setCopiedRefUrl(null), 2000);
+  };
+
   const handleGenerate = async (topic: string) => {
     if (!topic.trim() || !userId) return;
     setGenerating(true); setError('');
@@ -536,7 +589,7 @@ export default function CreatePost() {
         body: JSON.stringify({ topic, tone, contentType, userId, styleNudge: nudgeApplied ? nudge?.instruction : undefined }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) throw new Error(friendlyErrorMessage(data));
       updateContent(data.content);
       setPublishResult(null);
       setActiveFlow(null);
@@ -547,7 +600,11 @@ export default function CreatePost() {
         user_id: userId, content: data.content, topic,
         tone, content_type: contentType, source: 'auto',
       }).select('id').single();
-      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); setLastTopic(topic); checkAuthenticityScore(inserted.id, data.content, topic); }
+      if (inserted) {
+        setPostId(inserted.id); queueAnalysis(inserted.id, data.content); setLastTopic(topic);
+        setReferenceUsed(false); setReferenceHintDismissed(false); setReferencesExpanded(false);
+        checkAuthenticityScore(inserted.id, data.content, topic);
+      }
       checkToneMatch(data.content, tone);
     } catch (err: any) {
       addMsg('bot', `Sorry, couldn't generate: ${err.message || 'unknown error'}`, 'text');
@@ -566,7 +623,7 @@ export default function CreatePost() {
         body: JSON.stringify({ sourceText: repurposeText, contentType, tone, userId }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) throw new Error(friendlyErrorMessage(data));
       updateContent(data.content);
       setPublishResult(null);
       setActiveFlow(null);
@@ -576,7 +633,11 @@ export default function CreatePost() {
         user_id: userId, content: data.content, topic: 'Repurposed content',
         tone, content_type: contentType, source: 'repurpose',
       }).select('id').single();
-      if (inserted) { setPostId(inserted.id); queueAnalysis(inserted.id, data.content); setLastTopic('Repurposed content'); checkAuthenticityScore(inserted.id, data.content, 'Repurposed content'); }
+      if (inserted) {
+        setPostId(inserted.id); queueAnalysis(inserted.id, data.content); setLastTopic('Repurposed content');
+        setReferenceUsed(false); setReferenceHintDismissed(false); setReferencesExpanded(false);
+        checkAuthenticityScore(inserted.id, data.content, 'Repurposed content');
+      }
       checkToneMatch(data.content, tone);
     } catch (err: any) {
       addMsg('bot', `Repurpose failed: ${err.message || 'unknown error'}`, 'text');
@@ -595,7 +656,7 @@ export default function CreatePost() {
         body: JSON.stringify({ currentContent: composerContent, instruction, userId }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) throw new Error(friendlyErrorMessage(data));
       updateContent(data.content);
       addActivity('wand', label || `Applied: "${instruction.substring(0, 45)}${instruction.length > 45 ? '…' : ''}"`);
       fetch(`${API_URL}/api/persona-signal`, {
@@ -654,7 +715,7 @@ export default function CreatePost() {
         body: JSON.stringify({ currentContent: composerContent, targetFormat: newFormat, userId }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) throw new Error(friendlyErrorMessage(data));
       updateContent(data.content);
       addActivity('refresh', `Adapted to ${CONTENT_TYPES.find(c => c.id === newFormat)?.label}`);
     } catch { /* silent — content stays as-is */ }
@@ -687,7 +748,7 @@ export default function CreatePost() {
         body: JSON.stringify({ topic, format: 'square', style: visualStyle, userId }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) throw new Error(friendlyErrorMessage(data));
       setVisualPreview(data.imageUrl);
       // Default the overlay on for styles that carry a headline.
       setShowTextOverlay(OVERLAY_STYLES.has(visualStyle));
@@ -728,7 +789,7 @@ export default function CreatePost() {
 
   const handleCopy = () => {
     if (!composerContent) return;
-    navigator.clipboard.writeText(composerContent);
+    copyToClipboard(composerContent);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
     addActivity('copy', 'Copied to clipboard');
     if (userId) {
@@ -784,7 +845,7 @@ export default function CreatePost() {
         body: JSON.stringify({ postId: activePostId, userId }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) throw new Error(friendlyErrorMessage(data));
       setPublishResult({ success: true, urn: data.linkedinPostUrn });
       addActivity('send', 'Published to LinkedIn');
       fetch(`${API_URL}/api/persona-signal`, {
@@ -818,12 +879,12 @@ export default function CreatePost() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[#EAE5F5]">
+    <div className="h-app-shell flex flex-col overflow-hidden bg-[#EAE5F5]">
 
       {/* Nav */}
       <nav className="flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-6 h-14 flex items-center justify-between z-40">
         <div className="flex items-center gap-3">
-          <a href="/dashboard" className="p-1.5 -ml-1.5 text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
+          <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-1.5 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
           <a href="/dashboard" className="text-base font-extrabold gradient-text hidden sm:block">Eclatale</a>
         </div>
         <div className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[11px]">
@@ -1006,7 +1067,7 @@ export default function CreatePost() {
           {/* Single-row header: avatar · name · tone */}
           <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2.5 bg-white">
             {userAvatar
-              ? <img src={userAvatar} alt={userName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+              ? <img src={userAvatar} alt={userName} onError={() => setUserAvatar('')} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
               : <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">{userInitials || 'Y'}</div>
             }
             <span className="text-[12px] font-semibold text-brand-dark leading-none truncate max-w-[130px]">{userName || 'Your Name'}</span>
@@ -1112,7 +1173,7 @@ export default function CreatePost() {
                         <div className="flex items-start justify-between gap-2 mb-2 flex-shrink-0">
                           <div className="flex items-start gap-2 min-w-0">
                             {userAvatar
-                              ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                              ? <img src={userAvatar} alt={userName} onError={() => setUserAvatar('')} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                               : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
                                   style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
                                   {userInitials || 'Y'}
@@ -1279,7 +1340,8 @@ export default function CreatePost() {
                     value={composerContent}
                     onChange={e => setComposerContent(e.target.value)}
                     placeholder={composerPlaceholder}
-                    className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-[#9CA3AF] font-[inherit] min-h-[220px]"
+                    className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-[#9CA3AF] font-[inherit] min-h-[220px] max-h-[520px]"
+                    style={{ caretColor: '#7C5CFC' }}
                   />
                 )}
               </div>
@@ -1297,17 +1359,17 @@ export default function CreatePost() {
                         </p>
                       </div>
                     )}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
+                    <div className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity flex gap-1.5">
                       <button onClick={() => setShowTextOverlay(o => !o)}
-                        className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm flex items-center gap-1">
+                        className="px-2.5 py-1.5 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm flex items-center gap-1 min-h-[32px]">
                         {showTextOverlay ? <EyeOff size={9} /> : <Eye size={9} />} Text
                       </button>
                       <button onClick={() => { setVisualModalOpen(true); setVisualPreview(null); }}
-                        className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm">
+                        className="px-2.5 py-1.5 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm min-h-[32px]">
                         Change
                       </button>
                       <button onClick={() => setAttachedImage(null)}
-                        className="w-6 h-6 rounded-lg bg-black/60 text-white flex items-center justify-center backdrop-blur-sm">
+                        className="w-8 h-8 rounded-lg bg-black/60 text-white flex items-center justify-center backdrop-blur-sm">
                         <X size={11} />
                       </button>
                     </div>
@@ -1346,12 +1408,12 @@ export default function CreatePost() {
                 )}
               </div>
 
-              {/* Authenticity — single compact line by default, expands to the full score card on click */}
+              {/* Content Confidence — single compact line by default, expands to the full score card on click */}
               {composerContent && (showAuthLoading || authScore) && (
                 <div className="flex-shrink-0 px-5 pb-2.5">
                   {showAuthLoading && !authScore ? (
                     <div className="flex items-center gap-1.5 text-[11px] text-brand-muted">
-                      <span>Checking authenticity</span>
+                      <span>Checking confidence</span>
                       <span className="flex gap-0.5">
                         <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '0ms' }} />
                         <span className="w-1 h-1 rounded-full bg-brand-purple/40 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -1363,34 +1425,58 @@ export default function CreatePost() {
                       <button onClick={() => setAuthScoreExpanded(o => !o)}
                         className="text-[11px] font-semibold flex items-center gap-1 hover:underline"
                         style={{ color: scoreColor(authScore.overallScore) }}>
-                        Authenticity: {authScore.overallScore} {authScore.overallScore >= 80 ? '✓' : authScore.overallScore >= 60 ? '⚠' : '✗'}
+                        Confidence: {authScore.overallScore} {authScore.overallScore >= 80 ? '✓' : authScore.overallScore >= 60 ? '⚠' : '✗'}
                         <ChevronDown size={11} className={`transition-transform ${authScoreExpanded ? 'rotate-180' : ''}`} />
                       </button>
                       {authScoreExpanded && (
                         <div className="card !p-4 mt-2 animate-fadeIn">
                           <div className="flex items-start gap-4">
                             <AuthenticityRing score={authScore.overallScore} />
-                            <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0 mt-1"
-                              style={{ background: scoreColor(authScore.overallScore) }}>
-                              {authScore.grade}
-                            </span>
                             <div className="flex-1 min-w-0 space-y-1.5">
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-[11px] font-bold text-brand-dark uppercase tracking-wide">Authenticity Score</span>
-                                <span title="Eclatale checks your post for factual accuracy, topic freshness, and voice consistency before you publish. This helps you post with confidence."
+                                <span className="text-[11px] font-bold text-brand-dark uppercase tracking-wide">Content Confidence Score</span>
+                                <span title="This score helps you post with confidence. Most great LinkedIn posts score 65-80. Authentic human voices never score 100 — and they shouldn't."
                                   className="w-3.5 h-3.5 rounded-full bg-[rgba(124,92,252,0.1)] text-brand-purple text-[9px] font-bold flex items-center justify-center cursor-help flex-shrink-0">?</span>
                               </div>
-                              <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
+                              <p className="text-[12px] font-semibold" style={{ color: scoreColor(authScore.overallScore) }}>
+                                {confidenceLabel(authScore.overallScore)}
+                                {getActionableItems(authScore).length > 0 && (
+                                  <span className="text-brand-muted font-normal"> · {getActionableItems(authScore).length} optional improvement{getActionableItems(authScore).length === 1 ? '' : 's'}</span>
+                                )}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-[11px] text-brand-dark pt-1">
                                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.accuracy.score) }} />
-                                <span>✓ Factual Accuracy: {authScore.accuracy.score}/100</span>
+                                {authScore.accuracy.isOpinionBased ? (
+                                  <span>✓ Opinion-based — no facts to verify</span>
+                                ) : authScore.accuracy.claims.some(c => c.status === 'Unverifiable' || c.status === 'False') ? (
+                                  <span>⚠ {authScore.accuracy.claims.filter(c => c.status === 'Unverifiable' || c.status === 'False').length} claim{authScore.accuracy.claims.filter(c => c.status === 'Unverifiable' || c.status === 'False').length === 1 ? '' : 's'} need{authScore.accuracy.claims.filter(c => c.status === 'Unverifiable' || c.status === 'False').length === 1 ? 's' : ''} a source</span>
+                                ) : (
+                                  <span>✓ {authScore.accuracy.claims.filter(c => c.status === 'Verified').length || 'No'} fact{authScore.accuracy.claims.filter(c => c.status === 'Verified').length === 1 ? '' : 's'} verified</span>
+                                )}
                               </div>
+                              {!authScore.accuracy.isOpinionBased && authScore.accuracy.claims.filter(c => c.status === 'Verified' && c.sourceUrl).length > 0 && (
+                                <div className="flex flex-wrap gap-2 pl-3.5">
+                                  {authScore.accuracy.claims.filter(c => c.status === 'Verified' && c.sourceUrl).map((c, i) => (
+                                    <a key={i} href={c.sourceUrl} target="_blank" rel="noopener noreferrer"
+                                      className="text-[10px] text-brand-purple hover:underline">Source {i + 1} ↗</a>
+                                  ))}
+                                </div>
+                              )}
                               <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
                                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.freshness.score) }} />
-                                <span>↻ Topic Freshness: {authScore.freshness.score}/100</span>
+                                {authScore.freshness.score >= 70 ? (
+                                  <span>✓ Fresh angle</span>
+                                ) : (
+                                  <span>Fresh angle available ↗ {authScore.freshness.suggestion}</span>
+                                )}
                               </div>
                               <div className="flex items-center gap-1.5 text-[11px] text-brand-dark">
                                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: scoreColor(authScore.voice.score) }} />
-                                <span>◉ Voice Match: {authScore.voice.score}/100</span>
+                                {authScore.voice.score >= 75 ? (
+                                  <span>✓ Sounds like you</span>
+                                ) : (
+                                  <span>{authScore.voice.specificMismatches[0] || 'A bit off from your usual voice'}{authScore.voice.suggestion ? ` — ${authScore.voice.suggestion}` : ''}</span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1405,27 +1491,80 @@ export default function CreatePost() {
                           )}
                         </div>
                       )}
+
+                      {/* Supporting References — directly below the score card, same collapse/expand pattern */}
+                      <div className="mt-2">
+                      <button onClick={() => setReferencesExpanded(o => !o)}
+                        className="text-[11px] font-semibold flex items-center gap-1.5 text-brand-purple hover:underline">
+                        📎 Supporting References
+                        {authScore.references.references.length > 0 && <span className="text-brand-muted font-normal">({authScore.references.references.length})</span>}
+                        <ChevronDown size={11} className={`transition-transform ${referencesExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+                      {referencesExpanded && (
+                        <div className="card !p-4 mt-2 animate-fadeIn">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-[11px] font-bold text-brand-dark uppercase tracking-wide">Supporting References</span>
+                            <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[9px] !py-1">Powered by live web search</span>
+                          </div>
+                          {authScore.references.references.length === 0 ? (
+                            <p className="text-[11px] text-brand-muted leading-relaxed">No supporting references found for this angle — consider adding your own source or data point to strengthen credibility.</p>
+                          ) : (
+                            <div className="space-y-2.5">
+                              {authScore.references.references.map((ref, i) => (
+                                <div key={i} className="rounded-xl border border-[rgba(124,92,252,0.08)] p-3">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-bold text-brand-dark">{ref.publication}</span>
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                                      ref.type === 'news' ? 'bg-[rgba(17,138,178,0.1)] text-brand-blue'
+                                      : ref.type === 'research' ? 'bg-[rgba(124,92,252,0.1)] text-brand-purple'
+                                      : ref.type === 'data' ? 'bg-[rgba(6,214,160,0.1)] text-brand-teal'
+                                      : 'bg-[rgba(255,107,53,0.1)] text-brand-orange'
+                                    }`}>{ref.type.charAt(0).toUpperCase() + ref.type.slice(1)}</span>
+                                    {ref.publishedDate && <span className="text-[10px] text-brand-muted">{ref.publishedDate}</span>}
+                                  </div>
+                                  <a href={ref.url} target="_blank" rel="noopener noreferrer"
+                                    className="text-[12px] font-semibold text-brand-dark hover:text-brand-purple hover:underline block mb-1">
+                                    {ref.title}
+                                  </a>
+                                  <p className="text-[11px] text-brand-muted leading-relaxed mb-2">{ref.relevance}</p>
+                                  <div className="flex items-center gap-3">
+                                    <button onClick={() => handleUseReference(ref)} disabled={refining && usingReferenceUrl === ref.url}
+                                      className="text-[11px] font-semibold text-brand-purple hover:underline disabled:opacity-50">
+                                      {usingReferenceUrl === ref.url ? 'Adding…' : 'Use in post →'}
+                                    </button>
+                                    <button onClick={() => handleCopyReferenceLink(ref.url)}
+                                      className="text-[10px] text-brand-muted hover:text-brand-purple flex items-center gap-1">
+                                      {copiedRefUrl === ref.url ? <><Check size={10} className="text-brand-teal" /> Copied</> : <><Copy size={10} /> Copy link</>}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="flex-shrink-0 px-5 py-3 border-t border-[rgba(124,92,252,0.06)] bg-white/40 flex items-center gap-2">
+              <div className="flex-shrink-0 px-3 sm:px-5 py-3 safe-bottom border-t border-[rgba(124,92,252,0.06)] bg-white/40 flex items-center gap-1.5 sm:gap-2 overflow-x-auto">
                 <button onClick={handleCopy} disabled={!composerContent}
-                  className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
-                  {copied ? <><Check size={12} className="text-brand-teal" /> Copied</> : <><Copy size={12} /> Copy</>}
+                  className="btn-ghost text-xs !py-2 !px-2.5 sm:!px-3 disabled:opacity-40 flex-shrink-0">
+                  {copied ? <><Check size={12} className="text-brand-teal" /> <span className="hidden sm:inline">Copied</span></> : <><Copy size={12} /> <span className="hidden sm:inline">Copy</span></>}
                 </button>
                 <button onClick={handleSaveDraft} disabled={!composerContent}
-                  className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
-                  {saved ? <><Check size={12} className="text-brand-teal" /> Saved</> : <><FileText size={12} /> Save Draft</>}
+                  className="btn-ghost text-xs !py-2 !px-2.5 sm:!px-3 disabled:opacity-40 flex-shrink-0">
+                  {saved ? <><Check size={12} className="text-brand-teal" /> <span className="hidden sm:inline">Saved</span></> : <><FileText size={12} /> <span className="hidden sm:inline">Save Draft</span></>}
                 </button>
-                <div className="relative" ref={scheduleRef}>
+                <div className="relative flex-shrink-0" ref={scheduleRef}>
                   <button disabled={!composerContent} onClick={() => setScheduleOpen(o => !o)}
-                    className="btn-ghost text-xs !py-2 !px-3 disabled:opacity-40">
-                    <Calendar size={12} /> {scheduleConfirmed && scheduleDay ? `${scheduleDay}, ${scheduleTime}` : 'Schedule'}
+                    className="btn-ghost text-xs !py-2 !px-2.5 sm:!px-3 disabled:opacity-40">
+                    <Calendar size={12} /> <span className="hidden sm:inline">{scheduleConfirmed && scheduleDay ? `${scheduleDay}, ${scheduleTime}` : 'Schedule'}</span>
                   </button>
                   {scheduleOpen && (
-                    <div className="absolute bottom-full mb-2 left-0 w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-4 z-50 animate-fadeIn">
+                    <div className="fixed left-4 right-4 bottom-20 sm:absolute sm:bottom-full sm:left-0 sm:right-auto sm:mb-2 sm:w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-4 z-50 animate-fadeIn">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Calendar size={12} className="text-brand-purple" />
                         <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">Schedule</span>
@@ -1471,11 +1610,11 @@ export default function CreatePost() {
                         {authScore.overallScore >= 60 ? (
                           <span className="text-amber-500">{getActionableItems(authScore).length} suggestion{getActionableItems(authScore).length === 1 ? '' : 's'} available</span>
                         ) : (
-                          <span className="text-red-500">Low authenticity score — see details</span>
+                          <span className="text-red-500">Review before posting — see details</span>
                         )}
                       </button>
                       {postSuggestionsOpen && (
-                        <div className="absolute bottom-full right-0 mb-2 w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-3.5 z-50 animate-fadeIn space-y-2.5">
+                        <div className="fixed left-4 right-4 bottom-20 sm:absolute sm:bottom-full sm:right-0 sm:left-auto sm:mb-2 sm:w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-3.5 z-50 animate-fadeIn space-y-2.5">
                           {getActionableItems(authScore).slice(0, 2).map((item, i) => (
                             <div key={i}>
                               <span className="text-[10px] font-bold text-brand-dark uppercase tracking-wide">{item.label}</span>
@@ -1489,6 +1628,21 @@ export default function CreatePost() {
                         </div>
                       )}
                     </div>
+                  )}
+                  {!publishResult?.success && (
+                    referenceUsed ? (
+                      <span className="text-[10px] font-semibold text-brand-teal">✓ Source included</span>
+                    ) : authScore && authScore.references.references.length > 0 && !referenceHintDismissed ? (
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => setReferencesExpanded(true)}
+                          className="text-[10px] font-semibold text-brand-purple hover:underline">
+                          💡 Add a source to boost credibility · See references ↑
+                        </button>
+                        <button onClick={() => setReferenceHintDismissed(true)} className="text-brand-muted hover:text-brand-dark">
+                          <X size={10} />
+                        </button>
+                      </div>
+                    ) : null
                   )}
                 </div>
               </div>
@@ -1532,7 +1686,7 @@ export default function CreatePost() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(124,92,252,0.08)] sticky top-0 bg-white z-10">
                 <span className="text-sm font-bold text-brand-dark">Your Voice Profile</span>
                 <button onClick={closeVoiceEdit}
-                  className="w-8 h-8 rounded-xl hover:bg-[rgba(124,92,252,0.06)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
+                  className="min-w-[44px] min-h-[44px] rounded-xl hover:bg-[rgba(124,92,252,0.06)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
                   <X size={16} />
                 </button>
               </div>
@@ -1630,13 +1784,13 @@ export default function CreatePost() {
                 </div>
                 <span className="text-sm font-bold text-brand-dark">Add a visual</span>
               </div>
-              <button onClick={() => { setVisualModalOpen(false); setVisualPreview(null); setVisualError(''); }}
-                className="w-8 h-8 rounded-xl hover:bg-[rgba(124,92,252,0.06)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
+              <button onClick={closeVisualModal}
+                className="min-w-[44px] min-h-[44px] rounded-xl hover:bg-[rgba(124,92,252,0.06)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
                 <X size={16} />
               </button>
             </div>
 
-            <div className="px-5 py-4 space-y-4">
+            <div className="px-5 py-4 safe-bottom space-y-4">
               {/* Context from post */}
               <div>
                 <label className="text-[10px] font-semibold text-brand-dark uppercase tracking-widest mb-1.5 block">Post context (auto-filled)</label>
@@ -1712,7 +1866,7 @@ export default function CreatePost() {
       )}
       {/* Voice updated toast */}
       {voiceToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-brand-dark text-white text-[12px] font-medium px-4 py-3 rounded-xl shadow-2xl animate-fadeIn flex items-center gap-2 whitespace-nowrap">
+        <div className="fixed bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))] left-1/2 -translate-x-1/2 z-[60] bg-brand-dark text-white text-[12px] font-medium px-4 py-3 rounded-xl shadow-2xl animate-fadeIn flex items-center gap-2 max-w-[calc(100vw-2rem)] sm:whitespace-nowrap sm:max-w-none">
           <Check size={14} className="text-brand-teal" />
           Voice updated — your next post will reflect these changes
         </div>

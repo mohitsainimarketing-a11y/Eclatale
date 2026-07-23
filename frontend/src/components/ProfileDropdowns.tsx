@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useId } from 'react';
 import { Search, Check, Sparkles } from 'lucide-react';
 
 export const ROLES = [
@@ -117,6 +117,7 @@ export function SearchableDropdown({ options, value, onChange, placeholder }: {
 }) {
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const listboxId = useId();
 
   const filtered = useMemo(() => {
     if (!search) return options.slice(0, 15);
@@ -146,6 +147,7 @@ export function SearchableDropdown({ options, value, onChange, placeholder }: {
           className="input !pl-11 !pr-11 !rounded-2xl !text-base"
           role="combobox"
           aria-expanded={isOpen}
+          aria-controls={listboxId}
         />
         <Sparkles size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-purple/40" />
       </div>
@@ -153,7 +155,7 @@ export function SearchableDropdown({ options, value, onChange, placeholder }: {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute z-20 w-full mt-2 card !rounded-2xl max-h-60 overflow-y-auto shadow-brand-lg" role="listbox">
+          <div id={listboxId} className="absolute z-20 w-full mt-2 card !rounded-2xl max-h-60 overflow-y-auto shadow-brand-lg" role="listbox">
             {filtered.length === 0 ? (
               <div className="p-4 text-center text-sm text-brand-muted">No matches. Try a different search.</div>
             ) : (

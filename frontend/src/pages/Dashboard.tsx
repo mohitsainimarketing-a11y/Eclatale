@@ -5,6 +5,7 @@ import {
   Home, Zap, User, Clock, ArrowRight, RefreshCw, Copy, Check,
   Loader2, Target, Settings, ChevronRight, Image, TrendingUp, PenTool,
 } from 'lucide-react';
+import { copyToClipboard } from '../utils/clipboard';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -196,7 +197,7 @@ export default function Dashboard() {
   };
 
   const handleCopyPost = (post: RecentPost) => {
-    navigator.clipboard.writeText(post.content);
+    copyToClipboard(post.content);
     setCopiedId(post.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -240,7 +241,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#FAFAFE] flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[rgba(124,92,252,0.06)] h-screen sticky top-0 z-40">
+      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[rgba(124,92,252,0.06)] h-app-shell sticky top-0 z-40">
         <div className="px-5 h-16 flex items-center border-b border-[rgba(124,92,252,0.06)]">
           <a href="/dashboard" className="text-xl font-extrabold gradient-text">Eclatale</a>
         </div>
@@ -266,7 +267,7 @@ export default function Dashboard() {
         <div className="px-3 py-4 border-t border-[rgba(124,92,252,0.06)]">
           <div className="flex items-center gap-3 px-3 py-2">
             {userAvatar
-              ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+              ? <img src={userAvatar} alt={userName} onError={() => setUserAvatar('')} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
               : <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   {(() => { const p = userName.split(' ').filter(Boolean); return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : userName.substring(0,2).toUpperCase(); })()}
                 </div>
@@ -282,7 +283,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 pb-20 lg:pb-0">
+      <div className="flex-1 min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between px-5 h-14 bg-white/90 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] sticky top-0 z-40">
           <a href="/dashboard" className="text-lg font-extrabold gradient-text">Eclatale</a>
@@ -686,7 +687,7 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[rgba(124,92,252,0.06)] z-50">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[rgba(124,92,252,0.06)] z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around h-16">
           {[
             { icon: <Home size={20} />, label: 'Home', href: '/dashboard', active: true },

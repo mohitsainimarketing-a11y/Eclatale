@@ -12,6 +12,7 @@ import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '.
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { calculateAuthenticityScore } from '../lib/authenticityScore';
+import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -406,10 +407,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const result = await authenticityScore(userId, postId, postContent, topic, forceRefresh);
         return res.json(result);
       }
+      case 'page-view': {
+        const feature = String(body.feature || req.query.feature || '');
+        const path = String(body.path || req.query.path || '');
+        if (!feature) return res.status(400).json({ error: 'Missing feature' });
+        await supabase.from('page_views').insert({ user_id: userId, feature, path: path || null });
+        return res.json({ ok: true });
+      }
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
   } catch (error: any) {
+    if (isCreditsExhaustedError(error)) {
+      console.error('Anthropic credits exhausted');
+      return res.status(503).json(creditsExhaustedBody());
+    }
     console.error('Intelligence error:', error);
     res.status(500).json({ error: error.message || 'Intelligence request failed' });
   }

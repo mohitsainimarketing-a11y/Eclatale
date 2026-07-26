@@ -5,6 +5,7 @@
     { "source": "/api/voice-match-score", "destination": "/api/persona-signal" },
     { "source": "/api/admin/trigger-digest", "destination": "/api/intelligence?action=trigger-digest" },
     { "source": "/api/weekly-digest-cron", "destination": "/api/intelligence?action=weekly-digest-cron" },
+    { "source": "/api/analytics/page-view", "destination": "/api/intelligence?action=page-view" },
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "crons": [

@@ -267,7 +267,7 @@ export default function Dashboard() {
         <div className="px-3 py-4 border-t border-[rgba(124,92,252,0.06)]">
           <div className="flex items-center gap-3 px-3 py-2">
             {userAvatar
-              ? <img src={userAvatar} alt={userName} onError={() => setUserAvatar('')} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+              ? <img src={userAvatar} alt={userName} loading="lazy" onError={() => setUserAvatar('')} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
               : <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   {(() => { const p = userName.split(' ').filter(Boolean); return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : userName.substring(0,2).toUpperCase(); })()}
                 </div>

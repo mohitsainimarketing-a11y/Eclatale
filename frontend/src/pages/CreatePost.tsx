@@ -1067,7 +1067,7 @@ export default function CreatePost() {
           {/* Single-row header: avatar · name · tone */}
           <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2.5 bg-white">
             {userAvatar
-              ? <img src={userAvatar} alt={userName} onError={() => setUserAvatar('')} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+              ? <img src={userAvatar} alt={userName} loading="lazy" onError={() => setUserAvatar('')} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
               : <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">{userInitials || 'Y'}</div>
             }
             <span className="text-[12px] font-semibold text-brand-dark leading-none truncate max-w-[130px]">{userName || 'Your Name'}</span>
@@ -1173,7 +1173,7 @@ export default function CreatePost() {
                         <div className="flex items-start justify-between gap-2 mb-2 flex-shrink-0">
                           <div className="flex items-start gap-2 min-w-0">
                             {userAvatar
-                              ? <img src={userAvatar} alt={userName} onError={() => setUserAvatar('')} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                              ? <img src={userAvatar} alt={userName} loading="lazy" onError={() => setUserAvatar('')} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                               : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
                                   style={{ background: 'linear-gradient(135deg,#7C5CFC 0%,#F725C5 100%)' }}>
                                   {userInitials || 'Y'}
@@ -1351,7 +1351,7 @@ export default function CreatePost() {
               <div className="px-5 pb-5">
                 {attachedImage ? (
                   <div className="relative rounded-xl overflow-hidden group">
-                    <img src={attachedImage} alt="Post visual" className="w-full rounded-xl object-cover max-h-[240px]" />
+                    <img src={attachedImage} alt="Post visual" loading="lazy" className="w-full rounded-xl object-cover max-h-[240px]" />
                     {showTextOverlay && composerContent && (
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-4 pt-10 pb-4 rounded-b-xl pointer-events-none">
                         <p className="text-white text-[13px] font-semibold leading-snug line-clamp-2">
@@ -1831,7 +1831,7 @@ export default function CreatePost() {
               {visualPreview && (
                 <div className="space-y-3 animate-fadeIn">
                   <div className="relative rounded-xl overflow-hidden">
-                    <img src={visualPreview} alt="Generated visual" className="w-full rounded-xl object-cover" />
+                    <img src={visualPreview} alt="Generated visual" loading="lazy" className="w-full rounded-xl object-cover" />
                     {showTextOverlay && composerContent && (
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-4 pt-10 pb-4 rounded-b-xl pointer-events-none">
                         <p className="text-white text-[13px] font-semibold leading-snug line-clamp-2">

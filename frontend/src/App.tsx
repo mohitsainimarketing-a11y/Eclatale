@@ -1,5 +1,6 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { initAnalytics, trackEvent } from './lib/analytics';
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Auth = lazy(() => import('./pages/auth'));
@@ -12,6 +13,9 @@ const PersonaSetup = lazy(() => import('./pages/PersonaSetup'));
 const Settings = lazy(() => import('./pages/Settings'));
 const CreateVisual = lazy(() => import('./pages/CreateVisual'));
 const Intelligence = lazy(() => import('./pages/Intelligence'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
   return (
@@ -24,9 +28,22 @@ function PageLoader() {
   );
 }
 
+function PageViewTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackEvent('page_view', { page_path: location.pathname });
+  }, [location]);
+  return null;
+}
+
 function App() {
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
   return (
     <Router>
+      <PageViewTracker />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -42,6 +59,9 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/create-visual" element={<CreateVisual />} />
           <Route path="/intelligence" element={<Intelligence />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </Router>

@@ -1,0 +1,242 @@
+export interface BlogBlock {
+  type: 'h2' | 'h3' | 'p' | 'ul';
+  text?: string;
+  items?: string[];
+}
+
+export interface BlogPost {
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  date: string;
+  readTime: string;
+  keyword: string;
+  content: BlogBlock[];
+}
+
+export const blogPosts: BlogPost[] = [
+  {
+    slug: 'linkedin-content-strategy-founders-2026',
+    title: 'The LinkedIn Content Strategy Every Founder Needs in 2026',
+    description: 'Why founders need a real LinkedIn presence, what content actually works, how often to post, and how to use AI without sounding generic.',
+    category: 'Strategy',
+    date: '2026-07-01',
+    readTime: '8 min read',
+    keyword: 'LinkedIn content strategy founders',
+    content: [
+      { type: 'p', text: 'If you\'re a founder in 2026 and you\'re not posting on LinkedIn, you\'re leaving one of the highest-leverage channels available to early-stage companies completely untouched. Investors check it before they take a call. Candidates check it before they accept an offer. Customers check it before they trust a cold outbound email. Your LinkedIn profile has quietly become your company\'s second homepage — and for many buyers, it\'s the one they actually read.' },
+      { type: 'h2', text: 'Why founders specifically need a LinkedIn content strategy' },
+      { type: 'p', text: 'A company page has almost no reach. LinkedIn\'s algorithm heavily favors personal profiles because people trust people, not logos. When a founder posts consistently, that content routinely reaches 10-50x further than the same message posted from the company account. That reach compounds: every post that performs well introduces your name to a slice of your target market who would never have found your company page organically.' },
+      { type: 'p', text: 'There\'s also a trust dimension that\'s easy to underestimate. Founder content lets prospects, investors, and hires get a read on how you think before they ever get on a call with you. It pre-sells your judgment. A thoughtful post about a hard decision you made last quarter does more to build credibility than a polished case study, because it\'s unscripted and specific.' },
+      { type: 'h2', text: 'What content actually works for founders' },
+      { type: 'p', text: 'The founders who build real audiences on LinkedIn are rarely the ones posting generic "5 tips for success" listicles. The content that performs consistently falls into a few repeatable categories:' },
+      { type: 'ul', items: [
+        'Behind-the-scenes decisions — what you chose not to build, why you fired a vendor, why you turned down a round',
+        'Contrarian but defensible takes on your industry — the opinion only becomes interesting if you can back it with specifics',
+        'Concrete numbers and outcomes — real MRR milestones, real churn lessons, real hiring mistakes',
+        'Lessons from failure — these consistently outperform highlight reels because they\'re rare and honest',
+        'Customer stories told through your lens — not a testimonial quote, but what you learned from the conversation',
+      ] },
+      { type: 'p', text: 'Notice what\'s missing from that list: generic motivational quotes, vague "grateful for my team" posts, and anything that could have been written by literally any founder in any industry. If a post could be copy-pasted onto a competitor\'s profile without anyone noticing, it\'s not going to move the needle.' },
+      { type: 'h2', text: 'How often should founders post?' },
+      { type: 'p', text: 'Consistency beats frequency. Three to four well-considered posts a week outperforms daily posting that dilutes quality, and it dramatically outperforms sporadic bursts followed by silence. LinkedIn\'s algorithm rewards accounts that post predictably because it can learn who to show your content to. A founder who disappears for six weeks and comes back loses most of the compounding effect they built.' },
+      { type: 'p', text: 'A realistic cadence for a busy founder is two to three posts per week, each taking 15-20 minutes to draft once you have a system. That\'s the number most people who actually sustain a LinkedIn habit long-term land on — anything more ambitious tends to burn out within a month.' },
+      { type: 'h2', text: 'Using AI without sounding like everyone else\'s AI' },
+      { type: 'p', text: 'The reason so much AI-generated LinkedIn content feels hollow isn\'t that AI can\'t write well — it\'s that most tools generate from a generic prompt with no memory of how you actually write, what you\'ve said before, or what your actual opinions are. The output reads like a competent stranger wrote it, because that\'s exactly what happened.' },
+      { type: 'p', text: 'The fix isn\'t to avoid AI — it\'s to use AI that has actually learned your voice. Tools built around a persona engine analyze your past writing, your vocabulary, your sentence rhythm, and your specific opinions, then generate drafts that sound like a first draft you\'d write yourself, not a template filled in with your name. This is the core difference between a generic AI writer and something like Eclatale\'s persona-based approach: the system gets better the more you use it, instead of producing the same generic tone on post one hundred as it did on post one.' },
+      { type: 'p', text: 'A practical workflow that works well for busy founders: capture the raw idea in one sentence right when it occurs to you, let the AI turn that into a structured first draft in your voice, then spend two minutes editing for specifics only you would know. That last step matters — the specific number, the actual name of the vendor, the exact phrase a customer used — is what separates a post that performs from one that gets scrolled past.' },
+      { type: 'h2', text: 'Building the habit that actually sticks' },
+      { type: 'p', text: 'Most founders who quit LinkedIn quit not because the content didn\'t work, but because the system to produce it wasn\'t sustainable. Keep a running list of ideas as they occur to you during the week — a hard conversation, a metric that surprised you, a mistake you caught — rather than trying to think of something to say when you sit down to write. The ideas are already happening in your business every week; the bottleneck is almost never inspiration, it\'s capture and follow-through.' },
+      { type: 'p', text: 'If you want to build a LinkedIn presence that compounds instead of one that fizzles out after a month, start with a system that removes the two biggest friction points: coming up with what to say, and making it sound like you when you say it.' },
+    ],
+  },
+  {
+    slug: 'ai-linkedin-post-generator-authentic-voice',
+    title: 'Why Most AI LinkedIn Post Generators Sound Generic (And How to Fix It)',
+    description: 'The problem with generic AI content, what "voice learning" actually means, and how persona engines produce posts that sound like a real person wrote them.',
+    category: 'AI & Content',
+    date: '2026-07-08',
+    readTime: '7 min read',
+    keyword: 'AI LinkedIn post generator',
+    content: [
+      { type: 'p', text: 'Scroll LinkedIn for ten minutes and you\'ll start recognizing the pattern before you finish the first line. The bold hook. The single-sentence paragraph. The "Here\'s what nobody tells you about X" opener. The tidy three-point breakdown. The inspirational close. It\'s not that the writing is bad — it\'s that it\'s recognizable, and recognizable AI content has a trust cost that compounds every time someone sees it.' },
+      { type: 'h2', text: 'The real problem isn\'t AI — it\'s generic prompting' },
+      { type: 'p', text: 'Most AI LinkedIn post generators work off a single shared prompt template: give the tool a topic, and it produces a post using the same underlying style guide it uses for every other user of the product. The topic changes; the voice doesn\'t. That\'s why a founder in fintech and a marketing director in healthcare end up posting content with an eerily similar cadence, even though they\'ve never met and write nothing alike in real life.' },
+      { type: 'p', text: 'This is a structural limitation, not a quality problem. A generic prompt has no access to how you actually write — your typical sentence length, whether you use dashes or semicolons, whether you\'re blunt or hedge your claims, whether you open with a story or a stat. Without that information, the model defaults to whatever pattern performs best on average across millions of users, which is exactly the homogenized style everyone now recognizes on sight.' },
+      { type: 'h2', text: 'What "voice learning" actually means' },
+      { type: 'p', text: 'A persona engine works differently. Instead of generating from a shared template, it builds a model of your specific writing style from content you\'ve actually written — past posts, drafts you\'ve edited, even the way you rewrite AI suggestions. It tracks things like:' },
+      { type: 'ul', items: [
+        'Sentence rhythm — do you write short punchy lines or longer, more layered ones?',
+        'Vocabulary — the specific words and phrases you reach for versus the ones you\'d never use',
+        'Structure — do you open with a question, a claim, or a story?',
+        'Opinion strength — do you hedge ("I think maybe") or state things directly ("This is wrong")?',
+        'Industry-specific language — the jargon and shorthand that\'s natural in your field',
+      ] },
+      { type: 'p', text: 'Every one of those signals gets weaker or stronger the more the system observes. The first draft it generates for you should already sound closer to your voice than a generic tool\'s hundredth draft, because it\'s not solving "write a good LinkedIn post" — it\'s solving "write a post the way this specific person would write it."' },
+      { type: 'h2', text: 'The authenticity score problem nobody talks about' },
+      { type: 'p', text: 'Even with voice learning, an AI draft can drift generic without you noticing, especially if you\'re skimming and approving quickly. This is where a second layer matters: scoring a draft for how much it actually sounds like you before you post it, rather than after your audience has already seen it. A content authenticity score — comparing the draft against your established voice profile — catches the moments where the AI reverted to a generic pattern, so you can fix it before it goes live instead of after a comment section quietly wonders whether you actually wrote it.' },
+      { type: 'h2', text: 'How to tell if a tool is actually learning your voice' },
+      { type: 'p', text: 'A few practical tests separate real persona engines from generic generators wearing a personalization label:' },
+      { type: 'ul', items: [
+        'Does the output change meaningfully as you use it more, or does post 50 read like post 1?',
+        'Does it ask you to review and correct drafts, and does it actually incorporate those corrections?',
+        'Can you see or edit the voice profile it\'s building, or is it a black box?',
+        'Does it flag when a draft doesn\'t match your usual tone, or does it just hand you generic copy silently?',
+      ] },
+      { type: 'p', text: 'If the answer to most of these is no, you\'re using a generator, not a voice engine — and you\'ll keep running into the same generic-sounding output no matter how detailed your prompts get.' },
+      { type: 'h2', text: 'The fix is architectural, not prompt-based' },
+      { type: 'p', text: 'You can\'t prompt your way out of a generic model. "Write like me" as an instruction has almost nothing to work with unless the tool has actually studied how you write. This is the entire premise behind Eclatale\'s persona engine: it learns from your real writing, scores drafts for authenticity before you post, and improves specifically for you rather than for the average user. The result isn\'t just faster content — it\'s content that doesn\'t make your audience do a double-take wondering who actually wrote it.' },
+    ],
+  },
+  {
+    slug: 'linkedin-personal-brand-ceo-executives',
+    title: 'How CEOs and Executives Are Building Personal Brands on LinkedIn in 2026',
+    description: 'Why executive silence is a real career risk, what a real executive brand looks like, and the outcomes leaders are seeing from consistent LinkedIn presence.',
+    category: 'Executive Growth',
+    date: '2026-07-12',
+    readTime: '8 min read',
+    keyword: 'LinkedIn personal brand CEO',
+    content: [
+      { type: 'p', text: 'For a long time, executive LinkedIn presence was optional — a nice-to-have if a CEO happened to enjoy writing, skippable if they didn\'t. That assumption doesn\'t hold anymore. Board members check LinkedIn before board meetings. Journalists check it before they run a story. Candidates check it before they accept an executive offer. Silence on LinkedIn isn\'t neutral anymore; it reads as either absence or irrelevance, and both carry a cost.' },
+      { type: 'h2', text: 'The risk of staying silent' },
+      { type: 'p', text: 'When an executive has no visible presence, the vacuum gets filled by whoever else is talking — competitors, former employees, industry commentators, or nobody at all, which is its own problem when a prospective hire or investor searches your name and finds nothing recent. In a crisis, an executive with an established voice can address the market directly; one with no history has to build credibility and get a message out at the same time, under worse conditions.' },
+      { type: 'p', text: 'There\'s also a straightforward talent dimension. Senior candidates increasingly research the leadership team before they\'ll take a first call, and a CEO who posts thoughtfully about how they think signals something a polished "About" page can\'t: how this person actually reasons through hard tradeoffs. That single signal influences who applies and who accepts an offer more than most companies realize.' },
+      { type: 'h2', text: 'What a real executive brand looks like' },
+      { type: 'p', text: 'The executives building real audiences aren\'t doing daily thought-leadership dumps. They\'re doing something narrower and more sustainable: a consistent point of view, shared regularly, in their own words. The pattern that works looks like:' },
+      { type: 'ul', items: [
+        'A handful of core themes they return to repeatedly — not a new topic every post',
+        'Specific, defensible opinions rather than safe consensus takes',
+        'Real numbers and outcomes from their own company, shared with appropriate discretion',
+        'Occasional vulnerability — a decision that didn\'t work, a lesson learned the hard way',
+        'A recognizable voice, so a reader could identify the author even with the name blocked out',
+      ] },
+      { type: 'p', text: 'What doesn\'t work: ghostwritten content so polished it reads like a press release, or content so generic it could have come from any executive at any company. Both erode the trust the whole exercise is supposed to build.' },
+      { type: 'h2', text: 'Real outcomes executives are reporting' },
+      { type: 'p', text: 'The outcomes that matter to executives are rarely vanity metrics like impressions. The ones worth tracking are downstream: inbound interest from candidates who reference a specific post in their outreach, investor introductions that started because someone forwarded a post internally, speaking invitations, and press interest that came from a journalist finding the executive\'s take on a topic before they found anyone else\'s. These compound quietly over months, which is exactly why consistency matters more than any single viral post.' },
+      { type: 'h2', text: 'The time problem, and how to actually solve it' },
+      { type: 'p', text: 'The honest objection every executive raises is time. Nobody running a company has an hour a day to draft LinkedIn posts, and that\'s the real reason most executive accounts go quiet after a strong first month. The sustainable version of this isn\'t "find more time to write" — it\'s reducing the time each post actually takes by removing the two slowest steps: coming up with what to say, and getting the draft into a voice that sounds like the executive instead of a ghostwriter.' },
+      { type: 'p', text: 'This is where a persona-based AI tool changes the math. Instead of staring at a blank page or briefing a ghostwriter and waiting days for a draft, an executive can capture a raw thought in a sentence or two during a meeting break, and get back a structured draft in their own voice within minutes — something Eclatale is built specifically to do. The executive still owns the edit and the final call on what goes out, but the fifteen-minutes-a-day version of building a brand becomes realistic instead of aspirational.' },
+      { type: 'h2', text: 'Starting without overcommitting' },
+      { type: 'p', text: 'The executives who sustain a LinkedIn presence long-term almost never start with an ambitious daily-posting plan. They start with two posts a week on topics they already have strong opinions about, and they build from there once the habit sticks. If you\'re a CEO or executive who hasn\'t posted in months, that\'s a more realistic starting point than trying to make up for lost time all at once.' },
+    ],
+  },
+  {
+    slug: 'taplio-alternative-linkedin-safe',
+    title: "The Best Taplio Alternative That Won't Get Your LinkedIn Account Banned",
+    description: "Taplio's compliance risks, why the official LinkedIn API matters, and how Eclatale offers a safer alternative without sacrificing content quality.",
+    category: 'Comparisons',
+    date: '2026-07-15',
+    readTime: '6 min read',
+    keyword: 'Taplio alternative',
+    content: [
+      { type: 'p', text: 'If you\'re searching for a Taplio alternative, there\'s a good chance you\'re either worried about the compliance risk of browser-automation tools, frustrated with the price, or both. Both concerns are legitimate, and both are worth understanding before you commit to any LinkedIn content tool.' },
+      { type: 'h2', text: "Taplio's compliance risk, explained" },
+      { type: 'p', text: 'Many LinkedIn growth tools, including popular options like Taplio, rely at least partly on browser extensions or session-based automation to schedule posts, manage engagement, or pull analytics. That approach works around LinkedIn\'s official integration path rather than through it, which puts the account owner in a gray area relative to LinkedIn\'s terms of service. LinkedIn has tightened enforcement on automation-adjacent behavior repeatedly over the past few years, and accounts flagged for suspicious activity patterns — even unintentionally, through a tool acting on your behalf — can face restrictions or bans.' },
+      { type: 'p', text: 'For a solo creator, that risk might feel tolerable. For a founder or executive whose LinkedIn account is tied directly to deal flow, hiring, and investor relationships, losing that account isn\'t a minor inconvenience — it can mean losing years of accumulated network and credibility overnight.' },
+      { type: 'h2', text: 'Why the official API matters more than it seems' },
+      { type: 'p', text: 'LinkedIn provides an official API for publishing content on behalf of verified accounts. Tools that integrate through this path operate within LinkedIn\'s sanctioned boundaries — actions are authenticated, rate-limited appropriately, and don\'t rely on impersonating a logged-in browser session. This isn\'t a minor technical distinction; it\'s the difference between a tool LinkedIn has explicitly approved to act on your behalf and one operating in a space LinkedIn could restrict at any time without warning.' },
+      { type: 'p', text: 'Eclatale is built exclusively on LinkedIn\'s official API for publishing. There\'s no browser extension impersonating your session, no scraping, and no automation pattern that could trigger LinkedIn\'s abuse detection. It\'s a meaningful trade worth understanding before you hand any tool access to an account you can\'t afford to lose.' },
+      { type: 'h2', text: 'Beyond safety: the content quality gap' },
+      { type: 'p', text: 'Compliance risk is the headline concern, but it\'s not the only reason people look for a Taplio alternative. A common complaint is that AI-generated drafts from generic tools sound templated — competent, but recognizably AI, and recognizably similar to what everyone else using the same tool is posting. Eclatale addresses this with a persona engine that learns your actual writing style from your past content rather than generating from a one-size-fits-all prompt, plus a content authenticity score that flags when a draft has drifted from your real voice before you post it, not after.' },
+      { type: 'h2', text: 'A direct comparison' },
+      { type: 'ul', items: [
+        'Publishing method: Eclatale uses the official LinkedIn API. Taplio relies partly on browser-based automation.',
+        'Account risk: Eclatale — zero ban risk from automation patterns. Taplio — non-zero, tied to LinkedIn\'s evolving enforcement.',
+        'Voice matching: Eclatale learns your specific writing style via a persona engine. Generic AI tools use shared templates.',
+        'Pricing: Eclatale starts at $19/mo. Taplio starts around $52/mo.',
+        'Authenticity check: Eclatale scores drafts against your real voice before publishing. Most alternatives skip this step entirely.',
+      ] },
+      { type: 'h2', text: 'Who should actually switch' },
+      { type: 'p', text: 'If your LinkedIn account is central to your business — deal flow, hiring, investor relationships, or your personal reputation as a founder or executive — the compliance risk alone is worth taking seriously, independent of price or features. If you\'ve also been frustrated by generic-sounding AI output, that\'s a second, separate reason to evaluate a persona-based alternative rather than another template-driven tool. Eclatale was built to solve both problems at once: publish safely through LinkedIn\'s official channel, and generate content that actually sounds like you wrote it.' },
+    ],
+  },
+  {
+    slug: 'linkedin-post-ideas-professionals',
+    title: '50 LinkedIn Post Ideas for Professionals That Actually Get Engagement',
+    description: 'Fifty concrete post angles across five categories, with real examples, to help you never stare at a blank LinkedIn compose box again.',
+    category: 'Content Ideas',
+    date: '2026-07-20',
+    readTime: '10 min read',
+    keyword: 'LinkedIn post ideas',
+    content: [
+      { type: 'p', text: 'The hardest part of a consistent LinkedIn habit usually isn\'t writing — it\'s deciding what to write about. Below are 50 concrete post angles, grouped into five categories, that consistently generate real engagement because they\'re specific rather than generic. Pick a category that fits your week, and adapt the angle to something that actually happened to you — specificity is what separates a post that performs from one that gets scrolled past.' },
+      { type: 'h2', text: '1. Lessons and mistakes (10 ideas)' },
+      { type: 'ul', items: [
+        'A decision you made that you\'d reverse if you could redo it, and what you\'d do instead',
+        'A hire that didn\'t work out and the interview signal you now know to watch for',
+        'A metric you were chasing that turned out to be the wrong one',
+        'The first time a customer told you something you didn\'t want to hear — and what changed after',
+        'A tool or process you abandoned after investing heavily in it',
+        'A negotiation you lost and what you learned about your own leverage',
+        'A piece of advice you followed that turned out to be wrong for your situation',
+        'The most expensive mistake you\'ve made in your career, in dollar terms',
+        'A time you were overconfident and it cost you',
+        'Something you believed for years that a specific event proved wrong',
+      ] },
+      { type: 'h2', text: '2. Behind-the-scenes and process (10 ideas)' },
+      { type: 'ul', items: [
+        'What your actual Monday morning looks like, hour by hour',
+        'How you make a decision when you don\'t have enough data',
+        'The real reason behind a product or business decision your audience saw the outcome of but not the reasoning',
+        'A rejected idea and why it didn\'t make the cut',
+        'How your team actually runs a specific recurring meeting',
+        'What changed in how you work after a specific milestone (funding, first hire, first big customer)',
+        'A tool or workflow you couldn\'t run your week without',
+        'What you check first thing every morning and why',
+        'How you prioritize when everything feels urgent',
+        'The actual conversation that led to a partnership or deal, told with real dialogue',
+      ] },
+      { type: 'h2', text: '3. Opinions and contrarian takes (10 ideas)' },
+      { type: 'ul', items: [
+        'A widely-accepted best practice in your industry that you think is actually wrong',
+        'Something everyone in your field says publicly but doesn\'t actually believe privately',
+        'A prediction about where your industry is heading in the next two years, with your reasoning',
+        'A popular tool or trend you\'re deliberately not adopting, and why',
+        'The advice you\'d give your industry\'s newest professionals that\'s different from the standard advice',
+        'A metric your industry over-indexes on that you think matters less than people assume',
+        'A take on a recent industry news story that goes against the consensus reaction',
+        'Something you changed your mind about in the last year and what caused the shift',
+        'A skill you think is undervalued in your field right now',
+        'A hiring or team-structure belief you hold that\'s different from conventional wisdom',
+      ] },
+      { type: 'h2', text: '4. Outcomes and numbers (10 ideas)' },
+      { type: 'ul', items: [
+        'A specific before/after metric from a change you made, with the actual numbers',
+        'What it actually took — time, money, effort — to hit a milestone you\'re proud of',
+        'A customer result you\'re allowed to share, told through the customer\'s specific problem',
+        'The real cost (not just financial) of a decision that paid off',
+        'A goal you set that you missed, and by how much, and why',
+        'The actual timeline of something that looked like an overnight success from outside',
+        'A comparison of what you expected versus what actually happened on a project',
+        'A specific number from your business you don\'t usually share publicly, with context on why it matters',
+        'The ROI of a specific investment (time or money) you made, calculated honestly',
+        'What changed in your numbers after a specific, nameable action you took',
+      ] },
+      { type: 'h2', text: '5. People and relationships (10 ideas)' },
+      { type: 'ul', items: [
+        'Someone who gave you advice early in your career that you still use',
+        'A colleague or employee who taught you something you didn\'t expect to learn from them',
+        'A moment a customer or client changed how you think about your own product',
+        'A mentor relationship and one specific thing they said that stuck',
+        'A time someone on your team disagreed with you and turned out to be right',
+        'The best question a candidate ever asked you in an interview',
+        'A person outside your industry whose approach to work influenced how you operate',
+        'A relationship you built by doing something unscalable early on',
+        'Someone you owe a specific, nameable career break to, and what they actually did',
+        'A moment of feedback from your team that changed how you lead',
+      ] },
+      { type: 'h2', text: 'How to turn any of these into a post fast' },
+      { type: 'p', text: 'The pattern that works: state the specific situation in one or two sentences, share what actually happened including the uncomfortable part, and end with what you\'d tell someone facing the same situation. Skip the generic wrap-up line ("What do you think?") unless you genuinely want a specific kind of response — it reads as filler otherwise.' },
+      { type: 'p', text: 'If you want to turn this list into an actual posting habit rather than a list you bookmark and forget, the fastest path is picking one idea, capturing the raw specifics in a sentence, and letting a tool that knows your voice — like Eclatale — turn it into a structured draft you can edit in a couple of minutes rather than starting from a blank page every time.' },
+    ],
+  },
+];
+
+export function getBlogPost(slug: string): BlogPost | undefined {
+  return blogPosts.find(p => p.slug === slug);
+}
+
+export function getRelatedPosts(slug: string, count = 2): BlogPost[] {
+  return blogPosts.filter(p => p.slug !== slug).slice(0, count);
+}

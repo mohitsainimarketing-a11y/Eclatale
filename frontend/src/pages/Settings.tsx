@@ -370,6 +370,7 @@ export default function Settings() {
                         title="Upload profile photo">
                         {profilePhoto || linkedinPicture
                           ? <img src={profilePhoto || linkedinPicture} alt="Profile"
+                              loading="lazy"
                               onError={() => { setProfilePhoto(''); setLinkedinPicture(''); }}
                               className="w-full h-full object-cover" />
                           : <div className="w-full h-full gradient-primary flex items-center justify-center text-white text-2xl font-bold">
@@ -786,7 +787,7 @@ export default function Settings() {
                           <h3 className="text-sm font-bold text-brand-dark">LinkedIn</h3>
                           {linkedinConnected ? (
                             <div className="flex items-center gap-2 mt-0.5">
-                              {linkedinPicture && <img src={linkedinPicture} alt="" className="w-4 h-4 rounded-full" />}
+                              {linkedinPicture && <img src={linkedinPicture} alt="" loading="lazy" className="w-4 h-4 rounded-full" />}
                               <span className="text-xs text-brand-muted">{linkedinName}</span>
                               <span className="text-[10px] font-semibold text-brand-teal bg-[rgba(6,214,160,0.08)] px-1.5 py-0.5 rounded-full">Connected</span>
                             </div>

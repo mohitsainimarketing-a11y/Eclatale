@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, Mail, Lock, Loader2 } from 'lucide-react';
+import { trackEvent } from '../lib/analytics';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -25,6 +26,7 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
+        trackEvent('signup_complete');
         if (data.session) {
           window.location.href = '/onboarding';
         } else {

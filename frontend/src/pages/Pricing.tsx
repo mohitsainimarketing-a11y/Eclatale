@@ -55,7 +55,7 @@ const FAQS = [
   { q: 'Do you offer refunds?', a: 'Yes — a full refund, no questions asked, within 7 days of your first charge.' },
   { q: 'How does LAUNCH50 work?', a: '50% off your first 3 months — that\'s $9.50/mo for 3 months, then the regular $19/mo (or $15.20/mo on annual) applies.' },
   { q: 'Is my LinkedIn account safe?', a: 'Yes — we publish only through LinkedIn\'s official API. There is zero ban risk since we never automate browser actions or scrape your account.' },
-  { q: 'What\'s different from Taplio?', a: 'Real voice learning from your own writing, authenticity scoring so your content never sounds like generic AI, zero ban risk, and a lower price.' },
+  { q: 'What makes Eclatale different?', a: 'Real voice learning from your own writing, an authenticity score that checks every post before it goes live, and publishing through LinkedIn\'s official API — all for $19/mo.' },
   { q: 'Can I upgrade or downgrade anytime?', a: 'Yes — changes take effect immediately, and billing is prorated automatically by Stripe.' },
 ];
 

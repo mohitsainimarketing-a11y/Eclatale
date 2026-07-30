@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Sparkles, TrendingUp, Zap, ArrowRight, ChevronDown, Menu, X, Target, Users, BarChart3,
-  Check, Shield, Lock, Star,
+  Sparkles, TrendingUp, Zap, ArrowRight, ChevronDown, Menu, X,
+  Check, Shield, Lock, Star, AudioWaveform, ShieldCheck, LineChart, Layers,
 } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 import NewsletterSignup from '../components/NewsletterSignup';
@@ -103,35 +103,27 @@ export default function Landing() {
   const handleViewPricing = () => trackEvent('view_pricing');
 
   const features = [
-    { icon: <Sparkles size={24} />, title: 'AI Content Engine', desc: 'Generate posts that sound like you, not a robot. Trained on your authentic voice and industry expertise.' },
-    { icon: <TrendingUp size={24} />, title: 'Growth Analytics', desc: 'Track what matters. Not vanity metrics, but real career outcomes like leads, opportunities, and influence.' },
-    { icon: <Zap size={24} />, title: 'Smart Scheduling', desc: 'Post at the perfect time. Our AI analyzes when your specific audience is most active and engaged.' },
-    { icon: <Target size={24} />, title: 'Persona Builder', desc: 'Define your unique voice, values, and positioning. Every piece of content stays authentic to who you are.' },
-    { icon: <Users size={24} />, title: 'Network Intelligence', desc: 'Identify and engage with the right people. Build meaningful connections that drive real opportunities.' },
-    { icon: <BarChart3 size={24} />, title: 'Growth Score', desc: 'One number that tells you exactly where you stand. Track your personal brand trajectory over time.' },
-  ];
-
-  const comparisonRows = [
-    { label: 'Learns your voice', eclatale: true, taplio: false, supergrow: false, generic: false },
-    { label: 'Authenticity score before posting', eclatale: true, taplio: false, supergrow: false, generic: false },
-    { label: 'LinkedIn account safe (official API)', eclatale: true, taplio: false, supergrow: true, generic: true },
-    { label: 'Unlimited posts (paid plan)', eclatale: true, taplio: true, supergrow: false, generic: false },
-    { label: 'Starting price', eclatale: '$19/mo', taplio: '$52/mo', supergrow: '$29/mo', generic: 'Varies' },
+    { icon: <AudioWaveform size={24} />, title: 'Learns Your Voice', desc: 'Feed Eclatale a few writing samples. Tell it your communication style. The more you use it, the more it sounds like the real you — not a polished, corporate, forgettable version of you.' },
+    { icon: <Sparkles size={24} />, title: 'Smart Content Engine', desc: 'Two ways to create. Auto-generate from a topic in seconds, or bring your own idea and let Eclatale shape it into something worth reading. You control how much AI helps.' },
+    { icon: <ShieldCheck size={24} />, title: 'Confidence Score Before You Post', desc: 'Before every post goes live, Eclatale checks it. Factual accuracy. Topic freshness. Voice consistency. You see a score, specific suggestions, and supporting references. Post with evidence, not hope.' },
+    { icon: <LineChart size={24} />, title: 'Real Growth Intelligence', desc: 'Track what actually matters — not vanity metrics, but patterns. Which hooks work for you. Which topics resonate. Which times drive real engagement. Intelligence that makes your next post better than your last.' },
+    { icon: <Layers size={24} />, title: 'One Post, Every Platform', desc: 'Write once. Eclatale adapts it for LinkedIn, Twitter, Instagram, and more. Each version tuned for that platform\'s style, character limit, and audience expectation.' },
+    { icon: <TrendingUp size={24} />, title: 'Your Brand, Compounding', desc: 'Thirty days from now, Eclatale will know you better than any tool you\'ve ever used. Sixty days in, your content will feel effortless. This is what compounding looks like for personal brands.' },
   ];
 
   const testimonials = [
-    { quote: 'My LinkedIn profile views went from 200 to 1,400 in 6 weeks.', name: 'Sarah K.', role: 'VP of Product' },
-    { quote: 'I landed 3 consulting clients directly from LinkedIn posts Eclatale helped me write.', name: 'Marcus J.', role: 'Startup Founder' },
-    { quote: 'Finally sounds like ME, not a robot.', name: 'Priya R.', role: 'Marketing Director' },
-    { quote: 'Switched from Taplio — no more fear of getting banned.', name: 'David L.', role: 'Agency Owner' },
-    { quote: 'My CEO uses this and swears by it.', name: 'Amara T.', role: 'Chief of Staff' },
-    { quote: 'Best $19 I spend every month.', name: 'James O.', role: 'Solo Consultant' },
+    { quote: 'My profile views went from 200 to 1,400 in 6 weeks.', name: 'Sarah K.', role: 'VP of Product' },
+    { quote: 'I landed my first consulting client directly from a LinkedIn post.', name: 'Marcus J.', role: 'Startup Founder' },
+    { quote: 'For the first time, my posts actually sound like me.', name: 'Priya R.', role: 'Marketing Director' },
+    { quote: 'I went from posting once a month to posting three times a week — and loving it.', name: 'David L.', role: 'Agency Owner' },
+    { quote: 'My CEO asked me how I got so good at LinkedIn. I told him about Eclatale.', name: 'Amara T.', role: 'Chief of Staff' },
+    { quote: 'The authenticity score changed how I think about content entirely.', name: 'James O.', role: 'Solo Consultant' },
   ];
 
   const faqs = [
-    { q: 'How is this different from other LinkedIn tools?', a: 'Eclatale isn\'t a LinkedIn optimizer. It\'s a growth engine. We learn your authentic voice, track real career outcomes (not vanity metrics), and build a personalized strategy based on your goals.' },
+    { q: 'What exactly does Eclatale do?', a: 'Eclatale is a personal brand growth engine. It learns your authentic voice, checks every post for accuracy and freshness before you publish, and tracks the real career outcomes that matter — not vanity metrics — as part of a strategy built around your goals.' },
     { q: 'Will the content sound like me?', a: 'Yes. Our AI analyzes your writing style, industry expertise, and personality to generate content that sounds authentically you. Every post is unique to your voice.' },
-    { q: 'Is Eclatale safe for my LinkedIn account?', a: 'Yes. Eclatale publishes exclusively through LinkedIn\'s official API, so there is zero risk of automation-related account bans, unlike browser-extension tools.' },
+    { q: 'Is Eclatale safe for my LinkedIn account?', a: 'Yes. Eclatale publishes exclusively through LinkedIn\'s official API, so your account stays fully compliant with zero risk of automation-related bans.' },
     { q: 'Is there a free plan?', a: 'Yes! Start with 10 AI generations per month for free. Upgrade when you\'re ready to scale your content creation.' },
     { q: 'How quickly will I see results?', a: 'Most users see engagement increase within 2-3 weeks of consistent posting. Personal brand growth compounds — the earlier and more consistently you post, the faster it builds.' },
     { q: 'Does it work for non-English speakers?', a: 'Eclatale is currently optimized for English. Support for other languages is coming soon — join the waitlist from Settings and we\'ll let you know when yours is ready.' },
@@ -177,13 +169,13 @@ export default function Landing() {
           </div>
 
           <h1 className="h1 text-brand-dark mb-5 md:mb-6 animate-fadeIn" style={{ animationDelay: '0.1s' }}>
-            The AI That Writes LinkedIn Posts<br className="hidden sm:block" />
-            in Your <span className="gradient-text">Authentic Voice</span>
+            Burst Onto Your Industry.<br className="hidden sm:block" />
+            Be Seen. <span className="gradient-text">Be Known.</span>
           </h1>
 
           <p className="body-text max-w-xl mx-auto mb-8 md:mb-10 animate-fadeIn" style={{ animationDelay: '0.2s' }}>
-            Stop sounding like every other generic LinkedIn post. Eclatale learns exactly how you
-            write and think — then generates content your audience will know is really you.
+            Your personal brand AI. It learns how you think. It writes how you speak.
+            It checks what you publish. And it gets better every single day.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fadeIn" style={{ animationDelay: '0.3s' }}>
@@ -412,50 +404,49 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Comparison */}
+      {/* Philosophy */}
       <section className="py-16 md:py-24 px-5 md:px-8 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10 md:mb-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 md:mb-16">
             <h2 className="h2 text-brand-dark mb-4">
-              Why founders <span className="gradient-text">switch to Eclatale</span>
+              Built on a <span className="gradient-text">different philosophy</span>
             </h2>
             <p className="body-text max-w-md mx-auto">
-              See how Eclatale stacks up against other LinkedIn content tools.
+              Most content tools generate posts. Eclatale builds your brand.
             </p>
           </div>
-          <div className="card overflow-x-auto">
-            <table className="w-full text-sm min-w-[560px]">
-              <thead>
-                <tr className="border-b border-[rgba(124,92,252,0.08)]">
-                  <th className="text-left font-semibold text-brand-muted p-4 md:p-5">&nbsp;</th>
-                  <th className="text-center font-bold text-brand-purple p-4 md:p-5">Eclatale</th>
-                  <th className="text-center font-semibold text-brand-muted p-4 md:p-5">Taplio</th>
-                  <th className="text-center font-semibold text-brand-muted p-4 md:p-5">Supergrow</th>
-                  <th className="text-center font-semibold text-brand-muted p-4 md:p-5">Generic AI</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonRows.map((row, i) => (
-                  <tr key={i} className="border-b border-[rgba(124,92,252,0.06)] last:border-0">
-                    <td className="p-4 md:p-5 font-medium text-brand-dark">{row.label}</td>
-                    {([row.eclatale, row.taplio, row.supergrow, row.generic] as (boolean | string)[]).map((val, j) => (
-                      <td key={j} className="p-4 md:p-5 text-center">
-                        {typeof val === 'boolean' ? (
-                          val ? (
-                            <Check size={18} className="inline text-brand-teal" />
-                          ) : (
-                            <X size={18} className="inline text-brand-muted opacity-40" />
-                          )
-                        ) : (
-                          <span className={j === 0 ? 'font-bold text-brand-purple' : 'text-brand-muted'}>{val}</span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-14 md:mb-16">
+            <div className="card card-hover p-7 md:p-8">
+              <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-white mb-5">
+                <AudioWaveform size={26} />
+              </div>
+              <h3 className="text-lg font-bold text-brand-dark mb-2.5">Your voice, not a template</h3>
+              <p className="text-sm text-brand-muted leading-relaxed">
+                Eclatale doesn't give you 50 post templates. It learns exactly how you write, think, and express ideas — then generates content that sounds like you wrote it on your best day. Every post makes the AI smarter about you.
+              </p>
+            </div>
+            <div className="card card-hover p-7 md:p-8">
+              <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-white mb-5">
+                <ShieldCheck size={26} />
+              </div>
+              <h3 className="text-lg font-bold text-brand-dark mb-2.5">Confidence before you publish</h3>
+              <p className="text-sm text-brand-muted leading-relaxed">
+                Every post you create gets checked for factual accuracy, topic freshness, and voice consistency before it goes live. You post knowing it's authentic, current, and credibly yours — not hoping it is.
+              </p>
+            </div>
+            <div className="card card-hover p-7 md:p-8">
+              <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-white mb-5">
+                <LineChart size={26} />
+              </div>
+              <h3 className="text-lg font-bold text-brand-dark mb-2.5">Growth that compounds</h3>
+              <p className="text-sm text-brand-muted leading-relaxed">
+                Your tenth post will be better than your first. Your fiftieth will be better than your tenth. Eclatale gets smarter with every post you keep, every refinement you make, every piece of feedback the market gives you.
+              </p>
+            </div>
           </div>
+          <p className="text-center text-xl md:text-3xl font-extrabold text-brand-dark leading-snug max-w-2xl mx-auto">
+            This isn't a scheduler. This isn't a template library.<br className="hidden sm:block" /> This is the AI that learns <span className="gradient-text">you</span>.
+          </p>
         </div>
       </section>
 

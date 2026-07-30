@@ -5,6 +5,7 @@ import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { TOPIC_SUGGESTION_PROMPT } from '../lib/contentPrompts';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
+import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { readCache, writeCache } from '../lib/intelligenceCache';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -75,6 +76,10 @@ Return ONLY a JSON array of 5 objects, each shaped exactly like: { "topic": "the
 
     res.json(payload);
   } catch (error: any) {
+    if (isCreditsExhaustedError(error)) {
+      console.error('Anthropic credits exhausted');
+      return res.status(503).json(creditsExhaustedBody());
+    }
     console.error('Topic suggestion error:', error);
     res.status(500).json({ error: error.message || 'Failed to suggest topics' });
   }

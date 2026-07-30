@@ -1,7 +1,9 @@
 export interface BlogBlock {
-  type: 'h2' | 'h3' | 'p' | 'ul';
+  type: 'h2' | 'h3' | 'p' | 'ul' | 'table';
   text?: string;
   items?: string[];
+  headers?: string[];
+  rows?: string[][];
 }
 
 export interface BlogPost {
@@ -20,7 +22,7 @@ export const blogPosts: BlogPost[] = [
     slug: 'linkedin-content-strategy-founders-2026',
     title: 'The LinkedIn Content Strategy Every Founder Needs in 2026',
     description: 'Why founders need a real LinkedIn presence, what content actually works, how often to post, and how to use AI without sounding generic.',
-    category: 'Strategy',
+    category: 'LinkedIn Growth',
     date: '2026-07-01',
     readTime: '8 min read',
     keyword: 'LinkedIn content strategy founders',
@@ -93,7 +95,7 @@ export const blogPosts: BlogPost[] = [
     slug: 'linkedin-personal-brand-ceo-executives',
     title: 'How CEOs and Executives Are Building Personal Brands on LinkedIn in 2026',
     description: 'Why executive silence is a real career risk, what a real executive brand looks like, and the outcomes leaders are seeing from consistent LinkedIn presence.',
-    category: 'Executive Growth',
+    category: 'Personal Branding',
     date: '2026-07-12',
     readTime: '8 min read',
     keyword: 'LinkedIn personal brand CEO',
@@ -125,7 +127,7 @@ export const blogPosts: BlogPost[] = [
     slug: 'taplio-alternative-linkedin-safe',
     title: "The Best Taplio Alternative That Won't Get Your LinkedIn Account Banned",
     description: "Taplio's compliance risks, why the official LinkedIn API matters, and how Eclatale offers a safer alternative without sacrificing content quality.",
-    category: 'Comparisons',
+    category: 'LinkedIn Growth',
     date: '2026-07-15',
     readTime: '6 min read',
     keyword: 'Taplio alternative',
@@ -155,7 +157,7 @@ export const blogPosts: BlogPost[] = [
     slug: 'linkedin-post-ideas-professionals',
     title: '50 LinkedIn Post Ideas for Professionals That Actually Get Engagement',
     description: 'Fifty concrete post angles across five categories, with real examples, to help you never stare at a blank LinkedIn compose box again.',
-    category: 'Content Ideas',
+    category: 'LinkedIn Growth',
     date: '2026-07-20',
     readTime: '10 min read',
     keyword: 'LinkedIn post ideas',
@@ -231,6 +233,362 @@ export const blogPosts: BlogPost[] = [
       { type: 'p', text: 'If you want to turn this list into an actual posting habit rather than a list you bookmark and forget, the fastest path is picking one idea, capturing the raw specifics in a sentence, and letting a tool that knows your voice — like Eclatale — turn it into a structured draft you can edit in a couple of minutes rather than starting from a blank page every time.' },
     ],
   },
+  {
+    slug: 'linkedin-engagement-rate-2026',
+    title: 'What\'s a Good LinkedIn Engagement Rate in 2026? (Benchmarks + How to Beat Them)',
+    description: 'The average LinkedIn post gets a 3.85% engagement rate in 2026 — here\'s how that number breaks down by content type, account size, and industry, plus a concrete plan to beat it.',
+    category: 'LinkedIn Growth',
+    date: '2026-07-24',
+    readTime: '9 min read',
+    keyword: 'LinkedIn engagement rate 2026',
+    content: [
+      { type: 'p', text: 'If you\'ve ever posted something you were proud of and watched it land three likes and a comment from your mom, you\'ve probably asked the question: is my engagement rate actually bad, or is this just LinkedIn? The honest answer is both things can be true. LinkedIn\'s average engagement rate across all posts in 2026 sits at roughly 3.85% — but that single number hides more than it reveals. Your "good" engagement rate depends heavily on your follower count, your content format, when you post, and what industry you\'re in. This post breaks down the real benchmarks, what actually moves the needle, and what to do about it.' },
+      { type: 'h2', text: 'The headline number: 3.85% average engagement rate' },
+      { type: 'p', text: 'Engagement rate on LinkedIn is typically calculated as (likes + comments + shares) ÷ impressions, multiplied by 100. Across aggregated data from creator and business accounts in 2026, the platform-wide average lands at about 3.85%. That\'s notably higher than Instagram (roughly 0.5–1.5% for most accounts) and Twitter/X (often under 1%), which is one reason LinkedIn has become the default platform for professionals building a personal brand — the algorithm still rewards genuine engagement more than most other networks.' },
+      { type: 'p', text: 'But averages are deceptive on a platform this uneven. A post from a 2,000-follower account and a post from a 200,000-follower account are playing entirely different games, and lumping them into one number tells you almost nothing about whether your specific post did well. That\'s why the benchmarks below are broken out by the variables that actually matter.' },
+      { type: 'h2', text: 'What actually affects your engagement rate' },
+      { type: 'h3', text: 'Account size' },
+      { type: 'p', text: 'This is the single biggest confound in any LinkedIn benchmark. Smaller accounts consistently post higher engagement rates than large ones, not because their content is better, but because their audience is denser — a higher percentage of followers actually see and interact with each post, and early engagement from a tight-knit audience signals the algorithm to distribute further. As follower count grows, impressions scale faster than engagement, which mechanically drags the rate down even when absolute engagement (likes, comments) keeps climbing.' },
+      { type: 'table', headers: ['Follower count', 'Typical engagement rate'], rows: [
+        ['Under 3,000', '6–9%'],
+        ['3,000–10,000', '4–6%'],
+        ['10,000–50,000', '2.5–4%'],
+        ['50,000–200,000', '1.5–3%'],
+        ['200,000+', '0.8–2%'],
+      ] },
+      { type: 'p', text: 'If you\'re at 4,000 followers and hitting 5%, you\'re performing normally, not badly. If you\'re at 150,000 followers and hitting 2%, that\'s also normal. Compare yourself to accounts in your own size bracket, not to a screenshot of someone else\'s viral post.' },
+      { type: 'h3', text: 'Content type' },
+      { type: 'p', text: 'Format is the second-biggest lever, and it\'s the one you have the most control over on any given day. LinkedIn\'s algorithm treats different formats differently — dwell time (how long someone looks at your post before scrolling past) is a major ranking signal, and formats that hold attention longer tend to get pushed further.' },
+      { type: 'table', headers: ['Content type', 'Avg. engagement rate', 'Why'], rows: [
+        ['Carousel / document post', '6–8%', 'Highest dwell time — readers swipe through multiple slides'],
+        ['Poll', '5–7%', 'Voting counts as engagement and takes one click'],
+        ['Text-only post', '4–5%', 'Fast to read, easy to react to, algorithm-friendly for creators'],
+        ['Native image post', '3–4%', 'Stops the scroll but doesn\'t hold attention as long as documents'],
+        ['Video (native upload)', '2–4%', 'High watch-time potential but lower comment rates unless a strong hook is used'],
+        ['External link post', '1–2%', 'LinkedIn suppresses reach on posts that send traffic off-platform'],
+      ] },
+      { type: 'p', text: 'The pattern here is consistent: formats that keep people on LinkedIn, looking at your content for longer, outperform formats that ask people to leave or that can be consumed in half a second. This is also why external links so reliably underperform — the algorithm has an obvious incentive to deprioritize posts that send users away, and the data bears that out year after year.' },
+      { type: 'h3', text: 'Posting time' },
+      { type: 'p', text: 'Timing matters less than most "best time to post" content implies, but it isn\'t nothing. Engagement tends to be highest on weekday mornings, roughly 7–9am and again around lunch (11:30am–1pm), in the audience\'s primary time zone — because LinkedIn is still overwhelmingly a work-context platform, and people check it in the gaps around their workday. Weekends see roughly 30–40% lower reach across the board. That said, a great hook posted at a mediocre time will still outperform a weak hook posted at a perfect time. Time-of-day optimizes the margins; the first two lines of your post determine the outcome.' },
+      { type: 'h3', text: 'Industry and niche' },
+      { type: 'p', text: 'Engagement rates also shift by industry, largely because some professional communities are simply more active commenters than others. Tech, marketing, recruiting, and sales tend to run 1–2 points above the platform average because those audiences treat commenting as networking. More conservative or regulated industries — finance, legal, healthcare administration — tend to run below average, not because the content is worse, but because professionals in those fields comment more cautiously and share less publicly.' },
+      { type: 'h2', text: 'How to read your own numbers' },
+      { type: 'p', text: 'Before you optimize anything, get an honest baseline. Pull your last 15–20 posts, calculate engagement rate per post, and find your median (not average — one viral outlier will skew an average badly). Compare that median against the size bracket in the table above. If you\'re within a point of your bracket\'s benchmark, your content strategy is fine and the fastest gains will come from format and hook changes, not a total rebuild. If you\'re well below your bracket, look for a structural issue first: are you posting external links, going quiet for weeks at a time, or writing in a voice that doesn\'t sound like an actual person had opinions?' },
+      { type: 'h2', text: 'A concrete action plan to beat the benchmark' },
+      { type: 'ul', items: [
+        'Lead with a one-line hook that makes a claim or asks a question — the first 140 characters decide whether someone clicks "see more," and posts that get truncated without a reason to expand lose most of their potential engagement in the first second.',
+        'Default to carousels or text-only posts over link posts. If you have something to promote, put the value in the post itself and mention the link in a comment rather than the body.',
+        'Post 3–5x per week, not once. LinkedIn\'s distribution rewards accounts with consistent recent activity — a single great post from an account that\'s been dark for a month starts from a colder distribution baseline than the same post from an account that\'s been active.',
+        'End every post with a genuine question, not a generic "thoughts?" — specific questions ("what\'s the one metric your team actually argues about?") get real comments; vague ones get silence.',
+        'Reply to every comment in the first hour. Early comment velocity is one of the strongest signals LinkedIn uses to decide whether to keep showing your post to more people.',
+        'Track engagement rate by format for your own account for at least 8–10 posts per format before drawing conclusions — one viral text post doesn\'t mean text always beats carousels for you specifically.',
+        'Avoid engagement pods and generic "agree?" bait — LinkedIn has gotten better at discounting low-effort reactions, and pod-driven likes without comments increasingly fail to move the algorithm the way they used to.',
+      ] },
+      { type: 'p', text: 'None of this is complicated, but almost none of it is easy to sustain. The accounts that consistently beat their bracket\'s benchmark aren\'t the ones with a secret formula — they\'re the ones who actually show up three or four times a week, in a voice that sounds like a specific person rather than a content calendar. That consistency is the hard part, and it\'s the part most people quietly give up on around week three, right when the algorithm was about to start rewarding them for it. This is the exact gap Eclatale is built around: it learns your actual writing voice from posts you\'ve already written, so drafting doesn\'t start from a blank page every time, and it runs a content authenticity score on each draft before you publish so what goes out still sounds like you and not like generic AI copy. Posting through LinkedIn\'s official API just makes the last step — actually hitting publish, on schedule, four times a week — the one thing you don\'t have to think about.' },
+      { type: 'h2', text: 'A common mistake: optimizing for the wrong bracket' },
+      { type: 'p', text: 'A surprisingly common way people talk themselves out of a good strategy is comparing their numbers to the wrong reference class. A 6,000-follower creator who sees a post from a 300,000-follower account hit 1.8% engagement and thinks "even the big accounts are struggling" is misreading the data — that 1.8% at 300,000 followers might represent more raw engagement than their own 8% at 6,000 followers ever will, and it says nothing about whether their own content is working. The fix is boring but effective: pick your bracket, write the benchmark number down somewhere you\'ll actually see it, and measure every post against that number specifically, not against whatever screenshot crosses your feed that week.' },
+      { type: 'p', text: 'The same misreading happens in the other direction too. A creator who jumps from 2,000 to 15,000 followers in a few months and watches their engagement rate drop from 9% to 4% often assumes something broke. Usually nothing did — they simply moved brackets, and 4% at 15,000 followers is a healthy number for that tier. Re-benchmark every time your follower count crosses one of the thresholds in the table above, rather than anchoring to the number you got used to at your old size.' },
+      { type: 'h2', text: 'The bottom line' },
+      { type: 'p', text: 'A "good" LinkedIn engagement rate in 2026 depends entirely on where you\'re starting from. Under 3,000 followers, aim for 6%+. Past 50,000, 2–3% is strong. Across all sizes, carousels and polls will consistently outperform link posts and passive video, mornings beat weekends, and the accounts winning the long game are the ones publishing consistently in a voice that sounds unmistakably human. Benchmark against your bracket, fix your format mix before you fix your topics, and treat the first hour after every post as seriously as the post itself.' },
+    ],
+  },
+  {
+    slug: 'personal-brand-roi-linkedin',
+    title: 'How to Measure the ROI of Your LinkedIn Personal Brand (With Real Metrics)',
+    description: 'Impressions and likes don\'t pay your rent. Here\'s a practical framework for tracking what your LinkedIn presence actually generates — leads, job offers, deal flow — and putting a dollar figure on it.',
+    category: 'Personal Branding',
+    date: '2026-07-25',
+    readTime: '9 min read',
+    keyword: 'personal brand ROI LinkedIn',
+    content: [
+      { type: 'p', text: 'Ask ten people why they post on LinkedIn and nine will say some version of "to build my personal brand." Ask them what that\'s worth in dollars and most go quiet. That gap — between the activity and its actual return — is why so many people quit posting after three months. Not because it doesn\'t work, but because they never set up a way to see that it does.' },
+      { type: 'p', text: 'This isn\'t a post about vibes. It\'s a framework for treating your LinkedIn presence like what it actually is: a distribution channel with measurable outputs. If you\'re going to spend three to five hours a week writing, you deserve to know what you\'re getting back.' },
+      { type: 'h2', text: 'Why personal brand ROI is genuinely hard to measure' },
+      { type: 'p', text: 'Marketing teams have it comparatively easy. They can point a UTM link at a landing page, watch it convert, and attribute revenue to a campaign in a dashboard. Personal branding doesn\'t work that way, for three structural reasons.' },
+      { type: 'ul', items: [
+        'The payoff is delayed and indirect. Someone reads your post in March and messages you about a job in September. There\'s no click to trace that back to.',
+        'The value shows up as an avoided cost, not a new revenue line. A recruiter who already trusts you skips the cold outreach entirely — you never see the deal you didn\'t have to chase.',
+        'It compounds across channels. A prospect might see your LinkedIn post, then Google you, then get referred by a mutual connection, then finally book a call. LinkedIn touched the outcome but wasn\'t the last click.'
+      ] },
+      { type: 'p', text: 'Because the attribution is messy, most people default to measuring what\'s easy to see instead of what matters — which is exactly the trap that keeps personal branding underrated in board rooms and overrated in vanity-metric screenshots.' },
+      { type: 'h2', text: 'Vanity metrics vs. metrics that matter' },
+      { type: 'p', text: 'Impressions, likes, and follower count feel like progress because LinkedIn puts them front and center on every post. But none of them predict career or revenue outcomes on their own. A post can get 50,000 impressions and produce zero inbound. Another can get 800 impressions and land you a client worth $40,000. The volume metric told you nothing about the value.' },
+      { type: 'table', headers: ['Vanity metric', 'What it actually tells you', 'Outcome metric to track instead'], rows: [
+        ['Impressions', 'Reach of a single post, not audience quality', 'Profile views from target-role or target-company titles'],
+        ['Likes', 'Passive agreement, costs nothing to give', 'Comments from people who could plausibly buy, hire, or fund you'],
+        ['Follower count', 'Vanity headline number, includes bots and dormant accounts', 'DM conversations that turn into a call'],
+        ['Post frequency', 'Effort input, not outcome', 'Inbound opportunities per month (leads, invites, offers)'],
+        ['Engagement rate', 'Algorithm feedback signal', 'Conversion rate from conversation to booked meeting or deal']
+      ] },
+      { type: 'p', text: 'The pattern in that table is the whole point: vanity metrics measure what the platform rewards. Outcome metrics measure what the platform enables. Your job is to build a habit of logging the second column, because LinkedIn\'s own analytics tab will never show it to you.' },
+      { type: 'h2', text: 'The outcomes that actually move your career or business' },
+      { type: 'p', text: 'Before you can calculate ROI, you need an inventory of what "return" looks like for your specific goals. These fall into a handful of buckets, and most people are only tracking one of them without realizing the others exist.' },
+      { type: 'h3', text: 'Inbound recruiter and hiring-manager messages' },
+      { type: 'p', text: 'This is the most direct signal for anyone employed or job-seeking. A recruiter who found you through a post has already pre-qualified your expertise before the first message — that\'s a meaningfully warmer lead than a cold application, and it should be tracked separately from recruiters who found you through a generic search.' },
+      { type: 'h3', text: 'Speaking, podcast, and panel invitations' },
+      { type: 'p', text: 'Invitations are a leading indicator that your content is establishing authority, not just reach. They also compound — a podcast appearance often gets clipped and reshared, generating a second wave of inbound you should log against the original post that got you invited.' },
+      { type: 'h3', text: 'Client and customer leads' },
+      { type: 'p', text: 'For consultants, freelancers, and founders, this is usually the metric with the clearest dollar sign attached. Track every "saw your post and wanted to ask about working together" message, tag it with the post that triggered it, and note whether it closed.' },
+      { type: 'h3', text: 'Investor intros and deal flow' },
+      { type: 'p', text: 'Founders underrate this one constantly. A well-timed post about a hard problem you solved can generate an investor DM that a cold email never would have. Track intros, warm meetings, and term sheets that trace back to LinkedIn visibility, even loosely.' },
+      { type: 'h3', text: 'Partnership and collaboration requests' },
+      { type: 'p', text: 'Co-marketing, affiliate, and collaboration pitches often arrive because someone saw consistent, credible activity over months, not a single viral post. These are slower-building but often higher-value than one-off leads.' },
+      { type: 'h2', text: 'A practical framework for putting a dollar figure on it' },
+      { type: 'p', text: 'You don\'t need a data science team to estimate this. You need a consistent way to log outcomes and a formula that\'s honest about uncertainty rather than falsely precise. Here\'s the version that holds up under scrutiny.' },
+      { type: 'p', text: 'Step 1 — Assign a realistic dollar value to each outcome type. Not what it could theoretically be worth, but a conservative estimate based on your actual numbers. Examples:' },
+      { type: 'ul', items: [
+        'A closed client lead: actual contract value, or average deal size if you don\'t know yet',
+        'A recruiter conversation that leads to an offer: the salary delta between your current comp and the new offer, or a flat estimate like $5,000–$15,000 for the optionality alone',
+        'A speaking invite: your normal speaking fee, or a flat placeholder (e.g., $500) if you speak for exposure',
+        'An investor intro: skip a dollar value, but log it as a qualitative outcome — some things matter without pricing them'
+      ] },
+      { type: 'p', text: 'Step 2 — Log every outcome as it happens, tagged with the post or period it came from. A simple spreadsheet row: date, outcome type, dollar value, source post (if identifiable), and whether it closed.' },
+      { type: 'p', text: 'Step 3 — Calculate your realized value over a fixed window (quarterly works well):' },
+      { type: 'p', text: 'LinkedIn ROI = (Sum of dollar value from all logged outcomes) ÷ (Hours spent writing, editing, and engaging × your hourly rate)' },
+      { type: 'p', text: 'If you spent 60 hours in a quarter on LinkedIn and your time is worth $150/hour, your cost basis is $9,000. If that quarter produced one $12,000 client contract and a job offer with a $20,000 comp bump you attribute half-credit to LinkedIn, your realized value is $22,000. That\'s a 2.4x return — a number you can actually defend, as opposed to a hunch that "posting is probably good for me."' },
+      { type: 'p', text: 'Step 4 — Separate a realized-ROI number from a pipeline-value number. Not everything closes in the same quarter it starts. Keep a second running total of outcomes that are still open (a conversation in progress, an intro that hasn\'t led to a meeting yet) so you\'re not undervaluing a channel just because this quarter\'s deals haven\'t closed.' },
+      { type: 'h2', text: 'Building a simple personal tracking system' },
+      { type: 'p', text: 'This doesn\'t need to be elaborate. Overbuilding the tracker is its own way of avoiding the actual work of posting. A minimal system needs four things.' },
+      { type: 'ul', items: [
+        'One spreadsheet with columns for: date, outcome type, description, estimated dollar value, source (post link or general presence), status (open/closed/dead)',
+        'A weekly five-minute review where you add anything new — DMs, comments that turned into conversations, connection requests from people at target companies',
+        'A monthly tally by outcome type, so you can see which kind of content produces which kind of result (how-to posts might drive recruiter interest, opinion posts might drive client leads)',
+        'A quarterly ROI calculation using the formula above, compared against the previous quarter so you can see whether the trend is improving'
+      ] },
+      { type: 'p', text: 'The habit matters more than the tool. A messy spreadsheet you actually update beats a beautiful dashboard you abandon in week three. The goal is a record you can point to when someone — including future you, deciding whether to keep posting — asks whether this is working.' },
+      { type: 'p', text: 'One thing that makes this tracking harder than it should be: most people can\'t tell which of their posts are actually landing until an outcome shows up weeks later, by which point they\'ve lost the thread on what worked. Eclatale\'s growth score is built around that gap — it scores each draft on authenticity and fit before you post, and its analytics track the outcomes that follow a post over time rather than just the 48-hour impression spike. The goal isn\'t a bigger reach number; it\'s a clearer line from what you wrote to what it produced, which is the same discipline this whole framework is asking you to build by hand.' },
+      { type: 'h2', text: 'The bottom line' },
+      { type: 'p', text: 'Personal brand ROI is measurable — it\'s just not measurable from LinkedIn\'s own analytics tab. Impressions and likes tell you about reach. Recruiter messages, client leads, speaking invites, and investor intros tell you about value. Track the second category deliberately, price it conservatively, and compare it against the hours you\'re putting in. Do that for two quarters and you\'ll have something most people posting on LinkedIn never bother to build: proof.' }
+    ]
+  },
+  {
+    slug: 'linkedin-post-examples-ceo',
+    title: '20 LinkedIn Post Examples from Top CEOs That Actually Work (And Why)',
+    description: 'A breakdown of 20 anonymized CEO post structures that consistently drive engagement, plus the psychological and algorithmic reasons each one works.',
+    category: 'Personal Branding',
+    date: '2026-07-26',
+    readTime: '11 min read',
+    keyword: 'LinkedIn post examples CEO',
+    content: [
+      { type: 'p', text: 'Most executives stare at a blank LinkedIn compose box and default to a company announcement or a generic "proud of my team" line. Meanwhile, a small number of CEOs post consistently well-performing content — not because they have better news, but because they\'ve internalized a handful of structures that reliably earn attention. Those structures repeat across industries, follower counts, and writing styles.' },
+      { type: 'p', text: 'Below are 20 of the most common high-performing CEO post patterns, grouped into six categories. Every example is a composite illustration — not a real quote from a real executive — written to show the shape of the post, not to put words in anyone\'s mouth. For each, you\'ll get the opening angle and the specific reason it tends to outperform.' },
+
+      { type: 'h2', text: 'Contrarian Takes' },
+      { type: 'p', text: 'Contrarian posts work because LinkedIn\'s feed rewards disagreement — replies and quote-shares are weighted more heavily than passive likes, and nothing produces replies like a well-argued position that pushes against consensus.' },
+
+      { type: 'h3', text: '1. The "Everyone is wrong about X" opener' },
+      { type: 'p', text: 'Example angle: "Everyone tells founders to \'hire slow, fire fast.\' We did the opposite for two years and grew faster because of it." — A SaaS CEO.' },
+      { type: 'p', text: 'Why it works: It names a piece of conventional wisdom the reader already holds, then immediately threatens it, which creates an open loop the brain wants resolved — a pattern interrupt that stops the scroll in under a second.' },
+
+      { type: 'h3', text: '2. The "unpopular opinion" flatly stated' },
+      { type: 'p', text: 'Example angle: "Unpopular opinion: most \'thought leadership\' content is just recycled LinkedIn advice with a new headline." — A marketing agency founder.' },
+      { type: 'p', text: 'Why it works: Naming the opinion as unpopular gives readers permission to agree publicly, which lowers the friction to comment — and comment volume is the single strongest signal LinkedIn\'s algorithm uses to extend reach.' },
+
+      { type: 'h3', text: '3. The "I used to believe, now I don\'t" reversal' },
+      { type: 'p', text: 'Example angle: "I spent five years telling founders to raise as much as possible. I was wrong, and our cap table is proof." — A fintech founder.' },
+      { type: 'p', text: 'Why it works: A public reversal signals intellectual honesty, which builds trust faster than a confident, unchanging stance — and the before/after structure gives the post a built-in narrative arc.' },
+
+      { type: 'h3', text: '4. The industry-norm callout' },
+      { type: 'p', text: 'Example angle: "Our industry charges for onboarding. We stopped. Here\'s what happened to churn." — A vertical SaaS CEO.' },
+      { type: 'p', text: 'Why it works: It positions the company as the exception to a norm the reader already resents, turning a product decision into a relatable grievance the audience can rally behind.' },
+
+      { type: 'h2', text: 'Behind-the-Scenes Decisions' },
+      { type: 'p', text: 'These posts trade the polish of a press release for the texture of a real decision — messy tradeoffs, incomplete information, second-guessing. Specificity is what makes them credible, and credibility is what makes them shareable.' },
+
+      { type: 'h3', text: '5. The decision-with-tradeoffs breakdown' },
+      { type: 'p', text: 'Example angle: "We turned down a $2M contract last week. Here\'s the spreadsheet we used to decide." — A B2B services CEO.' },
+      { type: 'p', text: 'Why it works: Showing the actual reasoning process — not just the outcome — satisfies the reader\'s curiosity about how executives really think, which is a scarcer commodity than the decision itself.' },
+
+      { type: 'h3', text: '6. The "why we killed the feature" post' },
+      { type: 'p', text: 'Example angle: "We spent four months building our most requested feature. We shipped it, then pulled it two weeks later." — A product-led CEO.' },
+      { type: 'p', text: 'Why it works: Admitting a costly mistake in public is rare enough that it reads as authentic rather than performative, and readers reward rarity with attention.' },
+
+      { type: 'h3', text: '7. The pricing-change explainer' },
+      { type: 'p', text: 'Example angle: "We raised prices 40% overnight. Revenue went up. Customers thanked us. Here\'s why that isn\'t a contradiction." — A subscription software CEO.' },
+      { type: 'p', text: 'Why it works: Pricing is a topic every founder secretly obsesses over but rarely discusses candidly, so a real walkthrough taps into an underserved information need with built-in urgency.' },
+
+      { type: 'h2', text: 'Hard Lessons and Failures' },
+      { type: 'p', text: 'Vulnerability posts outperform victory posts almost every time. Wins invite passive approval; failures invite identification, and identification is what turns a scroll into a pause.' },
+
+      { type: 'h3', text: '8. The near-failure confession' },
+      { type: 'p', text: 'Example angle: "Eighteen months ago we had six weeks of runway left and I hadn\'t told the board." — An early-stage startup CEO.' },
+      { type: 'p', text: 'Why it works: High stakes plus withheld information creates immediate narrative tension, and the reader stays for the resolution — a structure borrowed directly from storytelling, not business writing.' },
+
+      { type: 'h3', text: '9. The "I fired myself from a role" post' },
+      { type: 'p', text: 'Example angle: "I was the best salesperson at my own company. That was the problem." — A logistics-tech founder.' },
+      { type: 'p', text: 'Why it works: It reframes a personal strength as a hidden liability, a twist that rewards close reading and makes the post feel earned rather than boastful.' },
+
+      { type: 'h3', text: '10. The bad-hire postmortem' },
+      { type: 'p', text: 'Example angle: "I hired a VP based on their resume, not their references. It cost us a year." — A healthtech CEO.' },
+      { type: 'p', text: 'Why it works: Hiring mistakes are universally relatable among the manager-heavy LinkedIn audience, so the specificity of the lesson generalizes instantly to the reader\'s own situation.' },
+
+      { type: 'h2', text: 'Team and Culture' },
+      { type: 'p', text: 'Culture posts work best when they show a policy in action rather than describe values in the abstract. A rule the company actually enforces is more convincing than a value listed on a careers page.' },
+
+      { type: 'h3', text: '11. The "here\'s a rule we enforce" post' },
+      { type: 'p', text: 'Example angle: "No one on my team is allowed to email me after 7pm. Here\'s what happens when they do anyway." — An operations-heavy CEO.' },
+      { type: 'p', text: 'Why it works: A concrete, enforceable rule is more persuasive than an abstract value statement because it implies real cost and real accountability, not just good intentions.' },
+
+      { type: 'h3', text: '12. The promotion story with the criteria shown' },
+      { type: 'p', text: 'Example angle: "I promoted someone with 14 months of experience over three people with a decade each. Here\'s the scorecard I used." — A professional services CEO.' },
+      { type: 'p', text: 'Why it works: Publishing the actual criteria turns a subjective decision into something readers can evaluate and argue with, which drives comments from people who\'d have decided differently.' },
+
+      { type: 'h3', text: '13. The exit-interview quote post' },
+      { type: 'p', text: 'Example angle: "A departing employee told me something in their exit interview that changed how we run standups." — A remote-first CEO.' },
+      { type: 'p', text: 'Why it works: Using someone else\'s words as the pivot point removes the appearance of self-promotion and lets the lesson land as observed truth rather than asserted opinion.' },
+
+      { type: 'h2', text: 'Numbers and Outcomes' },
+      { type: 'p', text: 'Specific numbers outperform vague superlatives because they\'re falsifiable — and falsifiable claims read as more trustworthy, even to readers who never check the math.' },
+
+      { type: 'h3', text: '14. The counterintuitive metric reveal' },
+      { type: 'p', text: 'Example angle: "We cut our sales team from 12 to 4. Bookings went up 22% the following quarter." — A B2B SaaS CEO.' },
+      { type: 'p', text: 'Why it works: A number that violates the reader\'s expectation of cause and effect creates immediate curiosity about the mechanism, which the post then explains — a classic open-loop-then-resolve structure.' },
+
+      { type: 'h3', text: '15. The "here\'s exactly what broke" transparency post' },
+      { type: 'p', text: 'Example angle: "Our churn spiked 9 points in one month. Here\'s the internal doc we wrote to fix it." — A martech founder.' },
+      { type: 'p', text: 'Why it works: Sharing a real internal artifact signals nothing is being hidden, and the specificity of "9 points" instead of "significantly increased" makes the whole post feel more credible by association.' },
+
+      { type: 'h3', text: '16. The founder-market-fit timeline' },
+      { type: 'p', text: 'Example angle: "Year one: $40K revenue. Year four: $19M ARR. The line between them wasn\'t straight." — A vertical SaaS founder.' },
+      { type: 'p', text: 'Why it works: A clear before-and-after number gives the reader an instant, low-effort way to gauge credibility before committing to read the story that explains it.' },
+
+      { type: 'h2', text: 'Predictions and Industry Analysis' },
+      { type: 'p', text: 'Prediction posts perform well when they\'re specific enough to be provably right or wrong later — vague futurism gets scrolled past, but a dated, falsifiable claim invites bookmarking and debate.' },
+
+      { type: 'h3', text: '17. The dated, falsifiable prediction' },
+      { type: 'p', text: 'Example angle: "By the end of next year, half the tools in our stack will be replaced by one AI layer. Screenshotting this." — An enterprise software CEO.' },
+      { type: 'p', text: 'Why it works: Committing to a specific timeframe raises the stakes for the author and signals confidence, which readers find more compelling than hedged, timeless commentary.' },
+
+      { type: 'h3', text: '18. The "what my customers are telling me" trend post' },
+      { type: 'p', text: 'Example angle: "Three of my biggest customers asked the same unusual question this month. That\'s not a coincidence." — A data infrastructure CEO.' },
+      { type: 'p', text: 'Why it works: Grounding a prediction in firsthand customer signal rather than abstract punditry gives the author unique authority that\'s hard for readers to dispute or replicate.' },
+
+      { type: 'h2', text: 'Personal and Reflective' },
+      { type: 'p', text: 'The most-shared executive posts often aren\'t about the business at all — they\'re a personal reflection that happens to carry a professional lesson, which broadens the post\'s appeal beyond the founder\'s immediate network.' },
+
+      { type: 'h3', text: '19. The identity-shift reflection' },
+      { type: 'p', text: 'Example angle: "For years my job title was my personality. Losing a deal used to ruin my whole week. It doesn\'t anymore, and here\'s what changed." — A veteran startup CEO.' },
+      { type: 'p', text: 'Why it works: It trades business advice for emotional honesty, which activates a different kind of engagement — saves and DMs rather than quick likes — because readers relate to the feeling more than the specifics.' },
+
+      { type: 'h3', text: '20. The advice-to-my-younger-self post' },
+      { type: 'p', text: 'Example angle: "If I could tell myself one thing before starting this company, it wouldn\'t be about strategy at all." — A second-time founder.' },
+      { type: 'p', text: 'Why it works: The retrospective frame lets the author deliver hard-won advice without sounding like they\'re lecturing the reader directly, which keeps the tone humble even when the content is prescriptive.' },
+
+      { type: 'h2', text: 'What Doesn\'t Work (And Why the 20 Above Beat It)' },
+      { type: 'p', text: 'It\'s worth being explicit about the executive posts that consistently underperform, because the contrast makes the 20 patterns above easier to apply. Three failure modes show up constantly on CEO LinkedIn accounts:' },
+      { type: 'ul', items: [
+        'The unattributed motivational quote — no specific claim, no tension, nothing for a reader to agree or disagree with, so there\'s nothing to comment on beyond a generic emoji.',
+        'The company-announcement-as-personal-post — "Thrilled to announce our Series B" reads as a press release wearing a first-person voice, and it earns congratulations comments rather than substantive ones, which signals low engagement quality to the algorithm.',
+        'The safe, consensus-agreeing take — restating something everyone in the industry already believes doesn\'t create an open loop, so there\'s no reason for a reader to pause, let alone comment.',
+      ] },
+      { type: 'p', text: 'Every one of the 20 patterns above avoids all three traps by construction: each has a specific detail, a genuine tension, and an opinion or lesson a reader could plausibly disagree with. That\'s not an accident — it\'s the actual mechanism behind why they perform, and it\'s a useful filter to run any draft through before publishing: does this have a specific detail, a real tension, and a position someone could push back on? If a draft is missing any of the three, it\'s closer to the failure modes above than to pattern 1 through 20.' },
+      { type: 'h2', text: 'The Pattern Behind the Patterns' },
+      { type: 'p', text: 'Look closely and all 20 structures share three traits: a specific, falsifiable detail near the top; a tension or reversal that creates an open loop; and a resolution that reads as earned rather than asserted. None of them require a bigger audience, a PR team, or a dramatic company milestone — they require a consistent process for noticing which of your own decisions, numbers, and lessons actually fit one of these shapes.' },
+      { type: 'p', text: 'That\'s the hard part in practice. Most executives have plenty of raw material — a pricing change, a hard hire, a customer conversation that shifted their thinking — but no reliable way to turn it into a post that sounds like them rather than like a template. Eclatale\'s persona engine is built for exactly that gap: it learns your actual writing voice from your past posts and messages, then helps you fit a real moment from your week into a structure like the ones above without flattening it into generic "thought leadership" phrasing. Before anything goes out, its content authenticity score flags lines that sound more like a content calendar than like you, so the structure does the heavy lifting while the voice stays unmistakably yours — and publishing happens straight through LinkedIn\'s official API, no copy-paste required.' },
+      { type: 'p', text: 'You don\'t need 20 new ideas this week. You need one real decision, run through a structure that\'s already proven it holds attention — written the way you\'d actually say it.' },
+    ],
+  },
+  {
+    slug: 'ai-content-creation-authentic-voice',
+    title: 'How to Use AI for Content Creation Without Losing Your Authentic Voice',
+    description: 'The real cost of generic AI content, how voice-learning tools differ architecturally from prompt-based generators, and a practical editing workflow that keeps your writing recognizably yours.',
+    category: 'AI & Content',
+    date: '2026-07-27',
+    readTime: '9 min read',
+    keyword: 'AI content creation authentic',
+    content: [
+      { type: 'p', text: 'Every marketer, founder, and writer using AI right now is running the same experiment, whether they realize it or not: can a language model produce content that sounds like a person, or does it just produce content that sounds like a language model? The honest answer, most of the time, is the second one. Not because the technology is bad — it\'s genuinely good — but because of how almost everyone is using it. Understanding why that happens, and what actually fixes it, matters more than any prompt trick you\'ll find in a Twitter thread.' },
+      { type: 'h2', text: 'Why generic AI content is now instantly recognizable' },
+      { type: 'p', text: 'There\'s a specific cadence to AI-generated writing that most active internet users can now identify within a sentence or two. The em-dash pileups. The rule-of-three lists. The rhetorical question followed by a one-line paragraph answer. The "it\'s not X, it\'s Y" construction, used at least once per piece as if contractually required. None of these are wrong in isolation — good writers use all of them. The problem is frequency and predictability: when every third post on a feed uses the identical structural tics, readers stop processing the content and start pattern-matching the source.' },
+      { type: 'p', text: 'This matters more than most people using AI tools account for, because trust erodes quietly. Nobody leaves a comment saying "this looks AI-generated" and walks away. They just scroll past a little faster next time, engage a little less, and slowly recalibrate how much weight to give anything from that account. The cost isn\'t one bad post — it\'s a gradual discount applied to everything you publish afterward, including the posts you wrote entirely yourself but that happen to open with a hook that reads like a template.' },
+      { type: 'p', text: 'There\'s also a fatigue dimension that\'s easy to underrate. Content platforms reward volume, and AI tools make volume cheap, so the obvious move is to publish more. But readers have finite attention and an increasingly good nose for filler. A feed full of technically competent, structurally identical posts doesn\'t reward the publisher with more engagement — it trains the audience to skim faster and trust less, which is the opposite of what content is supposed to build. More AI-assisted output without a corresponding increase in specificity is a net negative, not a wash.' },
+      { type: 'h2', text: 'Why this is an architecture problem, not a writing problem' },
+      { type: 'p', text: 'The instinct when a draft comes back sounding generic is to blame the prompt. Add more instructions, specify a tone, paste in three examples of "good" writing, tell the model to "sound more human." This helps at the margins and then stops helping, because the underlying issue isn\'t instruction quality — it\'s that a single shared model, prompted fresh each time with no persistent memory of you specifically, has nothing to draw on except the statistical average of everyone who has ever asked it to write something similar.' },
+      { type: 'p', text: 'Picture two tools side by side. The first is a generic prompt-based generator: you type a topic, it generates a draft using the same base style guide it applies to every user of the product, and the only thing that changes between your output and a stranger\'s is the subject matter. The underlying voice — sentence length, rhythm, how confident the claims sound, whether it opens with a story or a stat — stays constant because the model has no input describing how you specifically write. It\'s not personalizing; it\'s substituting a variable into a template.' },
+      { type: 'p', text: 'The second kind of tool is architecturally different: it ingests writing you\'ve actually produced — past posts, drafts you\'ve edited, corrections you\'ve made to previous AI output — and builds a working model of your specific voice from that material. It tracks patterns like whether you write short declarative sentences or longer layered ones, which words you reach for and which you\'d never use, whether you hedge claims or state them flatly, and what kind of opening you gravitate toward. This is usually called a persona engine, and the distinction matters because the two approaches produce fundamentally different trajectories over time. A generic generator\'s hundredth output looks statistically identical to its first. A voice-learning system\'s tenth output should already sound closer to you than its first did, and its hundredth should sound closer still, because every edit and correction you make becomes training signal for the next draft.' },
+      { type: 'p', text: 'This is true regardless of the format you\'re producing — a LinkedIn post, a newsletter section, a client email, a video script. The failure mode is the same everywhere AI touches writing: strip away the persistent model of an individual voice, and the output regresses toward the mean of everything the model has ever seen, which is a very articulate version of nobody in particular.' },
+      { type: 'h2', text: 'A practical editing workflow that preserves your voice' },
+      { type: 'p', text: 'Assuming you\'re using AI as a drafting tool rather than a replacement for judgment, a few workflow habits make the difference between content that reads as yours and content that reads as assisted.' },
+      { type: 'p', text: 'Start with the raw idea in your own words before the AI touches anything. A rough sentence — "we lost a deal today because the buyer didn\'t trust our pricing page" — captured the moment it occurs to you is worth more than any prompt you could write from a blank page later. The AI\'s job is to expand and structure that seed, not to generate the seed itself. Tools that ask you to start from a topic rather than a specific observation are already nudging you toward generic territory before a single word gets written.' },
+      { type: 'p', text: 'Treat the first AI draft as a rough cut, not a finished piece. Read it once for structure and once for voice, separately. On the structure pass, check whether the argument actually holds together and whether anything important got smoothed over. On the voice pass, read it out loud — genuinely, not silently — and flag every sentence you wouldn\'t say to a colleague. AI drafts tend to overuse transitional phrases and tidy summaries that real conversational writing skips entirely.' },
+      { type: 'p', text: 'Always add something the model couldn\'t have known. This is the single highest-leverage edit available to you, and it takes under two minutes. A real number instead of "significant growth." The actual name of the tool, vendor, or person involved instead of a generic role. The specific phrase a customer used instead of a paraphrase. The date something happened. These details are what separate a draft that could have been written about any company from one that could only have been written about yours, and they\'re exactly the details a language model has no access to unless you supply them.' },
+      { type: 'p', text: 'Cut the closing summary paragraph by default. Most AI drafts end with a tidy restatement of the point you just made — "at the end of the day, authenticity matters more than ever" — and it is almost always the weakest paragraph in the piece. Real writing usually ends on the last concrete point, not a recap.' },
+      { type: 'h2', text: 'A short checklist of red flags that a draft has gone generic' },
+      { type: 'p', text: 'Certain patterns show up reliably when a piece has drifted away from a real voice and toward the statistical average, whatever platform it\'s headed for:' },
+      { type: 'ul', items: [
+        'Every claim is hedged with "can," "may," or "often," and nothing is stated as a flat fact',
+        'The piece could be published under a different name or company with zero factual edits required',
+        'It leans on rule-of-three lists and rhetorical questions in place of an actual argument',
+        'Nothing in it references a specific date, number, name, or event — it\'s all abstraction',
+        'The opening line is a variation of "In today\'s fast-paced world" or "Let\'s talk about X"',
+        'The structure is identical to the last five things you or your team published, regardless of topic',
+      ] },
+      { type: 'p', text: 'If a draft trips more than one or two of these, the fix usually isn\'t a better prompt — it\'s going back to the specific detail that made the idea worth writing about in the first place and putting it back in.' },
+      { type: 'h2', text: 'How to actually evaluate whether a tool is learning your voice' },
+      { type: 'p', text: 'Plenty of products now market themselves as "personalized" or "voice-aware," and the label is doing more work than the underlying system usually deserves. A few concrete tests separate real voice-learning architecture from a generic generator with a personalization skin on top.' },
+      { type: 'p', text: 'Check whether output changes meaningfully over time. Generate ten pieces on similar topics a few weeks apart and compare the earliest to the most recent. If they read almost identically, the system isn\'t learning anything — it\'s applying the same static template regardless of how much data you\'ve fed it.' },
+      { type: 'p', text: 'Check whether corrections persist. Edit a draft, then ask for another one on a related topic. A real voice engine should visibly incorporate the correction; a generic tool will make the same mistake again because nothing you did got stored anywhere.' },
+      { type: 'p', text: 'Check whether you can see the voice profile it\'s building. Tools that can\'t show you what they think your voice looks like — the vocabulary patterns, sentence rhythm, tone — usually aren\'t building one in any meaningful sense. A black box that claims personalization without evidence should be treated with real skepticism.' },
+      { type: 'p', text: 'Check whether it scores or flags drafts that have drifted from your established tone, rather than handing you output silently and leaving detection entirely up to you. This matters more than it sounds like it should, because the moments where AI content goes generic are exactly the moments you\'re least likely to catch on a quick skim — you\'re moving fast, the draft looks fine at a glance, and it ships. A system that actively checks a draft against your voice profile before you hit publish is solving a problem that pure prompting can\'t touch, because the model generating the draft has no independent way to notice it just reverted to its default style.' },
+      { type: 'p', text: 'This is the exact problem Eclatale\'s persona engine was built to solve, and it\'s worth mentioning here because the two pieces work together rather than separately. The persona engine learns your voice from what you\'ve actually written, and every draft gets a content authenticity score before it goes anywhere near a publish button, so drift gets caught while it\'s still an edit rather than after it\'s already public. It\'s not a replacement for the editing habits above — it\'s a second check that catches what a fast skim misses, particularly on the days you\'re moving quickly and least inclined to read a draft twice.' },
+      { type: 'p', text: 'None of this is really about AI being good or bad at writing — it\'s very good at writing. It\'s about whether the system producing your content has any actual model of who you are, or whether it\'s quietly averaging you into everyone else who\'s ever asked for help with a similar piece. The tools that solve that problem architecturally, by learning from your real writing instead of a shared template, are the ones worth using. Everything else is a faster way to sound like everyone else.' },
+    ],
+  },
+  {
+    slug: 'linkedin-algorithm-2026',
+    title: 'The LinkedIn Algorithm in 2026: What Changed and How to Work With It',
+    description: 'LinkedIn\'s ranking system has quietly moved away from raw engagement counts toward dwell time and comment quality. Here\'s what actually works now.',
+    category: 'LinkedIn Growth',
+    date: '2026-07-28',
+    keyword: 'LinkedIn algorithm 2026',
+    readTime: '9 min read',
+    content: [
+      { type: 'p', text: 'If your LinkedIn posts feel like they perform differently than they did eighteen months ago, you\'re not imagining it. The platform hasn\'t published a dramatic overhaul, but the accumulation of smaller signal changes has meaningfully shifted what gets distributed, how far it travels, and how quickly you can tell whether a post is working. This isn\'t a listicle of hacks. It\'s a breakdown of the directional shifts worth understanding, and what to actually do about them.' },
+
+      { type: 'h2', text: 'The Big Shift: From Counting Engagement to Weighing It' },
+      { type: 'p', text: 'For years, the mental model for LinkedIn distribution was simple: likes and comments in the first hour predict reach, so ask people to comment, tag someone, or drop an emoji. That model is decaying. LinkedIn has increasingly weighted signals that are harder to game and more correlated with whether a reader actually got value from a post — chiefly, dwell time (how long someone spends with a post before scrolling past) and the substance of the comments it generates.' },
+      { type: 'p', text: 'The practical effect is that a post with 40 comments that are one-word reactions ("Love this!", "So true 🔥") now tends to underperform a post with 12 comments that are three sentences long and reference something specific in the post. The algorithm appears to treat comment length and specificity as a proxy for genuine engagement, likely because it\'s a much harder signal to farm at scale than a like. Pods and engagement groups, which reliably worked a few years ago, have become less effective — LinkedIn has gotten better at detecting coordinated, low-quality interaction clusters and appears to discount their downstream reach.' },
+      { type: 'p', text: 'Dwell time works alongside this. A post that gets scrolled past in under a second sends a weak or negative signal regardless of whether it eventually gets a like. A post that holds attention — even from someone who never engages visibly — appears to earn continued distribution. This rewards content that reads well in the first two lines and gives someone a reason to keep reading rather than front-loading a hook that doesn\'t pay off.' },
+      { type: 'p', text: 'There\'s also a "dwell-then-scroll-back" behavior that seems to carry weight: a reader who pauses, scrolls slightly past, and comes back to re-read or engage is a stronger positive signal than a single pass. This tends to reward posts with a genuine turn or payoff partway through — a shift in perspective, an unexpected data point, a structural change like a numbered list appearing mid-post — rather than posts that are flat and predictable from line one to the last line.' },
+
+      { type: 'h2', text: 'Algorithmic Distrust of Engagement Bait' },
+      { type: 'p', text: 'The "comment YES below" and "who agrees? 👇" style of post has been a known genre for years, and LinkedIn has steadily gotten more aggressive about suppressing it. Posts that contain common bait phrasing, or that generate an engagement pattern consistent with bait (a burst of near-identical one-word comments in a short window), appear to get capped in distribution even if the raw engagement numbers look strong. This is a meaningful change in incentive structure: the old advice to "always end with a question to drive comments" is now closer to a liability than a growth tactic, unless the question is genuinely specific enough that answering it requires a real comment.' },
+      { type: 'p', text: 'The same logic extends to reshares with no added commentary and to "agree or disagree" polarizing takes manufactured purely to provoke replies. These can still spike short-term numbers, but the follow-on distribution tends to taper faster than it used to, and accounts that lean on this format repeatedly appear to see their baseline reach suppressed over time — consistent with LinkedIn treating bait-heavy posting history as a negative account-level signal, not just a per-post one.' },
+
+      { type: 'h2', text: 'What Gets Boosted Now' },
+      { type: 'p', text: 'Format performance has also shifted. Native video and document carousels ("PDF posts") continue to receive outsized reach relative to plain text, largely because both formats structurally increase dwell time — video by its nature takes time to consume, and documents require swiping, which is itself an engagement signal. Image posts sit in the middle. Plain text with no formatting is not dead, but it now has to work harder: it needs a strong opening line and clean paragraph breaks to hold attention, since it has no structural mechanism to slow the scroll.' },
+      { type: 'table', headers: ['Format', 'Directional Trend', 'Why'], rows: [
+        ['Native video', 'Strong reach advantage', 'Forces dwell time; autoplay increases initial exposure'],
+        ['Document/carousel (PDF)', 'Strong reach advantage', 'Swiping is an active engagement signal; multi-slide format extends dwell'],
+        ['Image + text', 'Moderate, stable', 'Visual break increases dwell slightly over plain text'],
+        ['Plain text', 'More variable', 'Depends heavily on hook strength and formatting; no structural dwell boost'],
+        ['External links', 'Suppressed', 'Sends users off-platform; LinkedIn continues to deprioritize outbound-link posts in feed ranking'],
+      ]},
+      { type: 'p', text: 'On substance, posts that perform well now tend to share a few traits: they make a specific, falsifiable claim rather than a generic platitude; they include a concrete detail (a number, a real example, a named mistake) that couldn\'t have been generated by a template; and they resolve into something the reader can actually use or disagree with. Generic "leadership lessons" and recycled motivational content still get posted constantly, but they increasingly plateau early because they don\'t generate the specific, substantive comments that seem to carry the most weight in extending reach.' },
+
+      { type: 'h2', text: 'Posting Times and Cadence' },
+      { type: 'p', text: 'The old advice — post Tuesday through Thursday, 8-10am in your audience\'s primary time zone — still holds directionally, because it\'s really just "post when your audience is awake and scrolling before their day gets busy." What\'s changed is the tolerance for over-posting. Because comment quality and dwell time now matter more than raw volume of engagement, flooding the feed with multiple posts a day tends to split your own audience\'s attention across posts and can suppress each individual post\'s early velocity, which matters more than ever since early velocity still appears to gate whether a post gets tested against a wider audience.' },
+      { type: 'p', text: 'A cadence of three to five posts a week, each with room to breathe, generally outperforms daily posting for accounts under roughly 20,000 followers. Above that threshold, some creators can sustain daily posting because they have enough audience density that the algorithm can find engaged early readers regardless of timing. For most professionals building a personal brand, consistency of cadence matters more than precision of timing — an account that reliably posts three times a week builds a stronger baseline distribution than one that posts erratically, even if the erratic account occasionally nails a "perfect" time slot.' },
+
+      { type: 'h2', text: 'Engagement Triggers That Actually Work' },
+      { type: 'ul', items: [
+        'Open with a claim or observation, not a scene-setting sentence — the first line needs to earn the second line within the truncation window before "see more."',
+        'Include one specific, checkable detail (a number, a name, a timeframe) in the first three lines — generic posts get skimmed and dropped; specific ones get read.',
+        'Write comment replies that add new information rather than saying thanks — LinkedIn appears to weight sustained back-and-forth in the comment thread, not just the initial comment count.',
+        'Ask a question only if answering it requires the reader to share something real about themselves or their work — avoid yes/no prompts that invite low-effort replies.',
+        'Break up longer posts with structural cues (numbered points, short paragraphs, a mid-post pivot) that reward continued reading rather than relying on length alone.',
+        'Reply to comments within the first hour or two — early responsiveness appears to extend the window in which a post is still being actively tested for wider distribution.',
+      ]},
+
+      { type: 'h2', text: 'What Hasn\'t Changed' },
+      { type: 'p', text: 'It\'s worth being honest about what\'s stayed constant, because the "algorithm changed everything" framing oversells the churn. Consistency still compounds. A recognizable point of view still travels further than a technically optimized but generic post. And the accounts that grow durably are still, overwhelmingly, the ones that show up regularly with something specific to say rather than the ones chasing whatever format spiked last quarter.' },
+
+      { type: 'p', text: 'This is part of why we built Eclatale around voice rather than templates. Chasing the algorithm\'s current preferences post-by-post is a losing game — by the time you\'ve reverse-engineered what\'s working, the weighting has usually shifted again. What holds up across every version of the algorithm we\'ve seen is an account that posts in a consistent, recognizably human voice often enough to build a pattern readers and the ranking system both learn to trust. Eclatale\'s persona engine learns how you actually write so your posts sound like you rather than a prompt, and the authenticity score flags anything that reads generic or bait-y before it goes out — not to game the algorithm, but because specific, honest writing is what tends to hold up regardless of which signals LinkedIn is weighting this quarter.' },
+
+      { type: 'h2', text: 'The Bottom Line' },
+      { type: 'p', text: 'LinkedIn in 2026 rewards content that earns attention rather than content that demands a reaction. Dwell time, comment substance, and format choice now matter more than raw engagement counts, and the platform has gotten measurably better at discounting bait and coordinated engagement. None of this requires a new playbook so much as a return to a simpler one: say something specific, format it so it\'s easy to keep reading, respond like a person when people respond to you, and do it on a schedule you can actually sustain. The algorithm will keep shifting. That approach won\'t stop working.' },
+    ],
+  },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
@@ -238,5 +596,12 @@ export function getBlogPost(slug: string): BlogPost | undefined {
 }
 
 export function getRelatedPosts(slug: string, count = 2): BlogPost[] {
-  return blogPosts.filter(p => p.slug !== slug).slice(0, count);
+  const current = getBlogPost(slug);
+  const rest = blogPosts.filter(p => p.slug !== slug);
+  if (!current) return rest.slice(0, count);
+  const sameCategory = rest.filter(p => p.category === current.category);
+  const others = rest.filter(p => p.category !== current.category);
+  return [...sameCategory, ...others].slice(0, count);
 }
+
+export const BLOG_CATEGORIES = ['All', 'LinkedIn Growth', 'Personal Branding', 'AI & Content', 'Career Development'] as const;

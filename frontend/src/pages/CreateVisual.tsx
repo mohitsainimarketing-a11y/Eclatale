@@ -4,6 +4,7 @@ import {
   ArrowLeft, Sparkles, Check, Loader2, Download, RefreshCw, Link2, Image, Type,
 } from 'lucide-react';
 import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
+import FeatureLock from '../components/FeatureLock';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -30,6 +31,10 @@ const STYLES = [
 
 
 export default function CreateVisual() {
+  return <FeatureLock feature="visualCreator" description="AI-generated visuals to pair with your posts are part of the Individual plan."><CreateVisualInner /></FeatureLock>;
+}
+
+function CreateVisualInner() {
   const [userId, setUserId] = useState<string | null>(null);
   const [topic, setTopic] = useState('');
   const [format, setFormat] = useState('');
@@ -133,7 +138,7 @@ export default function CreateVisual() {
             </div>
 
             {/* Topic */}
-            <div className="card p-5 md:p-6 mb-4">
+            <div className="card p-6 md:p-6 mb-4">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">What's this visual about?</label>
               <input
                 type="text"
@@ -145,7 +150,7 @@ export default function CreateVisual() {
             </div>
 
             {/* Format */}
-            <div className="card p-5 md:p-6 mb-4">
+            <div className="card p-6 md:p-6 mb-4">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">Format</label>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-2.5">
                 {FORMATS.map(f => {
@@ -168,7 +173,7 @@ export default function CreateVisual() {
             </div>
 
             {/* Style */}
-            <div className="card p-5 md:p-6 mb-6">
+            <div className="card p-6 md:p-6 mb-6">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">Style</label>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-2.5">
                 {STYLES.map(s => {
@@ -192,7 +197,7 @@ export default function CreateVisual() {
               {generating ? <><Loader2 size={18} className="animate-spin" /> Generating visual...</> : <><Sparkles size={18} /> Generate Visual</>}
             </button>
 
-            {error && <div className="card !bg-red-50 !border-red-100 p-4 text-sm text-red-600 font-medium text-center mt-4 animate-shake">{error}</div>}
+            {error && <div className="card !bg-red-50 !border-red-100 p-6 text-sm text-red-600 font-medium text-center mt-4 animate-shake">{error}</div>}
           </div>
         ) : (
           <div className="animate-slideUp space-y-5">
@@ -211,7 +216,7 @@ export default function CreateVisual() {
             </div>
 
             {/* Image Preview */}
-            <div className="card p-3 md:p-4 flex items-center justify-center">
+            <div className="card p-6 md:p-6 flex items-center justify-center">
               <img
                 src={displayUrl || imageUrl}
                 alt="Generated visual"
@@ -226,7 +231,7 @@ export default function CreateVisual() {
 
             {/* Text overlay editor (Bold / Data Viz) */}
             {hasOverlay && (
-              <div className="card p-4">
+              <div className="card p-6">
                 <label className="text-[11px] font-semibold text-brand-muted uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <Type size={12} /> Headline overlay
                 </label>

@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { initAnalytics, trackEvent } from './lib/analytics';
+import AriaWidget from './components/AriaWidget';
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Auth = lazy(() => import('./pages/auth'));
@@ -13,8 +14,14 @@ const PersonaSetup = lazy(() => import('./pages/PersonaSetup'));
 const Settings = lazy(() => import('./pages/Settings'));
 const CreateVisual = lazy(() => import('./pages/CreateVisual'));
 const Intelligence = lazy(() => import('./pages/Intelligence'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -39,11 +46,26 @@ function PageViewTracker() {
 function App() {
   useEffect(() => {
     initAnalytics();
+
+    // Supabase's password-recovery link redirects to the Site URL root with
+    // #access_token=...&type=recovery in the hash (or, if the link already
+    // expired/was used, #error=access_denied&error_code=otp_expired — with
+    // no `type`, since Supabase omits it on the error path). Nothing on the
+    // landing page consumes either, so send both straight to the
+    // reset-password screen, which renders the right state for each.
+    // Root is only ever the redirect target for recovery links (confirmation
+    // links point at /auth/callback instead), so an error hash landing here
+    // is unambiguously a recovery-link failure.
+    const isRecoveryHash = window.location.hash.includes('type=recovery') || window.location.hash.includes('error=');
+    if (isRecoveryHash && window.location.pathname === '/') {
+      window.location.replace(`/reset-password${window.location.hash}`);
+    }
   }, []);
 
   return (
     <Router>
       <PageViewTracker />
+      <AriaWidget />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -59,8 +81,14 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/create-visual" element={<CreateVisual />} />
           <Route path="/intelligence" element={<Intelligence />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

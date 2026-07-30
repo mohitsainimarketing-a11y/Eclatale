@@ -129,7 +129,7 @@ export default function PersonaSetup() {
                     key={s.id}
                     onClick={() => toggleStyle(s.id)}
                     disabled={disabled}
-                    className={`card p-4 text-center transition-all min-h-[44px] ${
+                    className={`card p-6 text-center transition-all min-h-[44px] ${
                       selected ? '!border-brand-purple !shadow-brand-md' : disabled ? 'opacity-40' : 'card-hover'
                     }`}
                   >
@@ -146,7 +146,7 @@ export default function PersonaSetup() {
               })}
             </div>
 
-            <div className="card p-5 mb-8">
+            <div className="card p-6 mb-8">
               <div className="flex items-center justify-between mb-3">
                 <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide">Formality</label>
                 <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs">{formalityLabel(formality)}</span>
@@ -184,7 +184,7 @@ export default function PersonaSetup() {
               <p className="body-text text-sm">This becomes your content anchor. The thing you're known for.</p>
             </div>
 
-            <div className="card p-5 mb-5">
+            <div className="card p-6 mb-5">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">
                 The ONE topic people come to you for
               </label>
@@ -197,7 +197,7 @@ export default function PersonaSetup() {
               />
             </div>
 
-            <div className="card p-5 mb-8">
+            <div className="card p-6 mb-8">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">
                 Your hot take (optional but powerful)
               </label>
@@ -228,7 +228,7 @@ export default function PersonaSetup() {
               <p className="body-text text-sm">Paste 1-3 things you've actually written. LinkedIn posts, emails, Slack messages, anything.</p>
             </div>
 
-            <div className="card p-5 mb-4">
+            <div className="card p-6 mb-4">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">
                 Your writing samples
               </label>
@@ -246,7 +246,7 @@ export default function PersonaSetup() {
             </div>
 
             {!voiceSamples && (
-              <div className="card p-4 !bg-[rgba(255,107,53,0.04)] !border-brand-orange/20 mb-6">
+              <div className="card p-6 !bg-[rgba(255,107,53,0.04)] !border-brand-orange/20 mb-6">
                 <p className="text-xs text-brand-orange font-medium">
                   Skipping this step means we'll use a generic professional voice until you add samples. You can always come back later.
                 </p>
@@ -318,7 +318,7 @@ export default function PersonaSetup() {
             </div>
 
             {/* Generate sample */}
-            <div className="card p-5 mb-6">
+            <div className="card p-6 mb-6">
               <button
                 onClick={handleGenerateSample}
                 disabled={generating}

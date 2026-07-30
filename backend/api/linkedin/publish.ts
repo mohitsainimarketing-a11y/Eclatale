@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { getValidToken } from '../../lib/linkedinTokenRefresh';
+import { checkPostMilestone } from '../../lib/notifications';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -119,6 +120,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }).eq('id', postId);
 
     await logPublish(userId, postId, true, null);
+    await checkPostMilestone(supabase, userId);
 
     res.json({
       success: true,

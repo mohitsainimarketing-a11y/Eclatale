@@ -220,28 +220,15 @@ function escapeHtml(s: string): string {
   return String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 }
 
-/** Send via SendGrid REST API (no SDK dependency). Returns whether it was actually sent. */
+/** Sends via the branded emailService template (Gmail SMTP, hello@eclatale.com). */
 export async function sendDigestEmail(d: DigestData): Promise<{ sent: boolean; reason?: string }> {
-  const key = process.env.SENDGRID_API_KEY;
-  if (!key) return { sent: false, reason: 'SENDGRID_API_KEY not configured' };
-
-  const fromEmail = process.env.DIGEST_FROM_EMAIL || 'hello@eclatale.com';
-  const html = renderDigestHTML(d);
-
-  const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: d.email }] }],
-      from: { email: fromEmail, name: 'Eclatale' },
-      subject: d.subject,
-      content: [{ type: 'text/html', value: html }],
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    return { sent: false, reason: `SendGrid error ${res.status}: ${err.substring(0, 200)}` };
-  }
-  return { sent: true };
+  const { sendWeeklyDigest } = await import('./emailService');
+  return sendWeeklyDigest(
+    d.userId,
+    d.email,
+    d.firstName,
+    { postsCount: d.postsLastWeek, streak: d.streak, growthScore: d.growthScore },
+    d.topicSuggestions,
+    d.tipOfWeek
+  );
 }

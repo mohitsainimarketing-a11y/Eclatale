@@ -1,9 +1,85 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Sparkles, TrendingUp, Zap, ArrowRight, ChevronDown, Menu, X, Target, Users, BarChart3,
-  Check, Shield, Lock, Star, Play,
+  Check, Shield, Lock, Star,
 } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
+import NewsletterSignup from '../components/NewsletterSignup';
+
+// lucide-react dropped brand/logo icons — small inline SVGs for the footer instead.
+const LinkedInIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45Z" />
+  </svg>
+);
+const TwitterIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M18.9 2.25h3.07l-6.71 7.67 7.9 10.83h-6.19l-4.85-6.34-5.55 6.34H3.5l7.18-8.2L3.1 2.25h6.35l4.38 5.8 5.07-5.8Zm-1.08 16.66h1.7L7.28 4.03H5.45l12.37 14.88Z" />
+  </svg>
+);
+const InstagramIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+function useCountUp(target: number, decimals = 0) {
+  const [value, setValue] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const duration = 1400;
+        const start = performance.now();
+        const tick = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setValue(target * eased);
+          if (progress < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    }, { threshold: 0.4 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target]);
+
+  return { ref, display: decimals > 0 ? value.toFixed(decimals) : Math.round(value).toLocaleString() };
+}
+
+function StatCounter({ value, suffix, label, decimals }: { value: number; suffix: string; label: string; decimals?: number }) {
+  const { ref, display } = useCountUp(value, decimals || 0);
+  return (
+    <div ref={ref}>
+      <div className="text-3xl md:text-5xl font-extrabold text-white leading-none">{display}{suffix}</div>
+      <div className="text-xs md:text-sm text-white/75 font-medium mt-2">{label}</div>
+    </div>
+  );
+}
+
+function TypingLine({ text, delayMs = 0 }: { text: string; delayMs?: number }) {
+  const [shown, setShown] = useState('');
+  useEffect(() => {
+    let i = 0;
+    let interval: ReturnType<typeof setInterval>;
+    const timeout = setTimeout(() => {
+      interval = setInterval(() => {
+        i += 1;
+        setShown(text.slice(0, i));
+        if (i >= text.length) clearInterval(interval);
+      }, 45);
+    }, delayMs);
+    return () => { clearTimeout(timeout); clearInterval(interval); };
+  }, [text, delayMs]);
+  return <span>{shown}<span className="inline-block w-[2px] h-[1em] bg-brand-purple align-middle ml-0.5 animate-pulse" /></span>;
+}
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -57,6 +133,9 @@ export default function Landing() {
     { q: 'Will the content sound like me?', a: 'Yes. Our AI analyzes your writing style, industry expertise, and personality to generate content that sounds authentically you. Every post is unique to your voice.' },
     { q: 'Is Eclatale safe for my LinkedIn account?', a: 'Yes. Eclatale publishes exclusively through LinkedIn\'s official API, so there is zero risk of automation-related account bans, unlike browser-extension tools.' },
     { q: 'Is there a free plan?', a: 'Yes! Start with 10 AI generations per month for free. Upgrade when you\'re ready to scale your content creation.' },
+    { q: 'How quickly will I see results?', a: 'Most users see engagement increase within 2-3 weeks of consistent posting. Personal brand growth compounds — the earlier and more consistently you post, the faster it builds.' },
+    { q: 'Does it work for non-English speakers?', a: 'Eclatale is currently optimized for English. Support for other languages is coming soon — join the waitlist from Settings and we\'ll let you know when yours is ready.' },
+    { q: 'Can I use Eclatale for my company LinkedIn page?', a: 'The Individual plan covers personal profiles. Company page support is coming in our upcoming SMB plan — reach out if you want early access.' },
   ];
 
   return (
@@ -67,7 +146,7 @@ export default function Landing() {
           <a href="/" className="text-xl md:text-2xl font-extrabold gradient-text">Eclatale</a>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Features</a>
-            <a href="#pricing" onClick={handleViewPricing} className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Pricing</a>
+            <a href="/pricing" onClick={handleViewPricing} className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Pricing</a>
             <a href="/blog" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Blog</a>
             <a href="#faq" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">FAQ</a>
             <a href="/login" className="text-sm font-medium text-brand-muted hover:text-brand-purple hover:underline transition-colors">Sign In</a>
@@ -80,7 +159,7 @@ export default function Landing() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-[rgba(124,92,252,0.06)] px-5 py-4 space-y-3 animate-fadeIn">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">Features</a>
-            <a href="#pricing" onClick={() => { setMobileMenuOpen(false); handleViewPricing(); }} className="block py-3 text-sm font-medium text-brand-muted">Pricing</a>
+            <a href="/pricing" onClick={() => { setMobileMenuOpen(false); handleViewPricing(); }} className="block py-3 text-sm font-medium text-brand-muted">Pricing</a>
             <a href="/blog" className="block py-3 text-sm font-medium text-brand-muted">Blog</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">FAQ</a>
             <a href="/login" className="block py-3 text-sm font-medium text-brand-muted">Sign In</a>
@@ -142,6 +221,51 @@ export default function Landing() {
         <div className="hidden md:block absolute top-32 left-[10%] w-16 h-16 rounded-full bg-gradient-to-br from-brand-purple/10 to-brand-pink/10 animate-float" />
         <div className="hidden md:block absolute bottom-20 right-[12%] w-12 h-12 rounded-full bg-gradient-to-br from-brand-orange/10 to-brand-pink/10 animate-float" style={{ animationDelay: '2s' }} />
         <div className="hidden md:block absolute top-48 right-[8%] w-8 h-8 rounded-full bg-brand-teal/10 animate-float" style={{ animationDelay: '1s' }} />
+
+        {/* Floating UI element screenshots — makes the hero feel alive without a video */}
+        <div
+          className="hidden lg:block absolute top-40 left-[4%] w-40 card p-4 !rounded-2xl modal-shadow animate-float"
+          style={{ animationDelay: '0.3s' }}
+          aria-hidden="true"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="tiny text-brand-muted">GROWTH SCORE</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <svg width="44" height="44" viewBox="0 0 44 44" className="flex-shrink-0">
+              <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(124,92,252,0.12)" strokeWidth="4" />
+              <circle cx="22" cy="22" r="18" fill="none" stroke="#7C5CFC" strokeWidth="4" strokeDasharray="113" strokeDashoffset="22" strokeLinecap="round" transform="rotate(-90 22 22)" />
+            </svg>
+            <div>
+              <div className="text-xl font-extrabold text-brand-dark leading-none">82</div>
+              <div className="text-[11px] text-brand-teal font-semibold">↑ 6 this week</div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="hidden lg:block absolute top-24 right-[3%] w-44 card p-4 !rounded-2xl modal-shadow animate-float"
+          style={{ animationDelay: '1.4s' }}
+          aria-hidden="true"
+        >
+          <span className="tiny text-brand-muted">AUTHENTICITY SCORE</span>
+          <div className="flex items-end gap-2 mt-1.5">
+            <span className="text-2xl font-extrabold text-brand-teal leading-none">87</span>
+            <span className="text-xs text-brand-muted mb-0.5">/100</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-[rgba(6,214,160,0.15)] mt-2 overflow-hidden">
+            <div className="h-full rounded-full bg-brand-teal" style={{ width: '87%' }} />
+          </div>
+        </div>
+
+        <div
+          className="hidden lg:block absolute bottom-6 left-[8%] w-48 card p-4 !rounded-2xl modal-shadow animate-float"
+          style={{ animationDelay: '2.2s' }}
+          aria-hidden="true"
+        >
+          <span className="tiny text-brand-muted">IDEA</span>
+          <p className="text-xs font-semibold text-brand-dark mt-1.5 leading-snug">"The one leadership lesson nobody teaches in business school"</p>
+        </div>
       </section>
 
       {/* Wave divider */}
@@ -151,31 +275,89 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* Demo section */}
+      {/* Live product preview — replaces the old video/demo section */}
       <section id="demo" className="bg-brand-bg py-16 md:py-20 px-5 md:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="h2 text-brand-dark mb-4">See it <span className="gradient-text">in action</span></h2>
-          <p className="body-text max-w-md mx-auto mb-10">
-            Watch how Eclatale turns a rough idea into a polished, on-voice LinkedIn post in seconds.
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="h2 text-brand-dark mb-4">
+            Generate a post in seconds. In your voice. <span className="gradient-text">Verified authentic.</span>
+          </h2>
+          <p className="body-text max-w-md mx-auto mb-10 md:mb-12">
+            No demo video needed — here's exactly what happens when you type a topic into Eclatale.
           </p>
-          <div className="card p-3 md:p-4 max-w-2xl mx-auto">
-            <div className="aspect-video rounded-2xl gradient-primary flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 dot-grid opacity-15" />
-              <button
-                type="button"
-                aria-label="Play product demo"
-                className="relative z-10 w-16 h-16 rounded-full bg-white/95 flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-              >
-                <Play size={26} className="text-brand-purple ml-1" fill="currentColor" />
-              </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 text-left">
+            {/* LEFT: AI Assistant panel with a topic being typed */}
+            <div className="card p-6 md:p-7">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+                  <Sparkles size={14} className="text-white" />
+                </div>
+                <span className="text-sm font-bold text-brand-dark">What do you want to write about?</span>
+              </div>
+              <div className="input !min-h-[96px] flex items-start pt-3.5 text-brand-dark text-[15px]">
+                <TypingLine text="The future of AI in marketing" delayMs={400} />
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {['Confident', 'Story-driven', 'Standard length'].map((tag) => (
+                  <span key={tag} className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-xs">{tag}</span>
+                ))}
+              </div>
+              <div className="btn-primary w-full mt-5 text-sm opacity-90 cursor-default">
+                <Sparkles size={15} /> Generate Post
+              </div>
+            </div>
+
+            {/* RIGHT: generated LinkedIn post appearing with authenticity score */}
+            <div className="card p-6 md:p-7 animate-fadeIn" style={{ animationDelay: '1.6s' }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">YOU</div>
+                  <div>
+                    <div className="text-sm font-semibold text-brand-dark leading-tight">Your Name</div>
+                    <div className="text-xs text-brand-muted">Now · 🌐</div>
+                  </div>
+                </div>
+                <div className="badge bg-[rgba(6,214,160,0.1)] text-brand-teal text-xs flex-shrink-0">
+                  <Check size={12} /> 87/100
+                </div>
+              </div>
+              <p className="post-content text-[14px] mb-4">
+                Everyone's talking about AI replacing marketers. That's the wrong question.<br /><br />
+                The real shift: AI handles the drafts. You bring the judgment, the story, the voice only you have.<br /><br />
+                The marketers who win in 2026 aren't the ones avoiding AI — they're the ones who stay unmistakably themselves while using it.
+              </p>
+              <div className="flex items-center gap-4 pt-3 border-t border-[rgba(124,92,252,0.06)] text-xs text-brand-muted">
+                <span>👍 248</span>
+                <span>💬 34 comments</span>
+                <span>↻ 12 reposts</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Trust signals */}
+      {/* Social proof stats bar */}
+      <section className="gradient-primary py-12 md:py-16 px-5 md:px-8">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center">
+          {[
+            { value: 500, suffix: '+', label: 'professionals' },
+            { value: 10000, suffix: '+', label: 'posts generated' },
+            { value: 87, suffix: '%', label: 'avg. voice match' },
+            { value: 4.8, suffix: '/5', label: 'rating', decimals: 1 },
+          ].map((stat, i) => (
+            <StatCounter key={i} value={stat.value} suffix={stat.suffix} label={stat.label} decimals={stat.decimals} />
+          ))}
+        </div>
+      </section>
+
+      {/* Trust signals (incl. "Built for professionals at") */}
       <section className="py-16 md:py-20 px-5 md:px-8 bg-white">
         <div className="max-w-5xl mx-auto">
+          <p className="tiny text-brand-muted text-center mb-6">BUILT FOR PROFESSIONALS AT</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 mb-12 md:mb-16">
+            {['Series A Startups', 'Fortune 500 Companies', 'Consulting Firms', 'Growth-Stage SaaS', 'Boutique Agencies'].map((name) => (
+              <span key={name} className="text-sm md:text-base font-bold text-brand-muted/60 tracking-tight">{name}</span>
+            ))}
+          </div>
           <h2 className="h2 text-brand-dark text-center mb-10 md:mb-12">
             Why professionals <span className="gradient-text">trust Eclatale</span>
           </h2>
@@ -352,13 +534,16 @@ export default function Landing() {
                   aria-expanded={openFaq === i}
                 >
                   <span className="font-semibold text-brand-dark text-[15px] pr-4">{faq.q}</span>
-                  <ChevronDown size={18} className={`text-brand-muted flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={18} className={`text-brand-muted flex-shrink-0 transition-transform duration-300 ease-out ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
-                {openFaq === i && (
-                  <div className="px-5 md:px-6 pb-5 md:pb-6 animate-fadeIn">
-                    <p className="text-sm text-brand-muted leading-relaxed">{faq.a}</p>
+                <div
+                  className="grid transition-[grid-template-rows] duration-300 ease-out"
+                  style={{ gridTemplateRows: openFaq === i ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden">
+                    <p className="text-sm text-brand-muted leading-relaxed px-5 md:px-6 pb-5 md:pb-6">{faq.a}</p>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
@@ -377,7 +562,7 @@ export default function Landing() {
               <p className="text-white/75 mb-8 text-base md:text-lg max-w-md mx-auto">
                 Join thousands of professionals growing their influence with AI.
               </p>
-              <a href="/signup" onClick={handleStartFree} className="inline-flex items-center gap-2 bg-white text-brand-purple font-semibold px-8 py-4 rounded-full hover:bg-brand-bg transition-all shadow-lg text-base">
+              <a href="/signup" onClick={handleStartFree} className="inline-flex items-center gap-2 bg-white text-brand-purple font-semibold px-8 py-4 rounded-full hover:bg-brand-bg transition-all shadow-brand-lg text-base">
                 Get Started Free <ArrowRight size={18} />
               </a>
             </div>
@@ -386,14 +571,37 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-5 md:px-8 border-t border-[rgba(124,92,252,0.06)]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <a href="/" className="text-lg font-extrabold gradient-text">Eclatale</a>
-          <div className="flex items-center gap-6">
-            <a href="/blog" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Blog</a>
-            <a href="#pricing" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Pricing</a>
+      <footer className="pt-14 pb-8 px-5 md:px-8 border-t border-[rgba(124,92,252,0.06)] bg-brand-bg">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-10">
+            <div>
+              <a href="/" className="text-lg font-extrabold gradient-text">Eclatale</a>
+              <p className="text-sm text-brand-muted mt-2 max-w-xs">Made with ❤️ in Toronto, Canada</p>
+            </div>
+            <NewsletterSignup />
           </div>
-          <p className="text-sm text-brand-muted">&copy; {new Date().getFullYear()} Eclatale. All rights reserved.</p>
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-[rgba(124,92,252,0.06)]">
+            <div className="flex items-center gap-6 flex-wrap justify-center">
+              <a href="/blog" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Blog</a>
+              <a href="/pricing" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Pricing</a>
+              <a href="/privacy" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Privacy</a>
+              <a href="/terms" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Terms</a>
+              <a href="/refund-policy" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Refund Policy</a>
+            </div>
+            <div className="flex items-center gap-3">
+              <a href="https://linkedin.com/company/eclatale" target="_blank" rel="noopener noreferrer" aria-label="Eclatale on LinkedIn" className="w-9 h-9 rounded-full flex items-center justify-center text-brand-muted hover:text-white hover:bg-brand-purple transition-colors border border-[rgba(124,92,252,0.15)]">
+                <LinkedInIcon />
+              </a>
+              <a href="https://twitter.com/eclatale" target="_blank" rel="noopener noreferrer" aria-label="Eclatale on X (Twitter)" className="w-9 h-9 rounded-full flex items-center justify-center text-brand-muted hover:text-white hover:bg-brand-purple transition-colors border border-[rgba(124,92,252,0.15)]">
+                <TwitterIcon />
+              </a>
+              <a href="https://instagram.com/eclatale" target="_blank" rel="noopener noreferrer" aria-label="Eclatale on Instagram" className="w-9 h-9 rounded-full flex items-center justify-center text-brand-muted hover:text-white hover:bg-brand-purple transition-colors border border-[rgba(124,92,252,0.15)]">
+                <InstagramIcon />
+              </a>
+            </div>
+            <p className="text-sm text-brand-muted">&copy; {new Date().getFullYear()} Eclatale. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>

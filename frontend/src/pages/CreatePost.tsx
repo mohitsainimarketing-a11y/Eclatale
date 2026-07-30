@@ -31,6 +31,13 @@ const CONTENT_TYPES = [
   { id: 'instagram-caption', label: 'Instagram',     short: 'Instagram' },
 ];
 
+const CONTENT_LENGTHS = [
+  { id: 'micro',    emoji: '⚡', label: 'Micro',     range: '100-300 chars',  desc: 'Ultra short. One powerful idea. Maximum impact.',            approxSeconds: 5 },
+  { id: 'short',    emoji: '📝', label: 'Short',     range: '300-800 chars',  desc: 'Punchy and scannable. Perfect for quick insights.',          approxSeconds: 15 },
+  { id: 'standard', emoji: '📄', label: 'Standard',  range: '800-1500 chars', desc: 'The LinkedIn sweet spot. Story + insight + CTA.',            approxSeconds: 30 },
+  { id: 'longform', emoji: '📚', label: 'Long-form', range: '1500-3000 chars', desc: 'Deep dive. Full thought leadership. Maximum authority.',    approxSeconds: 60 },
+] as const;
+
 const VISUAL_STYLES = [
   { id: 'minimal',       label: 'Minimal',       emoji: '🤍' },
   { id: 'bold',          label: 'Bold',           emoji: '🔥' },
@@ -174,6 +181,50 @@ function computeNudge(patterns: any): { text: string; instruction: string } | nu
   return null;
 }
 
+// approximate silent adult reading speed used for the "X seconds to read" hint
+const READING_CHARS_PER_SECOND = 17;
+
+function LengthSelector({ value, onChange }: { value: typeof CONTENT_LENGTHS[number]['id']; onChange: (v: typeof CONTENT_LENGTHS[number]['id']) => void }) {
+  const active = CONTENT_LENGTHS.find(l => l.id === value) || CONTENT_LENGTHS[2];
+  const maxChars = 3000;
+  const activeMaxChars = Number(active.range.split('-')[1]?.replace(/\D/g, '')) || 1500;
+  const barPct = Math.min(100, Math.round((activeMaxChars / maxChars) * 100));
+  const approxSeconds = Math.round(activeMaxChars / READING_CHARS_PER_SECOND);
+
+  return (
+    <div>
+      <p className="text-[12px] font-semibold text-brand-dark mb-2">Post length</p>
+      <div className="grid grid-cols-2 gap-2">
+        {CONTENT_LENGTHS.map(l => (
+          <button
+            key={l.id}
+            type="button"
+            onClick={() => onChange(l.id)}
+            className={`text-left rounded-xl border p-2.5 transition-all ${
+              value === l.id
+                ? 'border-brand-purple bg-[rgba(124,92,252,0.06)]'
+                : 'border-[rgba(0,0,0,0.08)] hover:border-brand-purple/40'
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-[13px]">{l.emoji}</span>
+              <span className="text-[11px] font-bold text-brand-dark">{l.label}</span>
+            </div>
+            <p className="text-[9.5px] text-brand-muted mt-1 leading-snug">{l.desc}</p>
+            <p className="text-[9px] text-brand-muted/70 mt-1">{l.range}</p>
+          </button>
+        ))}
+      </div>
+      <div className="mt-2.5">
+        <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.1)] overflow-hidden">
+          <div className="h-full rounded-full gradient-primary transition-all duration-300" style={{ width: `${barPct}%` }} />
+        </div>
+        <p className="text-[10px] text-brand-muted mt-1.5">This will take about {approxSeconds} seconds to read</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function CreatePost() {
@@ -205,6 +256,7 @@ export default function CreatePost() {
   const [contentHistory, setContentHistory]   = useState<string[]>([]);
   const [contentType, setContentType]         = useState('linkedin-post');
   const [tone, setTone]                       = useState('professional');
+  const [contentLength, setContentLength]     = useState<'micro' | 'short' | 'standard' | 'longform'>('standard');
   const [postId, setPostId]                   = useState<string | null>(null);
   const [copied, setCopied]   = useState(false);
   const [saved, setSaved]     = useState(false);
@@ -279,6 +331,9 @@ export default function CreatePost() {
       addMsg('bot', "What would you like to write about? I've pre-filled the topic below.", 'text');
       setChatInput(topicParam);
       setActiveFlow('write');
+    }
+    if (params.get('action') === 'ideas') {
+      handleCardIdeas();
     }
 
     supabase.auth.getUser().then(({ data }) => {
@@ -550,13 +605,13 @@ export default function CreatePost() {
     const loadingTimer = setTimeout(() => setShowAuthLoading(true), 1200);
     fetch(`${API_URL}/api/intelligence`, {
       method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ action: 'authenticity-score', userId, postId: postIdToCheck, postContent: content, topic }),
+      body: JSON.stringify({ action: 'authenticity-score', userId, postId: postIdToCheck, postContent: content, topic, contentLength }),
     })
       .then(r => r.json())
       .then(d => { if (d && !d.error) setAuthScore(d); })
       .catch(() => {})
       .finally(() => { clearTimeout(loadingTimer); setShowAuthLoading(false); });
-  }, [userId]);
+  }, [userId, contentLength]);
 
   const handleFixSuggestion = (suggestion: string) => {
     if (!suggestion) return;
@@ -586,7 +641,7 @@ export default function CreatePost() {
     try {
       const res = await fetch(`${API_URL}/api/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ topic, tone, contentType, userId, styleNudge: nudgeApplied ? nudge?.instruction : undefined }),
+        body: JSON.stringify({ topic, tone, contentType, contentLength, userId, styleNudge: nudgeApplied ? nudge?.instruction : undefined }),
       });
       const data = await res.json();
       if (data.error) throw new Error(friendlyErrorMessage(data));
@@ -604,6 +659,13 @@ export default function CreatePost() {
         setPostId(inserted.id); queueAnalysis(inserted.id, data.content); setLastTopic(topic);
         setReferenceUsed(false); setReferenceHintDismissed(false); setReferencesExpanded(false);
         checkAuthenticityScore(inserted.id, data.content, topic);
+        // Fire-and-forget: server checks the actual weekly count and dedupes
+        // via email_log, so it's safe to call after every generated post.
+        fetch(`${API_URL}/api/email/send-free-limit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        }).catch(() => {});
       }
       checkToneMatch(data.content, tone);
     } catch (err: any) {
@@ -620,7 +682,7 @@ export default function CreatePost() {
     try {
       const res = await fetch(`${API_URL}/api/repurpose`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ sourceText: repurposeText, contentType, tone, userId }),
+        body: JSON.stringify({ sourceText: repurposeText, contentType, tone, contentLength, userId }),
       });
       const data = await res.json();
       if (data.error) throw new Error(friendlyErrorMessage(data));
@@ -942,7 +1004,7 @@ export default function CreatePost() {
               <div className="space-y-2">
 
                 <button onClick={handleCardIdeas}
-                  className="w-full card !p-3.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
                   <div className="w-7 h-7 rounded-xl bg-[rgba(124,92,252,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <Lightbulb size={13} className="text-brand-purple" />
                   </div>
@@ -953,7 +1015,7 @@ export default function CreatePost() {
                 </button>
 
                 <button onClick={handleCardWrite}
-                  className="w-full card !p-3.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
                   <div className="w-7 h-7 rounded-xl bg-[rgba(247,37,133,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <PenTool size={13} className="text-brand-pink" />
                   </div>
@@ -964,7 +1026,7 @@ export default function CreatePost() {
                 </button>
 
                 <button onClick={handleCardRepurpose}
-                  className="w-full card !p-3.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
                   <div className="w-7 h-7 rounded-xl bg-[rgba(255,107,53,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <Scissors size={13} className="text-brand-orange" />
                   </div>
@@ -975,7 +1037,7 @@ export default function CreatePost() {
                 </button>
 
                 <button onClick={handleCardImprove}
-                  className="w-full card !p-3.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
                   <div className="w-7 h-7 rounded-xl bg-[rgba(6,214,160,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <Wand2 size={13} className="text-brand-teal" />
                   </div>
@@ -1166,9 +1228,9 @@ export default function CreatePost() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {ideasList.map((idea, i) => (
                     <div key={i} className="bg-white rounded-2xl overflow-hidden flex flex-col transition-shadow"
-                      style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)' }}
-                      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.09)')}
-                      onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05)')}>
+                      style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}
+                      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 8px 32px rgba(124,92,252,0.16)')}
+                      onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 24px rgba(124,92,252,0.08)')}>
                       <div className="px-3 pt-3 pb-2 flex-1 flex flex-col">
                         <div className="flex items-start justify-between gap-2 mb-2 flex-shrink-0">
                           <div className="flex items-start gap-2 min-w-0">
@@ -1258,6 +1320,9 @@ export default function CreatePost() {
                     </button>
                   </div>
                 )}
+                {contentType === 'linkedin-post' && (
+                  <LengthSelector value={contentLength} onChange={setContentLength} />
+                )}
                 <button onClick={handleWriteGenerate} disabled={!writeTopic.trim() || generating}
                   className="btn-primary w-full !py-3 text-sm">
                   {generating
@@ -1290,6 +1355,9 @@ export default function CreatePost() {
                     autoFocus
                   />
                 </div>
+                {contentType === 'linkedin-post' && (
+                  <LengthSelector value={contentLength} onChange={setContentLength} />
+                )}
                 <button onClick={handleRepurpose} disabled={!repurposeText.trim() || repurposing}
                   className="btn-primary w-full !py-3 text-sm">
                   {repurposing
@@ -1429,7 +1497,7 @@ export default function CreatePost() {
                         <ChevronDown size={11} className={`transition-transform ${authScoreExpanded ? 'rotate-180' : ''}`} />
                       </button>
                       {authScoreExpanded && (
-                        <div className="card !p-4 mt-2 animate-fadeIn">
+                        <div className="card !p-6 mt-2 animate-fadeIn">
                           <div className="flex items-start gap-4">
                             <AuthenticityRing score={authScore.overallScore} />
                             <div className="flex-1 min-w-0 space-y-1.5">
@@ -1501,7 +1569,7 @@ export default function CreatePost() {
                         <ChevronDown size={11} className={`transition-transform ${referencesExpanded ? 'rotate-180' : ''}`} />
                       </button>
                       {referencesExpanded && (
-                        <div className="card !p-4 mt-2 animate-fadeIn">
+                        <div className="card !p-6 mt-2 animate-fadeIn">
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-[11px] font-bold text-brand-dark uppercase tracking-wide">Supporting References</span>
                             <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[9px] !py-1">Powered by live web search</span>
@@ -1564,7 +1632,7 @@ export default function CreatePost() {
                     <Calendar size={12} /> <span className="hidden sm:inline">{scheduleConfirmed && scheduleDay ? `${scheduleDay}, ${scheduleTime}` : 'Schedule'}</span>
                   </button>
                   {scheduleOpen && (
-                    <div className="fixed left-4 right-4 bottom-20 sm:absolute sm:bottom-full sm:left-0 sm:right-auto sm:mb-2 sm:w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-4 z-50 animate-fadeIn">
+                    <div className="fixed left-4 right-4 bottom-20 sm:absolute sm:bottom-full sm:left-0 sm:right-auto sm:mb-2 sm:w-72 bg-white rounded-2xl modal-shadow border border-[rgba(124,92,252,0.1)] p-4 z-50 animate-fadeIn">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Calendar size={12} className="text-brand-purple" />
                         <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">Schedule</span>
@@ -1614,7 +1682,7 @@ export default function CreatePost() {
                         )}
                       </button>
                       {postSuggestionsOpen && (
-                        <div className="fixed left-4 right-4 bottom-20 sm:absolute sm:bottom-full sm:right-0 sm:left-auto sm:mb-2 sm:w-72 bg-white rounded-2xl shadow-2xl border border-[rgba(124,92,252,0.1)] p-3.5 z-50 animate-fadeIn space-y-2.5">
+                        <div className="fixed left-4 right-4 bottom-20 sm:absolute sm:bottom-full sm:right-0 sm:left-auto sm:mb-2 sm:w-72 bg-white rounded-2xl modal-shadow border border-[rgba(124,92,252,0.1)] p-3.5 z-50 animate-fadeIn space-y-2.5">
                           {getActionableItems(authScore).slice(0, 2).map((item, i) => (
                             <div key={i}>
                               <span className="text-[10px] font-bold text-brand-dark uppercase tracking-wide">{item.label}</span>
@@ -1659,12 +1727,12 @@ export default function CreatePost() {
               )}
 
               {publishResult?.error && (
-                <div className="flex-shrink-0 mx-5 mb-3 card !bg-red-50 !border-red-100 p-3 text-xs text-red-600 font-medium text-center animate-shake">
+                <div className="flex-shrink-0 mx-5 mb-3 card !bg-red-50 !border-red-100 p-6 text-xs text-red-600 font-medium text-center animate-shake">
                   {publishResult.error}
                 </div>
               )}
               {publishResult?.success && (
-                <div className="flex-shrink-0 mx-5 mb-3 card !bg-[rgba(6,214,160,0.06)] !border-brand-teal/20 p-3 text-xs text-brand-teal font-medium text-center animate-fadeIn flex items-center justify-center gap-2">
+                <div className="flex-shrink-0 mx-5 mb-3 card !bg-[rgba(6,214,160,0.06)] !border-brand-teal/20 p-6 text-xs text-brand-teal font-medium text-center animate-fadeIn flex items-center justify-center gap-2">
                   Published to LinkedIn!
                   {publishResult.urn && (
                     <a href={`https://www.linkedin.com/feed/update/${publishResult.urn}`} target="_blank" rel="noopener noreferrer"
@@ -1682,7 +1750,7 @@ export default function CreatePost() {
         {voiceEditOpen && (
           <>
             <div className="absolute inset-0 z-40 bg-transparent" onClick={closeVoiceEdit} />
-            <div className={`absolute inset-y-0 left-0 z-50 w-full sm:w-[400px] bg-white shadow-2xl overflow-y-auto ${voiceEditClosing ? 'animate-slideOutLeft' : 'animate-slideInLeft'}`}>
+            <div className={`absolute inset-y-0 left-0 z-50 w-full sm:w-[400px] bg-white modal-shadow overflow-y-auto ${voiceEditClosing ? 'animate-slideOutLeft' : 'animate-slideInLeft'}`}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(124,92,252,0.08)] sticky top-0 bg-white z-10">
                 <span className="text-sm font-bold text-brand-dark">Your Voice Profile</span>
                 <button onClick={closeVoiceEdit}
@@ -1701,7 +1769,7 @@ export default function CreatePost() {
                       const disabled = !selected && editStyles.length >= 3;
                       return (
                         <button key={s.id} onClick={() => toggleEditStyle(s.id)} disabled={disabled}
-                          className={`card !p-3 text-center transition-all ${selected ? '!border-brand-purple !shadow-brand-md' : disabled ? 'opacity-40' : 'card-hover'}`}>
+                          className={`card !p-6 text-center transition-all ${selected ? '!border-brand-purple !shadow-brand-md' : disabled ? 'opacity-40' : 'card-hover'}`}>
                           <span className="text-lg block mb-1">{s.emoji}</span>
                           <span className="text-[11px] font-bold text-brand-dark block">{s.label}</span>
                           {selected && (
@@ -1739,7 +1807,7 @@ export default function CreatePost() {
                 </div>
 
                 {/* Voice match score */}
-                <div className="card !p-4 flex items-center gap-3">
+                <div className="card !p-6 flex items-center gap-3">
                   {loadingVoiceScore ? (
                     <Loader2 size={16} className="animate-spin text-brand-purple" />
                   ) : voiceMatchScore !== null ? (
@@ -1776,7 +1844,7 @@ export default function CreatePost() {
       {/* ── VISUAL CREATION MODAL ─────────────────────────────────────────────── */}
       {visualModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn">
-          <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-t-4xl sm:rounded-4xl modal-shadow w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[rgba(124,92,252,0.06)]">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-xl gradient-primary flex items-center justify-center">
@@ -1866,7 +1934,7 @@ export default function CreatePost() {
       )}
       {/* Voice updated toast */}
       {voiceToast && (
-        <div className="fixed bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))] left-1/2 -translate-x-1/2 z-[60] bg-brand-dark text-white text-[12px] font-medium px-4 py-3 rounded-xl shadow-2xl animate-fadeIn flex items-center gap-2 max-w-[calc(100vw-2rem)] sm:whitespace-nowrap sm:max-w-none">
+        <div className="fixed bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))] left-1/2 -translate-x-1/2 z-[60] bg-brand-dark text-white text-[12px] font-medium px-4 py-3 rounded-xl modal-shadow animate-fadeIn flex items-center gap-2 max-w-[calc(100vw-2rem)] sm:whitespace-nowrap sm:max-w-none">
           <Check size={14} className="text-brand-teal" />
           Voice updated — your next post will reflect these changes
         </div>

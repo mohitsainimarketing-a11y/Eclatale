@@ -7,6 +7,7 @@ import {
   FileText, MessageCircle, Image, Globe,
 } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
+import FeatureLock from '../components/FeatureLock';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -33,6 +34,10 @@ interface Question { id: string; question: string; placeholder: string; }
 type Step = 'idea' | 'format' | 'questions' | 'result';
 
 export default function GuidedCreate() {
+  return <FeatureLock feature="guidedCreation" description="Step-by-step guided post creation is part of the Individual plan."><GuidedCreateInner /></FeatureLock>;
+}
+
+function GuidedCreateInner() {
   const [userId, setUserId] = useState<string | null>(null);
   const [step, setStep] = useState<Step>('idea');
   const [rawIdea, setRawIdea] = useState('');
@@ -164,7 +169,7 @@ export default function GuidedCreate() {
               <h2 className="h2 text-brand-dark mb-2">What's your <span className="gradient-text">idea</span>?</h2>
               <p className="body-text text-sm">Dump your rough thought. We'll shape it into something great.</p>
             </div>
-            <div className="card p-5 md:p-6 mb-6">
+            <div className="card p-6 md:p-6 mb-6">
               <textarea
                 value={rawIdea}
                 onChange={(e) => setRawIdea(e.target.value)}
@@ -197,7 +202,7 @@ export default function GuidedCreate() {
               <p className="body-text text-sm">Pick the format and tone.</p>
             </div>
 
-            <div className="card p-5 md:p-6">
+            <div className="card p-6 md:p-6">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">Format</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                 {CONTENT_TYPES.map(ct => {
@@ -215,7 +220,7 @@ export default function GuidedCreate() {
               </div>
             </div>
 
-            <div className="card p-5 md:p-6">
+            <div className="card p-6 md:p-6">
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-3 block">Tone</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                 {TONES.map(t => {
@@ -239,7 +244,7 @@ export default function GuidedCreate() {
                 {loading ? <><Loader2 size={16} className="animate-spin" /> Thinking...</> : <><MessageSquare size={16} /> Get Questions</>}
               </button>
             </div>
-            {error && <div className="card !bg-red-50 !border-red-100 p-4 text-sm text-red-600 font-medium text-center animate-shake">{error}</div>}
+            {error && <div className="card !bg-red-50 !border-red-100 p-6 text-sm text-red-600 font-medium text-center animate-shake">{error}</div>}
           </div>
         )}
 
@@ -252,7 +257,7 @@ export default function GuidedCreate() {
             </div>
 
             {questions.map((q, i) => (
-              <div key={q.id} className="card p-5">
+              <div key={q.id} className="card p-6">
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{i + 1}</div>
                   <label className="text-sm font-semibold text-brand-dark leading-relaxed">{q.question}</label>
@@ -267,7 +272,7 @@ export default function GuidedCreate() {
               </div>
             ))}
 
-            <div className="card p-4 !bg-brand-bg flex items-center justify-between">
+            <div className="card p-6 !bg-brand-bg flex items-center justify-between">
               <span className="text-sm font-semibold text-brand-dark">{answeredCount}/{questions.length} answered</span>
               <div className="flex gap-1">
                 {questions.map(q => (
@@ -282,7 +287,7 @@ export default function GuidedCreate() {
                 {loading ? <><Loader2 size={16} className="animate-spin" /> Crafting...</> : <><Sparkles size={16} /> Generate</>}
               </button>
             </div>
-            {error && <div className="card !bg-red-50 !border-red-100 p-4 text-sm text-red-600 font-medium text-center animate-shake">{error}</div>}
+            {error && <div className="card !bg-red-50 !border-red-100 p-6 text-sm text-red-600 font-medium text-center animate-shake">{error}</div>}
           </div>
         )}
 
@@ -299,7 +304,7 @@ export default function GuidedCreate() {
               </div>
             </div>
 
-            <div className="card p-5 md:p-7">
+            <div className="card p-6 md:p-7">
               {isEditing ? (
                 <textarea value={editedContent} onChange={(e) => setEditedContent(e.target.value)}
                   className="input !min-h-[280px] !resize-y !leading-relaxed !rounded-xl" />
@@ -326,10 +331,10 @@ export default function GuidedCreate() {
               </button>
             </div>
             {publishResult?.error && (
-              <div className="card !bg-red-50 !border-red-100 p-3 text-sm text-red-600 font-medium text-center mt-3 animate-shake">{publishResult.error}</div>
+              <div className="card !bg-red-50 !border-red-100 p-6 text-sm text-red-600 font-medium text-center mt-3 animate-shake">{publishResult.error}</div>
             )}
             {publishResult?.success && (
-              <div className="card !bg-[rgba(6,214,160,0.06)] !border-brand-teal/20 p-3 text-sm text-brand-teal font-medium text-center mt-3 animate-fadeIn">
+              <div className="card !bg-[rgba(6,214,160,0.06)] !border-brand-teal/20 p-6 text-sm text-brand-teal font-medium text-center mt-3 animate-fadeIn">
                 Published to LinkedIn!
                 {publishResult.urn && (
                   <a href={`https://www.linkedin.com/feed/update/${publishResult.urn}`} target="_blank" rel="noopener noreferrer" className="ml-2 underline">View post</a>

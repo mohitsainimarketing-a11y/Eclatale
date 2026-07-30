@@ -6,6 +6,8 @@ import {
   Loader2, Target, Settings, ChevronRight, Image, TrendingUp, PenTool,
 } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
+import NotificationBell from '../components/NotificationBell';
+import { maybePromptPush } from '../lib/pushNotifications';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -118,6 +120,7 @@ export default function Dashboard() {
     const posts = postsRes.data || [];
     setTotalPosts(posts.length);
     setRecentPosts(recentRes.data || []);
+    if (posts.length > 0) maybePromptPush(userId);
 
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -241,9 +244,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#FAFAFE] flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[rgba(124,92,252,0.06)] h-app-shell sticky top-0 z-40">
-        <div className="px-5 h-16 flex items-center border-b border-[rgba(124,92,252,0.06)]">
+      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[rgba(124,92,252,0.06)] h-app-shell sticky top-0 z-40 nav-shadow">
+        <div className="px-5 h-16 flex items-center justify-between border-b border-[rgba(124,92,252,0.06)]">
           <a href="/dashboard" className="text-xl font-extrabold gradient-text">Eclatale</a>
+          {user && <NotificationBell userId={user.id} />}
         </div>
 
         <div className="px-3 pt-4 pb-2">
@@ -287,7 +291,10 @@ export default function Dashboard() {
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between px-5 h-14 bg-white/90 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] sticky top-0 z-40">
           <a href="/dashboard" className="text-lg font-extrabold gradient-text">Eclatale</a>
-          <button onClick={handleLogout} className="text-sm text-red-400 p-2"><LogOut size={18} /></button>
+          <div className="flex items-center gap-1">
+            {user && <NotificationBell userId={user.id} />}
+            <button onClick={handleLogout} className="text-sm text-red-400 p-2"><LogOut size={18} /></button>
+          </div>
         </div>
 
         <div className="max-w-[960px] mx-auto px-5 md:px-8 py-6 md:py-8">
@@ -307,7 +314,7 @@ export default function Dashboard() {
 
           {/* Growth Score breakdown panel */}
           {growthOpen && (
-            <div className="card p-5 mb-6 animate-fadeIn">
+            <div className="card p-6 mb-6 animate-fadeIn">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-sm font-bold text-brand-dark">Growth Score: {displayGrowthScore}/100</h3>
@@ -369,7 +376,7 @@ export default function Dashboard() {
               { label: 'Streak', value: `${streak}d`, icon: <Flame size={16} />, color: 'from-brand-orange to-[#FF8F5E]' },
               { label: 'Growth Score', value: `${displayGrowthScore}/100`, icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
             ].map((s, i) => (
-              <div key={i} className="card stat-card p-4">
+              <div key={i} className="card stat-card p-6">
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white`}>{s.icon}</div>
                   <span className="text-[11px] text-brand-muted font-medium">{s.label}</span>
@@ -380,7 +387,7 @@ export default function Dashboard() {
           </div>
 
           {/* Writing Insights (Piece 12 — semantic engine, Surface 3) */}
-          <div className="card p-5 mb-6">
+          <div className="card p-6 mb-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple to-brand-pink flex items-center justify-center text-white">
                 <PenTool size={16} />
@@ -432,7 +439,7 @@ export default function Dashboard() {
 
           {/* Persona CTA */}
           {!hasPersona && (
-            <a href="/persona-setup" className="card card-hover p-4 mb-6 block !border-brand-purple/15 gradient-mesh">
+            <a href="/persona-setup" className="card card-hover p-6 mb-6 block !border-brand-purple/15 gradient-mesh">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-white flex-shrink-0">
                   <Target size={16} />
@@ -448,7 +455,7 @@ export default function Dashboard() {
 
           {/* Learning Insight */}
           {learningInsight && (
-            <div className="card p-4 mb-6 !border-brand-teal/15">
+            <div className="card p-6 mb-6 !border-brand-teal/15">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white flex-shrink-0">
                   <Sparkles size={14} />
@@ -465,7 +472,7 @@ export default function Dashboard() {
             {/* Left Column (2/3) */}
             <div className="lg:col-span-2 space-y-6">
               {/* Post Ideas */}
-              <div className="card p-5 md:p-6">
+              <div className="card p-6 md:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-base font-bold text-brand-dark">Post ideas for you</h2>
@@ -510,7 +517,7 @@ export default function Dashboard() {
               </div>
 
               {/* Recent Posts */}
-              <div className="card p-5 md:p-6">
+              <div className="card p-6 md:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-bold text-brand-dark">Recent posts</h2>
                   {recentPosts.length > 0 && (
@@ -551,7 +558,7 @@ export default function Dashboard() {
             {/* Right Column (1/3) */}
             <div className="space-y-6">
               {/* Weekly Progress */}
-              <div className="card p-5">
+              <div className="card p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 rounded-lg bg-[rgba(124,92,252,0.06)] flex items-center justify-center">
                     <BarChart3 size={16} className="text-brand-purple" />
@@ -582,7 +589,7 @@ export default function Dashboard() {
 
               {/* Post Timing (AI-recommended) */}
               {bestTime && bestTime.recommendedDays.length > 0 && (
-                <div className="card p-5">
+                <div className="card p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white">
                       <Clock size={16} />
@@ -607,7 +614,7 @@ export default function Dashboard() {
               )}
 
               {/* Quick Create */}
-              <div className="card p-5">
+              <div className="card p-6">
                 <h3 className="text-sm font-bold text-brand-dark mb-3">Quick create</h3>
                 <div className="space-y-2">
                   <a href="/create" className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-purple/20 transition-all group">
@@ -634,7 +641,7 @@ export default function Dashboard() {
               </div>
 
               {/* LinkedIn Connection */}
-              <div className="card p-5">
+              <div className="card p-6">
                 <h3 className="text-sm font-bold text-brand-dark mb-3">LinkedIn</h3>
                 {linkedinConnected ? (
                   <div className="flex items-center gap-3">
@@ -658,7 +665,7 @@ export default function Dashboard() {
               </div>
 
               {/* Roadmap */}
-              <div className="card p-5">
+              <div className="card p-6">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-bold text-brand-dark">Your roadmap</h3>
                   <span className="text-[10px] font-semibold text-brand-purple bg-[rgba(124,92,252,0.06)] px-2 py-0.5 rounded-full">{roadmapDone}/{roadmap.length}</span>

@@ -2,13 +2,36 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/voice-match-score", "destination": "/api/persona-signal" },
+    { "source": "/api/voice-match-score", "destination": "/api/intelligence?action=voice-match-score" },
+    { "source": "/api/persona-signal", "destination": "/api/intelligence?action=persona-signal" },
     { "source": "/api/admin/trigger-digest", "destination": "/api/intelligence?action=trigger-digest" },
     { "source": "/api/weekly-digest-cron", "destination": "/api/intelligence?action=weekly-digest-cron" },
     { "source": "/api/analytics/page-view", "destination": "/api/intelligence?action=page-view" },
+    { "source": "/api/reengagement-cron", "destination": "/api/intelligence?action=reengagement-cron" },
+    { "source": "/api/email/send-welcome", "destination": "/api/intelligence?action=send-welcome" },
+    { "source": "/api/email/send-digest", "destination": "/api/intelligence?action=trigger-digest" },
+    { "source": "/api/email/send-free-limit", "destination": "/api/intelligence?action=send-free-limit" },
+    { "source": "/api/email/send-reengagement", "destination": "/api/intelligence?action=send-reengagement" },
+    { "source": "/api/email/unsubscribe", "destination": "/api/intelligence?action=unsubscribe" },
+    { "source": "/api/email/newsletter-subscribe", "destination": "/api/intelligence?action=newsletter-subscribe" },
+    { "source": "/api/aria/chat", "destination": "/api/intelligence?action=aria-chat" },
+    { "source": "/api/aria/history", "destination": "/api/intelligence?action=aria-history" },
+    { "source": "/api/email/preferences", "destination": "/api/intelligence?action=email-preferences" },
+    { "source": "/api/billing/create-checkout", "destination": "/api/billing?action=create-checkout" },
+    { "source": "/api/billing/webhook", "destination": "/api/billing?action=webhook" },
+    { "source": "/api/billing/customer-portal", "destination": "/api/billing?action=customer-portal" },
+    { "source": "/api/billing/subscription-status", "destination": "/api/billing?action=subscription-status" },
+    { "source": "/api/billing/cancel-subscription", "destination": "/api/billing?action=cancel-subscription" },
+    { "source": "/api/billing/request-refund", "destination": "/api/billing?action=request-refund" },
+    { "source": "/api/notifications", "destination": "/api/intelligence?action=notifications-list" },
+    { "source": "/api/notifications/read-all", "destination": "/api/intelligence?action=notifications-mark-all-read" },
+    { "source": "/api/notifications/:id/read", "destination": "/api/intelligence?action=notifications-mark-read&id=:id" },
+    { "source": "/api/notifications/:id", "destination": "/api/intelligence?action=notifications-item&id=:id" },
+    { "source": "/api/push/subscribe", "destination": "/api/intelligence?action=push-subscribe" },
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "crons": [
-    { "path": "/api/weekly-digest-cron", "schedule": "0 13 * * 1" }
+    { "path": "/api/weekly-digest-cron", "schedule": "0 13 * * 1" },
+    { "path": "/api/reengagement-cron", "schedule": "0 9 * * *" }
   ]
 }

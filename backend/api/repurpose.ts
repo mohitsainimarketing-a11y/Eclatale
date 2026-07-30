@@ -2,9 +2,11 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
-import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES } from '../lib/contentPrompts';
+import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
+import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
+import { requireFeature } from '../lib/featureGates';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -17,10 +19,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { sourceText, contentType, tone, userId } = req.body;
+    const { sourceText, contentType, tone, userId, contentLength } = req.body;
     if (!sourceText || !contentType || !tone || !userId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+    const length: ContentLength = CONTENT_LENGTH_INSTRUCTIONS[contentLength as ContentLength] ? contentLength : 'standard';
+
+    const locked = await requireFeature(supabase, userId, 'repurposeContent');
+    if (locked) return res.status(403).json(locked);
 
     const { data: profile } = await supabase.from('profiles').select('role, domain, goals').eq('id', userId).single();
     const role = profile?.role || 'professional';
@@ -48,6 +54,8 @@ ${OUTPUT_RULES}
 
 ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}
 
+${contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : ''}
+
 REPURPOSING RULES:
 - Extract the core insight, argument, or most valuable idea from the source material.
 - Reframe it completely in the author's authentic voice — this is their commentary on it, not a repost.
@@ -73,6 +81,10 @@ Extract the key insight, filter it through my perspective as a ${role} in ${indu
     const content = message.content[0].type === 'text' ? message.content[0].text : '';
     res.json({ content });
   } catch (error: any) {
+    if (isCreditsExhaustedError(error)) {
+      console.error('Anthropic credits exhausted');
+      return res.status(503).json(creditsExhaustedBody());
+    }
     console.error('Repurpose error:', error);
     res.status(500).json({ error: error.message || 'Failed to repurpose content' });
   }

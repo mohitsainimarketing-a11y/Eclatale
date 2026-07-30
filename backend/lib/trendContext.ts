@@ -57,6 +57,10 @@ export async function getTrendContext(anthropic: Anthropic, supabase: SupabaseCl
   const monthName = now.toLocaleString('en-US', { month: 'long' });
   const year = now.getFullYear();
 
+  // Bounded so a slow/cold web search can never block content generation
+  // indefinitely — worst case, the caller proceeds without live trend context.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -67,7 +71,7 @@ export async function getTrendContext(anthropic: Anthropic, supabase: SupabaseCl
         role: 'user',
         content: `Search for: "${domain} trends ${monthName} ${year}" and separately "${role} LinkedIn trending topics ${year}". Based on the search results, extract 3 to 5 specific, currently trending angles or topics in ${domain} that a ${role} could write about right now. Each must be a concrete, specific angle (not a vague category), grounded in something actually happening this month.\n\nReturn ONLY a JSON object (after any research): { "trends": ["trend 1", "trend 2", "trend 3"] }`,
       }],
-    });
+    }, { signal: controller.signal });
 
     const text = message.content.filter((b): b is Anthropic.Messages.TextBlock => b.type === 'text').map(b => b.text).join('\n');
     const raw = parseJsonObject(text);
@@ -76,6 +80,8 @@ export async function getTrendContext(anthropic: Anthropic, supabase: SupabaseCl
     return { trends, generatedAt: new Date().toISOString(), cached: false };
   } catch {
     return { trends: [], generatedAt: new Date().toISOString(), cached: false };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

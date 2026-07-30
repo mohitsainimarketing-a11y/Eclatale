@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   ArrowLeft, User, Mic, Link2, CreditCard, Key, Bell, Shield,
-  Check, Loader2, ChevronRight, ExternalLink, LogOut, Trash2, Save, Camera, RefreshCw,
+  Check, Loader2, LogOut, Trash2, Save, Camera, RefreshCw, AlertTriangle, X,
 } from 'lucide-react';
 import { SearchableDropdown, ROLES, INDUSTRIES, SENIORITY_LEVELS, TIMEZONES } from '../components/ProfileDropdowns';
 
@@ -99,7 +99,26 @@ export default function Settings() {
   };
 
   // Billing state
-  const [totalPostsThisMonth, setTotalPostsThisMonth] = useState(0);
+  const [subTier, setSubTier] = useState<'free' | 'individual'>('free');
+  const [subStatus, setSubStatus] = useState<string>('free');
+  const [postsThisWeek, setPostsThisWeek] = useState(0);
+  const [weekResetsAt, setWeekResetsAt] = useState<string | null>(null);
+  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null);
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false);
+  const [cancelsAt, setCancelsAt] = useState<string | null>(null);
+  const [firstChargeAt, setFirstChargeAt] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelFeedback, setCancelFeedback] = useState('');
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const [cancelResult, setCancelResult] = useState<{ accessUntil: string } | null>(null);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundReason, setRefundReason] = useState('Not what I expected');
+  const [refundDetails, setRefundDetails] = useState('');
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [refundResult, setRefundResult] = useState<{ status: string; message: string } | null>(null);
 
   // Delete account state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -114,11 +133,24 @@ export default function Settings() {
   }, []);
 
   const loadSettings = async (uid: string) => {
-    const [profileRes, personaRes, postsRes] = await Promise.all([
+    const [profileRes, personaRes, billingRes] = await Promise.all([
       supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, seniority_level, company_name, linkedin_url_manual, bio, username_slug, timezone, default_tone, pronouns, profile_public').eq('id', uid).single(),
       supabase.from('persona_profiles').select('*').eq('user_id', uid).single(),
-      supabase.from('posts').select('id').eq('user_id', uid).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+      supabase.from('profiles').select('subscription_tier, subscription_status, posts_this_week, week_reset_at, trial_ends_at, current_period_end, cancel_at_period_end, subscription_cancels_at, first_charge_at').eq('id', uid).maybeSingle(),
     ]);
+
+    if (billingRes.data) {
+      const b: any = billingRes.data;
+      setSubTier((b.subscription_tier || 'free') as 'free' | 'individual');
+      setSubStatus(b.subscription_status || 'free');
+      setPostsThisWeek(b.posts_this_week || 0);
+      setWeekResetsAt(b.week_reset_at || null);
+      setTrialEndsAt(b.trial_ends_at || null);
+      setCurrentPeriodEnd(b.current_period_end || null);
+      setCancelAtPeriodEnd(!!b.cancel_at_period_end);
+      setCancelsAt(b.subscription_cancels_at || null);
+      setFirstChargeAt(b.first_charge_at || null);
+    }
 
     if (profileRes.data) {
       const p = profileRes.data;
@@ -165,7 +197,6 @@ export default function Settings() {
       setPersonaCompleted(!!personaRes.data.persona_completed_at);
     }
 
-    setTotalPostsThisMonth(postsRes.data?.length || 0);
 
     try {
       const liRes = await fetch(`${API_URL}/api/linkedin/status?userId=${uid}`);
@@ -311,6 +342,63 @@ export default function Settings() {
     } catch {}
     setLinkedinDisconnecting(false);
   };
+
+  const openBillingPortal = async () => {
+    if (!userId) return;
+    setPortalLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/billing/customer-portal`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.portalUrl) throw new Error(data.error || 'Could not open billing portal');
+      window.location.href = data.portalUrl;
+    } catch (e: any) {
+      alert(e.message || 'Could not open billing portal');
+      setPortalLoading(false);
+    }
+  };
+
+  const submitCancellation = async () => {
+    if (!userId) return;
+    setCancelSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/billing/cancel-subscription`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, reason: cancelReason, feedback: cancelFeedback }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not cancel subscription');
+      setCancelResult({ accessUntil: data.accessUntil });
+      setCancelAtPeriodEnd(true);
+      setCancelsAt(data.accessUntil);
+    } catch (e: any) {
+      alert(e.message || 'Could not cancel subscription');
+    }
+    setCancelSubmitting(false);
+  };
+
+  const submitRefundRequest = async () => {
+    if (!userId) return;
+    setRefundSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/billing/request-refund`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, reason: refundReason, details: refundDetails }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not submit refund request');
+      setRefundResult({ status: data.status, message: data.message });
+      if (data.status === 'approved') { setSubTier('free'); setSubStatus('cancelled'); }
+    } catch (e: any) {
+      setRefundResult({ status: 'error', message: e.message || 'Something went wrong. Please try again.' });
+    }
+    setRefundSubmitting(false);
+  };
+
+  const formatDate = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+  const withinRefundWindow = firstChargeAt ? (Date.now() - new Date(firstChargeAt).getTime()) / (24 * 60 * 60 * 1000) <= 30 : false;
 
   if (loading) {
     return (
@@ -753,7 +841,7 @@ export default function Settings() {
                   </div>
                 )}
                 {patterns && !patterns.ready && personaCompleted && (
-                  <div className="card p-5 mt-6 text-center">
+                  <div className="card p-6 mt-6 text-center">
                     <p className="text-sm text-brand-muted">Not enough data yet. {patterns.postsAnalyzed || 0}/3 posts analyzed. Generate {Math.max(0, 3 - (patterns.postsAnalyzed || 0))} more to unlock your writing patterns.</p>
                   </div>
                 )}
@@ -779,7 +867,7 @@ export default function Settings() {
 
                 <div className="space-y-4">
                   {/* LinkedIn */}
-                  <div className="card p-5">
+                  <div className="card p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-[#0A66C2] flex items-center justify-center text-white text-sm font-bold">in</div>
@@ -810,7 +898,7 @@ export default function Settings() {
                   </div>
 
                   {/* Twitter/X */}
-                  <div className="card p-5 opacity-60">
+                  <div className="card p-6 opacity-60">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-white text-sm font-bold">X</div>
@@ -824,7 +912,7 @@ export default function Settings() {
                   </div>
 
                   {/* Instagram */}
-                  <div className="card p-5 opacity-60">
+                  <div className="card p-6 opacity-60">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center text-white text-sm font-bold">ig</div>
@@ -846,29 +934,96 @@ export default function Settings() {
                 <h2 className="text-xl font-bold text-brand-dark mb-1">Billing & Subscription</h2>
                 <p className="text-sm text-brand-muted mb-6">Manage your plan and view usage.</p>
 
-                <div className="card p-6 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wide">Current Plan</span>
-                      <h3 className="text-lg font-bold text-brand-dark mt-1">Free</h3>
+                {subTier === 'free' ? (
+                  <>
+                    <div className="card p-6 mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wide">Current Plan</span>
+                          <h3 className="text-lg font-bold text-brand-dark mt-1">Free</h3>
+                        </div>
+                        <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs">Active</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-2 overflow-hidden">
+                        <div className="h-full rounded-full gradient-primary" style={{ width: `${Math.min(100, (postsThisWeek / 3) * 100)}%` }} />
+                      </div>
+                      <p className="text-xs text-brand-muted mb-4">
+                        {postsThisWeek}/3 posts used this week
+                        {weekResetsAt && ` · resets ${formatDate(weekResetsAt)}`}
+                      </p>
+                      <a href="/pricing" className="btn-primary text-sm inline-flex">Upgrade to Individual</a>
                     </div>
-                    <span className="badge bg-[rgba(6,214,160,0.08)] text-brand-teal text-xs">Active</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-2 overflow-hidden">
-                    <div className="h-full rounded-full gradient-primary" style={{ width: `${Math.min(100, (totalPostsThisMonth / 10) * 100)}%` }} />
-                  </div>
-                  <p className="text-xs text-brand-muted mb-4">{totalPostsThisMonth}/10 posts generated this month</p>
-                  <button onClick={() => alert('Coming soon! Pro plan launching next month.')} className="btn-primary text-sm">
-                    Upgrade to Pro
-                  </button>
-                </div>
 
-                <div className="card p-6">
-                  <h3 className="text-sm font-bold text-brand-dark mb-3">Billing History</h3>
-                  <div className="text-center py-6">
-                    <p className="text-sm text-brand-muted">No billing history yet.</p>
-                  </div>
-                </div>
+                    <div className="card p-6">
+                      <h3 className="text-sm font-bold text-brand-dark mb-3">What you're missing on Free</h3>
+                      <ul className="space-y-2 text-sm text-brand-muted">
+                        {['Unlimited posts', 'Visual Creator', 'Competitor Intelligence', 'Authenticity Score', 'Full content history'].map((f, i) => (
+                          <li key={i} className="flex items-center gap-2"><X size={13} className="text-red-300 flex-shrink-0" /> {f}</li>
+                        ))}
+                      </ul>
+                      <a href="/pricing" className="text-xs text-brand-purple font-semibold hover:underline mt-4 inline-block">See full comparison →</a>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="card p-6 mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wide">Current Plan</span>
+                          <h3 className="text-lg font-bold text-brand-dark mt-1">Individual · $19/mo</h3>
+                        </div>
+                        <span className={`badge text-xs ${
+                          subStatus === 'past_due' ? 'bg-[rgba(255,69,58,0.08)] text-red-500' :
+                          subStatus === 'trialing' ? 'bg-[rgba(255,107,53,0.08)] text-brand-orange' :
+                          'bg-[rgba(6,214,160,0.08)] text-brand-teal'
+                        }`}>
+                          {subStatus === 'trialing' ? 'Trialing' : subStatus === 'past_due' ? 'Past Due' : cancelAtPeriodEnd ? 'Cancelling' : 'Active'}
+                        </span>
+                      </div>
+
+                      {subStatus === 'past_due' && (
+                        <div className="flex items-start gap-2 p-3 rounded-xl bg-[rgba(255,69,58,0.06)] mb-4">
+                          <AlertTriangle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs text-red-600">Your last payment failed. Update your payment method to keep Individual features.</p>
+                        </div>
+                      )}
+
+                      {trialEndsAt && subStatus === 'trialing' && (
+                        <p className="text-xs text-brand-muted mb-2">Trial ends {formatDate(trialEndsAt)} — your card will be charged automatically.</p>
+                      )}
+                      {cancelAtPeriodEnd && cancelsAt && (
+                        <p className="text-xs text-brand-orange mb-2">Your plan is set to cancel. You'll keep access until {formatDate(cancelsAt)}.</p>
+                      )}
+                      {currentPeriodEnd && !cancelAtPeriodEnd && subStatus === 'active' && (
+                        <p className="text-xs text-brand-muted mb-4">Next billing date: {formatDate(currentPeriodEnd)}</p>
+                      )}
+
+                      <div className="flex items-center gap-3 flex-wrap mt-4">
+                        <button onClick={openBillingPortal} disabled={portalLoading} className="btn-secondary text-sm">
+                          {portalLoading ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />} Manage Billing
+                        </button>
+                        {!cancelAtPeriodEnd && (
+                          <button onClick={() => { setShowCancelModal(true); setCancelResult(null); }} className="btn-ghost text-sm">
+                            Cancel Subscription
+                          </button>
+                        )}
+                        {withinRefundWindow && (
+                          <button onClick={() => { setShowRefundModal(true); setRefundResult(null); }} className="btn-ghost text-sm !text-red-500 !border-red-200 hover:!bg-red-50">
+                            Request Refund
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="card p-6">
+                      <h3 className="text-sm font-bold text-brand-dark mb-1">Invoices</h3>
+                      <p className="text-xs text-brand-muted mb-4">View and download your invoice history from the billing portal.</p>
+                      <button onClick={openBillingPortal} disabled={portalLoading} className="text-xs text-brand-purple font-semibold hover:underline">
+                        Open billing portal →
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -984,6 +1139,102 @@ export default function Settings() {
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowDeleteModal(false)} className="btn-ghost text-sm">Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Subscription Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-5">
+          <div className="card p-6 max-w-md w-full animate-slideUp">
+            {cancelResult ? (
+              <>
+                <div className="w-11 h-11 rounded-full bg-[rgba(6,214,160,0.1)] flex items-center justify-center mb-4">
+                  <Check size={20} className="text-brand-teal" />
+                </div>
+                <h3 className="text-lg font-bold text-brand-dark mb-2">Subscription cancelled</h3>
+                <p className="text-sm text-brand-muted mb-5">
+                  You'll keep full access to Individual features until <strong>{formatDate(cancelResult.accessUntil)}</strong>. We've sent a confirmation to your email.
+                </p>
+                <button onClick={() => { setShowCancelModal(false); setCancelResult(null); }} className="btn-primary text-sm w-full">Done</button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold text-brand-dark mb-2">Cancel your Individual plan?</h3>
+                <p className="text-sm text-brand-muted mb-5">
+                  You'll lose access to unlimited posts, competitor intelligence, authenticity scoring, and the rest of Individual once your current billing period ends.
+                </p>
+
+                <div className="p-4 rounded-2xl bg-[rgba(124,92,252,0.05)] border border-[rgba(124,92,252,0.1)] mb-5">
+                  <p className="text-sm font-semibold text-brand-dark mb-1">Before you go — stay for $9.50/mo</p>
+                  <p className="text-xs text-brand-muted mb-3">Apply LAUNCH50 for 50% off your next 3 months instead of cancelling.</p>
+                  <a href="mailto:info@eclatale.com?subject=Apply%20LAUNCH50%20to%20my%20subscription" className="text-xs text-brand-purple font-semibold hover:underline">
+                    Email us to apply the discount →
+                  </a>
+                </div>
+
+                <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Why are you cancelling?</label>
+                <select value={cancelReason} onChange={e => setCancelReason(e.target.value)} className="input mb-3">
+                  <option value="">Select a reason</option>
+                  <option value="too_expensive">Too expensive</option>
+                  <option value="not_using_it">Not using it enough</option>
+                  <option value="missing_features">Missing features I need</option>
+                  <option value="found_alternative">Found an alternative</option>
+                  <option value="technical_issues">Technical issues</option>
+                  <option value="other">Other</option>
+                </select>
+                <textarea value={cancelFeedback} onChange={e => setCancelFeedback(e.target.value)} className="input mb-5" rows={2} placeholder="Anything else you'd like us to know? (optional)" />
+
+                <div className="flex gap-3 justify-end">
+                  <button onClick={() => setShowCancelModal(false)} className="btn-ghost text-sm">Never mind</button>
+                  <button onClick={submitCancellation} disabled={cancelSubmitting} className="btn-ghost text-sm !text-red-500 !border-red-200 hover:!bg-red-50">
+                    {cancelSubmitting ? <Loader2 size={14} className="animate-spin" /> : null} Confirm Cancellation
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Request Refund Modal */}
+      {showRefundModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-5">
+          <div className="card p-6 max-w-md w-full animate-slideUp">
+            {refundResult ? (
+              <>
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center mb-4 ${refundResult.status === 'approved' ? 'bg-[rgba(6,214,160,0.1)]' : refundResult.status === 'pending_review' ? 'bg-[rgba(255,107,53,0.1)]' : 'bg-[rgba(255,69,58,0.1)]'}`}>
+                  {refundResult.status === 'approved' ? <Check size={20} className="text-brand-teal" /> : <AlertTriangle size={20} className={refundResult.status === 'pending_review' ? 'text-brand-orange' : 'text-red-500'} />}
+                </div>
+                <h3 className="text-lg font-bold text-brand-dark mb-2">
+                  {refundResult.status === 'approved' ? 'Refund approved' : refundResult.status === 'pending_review' ? 'Under review' : 'Refund not available'}
+                </h3>
+                <p className="text-sm text-brand-muted mb-5">{refundResult.message}</p>
+                <button onClick={() => setShowRefundModal(false)} className="btn-primary text-sm w-full">Done</button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold text-brand-dark mb-2">Request a refund</h3>
+                <p className="text-sm text-brand-muted mb-5">Full refund, no questions asked, within 7 days of your first charge. Requests within 30 days are reviewed manually.</p>
+
+                <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Reason</label>
+                <select value={refundReason} onChange={e => setRefundReason(e.target.value)} className="input mb-3">
+                  <option>Not what I expected</option>
+                  <option>Too expensive</option>
+                  <option>Found alternative</option>
+                  <option>Technical issues</option>
+                  <option>Other</option>
+                </select>
+                <textarea value={refundDetails} onChange={e => setRefundDetails(e.target.value)} className="input mb-5" rows={3} placeholder="Tell us more (optional)" />
+
+                <div className="flex gap-3 justify-end">
+                  <button onClick={() => setShowRefundModal(false)} className="btn-ghost text-sm">Cancel</button>
+                  <button onClick={submitRefundRequest} disabled={refundSubmitting} className="btn-primary text-sm">
+                    {refundSubmitting ? <Loader2 size={14} className="animate-spin" /> : null} Submit Request
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

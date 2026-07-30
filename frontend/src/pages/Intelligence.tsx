@@ -4,6 +4,7 @@ import {
   ArrowLeft, Clock, FileText, Search, TrendingUp, Target,
   RefreshCw, Loader2, Sparkles, ArrowRight,
 } from 'lucide-react';
+import FeatureLock from '../components/FeatureLock';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -30,6 +31,10 @@ const INSIGHT_META: Record<string, { icon: React.ReactNode; label: string; color
 };
 
 export default function Intelligence() {
+  return <FeatureLock feature="competitorIntelligence" description="AI-curated competitor insights and trending topics are part of the Individual plan."><IntelligenceInner /></FeatureLock>;
+}
+
+function IntelligenceInner() {
   const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<IntelData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,7 +111,7 @@ export default function Intelligence() {
               {data.insights.map((ins, i) => {
                 const meta = INSIGHT_META[ins.type] || { icon: <Sparkles size={16} />, label: ins.type, color: 'from-brand-purple to-brand-pink' };
                 return (
-                  <div key={i} className="card p-5">
+                  <div key={i} className="card p-6">
                     <div className="flex items-start gap-3">
                       <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${meta.color} flex items-center justify-center text-white flex-shrink-0`}>
                         {meta.icon}
@@ -126,7 +131,7 @@ export default function Intelligence() {
 
             {/* Trending Topics */}
             <div className="space-y-6">
-              <div className="card p-5">
+              <div className="card p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp size={16} className="text-brand-teal" />
                   <h3 className="text-sm font-bold text-brand-dark">Trending Topics</h3>

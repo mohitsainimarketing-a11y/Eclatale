@@ -76,7 +76,7 @@ export default function Onboarding() {
                 <h2 className="h2 text-brand-dark mb-2">Tell us about <span className="gradient-text">yourself</span></h2>
                 <p className="body-text text-sm">We'll personalize your content strategy.</p>
               </div>
-              <div className="card p-5 md:p-6 space-y-4">
+              <div className="card p-6 md:p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-1.5 block">First Name</label>
@@ -122,7 +122,7 @@ export default function Onboarding() {
                 <h2 className="h2 text-brand-dark mb-2">What's your <span className="gradient-text">industry</span>?</h2>
                 <p className="body-text text-sm">We'll tailor content for your audience.</p>
               </div>
-              <div className="card p-5 md:p-6">
+              <div className="card p-6 md:p-6">
                 <SearchableDropdown options={INDUSTRIES} value={industry} onChange={setIndustry} placeholder="Search your industry..." />
                 {industry && (
                   <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brand-pink animate-checkmark">
@@ -149,7 +149,7 @@ export default function Onboarding() {
                     <button
                       key={goal.id}
                       onClick={() => toggleGoal(goal.id)}
-                      className={`card card-hover p-4 text-left !transition-all ${
+                      className={`card card-hover p-6 text-left !transition-all ${
                         selected ? '!border-brand-purple !shadow-brand-md' : ''
                       }`}
                       aria-pressed={selected}

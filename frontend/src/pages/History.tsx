@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
+import { useFeatureGate } from '../hooks/useFeatureGate';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -154,6 +155,11 @@ export default function History() {
     return list;
   }, [posts, analytics, filterHook, filterTone, filterTopic, sortBy]);
 
+  const { tier } = useFeatureGate('contentHistoryLimit');
+  const HISTORY_LIMIT = 10;
+  const isLimited = tier === 'free' && visiblePosts.length > HISTORY_LIMIT;
+  const shownPosts = isLimited ? visiblePosts.slice(0, HISTORY_LIMIT) : visiblePosts;
+
   const hasAnalytics = Object.keys(analytics).length > 0;
 
   const formatDate = (dateStr: string) => {
@@ -209,7 +215,7 @@ export default function History() {
           <div className="space-y-4">
             {/* Filter / sort bar (shown once semantic analysis exists) */}
             {hasAnalytics && (
-              <div className="card p-3 flex flex-wrap items-center gap-2 mb-2">
+              <div className="card p-6 flex flex-wrap items-center gap-2 mb-2">
                 <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wide flex items-center gap-1"><Sparkles size={11} /> Filter</span>
                 {hookOptions.length > 0 && (
                   <select value={filterHook} onChange={e => setFilterHook(e.target.value)} className="text-xs rounded-lg border border-[rgba(124,92,252,0.15)] px-2 py-1.5 bg-white text-brand-dark">
@@ -239,7 +245,7 @@ export default function History() {
                 )}
               </div>
             )}
-            {visiblePosts.map(post => {
+            {shownPosts.map(post => {
               const isExpanded = expandedId === post.id;
               const analysis = analytics[post.id];
               const preview = post.content.length > 200 && !isExpanded
@@ -247,7 +253,7 @@ export default function History() {
                 : post.content;
 
               return (
-                <div key={post.id} className="card card-hover p-5 md:p-6">
+                <div key={post.id} className="card card-hover p-6 md:p-6">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -344,6 +350,15 @@ export default function History() {
                 </div>
               );
             })}
+            {isLimited && (
+              <div className="card p-6 text-center border-2 border-dashed border-[rgba(124,92,252,0.2)]">
+                <p className="text-sm font-bold text-brand-dark mb-1">
+                  {visiblePosts.length - HISTORY_LIMIT} more post{visiblePosts.length - HISTORY_LIMIT === 1 ? '' : 's'} in your history
+                </p>
+                <p className="text-xs text-brand-muted mb-4">Free plans show your 10 most recent posts. Upgrade to see everything.</p>
+                <a href="/pricing" className="btn-primary text-sm !py-2 !px-5 inline-flex">Upgrade Now</a>
+              </div>
+            )}
           </div>
         )}
       </div>

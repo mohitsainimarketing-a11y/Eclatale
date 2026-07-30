@@ -7,6 +7,8 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
 
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
+
 export default function AuthCallback() {
   const [error, setError] = useState('');
 
@@ -42,6 +44,14 @@ export default function AuthCallback() {
           .select('role, domain, goals')
           .eq('id', userData.user.id)
           .single();
+
+        // Fire-and-forget: send-welcome is idempotent (checks welcome_email_sent),
+        // safe to call on every confirmation callback without awaiting the result.
+        fetch(`${API_URL}/api/email/send-welcome`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userData.user.id }),
+        }).catch(() => {});
 
         const hasProfile = !!(profile?.role && profile?.domain && profile?.goals?.length);
         window.location.href = hasProfile ? '/dashboard' : '/onboarding';

@@ -121,6 +121,22 @@ export const OUTPUT_RULES = `CRITICAL OUTPUT RULES:
 - Do not wrap the output in quotes or add any framing text.
 - Write as if this will be posted directly to a live social media account in the next 5 minutes.`;
 
+export type ContentLength = 'micro' | 'short' | 'standard' | 'longform';
+
+export const CONTENT_LENGTH_INSTRUCTIONS: Record<ContentLength, string> = {
+  micro: `LENGTH OVERRIDE: Write this as an extremely short, punchy LinkedIn post. Maximum 300 characters. One single powerful idea. No fluff. Hit hard and stop. Ignore any character-count guidance given elsewhere in this prompt in favor of this 300-character maximum.`,
+  short: `LENGTH OVERRIDE: Write this as a short, scannable LinkedIn post. 300-800 characters. 2-3 key points maximum. Easy to read in 30 seconds. Ignore any character-count guidance given elsewhere in this prompt in favor of this 300-800 character range.`,
+  standard: `LENGTH OVERRIDE: Write this as a standard LinkedIn post. 800-1500 characters. Include hook, body with 2-3 insights, and clear CTA. This is the default LinkedIn length.`,
+  longform: `LENGTH OVERRIDE: Write this as a long-form LinkedIn thought leadership post. 1500-3000 characters. In-depth analysis, multiple insights, personal story element, strong CTA. Ignore any shorter character-count guidance given elsewhere in this prompt in favor of this 1500-3000 character range.`,
+};
+
+export const CONTENT_LENGTH_LABELS: Record<ContentLength, { label: string; emoji: string; range: string; description: string }> = {
+  micro: { label: 'Micro', emoji: '⚡', range: '100-300 chars', description: 'Ultra short. One powerful idea. Maximum impact.' },
+  short: { label: 'Short', emoji: '📝', range: '300-800 chars', description: 'Punchy and scannable. Perfect for quick insights.' },
+  standard: { label: 'Standard', emoji: '📄', range: '800-1500 chars', description: 'The LinkedIn sweet spot. Story + insight + CTA.' },
+  longform: { label: 'Long-form', emoji: '📚', range: '1500-3000 chars', description: 'Deep dive. Full thought leadership. Maximum authority.' },
+};
+
 export const TOPIC_SUGGESTION_PROMPT = `You are a content strategist who thinks like a top 1% entrepreneur and trend analyst.
 
 Your job: suggest content topics that are TIMELY, SPECIFIC, and HIGH-SIGNAL.

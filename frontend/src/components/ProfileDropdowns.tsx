@@ -155,7 +155,7 @@ export function SearchableDropdown({ options, value, onChange, placeholder }: {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div id={listboxId} className="absolute z-20 w-full mt-2 card !rounded-2xl max-h-60 overflow-y-auto shadow-brand-lg" role="listbox">
+          <div id={listboxId} className="absolute z-20 w-full mt-2 card !rounded-2xl max-h-60 overflow-y-auto modal-shadow" role="listbox">
             {filtered.length === 0 ? (
               <div className="p-4 text-center text-sm text-brand-muted">No matches. Try a different search.</div>
             ) : (

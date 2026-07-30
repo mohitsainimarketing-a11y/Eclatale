@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, OUTPUT_RULES } from '../lib/contentPrompts';
 import { getDateContext } from '../lib/dateContext';
+import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -66,6 +67,10 @@ Return the full adapted ${targetLabel}.`;
     const content = message.content[0].type === 'text' ? message.content[0].text : '';
     res.json({ content });
   } catch (error: any) {
+    if (isCreditsExhaustedError(error)) {
+      console.error('Anthropic credits exhausted');
+      return res.status(503).json(creditsExhaustedBody());
+    }
     console.error('Adapt content error:', error);
     res.status(500).json({ error: error.message || 'Failed to adapt content' });
   }

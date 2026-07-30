@@ -14,6 +14,11 @@ import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { calculateAuthenticityScore } from '../lib/authenticityScore';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
+import { sendWelcomeEmail, sendFreeLimit, sendReengagement } from '../lib/emailService';
+import { checkGrowthMilestone, createNotification } from '../lib/notifications';
+import { requireFeature } from '../lib/featureGates';
+import { calculateVoiceMatchScore } from '../lib/voiceMatchScore';
+import { ariaChat, getAriaConversation, AriaMessage } from '../lib/aria';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -135,6 +140,8 @@ async function growthScore(userId: string, forceRefresh: boolean) {
     subComponents: payload.subComponents,
   });
 
+  await checkGrowthMilestone(supabase, userId, overallScore);
+
   return payload;
 }
 
@@ -255,7 +262,7 @@ async function bestTimeToPost(userId: string, forceRefresh: boolean) {
 // run as three parallel Claude calls. Cached per-post for 10 minutes so a quick
 // "regenerate" click doesn't re-run all three checks.
 async function authenticityScore(
-  userId: string, postId: string, postContent: string, topic: string, forceRefresh: boolean
+  userId: string, postId: string, postContent: string, topic: string, forceRefresh: boolean, contentLength?: string
 ) {
   const cacheKind = `authenticity-${postId}`;
   if (!forceRefresh) {
@@ -266,7 +273,7 @@ async function authenticityScore(
   const { role, industry } = await getProfile(userId);
   const personaContext = await buildPersonaPrompt(supabase, userId);
 
-  const result = await calculateAuthenticityScore(anthropic, postContent, role, industry, personaContext);
+  const result = await calculateAuthenticityScore(anthropic, postContent, role, industry, personaContext, contentLength);
   const payload = { ...result, generatedAt: new Date().toISOString(), cached: false };
 
   await writeCache(supabase, userId, cacheKind, result);
@@ -327,16 +334,219 @@ async function weeklyDigestCron() {
   return { ok: true, considered: (profiles || []).length, results };
 }
 
+// ---- Email actions (folded in here, rather than a separate api/email.ts,
+// to stay under the Hobby-plan 12-serverless-function cap). ----
+
+async function getProfileEmail(userId: string) {
+  const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', userId).maybeSingle();
+  const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+  const email = authUser?.user?.email || '';
+  const firstName = profile?.first_name || (email.split('@')[0] || 'there');
+  return { email, firstName };
+}
+
+async function handleSendWelcome(userId: string) {
+  const { data: profile } = await supabase.from('profiles').select('welcome_email_sent').eq('id', userId).maybeSingle();
+  if (profile?.welcome_email_sent) return { ok: true, sent: false, reason: 'already_sent' };
+
+  const { email, firstName } = await getProfileEmail(userId);
+  if (!email) return { ok: false, error: 'No email found for user' };
+
+  const result = await sendWelcomeEmail(userId, email, firstName);
+  if (result.sent) {
+    await supabase.from('profiles').update({ welcome_email_sent: true }).eq('id', userId);
+  }
+  return { ok: true, ...result };
+}
+
+async function countPostsThisWeek(userId: string): Promise<number> {
+  const now = new Date();
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+  const { data } = await supabase
+    .from('posts')
+    .select('id', { count: 'exact', head: false })
+    .eq('user_id', userId)
+    .gte('created_at', weekStart.toISOString());
+  return data?.length || 0;
+}
+
+async function alreadySentThisWeek(userId: string, emailType: string): Promise<boolean> {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from('email_log')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('email_type', emailType)
+    .eq('status', 'sent')
+    .gte('sent_at', weekAgo)
+    .limit(1);
+  return !!(data && data.length);
+}
+
+async function handleSendFreeLimit(userId: string) {
+  const count = await countPostsThisWeek(userId);
+  if (count !== 3) return { ok: true, sent: false, reason: `post count is ${count}, not 3` };
+  if (await alreadySentThisWeek(userId, 'free_limit')) return { ok: true, sent: false, reason: 'already_sent_this_week' };
+
+  const { email, firstName } = await getProfileEmail(userId);
+  if (!email) return { ok: false, error: 'No email found for user' };
+  const result = await sendFreeLimit(userId, email, firstName);
+  await createNotification(
+    supabase, userId, 'free_limit_reached', 'Weekly limit reached',
+    '🔒 Weekly limit reached. Upgrade to keep posting or wait until Monday.',
+    { text: 'Upgrade now', url: 'https://eclatale.com/pricing' }
+  );
+  return { ok: true, ...result };
+}
+
+async function handleSendReengagement(userId: string) {
+  const { data: profile } = await supabase.from('profiles').select('last_active_at').eq('id', userId).maybeSingle();
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const lastPostDate = posts?.[0]?.created_at || null;
+  const lastActive = profile?.last_active_at || lastPostDate;
+  if (!lastActive) return { ok: true, sent: false, reason: 'no activity on record' };
+
+  const daysInactive = (Date.now() - new Date(lastActive).getTime()) / (24 * 60 * 60 * 1000);
+  if (daysInactive < 7) return { ok: true, sent: false, reason: `only ${daysInactive.toFixed(1)} days inactive` };
+  if (await alreadySentThisWeek(userId, 'reengagement')) return { ok: true, sent: false, reason: 'already_sent_this_week' };
+
+  const { email, firstName } = await getProfileEmail(userId);
+  if (!email) return { ok: false, error: 'No email found for user' };
+
+  const { data: allPosts } = await supabase.from('posts').select('created_at').eq('user_id', userId).order('created_at', { ascending: false });
+  const growthScore = Math.min(100, Math.round((allPosts?.length || 0) * 4));
+  const result = await sendReengagement(userId, email, firstName, {
+    lastPostDate: lastPostDate ? new Date(lastPostDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'never',
+    streak: 0,
+    growthScore,
+  });
+  return { ok: true, ...result };
+}
+
+/** Daily cron: scans all users for the 7-day-inactive re-engagement send. */
+async function reengagementCron() {
+  const { data: profiles } = await supabase.from('profiles').select('id, notif_post_reminders');
+  const results: { userId: string; sent: boolean; reason?: string }[] = [];
+  for (const p of profiles || []) {
+    if ((p as any).notif_post_reminders === false) continue;
+    try {
+      const r = await handleSendReengagement((p as any).id);
+      results.push({ userId: (p as any).id, sent: !!(r as any).sent, reason: (r as any).reason });
+    } catch (e: any) {
+      results.push({ userId: (p as any).id, sent: false, reason: e.message });
+    }
+  }
+  return { ok: true, considered: (profiles || []).length, results };
+}
+
+async function handleUnsubscribe(token: string, type: string) {
+  const { data: profile } = await supabase.from('profiles').select('id').eq('unsubscribe_token', token).maybeSingle();
+  if (!profile) return { ok: false, error: 'Invalid or expired unsubscribe link' };
+
+  const columnMap: Record<string, string> = {
+    notif_weekly_digest: 'notif_weekly_digest',
+    notif_post_reminders: 'notif_post_reminders',
+    digest: 'notif_weekly_digest',
+    reengagement: 'notif_post_reminders',
+  };
+  const column = columnMap[type];
+  if (!column) return { ok: false, error: 'Unknown email type' };
+
+  await supabase.from('profiles').update({ [column]: false }).eq('id', profile.id);
+  return { ok: true, unsubscribedFrom: column };
+}
+
+// ---- Persona signal actions (folded in here for the same reason). ----
+
+async function logPersonaSignal(userId: string, postId: string | null, action: string, tone: string | null, contentType: string | null, topicSnippet: string | null, postLength: number | null) {
+  const { error } = await supabase.from('persona_signals').insert({
+    user_id: userId, post_id: postId, action, tone, content_type: contentType, topic_snippet: topicSnippet, post_length: postLength,
+  });
+  if (error) throw new Error(error.message || 'Insert failed');
+  return { success: true };
+}
+
+// ---- Notification + push actions (folded in here for the same reason as
+// email actions above: staying under the Hobby-plan 12-serverless-function cap). ----
+
+async function listNotifications(userId: string) {
+  const { data } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('read', { ascending: true })
+    .order('created_at', { ascending: false })
+    .limit(20);
+  const { count: unreadCount } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+  return { notifications: data || [], unreadCount: unreadCount || 0 };
+}
+
+async function markNotificationRead(userId: string, id: string) {
+  await supabase.from('notifications').update({ read: true }).eq('id', id).eq('user_id', userId);
+  return { ok: true };
+}
+
+async function markAllNotificationsRead(userId: string) {
+  await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false);
+  return { ok: true };
+}
+
+async function deleteNotification(userId: string, id: string) {
+  await supabase.from('notifications').delete().eq('id', id).eq('user_id', userId);
+  return { ok: true };
+}
+
+async function pushSubscribe(userId: string, subscription: any) {
+  await supabase.from('push_subscriptions').insert({ user_id: userId, subscription });
+  return { ok: true };
+}
+
+async function getEmailPreferences(userId: string) {
+  const { data } = await supabase
+    .from('profiles')
+    .select('notif_weekly_digest, notif_post_reminders, notif_publish_confirm')
+    .eq('id', userId)
+    .maybeSingle();
+  return {
+    digest: data?.notif_weekly_digest !== false,
+    reengagement: data?.notif_post_reminders !== false,
+    publishConfirm: data?.notif_publish_confirm !== false,
+  };
+}
+
+async function updateEmailPreferences(userId: string, updates: Record<string, boolean>) {
+  const patch: Record<string, boolean> = {};
+  if ('digest' in updates) patch.notif_weekly_digest = updates.digest;
+  if ('reengagement' in updates) patch.notif_post_reminders = updates.reengagement;
+  if ('publishConfirm' in updates) patch.notif_publish_confirm = updates.publishConfirm;
+  await supabase.from('profiles').update(patch).eq('id', userId);
+  return getEmailPreferences(userId);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const body = req.method === 'POST' ? (req.body || {}) : {};
-    const action = String(body.action || req.query.action || '');
+    // Query-string action (set by vercel.json rewrites for /api/persona-signal,
+    // /api/notifications, etc.) takes priority over a same-named field in the
+    // POST body, since callers like persona-signal legitimately send their own
+    // `action` field (e.g. "kept") in the body.
+    const action = String(req.query.action || body.action || '');
     const userId = String(body.userId || req.query.userId || '');
     const forceRefresh = !!body.refresh || req.query.refresh === 'true';
 
@@ -364,16 +574,114 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json(result);
     }
 
+    if (action === 'reengagement-cron') {
+      const secret = String(body.secret || req.query.secret || '');
+      if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+        const auth = req.headers.authorization || '';
+        if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
+      }
+      return res.json(await reengagementCron());
+    }
+
+    if (action === 'unsubscribe') {
+      const token = String(body.token || req.query.token || '');
+      const type = String(body.type || req.query.type || '');
+      if (!token || !type) return res.status(400).json({ error: 'Missing token or type' });
+      return res.json(await handleUnsubscribe(token, type));
+    }
+
+    if (action === 'newsletter-subscribe') {
+      const email = String(body.email || req.query.email || '').trim().toLowerCase();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Valid email required' });
+      const { error } = await supabase.from('newsletter_subscribers').upsert({ email }, { onConflict: 'email' });
+      if (error) return res.status(500).json({ error: 'Subscribe failed' });
+      return res.json({ ok: true });
+    }
+
+    if (action === 'aria-chat') {
+      const message = String(body.message || '').trim();
+      const currentPage = String(body.currentPage || '/dashboard');
+      const conversationHistory: AriaMessage[] = Array.isArray(body.conversationHistory) ? body.conversationHistory : [];
+      if (!userId || !message) return res.status(400).json({ error: 'Missing userId or message' });
+      const result = await ariaChat(anthropic, supabase, userId, message, conversationHistory, currentPage);
+      return res.json(result);
+    }
+
+    if (action === 'aria-history') {
+      if (!userId) return res.status(400).json({ error: 'Missing userId' });
+      const messages = await getAriaConversation(supabase, userId);
+      return res.json({ messages });
+    }
+
+    if (action === 'voice-match-score') {
+      if (!userId) return res.status(400).json({ error: 'Missing userId' });
+      const result = await calculateVoiceMatchScore(supabase, userId);
+      return res.json(result);
+    }
+
+    if (action === 'persona-signal') {
+      if (!userId || !body.action) return res.status(400).json({ error: 'Missing userId or action' });
+      const result = await logPersonaSignal(
+        userId, body.postId || null, body.action, body.tone || null, body.contentType || null, body.topicSnippet || null, body.postLength || null
+      );
+      return res.json(result);
+    }
+
+    if (action === 'notifications-list') {
+      if (!userId) return res.status(400).json({ error: 'Missing userId' });
+      return res.json(await listNotifications(userId));
+    }
+
+    if (action === 'notifications-mark-read') {
+      const id = String(body.id || req.query.id || '');
+      if (!userId || !id) return res.status(400).json({ error: 'Missing userId or id' });
+      return res.json(await markNotificationRead(userId, id));
+    }
+
+    if (action === 'notifications-mark-all-read') {
+      if (!userId) return res.status(400).json({ error: 'Missing userId' });
+      return res.json(await markAllNotificationsRead(userId));
+    }
+
+    if (action === 'notifications-item') {
+      const id = String(body.id || req.query.id || '');
+      if (req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' });
+      if (!userId || !id) return res.status(400).json({ error: 'Missing userId or id' });
+      return res.json(await deleteNotification(userId, id));
+    }
+
+    if (action === 'push-subscribe') {
+      if (!userId || !body.subscription) return res.status(400).json({ error: 'Missing userId or subscription' });
+      return res.json(await pushSubscribe(userId, body.subscription));
+    }
+
+    if (action === 'email-preferences') {
+      if (!userId) return res.status(400).json({ error: 'Missing userId' });
+      if (req.method === 'GET') return res.json({ ok: true, preferences: await getEmailPreferences(userId) });
+      if (req.method === 'PUT' || req.method === 'POST') return res.json({ ok: true, preferences: await updateEmailPreferences(userId, body.updates || {}) });
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     if (!userId) return res.status(400).json({ error: 'Missing userId' });
 
     switch (action) {
+      case 'send-welcome':
+        return res.json(await handleSendWelcome(userId));
+      case 'send-free-limit':
+        return res.json(await handleSendFreeLimit(userId));
+      case 'send-reengagement':
+        return res.json(await handleSendReengagement(userId));
       case 'competitor':
       case 'competitor-intelligence': {
+        const locked = await requireFeature(supabase, userId, 'competitorIntelligence');
+        if (locked) return res.status(403).json(locked);
         const result = await competitorIntelligence(userId, forceRefresh);
         return res.json(result);
       }
       case 'best-time':
       case 'best-time-to-post': {
+        const locked = await requireFeature(supabase, userId, 'bestTimeToPost');
+        if (locked) return res.status(403).json(locked);
         const result = await bestTimeToPost(userId, forceRefresh);
         return res.json(result);
       }
@@ -384,8 +692,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'analyze-post': {
         const postId = String(body.postId || '');
         const postContent = String(body.postContent || '');
+        const contentLength = body.contentLength ? String(body.contentLength) : undefined;
         if (!postId || !postContent) return res.status(400).json({ error: 'Missing postId or postContent' });
-        const analysis = await analyzePost(anthropic, supabase, postContent, userId, postId);
+        const analysis = await analyzePost(anthropic, supabase, postContent, userId, postId, contentLength);
         return res.json({ ok: true, analysis });
       }
       case 'user-patterns': {
@@ -400,11 +709,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json(result);
       }
       case 'authenticity-score': {
+        const locked = await requireFeature(supabase, userId, 'authenticityScore');
+        if (locked) return res.status(403).json(locked);
         const postId = String(body.postId || '');
         const postContent = String(body.postContent || '');
         const topic = String(body.topic || '');
+        const contentLength = body.contentLength ? String(body.contentLength) : undefined;
         if (!postId || !postContent) return res.status(400).json({ error: 'Missing postId or postContent' });
-        const result = await authenticityScore(userId, postId, postContent, topic, forceRefresh);
+        const result = await authenticityScore(userId, postId, postContent, topic, forceRefresh, contentLength);
         return res.json(result);
       }
       case 'page-view': {

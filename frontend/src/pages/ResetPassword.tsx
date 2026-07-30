@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -6,6 +6,19 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
+
+const MIN_LENGTH = 8;
+
+function getStrength(password: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (password.length >= MIN_LENGTH) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score <= 1) return { score, label: 'Weak', color: '#EF4444' };
+  if (score === 2) return { score, label: 'Medium', color: '#F59E0B' };
+  return { score, label: 'Strong', color: '#06D6A0' };
+}
 
 export default function ResetPassword() {
   const [ready, setReady] = useState(false);
@@ -15,6 +28,8 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  const strength = useMemo(() => getStrength(password), [password]);
 
   useEffect(() => {
     // Supabase redirects expired/already-used links back with
@@ -57,7 +72,7 @@ export default function ResetPassword() {
   }, []);
 
   const handleSubmit = async () => {
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (password.length < MIN_LENGTH) { setError(`Password must be at least ${MIN_LENGTH} characters.`); return; }
     if (password !== confirm) { setError("Passwords don't match."); return; }
     setLoading(true);
     setError('');
@@ -65,7 +80,7 @@ export default function ResetPassword() {
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
       setDone(true);
-      setTimeout(() => { window.location.href = '/dashboard'; }, 1800);
+      setTimeout(() => { window.location.href = '/login'; }, 3000);
     } catch (err: any) {
       setError(err.message || 'Could not reset password.');
     }
@@ -80,9 +95,11 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen gradient-hero dot-grid flex items-center justify-center px-5">
         <div className="card p-7 md:p-8 max-w-[420px] w-full text-center">
-          <CheckCircle2 size={32} className="text-brand-teal mx-auto mb-4" />
-          <h2 className="h2 text-brand-dark mb-2">Password updated</h2>
-          <p className="body-text text-sm">Taking you to your dashboard...</p>
+          <div className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 size={28} className="text-white" />
+          </div>
+          <h2 className="h2 text-brand-dark mb-2">Password updated!</h2>
+          <p className="body-text text-sm">Taking you to the login page...</p>
         </div>
       </div>
     );
@@ -95,8 +112,8 @@ export default function ResetPassword() {
           <AlertCircle size={32} className="text-red-500 mx-auto mb-4" />
           <h2 className="h2 text-brand-dark mb-2">Link expired</h2>
           <p className="body-text text-sm mb-6">{linkError}</p>
-          <a href="/login" className="btn-primary w-full text-[15px] inline-flex justify-center">
-            Back to login
+          <a href="/login?forgot=1" className="btn-primary w-full text-[15px] inline-flex justify-center">
+            Request a new link
           </a>
         </div>
       </div>
@@ -119,7 +136,7 @@ export default function ResetPassword() {
       <div className="w-full max-w-[420px] animate-fadeIn">
         <div className="mb-8">
           <a href="/" className="text-2xl md:text-3xl font-extrabold gradient-text mb-2 block">Eclatale</a>
-          <p className="text-brand-muted text-sm font-medium">Choose a new password for your account.</p>
+          <p className="text-brand-muted text-sm font-medium">Create new password</p>
         </div>
 
         <div className="card p-7 md:p-8">
@@ -132,12 +149,26 @@ export default function ResetPassword() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 characters"
+                  placeholder={`Min ${MIN_LENGTH} characters`}
                   className="input !pl-11"
                   autoComplete="new-password"
                   autoFocus
                 />
               </div>
+              {password.length > 0 && (
+                <div className="mt-2.5">
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="h-1.5 flex-1 rounded-full transition-colors duration-200"
+                        style={{ backgroundColor: i < strength.score ? strength.color : 'rgba(107,114,128,0.15)' }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs font-medium mt-1.5" style={{ color: strength.color }}>{strength.label}</p>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Confirm Password</label>
@@ -163,11 +194,11 @@ export default function ResetPassword() {
 
           <button
             onClick={handleSubmit}
-            disabled={loading || !password || !confirm}
+            disabled={loading || !password || !confirm || password.length < MIN_LENGTH}
             className="btn-primary w-full mt-6 text-[15px]"
           >
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-            {loading ? 'Updating...' : 'Set New Password'}
+            {loading ? 'Updating...' : 'Update Password'}
           </button>
         </div>
       </div>

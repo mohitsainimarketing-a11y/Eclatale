@@ -58,7 +58,7 @@ function App() {
     // is unambiguously a recovery-link failure.
     const isRecoveryHash = window.location.hash.includes('type=recovery') || window.location.hash.includes('error=');
     if (isRecoveryHash && window.location.pathname === '/') {
-      window.location.replace(`/reset-password${window.location.hash}`);
+      window.location.replace(`/auth/reset-password${window.location.hash}`);
     }
   }, []);
 
@@ -88,6 +88,7 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

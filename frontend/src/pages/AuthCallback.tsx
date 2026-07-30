@@ -18,6 +18,15 @@ export default function AuthCallback() {
         const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
         const params = new URLSearchParams(window.location.search);
 
+        // Password-recovery links can land on /auth/callback (rather than the
+        // root) depending on how the link was generated — hand off to the
+        // reset-password screen instead of treating this as account
+        // confirmation, preserving the hash so it can parse the recovery session itself.
+        if (hash.get('type') === 'recovery') {
+          window.location.replace(`/auth/reset-password${window.location.hash}`);
+          return;
+        }
+
         const accessToken = hash.get('access_token');
         const refreshToken = hash.get('refresh_token');
         const code = params.get('code');

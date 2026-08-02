@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { topic, tone, contentType, userId, styleNudge, contentLength } = req.body;
+    const { topic, tone, contentType, userId, styleNudge, contentLength, angleTags, structureTag } = req.body;
     if (!topic || !tone || !contentType || !userId) return res.status(400).json({ error: 'Missing required fields' });
     const length: ContentLength = CONTENT_LENGTH_INSTRUCTIONS[contentLength as ContentLength] ? contentLength : 'standard';
 
@@ -42,6 +42,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const goals = profile?.goals || [];
     const goalsText = goals.length > 0 ? `Their growth goals are: ${goals.join(', ')}.` : '';
 
+    const STRUCTURE_FRAMEWORKS: Record<string, string> = {
+      AIDA: 'the AIDA framework (Attention: open with a scroll-stopping hook, Interest: build curiosity, Desire: make the reader want the outcome, Action: end with a clear next step)',
+      PAS: 'the PAS framework (Problem: name a real problem the reader has, Agitate: make the cost of that problem vivid, Solution: give the fix)',
+      BAB: 'the Before/After/Bridge framework (Before: paint the reader\'s current state, After: paint the better state, Bridge: show how to get there)',
+      PPP: 'the Problem/Promise/Proof framework (Problem: name the problem, Promise: state the outcome you\'re promising, Proof: back it with evidence or a specific result)',
+    };
+    const angleFragment = Array.isArray(angleTags) && angleTags.length
+      ? `\nWrite this from the following angle(s): ${angleTags.join(', ')}.\n`
+      : '';
+    const structureFragment = structureTag && STRUCTURE_FRAMEWORKS[structureTag]
+      ? `\nStructure the post using ${STRUCTURE_FRAMEWORKS[structureTag]}.\n`
+      : '';
+
     const personaFragment = await buildPersonaPrompt(supabase, userId);
     const trendResult = await getTrendContext(anthropic, supabase, industry, role);
     const trendFragment = buildTrendPromptFragment(trendResult, industry);
@@ -59,6 +72,7 @@ ${trendFragment ? trendFragment + '\n' : ''}
 ${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}
 
 ${styleNudge ? `Additional instruction based on this person's own writing patterns: ${styleNudge}\n` : ''}
+${angleFragment}${structureFragment}
 ${OUTPUT_RULES}
 
 ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}

@@ -58,6 +58,13 @@ export default function AriaWidget() {
     });
   }, []);
 
+  // Global "open Aria" hook — used by /create's Ctrl+K shortcut.
+  useEffect(() => {
+    const openHandler = () => { setOpen(true); setHasInteracted(true); };
+    window.addEventListener('aria:open', openHandler);
+    return () => window.removeEventListener('aria:open', openHandler);
+  }, []);
+
   // Load prior conversation + decide a proactive nudge, once we know who the user is.
   useEffect(() => {
     if (!userId || historyLoaded) return;
@@ -141,6 +148,9 @@ export default function AriaWidget() {
   if (!showWidget) return null;
 
   const chips = quickActionsFor(location.pathname);
+  // /create shows a fixed 56px+ bottom nav on mobile (<768px) — Aria's floating
+  // trigger/bubble/panel need to clear it there, but not on desktop/tablet.
+  const isCreatePage = location.pathname === '/create';
 
   return (
     <>
@@ -149,7 +159,7 @@ export default function AriaWidget() {
         type="button"
         onClick={() => { setOpen(o => !o); setHasInteracted(true); }}
         aria-label="Open Aria, your brand assistant"
-        className={`fixed z-[70] bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem))] right-5 w-14 h-14 rounded-full gradient-primary flex items-center justify-center text-white modal-shadow transition-transform hover:scale-105 active:scale-95 ${!hasInteracted && !open ? 'animate-pulse' : ''}`}
+        className={`fixed z-[70] ${isCreatePage ? 'bottom-[calc(max(1.25rem,env(safe-area-inset-bottom)+0.75rem)+64px)] md:bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem))]' : 'bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem))]'} right-5 w-14 h-14 rounded-full gradient-primary flex items-center justify-center text-white modal-shadow transition-transform hover:scale-105 active:scale-95 ${!hasInteracted && !open ? 'animate-pulse' : ''}`}
       >
         {open ? <X size={22} /> : <span className="text-lg font-extrabold">A</span>}
         {!open && proactiveMsg && (
@@ -162,7 +172,7 @@ export default function AriaWidget() {
         <button
           type="button"
           onClick={() => { setOpen(true); setHasInteracted(true); }}
-          className="fixed z-[70] bottom-[calc(max(1.25rem,env(safe-area-inset-bottom)+0.75rem)+72px)] right-5 max-w-[240px] card !rounded-2xl modal-shadow p-3 text-left animate-fadeIn"
+          className={`fixed z-[70] ${isCreatePage ? 'bottom-[calc(max(1.25rem,env(safe-area-inset-bottom)+0.75rem)+136px)] md:bottom-[calc(max(1.25rem,env(safe-area-inset-bottom)+0.75rem)+72px)]' : 'bottom-[calc(max(1.25rem,env(safe-area-inset-bottom)+0.75rem)+72px)]'} right-5 max-w-[240px] card !rounded-2xl modal-shadow p-3 text-left animate-fadeIn`}
         >
           <p className="text-[12px] text-brand-dark leading-snug">{proactiveMsg}</p>
         </button>
@@ -170,7 +180,7 @@ export default function AriaWidget() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed z-[70] bottom-0 right-0 sm:bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+5.5rem))] sm:right-5 w-full sm:w-[380px] h-[60vh] sm:h-[520px] bg-white sm:rounded-[24px] rounded-t-[24px] modal-shadow flex flex-col overflow-hidden animate-slideUp">
+        <div className={`fixed z-[70] ${isCreatePage ? 'bottom-14' : 'bottom-0'} right-0 sm:bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+5.5rem))] sm:right-5 w-full sm:w-[380px] h-[60vh] sm:h-[520px] bg-white sm:rounded-[24px] rounded-t-[24px] modal-shadow flex flex-col overflow-hidden animate-slideUp`}>
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-[rgba(124,92,252,0.08)] flex-shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">A</div>

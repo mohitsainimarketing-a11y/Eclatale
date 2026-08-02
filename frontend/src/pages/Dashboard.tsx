@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   BarChart3, FileText, Flame, Trophy, Sparkles, LogOut,
   Home, Zap, User, Clock, ArrowRight, RefreshCw, Copy, Check,
-  Loader2, Target, Settings, ChevronRight, Image, TrendingUp, PenTool,
+  Loader2, Target, Settings, ChevronRight, Image, TrendingUp, PenTool, Calendar,
 } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
 import NotificationBell from '../components/NotificationBell';
@@ -13,6 +13,15 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
+
+// Warms the lazy-loaded /create chunk on hover so the click feels instant —
+// webpack dedupes this against the App.tsx React.lazy() import of the same module.
+let createPagePrefetched = false;
+function prefetchCreatePage() {
+  if (createPagePrefetched) return;
+  createPagePrefetched = true;
+  import('./CreatePost').catch(() => { createPagePrefetched = false; });
+}
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -55,6 +64,7 @@ const SIDEBAR_ITEMS = [
   { icon: <Image size={18} />, label: 'Visual Creator', href: '/create-visual', active: false },
   { icon: <TrendingUp size={18} />, label: 'Competitor Intel', href: '/intelligence', active: false },
   { icon: <Clock size={18} />, label: 'Content History', href: '/history', active: false },
+  { icon: <Calendar size={18} />, label: 'Schedule', href: '/schedule', active: false },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup', active: false },
   { icon: <Settings size={18} />, label: 'Settings', href: '/settings', active: false },
 ];
@@ -251,7 +261,7 @@ export default function Dashboard() {
         </div>
 
         <div className="px-3 pt-4 pb-2">
-          <a href="/create" className="btn-primary w-full text-sm !py-2.5 !rounded-xl">
+          <a href="/create" onMouseEnter={prefetchCreatePage} className="btn-primary w-full text-sm !py-2.5 !rounded-xl">
             <Sparkles size={16} /> Write a Post
           </a>
         </div>
@@ -530,7 +540,7 @@ export default function Dashboard() {
                       <FileText size={20} />
                     </div>
                     <p className="text-sm text-brand-muted mb-4">No posts yet. Create your first one!</p>
-                    <a href="/create" className="btn-primary text-xs !py-2 !px-5">Write a Post</a>
+                    <a href="/create" onMouseEnter={prefetchCreatePage} className="btn-primary text-xs !py-2 !px-5">Write a Post</a>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -617,7 +627,7 @@ export default function Dashboard() {
               <div className="card p-6">
                 <h3 className="text-sm font-bold text-brand-dark mb-3">Quick create</h3>
                 <div className="space-y-2">
-                  <a href="/create" className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-purple/20 transition-all group">
+                  <a href="/create" onMouseEnter={prefetchCreatePage} className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-purple/20 transition-all group">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple to-brand-pink flex items-center justify-center text-white group-hover:scale-105 transition-transform">
                       <Sparkles size={14} />
                     </div>

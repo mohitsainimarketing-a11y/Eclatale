@@ -10,6 +10,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CreatePost = lazy(() => import('./pages/CreatePost'));
 const History = lazy(() => import('./pages/History'));
+const Schedule = lazy(() => import('./pages/Schedule'));
 const PersonaSetup = lazy(() => import('./pages/PersonaSetup'));
 const Settings = lazy(() => import('./pages/Settings'));
 const CreateVisual = lazy(() => import('./pages/CreateVisual'));
@@ -77,6 +78,7 @@ function App() {
           <Route path="/create" element={<CreatePost />} />
           <Route path="/guided" element={<Navigate to="/create" replace />} />
           <Route path="/history" element={<History />} />
+          <Route path="/schedule" element={<Schedule />} />
           <Route path="/persona-setup" element={<PersonaSetup />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/create-visual" element={<CreateVisual />} />

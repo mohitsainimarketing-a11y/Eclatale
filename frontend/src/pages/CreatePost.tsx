@@ -3,11 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import {
   ArrowLeft, Sparkles, Copy, RefreshCw, Send, Check, Loader2,
   FileText, Image, Lightbulb, Scissors,
-  Wand2, Undo2, Calendar, PenTool, ExternalLink,
+  Wand2, Undo2, Redo2, Calendar, PenTool, ExternalLink,
   ChevronDown, X, Download, Eye, EyeOff, ArrowRight,
+  ThumbsUp, MessageCircle, Repeat2, Monitor, Smartphone, PenLine,
 } from 'lucide-react';
 import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
 import { STYLES, formalityLabel } from '../lib/personaOptions';
+import { RICH_TEXT_STYLES } from '../lib/richText';
 import { copyToClipboard } from '../utils/clipboard';
 import { useModalBackButton } from '../hooks/useModalBackButton';
 
@@ -49,6 +51,18 @@ const VISUAL_STYLES = [
 const IMPROVE_CHIPS = [
   'Stronger hook', 'Shorter & punchier', 'Add a data point',
   'More casual', 'Better ending', 'More data-driven',
+];
+
+const ANGLE_TAGS = [
+  'Contrarian', 'Inspirational', 'Personal story', 'Lessons learned',
+  'Step-by-step', 'Comparison', 'Common mistake', 'Behind the scenes',
+];
+
+const STRUCTURE_TAGS = [
+  { id: 'AIDA', desc: 'Attention → Interest → Desire → Action' },
+  { id: 'PAS', desc: 'Problem → Agitate → Solution' },
+  { id: 'BAB', desc: 'Before → After → Bridge' },
+  { id: 'PPP', desc: 'Problem → Promise → Proof' },
 ];
 
 const CHAR_LIMIT = 3000;
@@ -141,13 +155,62 @@ function AIcon({ type, size = 11 }: { type: ActivityIcon; size?: number }) {
   return <Send size={size} className={cls} />;
 }
 
-// Translates the structured api_credits_exhausted error (or any other backend
-// error shape) into a message safe to show the user directly.
+// Translates known backend error shapes (and network failures) into copy
+// that's safe and specific enough to show the user directly, rather than a
+// raw error code like "weekly_limit_reached" leaking onto the screen.
 function friendlyErrorMessage(data: any): string {
-  if (data?.error === 'api_credits_exhausted') {
-    return 'AI features are temporarily paused. Please try again shortly.';
+  const code = data?.error;
+  if (code === 'api_credits_exhausted') return 'AI is taking a short break — try again in a few minutes.';
+  if (code === 'weekly_limit_reached') {
+    // The weekly reset always lands on Monday 00:00 UTC — format in UTC so
+    // the displayed weekday matches the backend's reset day regardless of
+    // the viewer's local timezone (local formatting can roll it back to Sunday).
+    const resets = data?.resetsAt ? new Date(data.resetsAt) : null;
+    const when = resets ? resets.toLocaleDateString([], { weekday: 'long', timeZone: 'UTC' }) : 'Monday';
+    return `You've used all your free posts this week. More unlock ${when}, or upgrade for unlimited posts.`;
   }
-  return data?.error || 'Something went wrong';
+  if (code === 'feature_locked') return data?.message || 'This feature is part of the Individual plan.';
+  if (code === '__network__') return "Check your connection and try again.";
+  if (code === '__rate_limit__') return "You're on a roll! Take a 60-second break before generating again.";
+  return code || 'Something went wrong — please try again.';
+}
+
+// Wraps a fetch+json call so network failures (offline, DNS, CORS) surface
+// through the same friendlyErrorMessage() path as backend error payloads,
+// instead of throwing a raw TypeError.
+async function fetchJson(url: string, options: RequestInit): Promise<any> {
+  let res: Response;
+  try {
+    res = await fetch(url, options);
+  } catch {
+    throw new Error(friendlyErrorMessage({ error: '__network__' }));
+  }
+  if (res.status === 429) throw new Error(friendlyErrorMessage({ error: '__rate_limit__' }));
+  return res.json();
+}
+
+// Finds the soonest future date/time matching one of the user's recurring
+// posting slots (from the /schedule calendar's "Posting times" grid).
+// Requires at least 15 minutes of lead time so "now" doesn't round to a slot
+// that's effectively already passed.
+function nextSlotOccurrence(slots: { time: string; days: number[] }[]): Date | null {
+  if (!slots.length) return null;
+  const now = new Date();
+  const minLead = new Date(now.getTime() + 15 * 60000);
+  let best: Date | null = null;
+  for (const slot of slots) {
+    const [h, m] = slot.time.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) continue;
+    for (const day of slot.days) {
+      const candidate = new Date(now);
+      let delta = (day - now.getDay() + 7) % 7;
+      candidate.setDate(now.getDate() + delta);
+      candidate.setHours(h, m, 0, 0);
+      if (candidate < minLead) candidate.setDate(candidate.getDate() + 7);
+      if (!best || candidate < best) best = candidate;
+    }
+  }
+  return best;
 }
 
 function uid() { return Math.random().toString(36).slice(2); }
@@ -184,6 +247,20 @@ function computeNudge(patterns: any): { text: string; instruction: string } | nu
 // approximate silent adult reading speed used for the "X seconds to read" hint
 const READING_CHARS_PER_SECOND = 17;
 
+// Arrow-key navigation within a group of option buttons (tone/length
+// selectors) — moves focus to the next/previous sibling button so the group
+// behaves like a single tab stop with roving arrow-key selection.
+function handleOptionGroupKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+  if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
+  const buttons = Array.from(e.currentTarget.querySelectorAll('button'));
+  const idx = buttons.indexOf(document.activeElement as HTMLButtonElement);
+  if (idx === -1) return;
+  e.preventDefault();
+  const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+  const next = buttons[(idx + dir + buttons.length) % buttons.length] as HTMLButtonElement;
+  next.focus();
+}
+
 function LengthSelector({ value, onChange }: { value: typeof CONTENT_LENGTHS[number]['id']; onChange: (v: typeof CONTENT_LENGTHS[number]['id']) => void }) {
   const active = CONTENT_LENGTHS.find(l => l.id === value) || CONTENT_LENGTHS[2];
   const maxChars = 3000;
@@ -194,11 +271,13 @@ function LengthSelector({ value, onChange }: { value: typeof CONTENT_LENGTHS[num
   return (
     <div>
       <p className="text-[12px] font-semibold text-brand-dark mb-2">Post length</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Post length" onKeyDown={handleOptionGroupKeyDown}>
         {CONTENT_LENGTHS.map(l => (
           <button
             key={l.id}
             type="button"
+            role="radio"
+            aria-checked={value === l.id}
             onClick={() => onChange(l.id)}
             className={`text-left rounded-xl border p-2.5 transition-all ${
               value === l.id
@@ -220,6 +299,85 @@ function LengthSelector({ value, onChange }: { value: typeof CONTENT_LENGTHS[num
           <div className="h-full rounded-full gradient-primary transition-all duration-300" style={{ width: `${barPct}%` }} />
         </div>
         <p className="text-[10px] text-brand-muted mt-1.5">This will take about {approxSeconds} seconds to read</p>
+      </div>
+    </div>
+  );
+}
+
+// LinkedIn truncates the feed body at ~210 chars before showing "…more" —
+// mirror that so the preview's truncation point matches the real feed.
+const PREVIEW_TRUNCATE_AT = 210;
+function truncatePreviewBody(text: string): { shown: string; truncated: boolean } {
+  if (text.length <= PREVIEW_TRUNCATE_AT) return { shown: text, truncated: false };
+  const cut = text.slice(0, PREVIEW_TRUNCATE_AT);
+  const lastSpace = cut.lastIndexOf(' ');
+  return { shown: cut.slice(0, lastSpace > 0 ? lastSpace : PREVIEW_TRUNCATE_AT), truncated: true };
+}
+
+function LinkedInPreviewCard({
+  content, imageUrl, userName, userRole, userAvatar, userInitials, device, poll,
+}: {
+  content: string; imageUrl: string | null; userName: string; userRole: string;
+  userAvatar: string; userInitials: string; device: 'desktop' | 'mobile';
+  poll?: { question: string; options: string[]; duration: string } | null;
+}) {
+  const { shown, truncated } = truncatePreviewBody(content);
+  const mobile = device === 'mobile';
+
+  return (
+    <div className="mx-auto rounded-xl border border-[rgba(0,0,0,0.08)] bg-white overflow-hidden shadow-sm transition-all"
+      style={{ maxWidth: mobile ? 340 : '100%' }}>
+      <div className="p-4">
+        <div className="flex items-start gap-2.5 mb-3">
+          {userAvatar
+            ? <img src={userAvatar} alt={userName} loading="lazy" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+            : <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white text-[14px] font-bold flex-shrink-0 select-none">{userInitials || 'Y'}</div>
+          }
+          <div className="flex-1 min-w-0">
+            <div className="text-[14px] font-semibold leading-tight truncate" style={{ color: '#1A1A2E' }}>{userName || 'Your Name'}</div>
+            {userRole && <div className="text-[12px] leading-snug line-clamp-1" style={{ color: '#6B7280' }}>{userRole}</div>}
+            <div className="text-[12px]" style={{ color: '#6B7280' }}>now · 🌐</div>
+          </div>
+        </div>
+        {content ? (
+          <p className="text-[14px] leading-[1.5] whitespace-pre-wrap" style={{ color: '#1A1A2E' }}>
+            {shown}
+            {truncated && <span className="font-semibold" style={{ color: '#6B7280' }}>…more</span>}
+          </p>
+        ) : (
+          <p className="text-[14px] italic" style={{ color: '#9CA3AF' }}>Your post will show up here exactly as it looks on LinkedIn.</p>
+        )}
+        {poll && (
+          <div className="mt-3 rounded-xl border p-3" style={{ borderColor: '#E8E8E8' }}>
+            <p className="text-[13px] font-semibold mb-2.5" style={{ color: '#1A1A2E' }}>{poll.question || 'Poll question'}</p>
+            <div className="space-y-1.5">
+              {poll.options.filter(Boolean).map((opt, i) => (
+                <div key={i} className="text-[12px] font-medium rounded-md border px-3 py-1.5" style={{ borderColor: '#0A66C2', color: '#0A66C2' }}>
+                  {opt}
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] mt-2" style={{ color: '#6B7280' }}>0 votes · {poll.duration} left</p>
+          </div>
+        )}
+      </div>
+      {imageUrl && <img src={imageUrl} alt="Post visual" loading="lazy" className="w-full object-cover max-h-[400px]" />}
+      <div className={`px-4 flex items-center border-t ${mobile ? 'justify-between py-3' : 'justify-between py-2 gap-1'}`} style={{ borderColor: '#E8E8E8' }}>
+        {mobile ? (
+          <>
+            <ThumbsUp size={18} style={{ color: '#6B7280' }} />
+            <MessageCircle size={18} style={{ color: '#6B7280' }} />
+            <Repeat2 size={18} style={{ color: '#6B7280' }} />
+            <Send size={16} style={{ color: '#6B7280' }} />
+          </>
+        ) : (
+          <>
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold flex-1 justify-center" style={{ color: '#6B7280' }}><ThumbsUp size={16} /> Like</span>
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold flex-1 justify-center" style={{ color: '#6B7280' }}><MessageCircle size={16} /> Comment</span>
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold flex-1 justify-center" style={{ color: '#6B7280' }}><Repeat2 size={16} /> Repost</span>
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold flex-1 justify-center" style={{ color: '#6B7280' }}><Send size={15} /> Send</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -254,9 +412,23 @@ export default function CreatePost() {
   // Composer
   const [composerContent, setComposerContent] = useState('');
   const [contentHistory, setContentHistory]   = useState<string[]>([]);
+  const [redoStack, setRedoStack]             = useState<string[]>([]);
+  const [shortcutsOpen, setShortcutsOpen]     = useState(false);
+  const [generationStage, setGenerationStage] = useState('');
+  const [lastTopicAttempt, setLastTopicAttempt] = useState('');
+  const [autosaveState, setAutosaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [restorePrompt, setRestorePrompt] = useState<{ content: string; savedAt: number } | null>(null);
+  const lastAutosavedContent = useRef('');
   const [contentType, setContentType]         = useState('linkedin-post');
-  const [tone, setTone]                       = useState('professional');
-  const [contentLength, setContentLength]     = useState<'micro' | 'short' | 'standard' | 'longform'>('standard');
+  const [tone, setTone]                       = useState(() => localStorage.getItem('eclatale_pref_tone') || 'professional');
+  const [contentLength, setContentLength]     = useState<'micro' | 'short' | 'standard' | 'longform'>(() => {
+    const saved = localStorage.getItem('eclatale_pref_length');
+    return (saved === 'micro' || saved === 'short' || saved === 'standard' || saved === 'longform') ? saved : 'standard';
+  });
+  // Remember the user's last tone/length choice locally so it's the default
+  // next visit, even before their profile default (if any) has loaded.
+  useEffect(() => { try { localStorage.setItem('eclatale_pref_tone', tone); } catch {} }, [tone]);
+  useEffect(() => { try { localStorage.setItem('eclatale_pref_length', contentLength); } catch {} }, [contentLength]);
   const [postId, setPostId]                   = useState<string | null>(null);
   const [copied, setCopied]   = useState(false);
   const [saved, setSaved]     = useState(false);
@@ -265,12 +437,22 @@ export default function CreatePost() {
   const [adapting, setAdapting] = useState(false);
   const [toneOpen, setToneOpen] = useState(false);
 
+  // Live LinkedIn preview
+  const [composerView, setComposerView] = useState<'edit' | 'preview'>('edit');
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+
+  // Poll (composer-only — LinkedIn's public API has no poll-publishing endpoint,
+  // so this is a draft/preview aid; publishing is blocked while one is attached)
+  const [pollData, setPollData] = useState<{ question: string; options: string[]; duration: string } | null>(null);
+
   // Visual attachment
   const [attachedImage, setAttachedImage]     = useState<string | null>(null);
   const [visualModalOpen, setVisualModalOpen] = useState(false);
   const [visualPreview, setVisualPreview]     = useState<string | null>(null);
   const [visualStyle, setVisualStyle]         = useState('minimal');
+  const [visualStyleAutoPicked, setVisualStyleAutoPicked] = useState(false);
   const [generatingVisual, setGeneratingVisual] = useState(false);
+  const [imageUsage, setImageUsage] = useState<{ used: number; limit: number } | null>(null);
   const [visualError, setVisualError]         = useState('');
   const [showTextOverlay, setShowTextOverlay] = useState(true);
   const [ideasView, setIdeasView]             = useState(false);
@@ -285,14 +467,19 @@ export default function CreatePost() {
   const [generating, setGenerating]   = useState(false);
   const [repurposing, setRepurposing] = useState(false);
   const [repurposeText, setRepurposeText] = useState('');
+  const [repurposeMode, setRepurposeMode] = useState<'voice' | 'pattern' | 'reaction'>('voice');
+  const [userReaction, setUserReaction] = useState('');
+  const [urlFetchState, setUrlFetchState] = useState<'idle' | 'fetching' | 'loaded' | 'error'>('idle');
+  const [urlFetchMessage, setUrlFetchMessage] = useState('');
+  const [extractedPattern, setExtractedPattern] = useState('');
   const [refining, setRefining]   = useState(false);
 
   // UI
-  const [mobileView, setMobileView] = useState<'compose' | 'assistant'>('compose');
   const [error, setError] = useState('');
 
   // Best time to post (AI-recommended)
   const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string; confidence: string } | null>(null);
+  const [scheduleSlots, setScheduleSlots] = useState<{ time: string; days: number[] }[]>([]);
 
   // Writing-pattern nudge (Piece 13) + tone match feedback (Piece 14)
   const [patterns, setPatterns] = useState<any>(null);
@@ -312,15 +499,31 @@ export default function CreatePost() {
   const [copiedRefUrl, setCopiedRefUrl] = useState<string | null>(null);
   const [lastTopic, setLastTopic] = useState('');
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [scheduleDay, setScheduleDay] = useState('');
+  const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
-  const [scheduleConfirmed, setScheduleConfirmed] = useState(false);
+  const [scheduleConfirmedFor, setScheduleConfirmedFor] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduleErr, setScheduleErr] = useState('');
   const scheduleRef = useRef<HTMLDivElement>(null);
 
   const toneRef        = useRef<HTMLDivElement>(null);
   const toneMatchRef   = useRef<HTMLDivElement>(null);
   const postSuggestionsRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Angle & structure tags (Write flow)
+  const [angleTags, setAngleTags] = useState<string[]>([]);
+  const [structureTag, setStructureTag] = useState<string | null>(null);
+  const toggleAngleTag = (tag: string) => setAngleTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : prev.length >= 3 ? prev : [...prev, tag]);
+
+  // Rich text + snippets toolbar
+  const composerTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const richTextRef = useRef<HTMLDivElement>(null);
+  const snippetsRef = useRef<HTMLDivElement>(null);
+  const [richTextOpen, setRichTextOpen] = useState(false);
+  const [snippetsOpen, setSnippetsOpen] = useState(false);
+  const [snippets, setSnippets] = useState<{ id: string; label: string; content: string }[]>([]);
+  const [newSnippetLabel, setNewSnippetLabel] = useState('');
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
@@ -335,11 +538,29 @@ export default function CreatePost() {
     if (params.get('action') === 'ideas') {
       handleCardIdeas();
     }
+    const scheduleDateParam = params.get('scheduleDate');
+    if (scheduleDateParam) setScheduleDate(scheduleDateParam);
+    const editPostId = params.get('postId');
 
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { window.location.href = '/login'; return; }
       const u = data.user;
       setUserId(u.id);
+      if (editPostId) {
+        supabase.from('posts').select('id, content, tone, content_type, scheduled_for').eq('id', editPostId).eq('user_id', u.id).single()
+          .then(({ data: post }) => {
+            if (!post) return;
+            setPostId(post.id);
+            setComposerContent(post.content || '');
+            if (post.tone) setTone(post.tone);
+            if (post.content_type) setContentType(post.content_type);
+            if (post.scheduled_for) {
+              const d = new Date(post.scheduled_for);
+              setScheduleDate(d.toISOString().slice(0, 10));
+              setScheduleTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+            }
+          });
+      }
       supabase.from('profiles').select('role, domain, first_name, last_name, profile_photo_url, default_tone').eq('id', u.id).single()
         .then(({ data: p }) => {
           if (p) {
@@ -363,6 +584,9 @@ export default function CreatePost() {
           const parts = display.split(' ').filter(Boolean);
           setUserInitials(parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : display.substring(0, 2).toUpperCase());
         });
+      loadSnippets(u.id);
+      supabase.from('user_schedule_slots').select('slots').eq('user_id', u.id).single()
+        .then(({ data: row }) => { if (row?.slots?.length) setScheduleSlots(row.slots); });
       supabase.from('persona_profiles').select('*').eq('user_id', u.id).single()
         .then(({ data: persona }) => {
           setHasPersona(!!persona?.persona_completed_at);
@@ -390,8 +614,6 @@ export default function CreatePost() {
         .then(d => {
           if (d && !d.error) {
             setBestTime(d);
-            if (d.recommendedDays?.[0]) setScheduleDay(d.recommendedDays[0]);
-            if (d.recommendedTimes?.[0]) setScheduleTime(d.recommendedTimes[0]);
           }
         })
         .catch(() => {});
@@ -412,6 +634,8 @@ export default function CreatePost() {
       if (scheduleRef.current && !scheduleRef.current.contains(e.target as Node)) setScheduleOpen(false);
       if (toneMatchRef.current && !toneMatchRef.current.contains(e.target as Node)) setToneMatchOpen(false);
       if (postSuggestionsRef.current && !postSuggestionsRef.current.contains(e.target as Node)) setPostSuggestionsOpen(false);
+      if (richTextRef.current && !richTextRef.current.contains(e.target as Node)) setRichTextOpen(false);
+      if (snippetsRef.current && !snippetsRef.current.contains(e.target as Node)) setSnippetsOpen(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -432,6 +656,7 @@ export default function CreatePost() {
   };
 
   const updateContent = useCallback((newContent: string) => {
+    setRedoStack([]);
     setComposerContent(prev => {
       if (prev) setContentHistory(h => [...h.slice(-19), prev]);
       return newContent;
@@ -440,8 +665,72 @@ export default function CreatePost() {
 
   const handleUndo = () => {
     if (!contentHistory.length) return;
-    setComposerContent(contentHistory[contentHistory.length - 1]);
+    setComposerContent(prev => {
+      setRedoStack(r => [...r.slice(-19), prev]);
+      return contentHistory[contentHistory.length - 1];
+    });
     setContentHistory(h => h.slice(0, -1));
+  };
+
+  const handleRedo = () => {
+    if (!redoStack.length) return;
+    setComposerContent(prev => {
+      setContentHistory(h => [...h.slice(-19), prev]);
+      return redoStack[redoStack.length - 1];
+    });
+    setRedoStack(r => r.slice(0, -1));
+  };
+
+  // ── Rich text + snippets ─────────────────────────────────────────────────
+
+  const applyRichTextStyle = (styleId: string) => {
+    const style = RICH_TEXT_STYLES.find(s => s.id === styleId);
+    if (!style) return;
+    const el = composerTextareaRef.current;
+    const start = el?.selectionStart ?? 0;
+    const end = el?.selectionEnd ?? composerContent.length;
+    const hasSelection = el && start !== end;
+    const target = hasSelection ? composerContent.slice(start, end) : composerContent;
+    const styled = style.apply(target);
+    const next = hasSelection
+      ? composerContent.slice(0, start) + styled + composerContent.slice(end)
+      : styled;
+    updateContent(next);
+    setRichTextOpen(false);
+    requestAnimationFrame(() => {
+      el?.focus();
+      const caret = (hasSelection ? start : 0) + styled.length;
+      el?.setSelectionRange(caret, caret);
+    });
+  };
+
+  const loadSnippets = useCallback(async (uid: string) => {
+    const { data } = await supabase.from('post_snippets').select('id, label, content').eq('user_id', uid).order('created_at', { ascending: false });
+    if (data) setSnippets(data);
+  }, []);
+
+  const insertSnippet = (content: string) => {
+    const el = composerTextareaRef.current;
+    const start = el?.selectionStart ?? composerContent.length;
+    const end = el?.selectionEnd ?? composerContent.length;
+    const next = composerContent.slice(0, start) + content + composerContent.slice(end);
+    updateContent(next);
+    setSnippetsOpen(false);
+    requestAnimationFrame(() => { el?.focus(); const caret = start + content.length; el?.setSelectionRange(caret, caret); });
+  };
+
+  const saveCurrentAsSnippet = async () => {
+    if (!userId || !composerContent.trim() || !newSnippetLabel.trim()) return;
+    const { data } = await supabase.from('post_snippets')
+      .insert({ user_id: userId, label: newSnippetLabel.trim(), content: composerContent })
+      .select('id, label, content').single();
+    if (data) setSnippets(s => [data, ...s]);
+    setNewSnippetLabel('');
+  };
+
+  const deleteSnippet = async (id: string) => {
+    setSnippets(s => s.filter(sn => sn.id !== id));
+    await supabase.from('post_snippets').delete().eq('id', id);
   };
 
   // ── Card clicks ───────────────────────────────────────────────────────────
@@ -564,9 +853,10 @@ export default function CreatePost() {
   const handleWriteGenerate = () => {
     if (!writeTopic.trim()) return;
     addMsg('user', writeTopic, 'text');
-    setActiveFlow(null);
+    // Stay on the write panel until generation actually succeeds — closing
+    // it optimistically meant a failed generation left the error with
+    // nowhere visible to render (activeFlow was already null by then).
     handleGenerate(writeTopic);
-    setWriteTopic('');
   };
 
   // Fire-and-forget background semantic analysis after a post is saved.
@@ -616,7 +906,6 @@ export default function CreatePost() {
   const handleFixSuggestion = (suggestion: string) => {
     if (!suggestion) return;
     setChatInput(suggestion);
-    setMobileView('compose');
   };
 
   const handleUseReference = async (ref: ReferenceItem) => {
@@ -635,19 +924,33 @@ export default function CreatePost() {
     setTimeout(() => setCopiedRefUrl(null), 2000);
   };
 
+  // Rotating status copy + a "taking a moment" upgrade after 10s, shown
+  // wherever `generating` is true (prevents a bare spinner feeling stuck).
+  useEffect(() => {
+    if (!generating && !repurposing) { setGenerationStage(''); return; }
+    const messages = repurposing
+      ? ['Reading your source material…', 'Extracting the core idea…', 'Matching your voice…', 'Adding the finishing touches…']
+      : ['Analyzing your industry…', 'Crafting your hook…', 'Matching your voice…', 'Adding the finishing touches…'];
+    let i = 0;
+    setGenerationStage(messages[0]);
+    const rotate = setInterval(() => { i = (i + 1) % messages.length; setGenerationStage(messages[i]); }, 2800);
+    const slow = setTimeout(() => setGenerationStage('This is taking a moment — our AI is being thorough…'), 10000);
+    return () => { clearInterval(rotate); clearTimeout(slow); };
+  }, [generating, repurposing]);
+
   const handleGenerate = async (topic: string) => {
     if (!topic.trim() || !userId) return;
-    setGenerating(true); setError('');
+    setGenerating(true); setError(''); setLastTopicAttempt(topic);
     try {
-      const res = await fetch(`${API_URL}/api/generate`, {
+      const data = await fetchJson(`${API_URL}/api/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ topic, tone, contentType, contentLength, userId, styleNudge: nudgeApplied ? nudge?.instruction : undefined }),
+        body: JSON.stringify({ topic, tone, contentType, contentLength, userId, styleNudge: nudgeApplied ? nudge?.instruction : undefined, angleTags, structureTag }),
       });
-      const data = await res.json();
       if (data.error) throw new Error(friendlyErrorMessage(data));
       updateContent(data.content);
       setPublishResult(null);
       setActiveFlow(null);
+      setWriteTopic('');
       setNudgeDismissed(true);
       const label = CONTENT_TYPES.find(c => c.id === contentType)?.label || contentType;
       addActivity('sparkles', `Generated a ${label} about "${topic.substring(0, 50)}${topic.length > 50 ? '…' : ''}"`);
@@ -669,28 +972,66 @@ export default function CreatePost() {
       }
       checkToneMatch(data.content, tone);
     } catch (err: any) {
-      addMsg('bot', `Sorry, couldn't generate: ${err.message || 'unknown error'}`, 'text');
+      const msg = err.message || 'Something went wrong — please try again.';
+      addMsg('bot', `Sorry, couldn't generate: ${msg}`, 'text');
+      setError(msg);
     }
     setGenerating(false);
   };
 
   // ── Repurpose ─────────────────────────────────────────────────────────────
 
+  // URLs auto-fetch on paste/blur so the user never has to leave the app to
+  // copy article text; LinkedIn URLs are rejected server-side with a
+  // specific message since that content isn't scrapeable.
+  const looksLikeUrl = (s: string) => /^https?:\/\/\S+$/i.test(s.trim());
+
+  const tryFetchUrl = async (text: string) => {
+    if (!looksLikeUrl(text) || urlFetchState === 'fetching') return;
+    setUrlFetchState('fetching');
+    setUrlFetchMessage('Fetching content from URL…');
+    try {
+      const data = await fetchJson(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'fetch-url', url: text.trim() }),
+      });
+      if (data.error === 'linkedin_private') {
+        setUrlFetchState('error');
+        setUrlFetchMessage(data.message);
+        return;
+      }
+      if (data.error) {
+        setUrlFetchState('error');
+        setUrlFetchMessage(data.message || "Couldn't fetch this URL — paste the text directly instead.");
+        return;
+      }
+      setRepurposeText(data.text);
+      setUrlFetchState('loaded');
+      setUrlFetchMessage(`Content loaded from ${data.domain}`);
+    } catch {
+      setUrlFetchState('error');
+      setUrlFetchMessage("Couldn't fetch this URL — paste the text directly instead.");
+    }
+  };
+
   const handleRepurpose = async () => {
     if (!repurposeText.trim() || !userId) return;
-    setRepurposing(true);
+    if (repurposeMode === 'reaction' && !userReaction.trim()) return;
+    setRepurposing(true); setError(''); setExtractedPattern('');
     try {
-      const res = await fetch(`${API_URL}/api/repurpose`, {
+      const data = await fetchJson(`${API_URL}/api/repurpose`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ sourceText: repurposeText, contentType, tone, contentLength, userId }),
+        body: JSON.stringify({ sourceText: repurposeText, contentType, tone, contentLength, userId, mode: repurposeMode, userReaction }),
       });
-      const data = await res.json();
       if (data.error) throw new Error(friendlyErrorMessage(data));
+      if (data.extractedPattern) setExtractedPattern(data.extractedPattern);
       updateContent(data.content);
       setPublishResult(null);
       setActiveFlow(null);
       const label = CONTENT_TYPES.find(c => c.id === contentType)?.label || contentType;
-      addActivity('scissors', `Repurposed content as a ${label}`);
+      addActivity('scissors', data.extractedPattern
+        ? `Repurposed as a ${label} using pattern: ${data.extractedPattern}`
+        : `Repurposed content as a ${label}`);
       const { data: inserted } = await supabase.from('posts').insert({
         user_id: userId, content: data.content, topic: 'Repurposed content',
         tone, content_type: contentType, source: 'repurpose',
@@ -702,7 +1043,9 @@ export default function CreatePost() {
       }
       checkToneMatch(data.content, tone);
     } catch (err: any) {
-      addMsg('bot', `Repurpose failed: ${err.message || 'unknown error'}`, 'text');
+      const msg = err.message || 'Something went wrong — please try again.';
+      addMsg('bot', `Repurpose failed: ${msg}`, 'text');
+      setError(msg);
     }
     setRepurposing(false);
   };
@@ -800,16 +1143,30 @@ export default function CreatePost() {
 
   // ── Visual ────────────────────────────────────────────────────────────────
 
+  // Suggests a visual style that matches the post's current tone — user's
+  // own pick (if they change it) always wins for the rest of the session.
+  const TONE_STYLE_SUGGESTION: Record<string, string> = {
+    professional: 'professional', 'data-driven': 'dataviz', casual: 'illustrated', inspirational: 'bold',
+  };
+  const openVisualModal = () => {
+    if (!visualStyleAutoPicked) {
+      const suggested = TONE_STYLE_SUGGESTION[tone];
+      if (suggested) setVisualStyle(suggested);
+    }
+    setVisualModalOpen(true);
+    setVisualPreview(null);
+  };
+
   const handleGenerateVisual = async () => {
     if (!userId) return;
     setGeneratingVisual(true); setVisualError(''); setVisualPreview(null);
     try {
       const topic = (composerContent.split('\n').find(l => l.trim()) || composerContent).substring(0, 80);
-      const res = await fetch(`${API_URL}/api/generate-image`, {
+      const data = await fetchJson(`${API_URL}/api/generate-image`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ topic, format: 'square', style: visualStyle, userId }),
       });
-      const data = await res.json();
+      if (typeof data.usageToday === 'number') setImageUsage({ used: data.usageToday, limit: data.usageLimit });
       if (data.error) throw new Error(friendlyErrorMessage(data));
       setVisualPreview(data.imageUrl);
       // Default the overlay on for styles that carry a headline.
@@ -880,6 +1237,87 @@ export default function CreatePost() {
     } catch { }
   };
 
+  // ── Autosave + draft recovery ────────────────────────────────────────────
+  const draftStorageKey = userId ? `eclatale_draft_${userId}` : null;
+
+  // localStorage mirror — instant, survives a network blip; written on every
+  // real content change (not on a timer) since it's just a synchronous write.
+  useEffect(() => {
+    if (!draftStorageKey || !composerContent) return;
+    try {
+      localStorage.setItem(draftStorageKey, JSON.stringify({
+        content: composerContent, topic: lastTopic || writeTopic, tone, contentType, savedAt: Date.now(),
+      }));
+    } catch { /* storage full or disabled — silent, Supabase autosave still covers it */ }
+  }, [composerContent, draftStorageKey, tone, contentType, lastTopic, writeTopic]);
+
+  // Supabase autosave — every 30s, only if there's content and it actually
+  // changed since the last autosave (avoids hammering the DB while idle).
+  useEffect(() => {
+    if (!composerContent || !userId) return;
+    const interval = setInterval(async () => {
+      if (composerContent === lastAutosavedContent.current) return;
+      setAutosaveState('saving');
+      try {
+        if (postId) {
+          await supabase.from('posts').update({ content: composerContent, tone, content_type: contentType }).eq('id', postId);
+        } else {
+          const { data: inserted } = await supabase.from('posts').insert({
+            user_id: userId, content: composerContent, topic: lastTopic || writeTopic || 'Draft',
+            tone, content_type: contentType, source: 'auto',
+          }).select('id').single();
+          if (inserted) setPostId(inserted.id);
+        }
+        lastAutosavedContent.current = composerContent;
+        setAutosaveState('saved');
+        setTimeout(() => setAutosaveState('idle'), 2000);
+      } catch {
+        setAutosaveState('idle');
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [composerContent, userId, postId, tone, contentType, lastTopic, writeTopic]);
+
+  // On mount, offer to restore a localStorage draft newer than what's already
+  // loaded (covers a crashed tab / lost network before the Supabase write landed).
+  useEffect(() => {
+    if (!draftStorageKey) return;
+    try {
+      const raw = localStorage.getItem(draftStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.content && !composerContent) {
+        setRestorePrompt({ content: parsed.content, savedAt: parsed.savedAt });
+      }
+    } catch { /* corrupt/old entry — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftStorageKey]);
+
+  const restoreDraft = () => {
+    if (!restorePrompt) return;
+    updateContent(restorePrompt.content);
+    setRestorePrompt(null);
+  };
+
+  const dismissRestorePrompt = () => {
+    if (draftStorageKey) { try { localStorage.removeItem(draftStorageKey); } catch {} }
+    setRestorePrompt(null);
+  };
+
+  // Warn on tab close / refresh / typed-URL navigation if there's content
+  // that hasn't made it to Supabase yet (autosave runs every 30s, so this
+  // only fires in that narrow window).
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (composerContent && composerContent !== lastAutosavedContent.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [composerContent]);
+
   const handlePublish = async () => {
     if (!composerContent || !userId) return;
     setPublishing(true); setPublishResult(null);
@@ -910,6 +1348,7 @@ export default function CreatePost() {
       if (data.error) throw new Error(friendlyErrorMessage(data));
       setPublishResult({ success: true, urn: data.linkedinPostUrn });
       addActivity('send', 'Published to LinkedIn');
+      if (draftStorageKey) { try { localStorage.removeItem(draftStorageKey); } catch {} }
       fetch(`${API_URL}/api/persona-signal`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId, postId: activePostId, action: 'kept', tone, contentType, postLength: composerContent.length }),
@@ -917,6 +1356,140 @@ export default function CreatePost() {
     } catch (err: any) { setPublishResult({ error: err.message }); }
     setPublishing(false);
   };
+
+  // ── Scheduling ────────────────────────────────────────────────────────────
+
+  const openSchedulePanel = () => {
+    if (!scheduleDate) {
+      // Prefer the user's own recurring posting-times grid (set at /schedule)
+      // over the AI's best-time guess — it's an explicit preference, not an inference.
+      const slotOccurrence = nextSlotOccurrence(scheduleSlots);
+      if (slotOccurrence) {
+        setScheduleDate(slotOccurrence.toISOString().slice(0, 10));
+        setScheduleTime(`${String(slotOccurrence.getHours()).padStart(2, '0')}:${String(slotOccurrence.getMinutes()).padStart(2, '0')}`);
+      } else {
+        // Fall back to the AI's best-time recommendation: next occurrence of
+        // the recommended weekday, at the recommended time.
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const recDay = bestTime?.recommendedDays?.[0];
+        const target = new Date();
+        if (recDay) {
+          const targetIdx = DAYS.indexOf(recDay);
+          if (targetIdx !== -1) {
+            let delta = (targetIdx - target.getDay() + 7) % 7;
+            if (delta === 0) delta = 7; // today already may have passed the slot — default to next week
+            target.setDate(target.getDate() + delta);
+          }
+        } else {
+          target.setDate(target.getDate() + 1);
+        }
+        setScheduleDate(target.toISOString().slice(0, 10));
+
+        const recTime = bestTime?.recommendedTimes?.[0];
+        const match = recTime?.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)/i);
+        if (match) {
+          let h = parseInt(match[1], 10);
+          const m = match[2] ? parseInt(match[2], 10) : 0;
+          if (/pm/i.test(match[3]) && h !== 12) h += 12;
+          if (/am/i.test(match[3]) && h === 12) h = 0;
+          setScheduleTime(`${String(h).padStart(2, '0')}:${String(Math.round(m / 30) * 30).padStart(2, '0')}`);
+        } else {
+          setScheduleTime('08:00');
+        }
+      }
+    }
+    setScheduleOpen(o => !o);
+  };
+
+  const handleSchedulePost = async () => {
+    if (!composerContent || !userId || !scheduleDate || !scheduleTime) return;
+    setScheduling(true); setScheduleErr('');
+    try {
+      const scheduledFor = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      if (scheduledFor.getTime() < Date.now()) throw new Error('Pick a time in the future.');
+
+      let activePostId = postId;
+      if (activePostId) {
+        await supabase.from('posts').update({ content: composerContent, tone, content_type: contentType }).eq('id', activePostId);
+      } else {
+        const { data: inserted } = await supabase.from('posts').insert({
+          user_id: userId, content: composerContent, topic: lastTopic || writeTopic || 'Draft',
+          tone, content_type: contentType, source: 'auto',
+        }).select('id').single();
+        if (inserted) { activePostId = inserted.id; setPostId(inserted.id); }
+      }
+      if (!activePostId) throw new Error('Failed to save post. Please try again.');
+
+      const data = await fetchJson(`${API_URL}/api/schedule/create`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ userId, postId: activePostId, scheduledFor: scheduledFor.toISOString() }),
+      });
+      if (data.error) throw new Error(friendlyErrorMessage(data));
+
+      setScheduleConfirmedFor(scheduledFor.toISOString());
+      setScheduleOpen(false);
+      addActivity('save', `Scheduled for ${scheduledFor.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })} at ${scheduledFor.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`);
+    } catch (err: any) {
+      setScheduleErr(err.message || 'Failed to schedule post.');
+    }
+    setScheduling(false);
+  };
+
+  // ── Global keyboard shortcuts ────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const mod = e.metaKey || e.ctrlKey;
+
+      if (mod && e.key === 'Enter') {
+        e.preventDefault();
+        if (composerContent && !publishing) handlePublish();
+        return;
+      }
+      if (mod && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        if (composerContent) handleSaveDraft();
+        return;
+      }
+      if (mod && (e.key === 'g' || e.key === 'G')) {
+        e.preventDefault();
+        if (activeFlow === 'write' && writeTopic.trim()) handleWriteGenerate();
+        else if (!activeFlow && !ideasView) handleCardWrite();
+        return;
+      }
+      if (mod && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('aria:open'));
+        return;
+      }
+      if (mod && (e.key === 'z' || e.key === 'Z') && !typing) {
+        e.preventDefault();
+        if (e.shiftKey) handleRedo(); else handleUndo();
+        return;
+      }
+      if (mod && (e.key === 'y' || e.key === 'Y') && !typing) {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (shortcutsOpen) { setShortcutsOpen(false); return; }
+        if (visualModalOpen) { closeVisualModal(); return; }
+        if (voiceEditOpen) { closeVoiceEdit(); return; }
+        if (toneOpen) { setToneOpen(false); return; }
+        if (toneMatchOpen) { setToneMatchOpen(false); return; }
+        if (activeFlow || ideasView) { closeActionPanel(); return; }
+        return;
+      }
+      if (e.key === '?' && !typing) {
+        e.preventDefault();
+        setShortcutsOpen(o => !o);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [composerContent, publishing, activeFlow, writeTopic, ideasView, shortcutsOpen, visualModalOpen, voiceEditOpen, toneOpen, toneMatchOpen, contentHistory, redoStack]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
 
@@ -954,20 +1527,24 @@ export default function CreatePost() {
         </div>
       </nav>
 
-      {/* Mobile tab switcher */}
-      <div className="md:hidden flex-shrink-0 flex border-b border-[rgba(124,92,252,0.06)] bg-white/60">
-        <button onClick={() => setMobileView('compose')}
-          className={`flex-1 py-2.5 text-xs font-semibold transition-all ${mobileView === 'compose' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-brand-muted'}`}>Compose</button>
-        <button onClick={() => setMobileView('assistant')}
-          className={`flex-1 py-2.5 text-xs font-semibold transition-all ${mobileView === 'assistant' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-brand-muted'}`}>AI Assistant</button>
+      {/* Mobile voice-status row — replaces desktop's AI Assistant panel header on small screens */}
+      <div className="md:hidden flex-shrink-0 h-11 px-4 flex items-center justify-between border-b border-[rgba(124,92,252,0.06)] bg-white/60">
+        {hasPersona ? (
+          <span className="badge bg-[rgba(6,214,160,0.08)] text-brand-teal text-[10px] !py-1"><Check size={10} /> In your voice</span>
+        ) : (
+          <a href="/persona-setup" className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[10px] !py-1">Set up voice</a>
+        )}
+        {hasPersona && (
+          <button onClick={openVoiceEdit} className="text-[11px] font-semibold text-brand-purple">Edit voice →</button>
+        )}
       </div>
 
       {/* Centered workspace — floats on page bg on wide screens */}
-      <div className="flex-1 min-h-0 overflow-hidden flex items-stretch justify-center md:px-6 md:py-5">
-        <div className="relative w-full max-w-[960px] flex min-h-0 bg-white rounded-none md:rounded-2xl md:border md:border-[rgba(0,0,0,0.08)] md:shadow-[0_4px_32px_rgba(0,0,0,0.1)] overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden flex items-stretch justify-center md:px-6 md:py-5 pb-14 md:pb-0">
+        <div className="relative w-full max-w-[1320px] flex min-h-0 bg-white rounded-none md:rounded-2xl md:border md:border-[rgba(0,0,0,0.08)] md:shadow-[0_4px_32px_rgba(0,0,0,0.1)] overflow-hidden">
 
-        {/* ── LEFT: AI ASSISTANT ────────────────────────────────────────────── */}
-        <aside className={`${mobileView === 'assistant' ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-[340px] flex-shrink-0 border-r border-[rgba(124,92,252,0.07)] bg-white/50 overflow-hidden`}>
+        {/* ── LEFT: AI ASSISTANT — desktop/tablet only; mobile uses the bottom nav instead ── */}
+        <aside className="hidden md:flex flex-col w-full md:w-[300px] lg:w-[380px] flex-shrink-0 border-r border-[rgba(124,92,252,0.07)] bg-white/50 overflow-hidden">
 
           {/* Header */}
           <div className="flex-shrink-0 px-5 py-3.5 border-b border-[rgba(124,92,252,0.06)] flex items-center justify-between">
@@ -1102,7 +1679,7 @@ export default function CreatePost() {
         <div className="hidden md:block w-px flex-shrink-0" style={{ background: 'linear-gradient(to bottom,transparent,rgba(124,92,252,0.1) 20%,rgba(124,92,252,0.1) 80%,transparent)' }} />
 
         {/* ── RIGHT: POST COMPOSER ───────────────────────────────────────────── */}
-        <main className={`${mobileView === 'compose' ? 'flex' : 'hidden'} md:flex flex-col flex-1 min-w-0 overflow-hidden`}>
+        <main className="flex flex-col flex-1 min-w-0 lg:min-w-[600px] overflow-hidden">
 
           {/* Refinement input — top of right panel, directly above content */}
           <div className="flex-shrink-0 px-4 py-2 border-b border-[rgba(0,0,0,0.05)] bg-white/70">
@@ -1123,7 +1700,7 @@ export default function CreatePost() {
                 {(generating || refining) ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
               </button>
             </div>
-            {error && <p className="text-[10px] text-red-500 mt-1 px-1">{error}</p>}
+            {error && activeFlow !== 'write' && activeFlow !== 'repurpose' && <p className="text-[10px] text-red-500 mt-1 px-1" role="alert">{error}</p>}
           </div>
 
           {/* Single-row header: avatar · name · tone */}
@@ -1168,14 +1745,14 @@ export default function CreatePost() {
                 <ChevronDown size={10} className={`transition-transform duration-200 ${toneOpen ? 'rotate-180' : ''}`} />
               </button>
               {toneOpen && (
-                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-2xl shadow-brand-md border border-[rgba(124,92,252,0.08)] p-2 w-52 z-30 animate-fadeIn">
+                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-2xl shadow-brand-md border border-[rgba(124,92,252,0.08)] p-2 w-52 z-30 animate-fadeIn" role="radiogroup" aria-label="Tone" onKeyDown={handleOptionGroupKeyDown}>
                   {composerContent && (
                     <p className="text-[10px] text-brand-muted px-2 pb-2 border-b border-[rgba(124,92,252,0.06)] mb-1 leading-relaxed">
                       Selecting a tone will rewrite your current draft.
                     </p>
                   )}
                   {TONES.map(t => (
-                    <button key={t.id} onClick={() => handleToneShift(t.id)}
+                    <button key={t.id} onClick={() => handleToneShift(t.id)} role="radio" aria-checked={tone === t.id}
                       className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 ${
                         tone === t.id ? 'bg-[rgba(124,92,252,0.06)] text-brand-purple' : 'text-brand-dark hover:bg-[rgba(124,92,252,0.04)]'
                       }`}>
@@ -1214,7 +1791,7 @@ export default function CreatePost() {
             <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[12px] font-bold text-brand-dark">Topic ideas for you</span>
-                <button onClick={closeActionPanel}
+                <button onClick={closeActionPanel} aria-label="Close panel"
                   className="p-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
                   <X size={15} />
                 </button>
@@ -1283,7 +1860,7 @@ export default function CreatePost() {
             <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
               <div className="flex items-center justify-between mb-5">
                 <span className="text-[12px] font-bold text-brand-dark">Write a post</span>
-                <button onClick={closeActionPanel}
+                <button onClick={closeActionPanel} aria-label="Close panel"
                   className="p-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
                   <X size={15} />
                 </button>
@@ -1314,7 +1891,7 @@ export default function CreatePost() {
                         {nudgeApplied ? '✓ Will apply to this post' : 'Yes, try it →'}
                       </button>
                     </div>
-                    <button onClick={() => setNudgeDismissed(true)}
+                    <button onClick={() => setNudgeDismissed(true)} aria-label="Dismiss suggestion"
                       className="text-brand-muted hover:text-brand-purple flex-shrink-0 p-0.5">
                       <X size={13} />
                     </button>
@@ -1323,12 +1900,56 @@ export default function CreatePost() {
                 {contentType === 'linkedin-post' && (
                   <LengthSelector value={contentLength} onChange={setContentLength} />
                 )}
+                <div>
+                  <p className="text-[12px] font-semibold text-brand-dark mb-2">Angle <span className="text-brand-muted font-normal">(optional, up to 3)</span></p>
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-label="Angle tags">
+                    {ANGLE_TAGS.map(tag => (
+                      <button key={tag} type="button" onClick={() => toggleAngleTag(tag)} aria-pressed={angleTags.includes(tag)}
+                        className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-full border transition-colors ${
+                          angleTags.includes(tag)
+                            ? 'border-brand-purple bg-[rgba(124,92,252,0.08)] text-brand-purple'
+                            : 'border-[rgba(0,0,0,0.08)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-purple'
+                        }`}>
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-brand-dark mb-2">Structure <span className="text-brand-muted font-normal">(optional)</span></p>
+                  <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label="Structure framework">
+                    {STRUCTURE_TAGS.map(s => (
+                      <button key={s.id} type="button" role="radio" aria-checked={structureTag === s.id} title={s.desc}
+                        onClick={() => setStructureTag(prev => prev === s.id ? null : s.id)}
+                        className={`text-[11px] font-bold py-1.5 rounded-lg border transition-colors ${
+                          structureTag === s.id
+                            ? 'border-brand-purple bg-[rgba(124,92,252,0.08)] text-brand-purple'
+                            : 'border-[rgba(0,0,0,0.08)] text-brand-muted hover:border-brand-purple/40 hover:text-brand-purple'
+                        }`}>
+                        {s.id}
+                      </button>
+                    ))}
+                  </div>
+                  {structureTag && <p className="text-[10px] text-brand-muted mt-1.5">{STRUCTURE_TAGS.find(s => s.id === structureTag)?.desc}</p>}
+                </div>
                 <button onClick={handleWriteGenerate} disabled={!writeTopic.trim() || generating}
-                  className="btn-primary w-full !py-3 text-sm">
+                  className="btn-primary w-full !py-3 text-sm" aria-live="polite">
                   {generating
                     ? <><Loader2 size={14} className="animate-spin" /> Generating…</>
                     : <><Sparkles size={14} /> Generate post</>}
                 </button>
+                {generating && generationStage && (
+                  <p className="text-[11px] text-brand-muted text-center mt-2 animate-fadeIn" aria-live="polite">{generationStage}</p>
+                )}
+                {error && (
+                  <div className="mt-3 p-3 rounded-xl bg-[rgba(239,68,68,0.06)] border border-red-100 text-center" role="alert" aria-live="assertive">
+                    <p className="text-[12px] text-red-600 font-medium mb-2">{error}</p>
+                    <button onClick={() => handleGenerate(lastTopicAttempt || writeTopic)}
+                      className="text-[11px] font-semibold text-brand-purple hover:underline">
+                      Try again
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1338,7 +1959,7 @@ export default function CreatePost() {
             <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
               <div className="flex items-center justify-between mb-5">
                 <span className="text-[12px] font-bold text-brand-dark">Repurpose content</span>
-                <button onClick={closeActionPanel}
+                <button onClick={closeActionPanel} aria-label="Close panel"
                   className="p-1 rounded-lg hover:bg-[rgba(124,92,252,0.06)] transition-colors text-brand-muted hover:text-brand-purple">
                   <X size={15} />
                 </button>
@@ -1349,21 +1970,72 @@ export default function CreatePost() {
                   <p className="text-[12px] text-brand-muted mb-3 leading-relaxed">Article, newsletter, transcript, tweet thread — I'll rewrite it as a {CONTENT_TYPES.find(c => c.id === contentType)?.label || 'LinkedIn Post'} in your voice.</p>
                   <textarea
                     value={repurposeText}
-                    onChange={e => setRepurposeText(e.target.value)}
-                    placeholder="Paste article, newsletter, transcript, or thread…"
+                    onChange={e => { setRepurposeText(e.target.value); if (urlFetchState !== 'idle') setUrlFetchState('idle'); }}
+                    onBlur={e => tryFetchUrl(e.target.value)}
+                    placeholder="Paste an article, URL, newsletter, transcript, or thread…"
                     className="input !text-[13px] !min-h-[180px] !resize-none w-full !leading-relaxed"
                     autoFocus
                   />
+                  {urlFetchState !== 'idle' && (
+                    <p className={`text-[11px] mt-1.5 flex items-center gap-1.5 ${urlFetchState === 'error' ? 'text-red-500' : urlFetchState === 'fetching' ? 'text-brand-muted' : 'text-brand-teal'}`} aria-live="polite">
+                      {urlFetchState === 'fetching' && <Loader2 size={11} className="animate-spin" />}
+                      {urlFetchState === 'loaded' && <Check size={11} />}
+                      {urlFetchMessage}
+                    </p>
+                  )}
                 </div>
+
+                <div>
+                  <p className="text-[12px] font-semibold text-brand-dark mb-2">Transform mode</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'voice' as const, label: 'In my voice', desc: 'Reframe as my take' },
+                      { id: 'pattern' as const, label: 'Extract pattern', desc: 'Reuse the structure' },
+                      { id: 'reaction' as const, label: 'My reaction', desc: 'Build on my opinion' },
+                    ].map(m => (
+                      <button key={m.id} type="button" onClick={() => setRepurposeMode(m.id)}
+                        className={`text-left rounded-xl border p-2.5 transition-all ${
+                          repurposeMode === m.id ? 'border-brand-purple bg-[rgba(124,92,252,0.06)]' : 'border-[rgba(0,0,0,0.08)] hover:border-brand-purple/40'
+                        }`}>
+                        <div className="text-[11px] font-bold text-brand-dark">{m.label}</div>
+                        <div className="text-[9.5px] text-brand-muted mt-0.5 leading-snug">{m.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {repurposeMode === 'reaction' && (
+                  <div>
+                    <label className="text-[12px] font-semibold text-brand-dark mb-1.5 block">What's your take on this?</label>
+                    <textarea
+                      value={userReaction}
+                      onChange={e => setUserReaction(e.target.value)}
+                      placeholder="e.g. I actually disagree — here's why…"
+                      className="input !text-[13px] !min-h-[70px] !resize-none w-full !leading-relaxed"
+                    />
+                  </div>
+                )}
+
                 {contentType === 'linkedin-post' && (
                   <LengthSelector value={contentLength} onChange={setContentLength} />
                 )}
-                <button onClick={handleRepurpose} disabled={!repurposeText.trim() || repurposing}
-                  className="btn-primary w-full !py-3 text-sm">
+                <button onClick={handleRepurpose} disabled={!repurposeText.trim() || repurposing || (repurposeMode === 'reaction' && !userReaction.trim())}
+                  className="btn-primary w-full !py-3 text-sm" aria-live="polite">
                   {repurposing
                     ? <><Loader2 size={14} className="animate-spin" /> Repurposing…</>
                     : <><Scissors size={14} /> Repurpose this</>}
                 </button>
+                {repurposing && generationStage && (
+                  <p className="text-[11px] text-brand-muted text-center mt-2 animate-fadeIn" aria-live="polite">{generationStage}</p>
+                )}
+                {error && (
+                  <div className="mt-3 p-3 rounded-xl bg-[rgba(239,68,68,0.06)] border border-red-100 text-center" role="alert" aria-live="assertive">
+                    <p className="text-[12px] text-red-600 font-medium mb-2">{error}</p>
+                    <button onClick={handleRepurpose} className="text-[11px] font-semibold text-brand-purple hover:underline">
+                      Try again
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1393,7 +2065,162 @@ export default function CreatePost() {
                 </div>
               )}
 
-              <div className="px-5 pt-5 pb-2">
+              {/* Edit / Preview toggle */}
+              <div className="px-5 pt-3 flex items-center justify-between">
+                <div className="flex items-center gap-1 bg-[rgba(0,0,0,0.03)] rounded-full p-0.5" role="tablist" aria-label="Composer view">
+                  <button role="tab" aria-selected={composerView === 'edit'} onClick={() => setComposerView('edit')}
+                    className={`text-[11px] font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors ${
+                      composerView === 'edit' ? 'bg-white text-brand-dark shadow-sm' : 'text-brand-muted hover:text-brand-dark'
+                    }`}>
+                    <PenLine size={12} /> Edit
+                  </button>
+                  <button role="tab" aria-selected={composerView === 'preview'} onClick={() => setComposerView('preview')}
+                    className={`text-[11px] font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors ${
+                      composerView === 'preview' ? 'bg-white text-brand-dark shadow-sm' : 'text-brand-muted hover:text-brand-dark'
+                    }`}>
+                    <Eye size={12} /> Preview
+                  </button>
+                </div>
+                {composerView === 'preview' && (
+                  <div className="flex items-center gap-1 bg-[rgba(0,0,0,0.03)] rounded-full p-0.5">
+                    <button onClick={() => setPreviewDevice('desktop')} aria-label="Preview as desktop" aria-pressed={previewDevice === 'desktop'}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                        previewDevice === 'desktop' ? 'bg-white text-brand-purple shadow-sm' : 'text-brand-muted hover:text-brand-dark'
+                      }`}>
+                      <Monitor size={13} />
+                    </button>
+                    <button onClick={() => setPreviewDevice('mobile')} aria-label="Preview as mobile" aria-pressed={previewDevice === 'mobile'}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                        previewDevice === 'mobile' ? 'bg-white text-brand-purple shadow-sm' : 'text-brand-muted hover:text-brand-dark'
+                      }`}>
+                      <Smartphone size={13} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {composerView === 'edit' && (
+                <div className="px-5 pt-2 flex items-center gap-1.5">
+                  <div className="relative" ref={richTextRef}>
+                    <button onClick={() => { setSnippetsOpen(false); setRichTextOpen(o => !o); }}
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-lg text-brand-muted hover:text-brand-purple hover:bg-[rgba(124,92,252,0.06)] transition-colors flex items-center gap-1">
+                      𝐀𝐚 Rich text
+                    </button>
+                    {richTextOpen && (
+                      <div className="absolute left-0 top-full mt-1.5 w-56 max-h-72 overflow-y-auto bg-white rounded-2xl shadow-brand-md border border-[rgba(124,92,252,0.08)] p-1.5 z-30 animate-fadeIn">
+                        {RICH_TEXT_STYLES.map(s => (
+                          <button key={s.id} onClick={() => applyRichTextStyle(s.id)}
+                            className="w-full text-left px-3 py-2 rounded-xl text-[13px] text-brand-dark hover:bg-[rgba(124,92,252,0.06)] transition-colors flex items-center justify-between gap-2">
+                            <span className="truncate">{s.apply('Sample Text')}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative" ref={snippetsRef}>
+                    <button onClick={() => { setRichTextOpen(false); setSnippetsOpen(o => !o); }}
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-lg text-brand-muted hover:text-brand-purple hover:bg-[rgba(124,92,252,0.06)] transition-colors flex items-center gap-1">
+                      <FileText size={12} /> Snippets
+                    </button>
+                    {snippetsOpen && (
+                      <div className="absolute left-0 top-full mt-1.5 w-72 max-h-80 overflow-y-auto bg-white rounded-2xl shadow-brand-md border border-[rgba(124,92,252,0.08)] p-2.5 z-30 animate-fadeIn">
+                        <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-[rgba(0,0,0,0.05)]">
+                          <input type="text" value={newSnippetLabel} onChange={e => setNewSnippetLabel(e.target.value)}
+                            placeholder="Save current draft as…" className="input !text-[11px] !py-1.5 flex-1" />
+                          <button onClick={saveCurrentAsSnippet} disabled={!composerContent.trim() || !newSnippetLabel.trim()}
+                            className="text-[11px] font-semibold text-brand-purple disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 px-1">
+                            Save
+                          </button>
+                        </div>
+                        {snippets.length === 0 ? (
+                          <p className="text-[11px] text-brand-muted px-1 py-2">No snippets yet — write a hook, CTA, or signature once and reuse it everywhere.</p>
+                        ) : (
+                          snippets.map(sn => (
+                            <div key={sn.id} className="group flex items-start gap-1.5 px-1.5 py-1.5 rounded-xl hover:bg-[rgba(124,92,252,0.04)]">
+                              <button onClick={() => insertSnippet(sn.content)} className="flex-1 min-w-0 text-left">
+                                <div className="text-[11px] font-semibold text-brand-dark truncate">{sn.label}</div>
+                                <div className="text-[10px] text-brand-muted line-clamp-1">{sn.content}</div>
+                              </button>
+                              <button onClick={() => deleteSnippet(sn.id)} aria-label={`Delete snippet ${sn.label}`}
+                                className="opacity-0 group-hover:opacity-100 text-brand-muted hover:text-red-500 transition-opacity flex-shrink-0 p-0.5">
+                                <X size={11} />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {!pollData && (
+                    <button onClick={() => setPollData({ question: '', options: ['', ''], duration: '1 week' })}
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-lg text-brand-muted hover:text-brand-purple hover:bg-[rgba(124,92,252,0.06)] transition-colors flex items-center gap-1">
+                      📊 Poll
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {composerView === 'edit' && pollData && (
+                <div className="mx-5 mt-2 p-3.5 rounded-2xl border border-[rgba(124,92,252,0.15)] bg-[rgba(124,92,252,0.03)]">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-[11px] font-bold text-brand-dark flex items-center gap-1.5">📊 Poll</span>
+                    <button onClick={() => setPollData(null)} aria-label="Remove poll" className="text-brand-muted hover:text-red-500 p-0.5">
+                      <X size={13} />
+                    </button>
+                  </div>
+                  <input type="text" value={pollData.question} onChange={e => setPollData(p => p && { ...p, question: e.target.value })}
+                    placeholder="Ask a question…" maxLength={140}
+                    className="input !text-[13px] !py-2 w-full mb-2" />
+                  <div className="space-y-1.5 mb-2">
+                    {pollData.options.map((opt, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <input type="text" value={opt}
+                          onChange={e => setPollData(p => p && { ...p, options: p.options.map((o, oi) => oi === i ? e.target.value : o) })}
+                          placeholder={`Option ${i + 1}`} maxLength={30}
+                          className="input !text-[12px] !py-1.5 flex-1" />
+                        {pollData.options.length > 2 && (
+                          <button onClick={() => setPollData(p => p && { ...p, options: p.options.filter((_, oi) => oi !== i) })}
+                            aria-label={`Remove option ${i + 1}`} className="text-brand-muted hover:text-red-500 p-1 flex-shrink-0">
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    {pollData.options.length < 4 ? (
+                      <button onClick={() => setPollData(p => p && { ...p, options: [...p.options, ''] })}
+                        className="text-[11px] font-semibold text-brand-purple hover:underline">
+                        + Add option
+                      </button>
+                    ) : <span />}
+                    <select value={pollData.duration} onChange={e => setPollData(p => p && { ...p, duration: e.target.value })}
+                      className="text-[11px] font-semibold text-brand-muted bg-transparent border-0 focus:outline-none cursor-pointer">
+                      {['1 day', '3 days', '1 week', '2 weeks'].map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <p className="text-[10px] text-brand-muted mt-2 leading-relaxed">
+                    LinkedIn's public API doesn't support publishing polls yet — this shows up in your preview as a draft aid. Post it manually on LinkedIn, or remove it to publish the rest through Eclatale.
+                  </p>
+                </div>
+              )}
+
+              {composerView === 'preview' ? (
+                <div className="px-5 pt-4 pb-6">
+                  <LinkedInPreviewCard
+                    content={composerContent}
+                    imageUrl={attachedImage}
+                    userName={userName}
+                    userRole={userRole}
+                    userAvatar={userAvatar}
+                    userInitials={userInitials}
+                    device={previewDevice}
+                    poll={pollData}
+                  />
+                </div>
+              ) : (
+              <>
+              <div className="px-5 pt-3 pb-2">
                 {adapting ? (
                   <div className="min-h-[200px] flex flex-col items-center justify-center gap-3">
                     <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
@@ -1405,8 +2232,20 @@ export default function CreatePost() {
                   </div>
                 ) : (
                   <textarea
+                    ref={composerTextareaRef}
                     value={composerContent}
                     onChange={e => setComposerContent(e.target.value)}
+                    onKeyDown={e => {
+                      // Content creators use Tab to insert indentation, not to move focus.
+                      if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const el = e.currentTarget;
+                        const start = el.selectionStart, end = el.selectionEnd;
+                        const next = composerContent.slice(0, start) + '  ' + composerContent.slice(end);
+                        setComposerContent(next);
+                        requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = start + 2; });
+                      }
+                    }}
                     placeholder={composerPlaceholder}
                     className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-[#9CA3AF] font-[inherit] min-h-[220px] max-h-[520px]"
                     style={{ caretColor: '#7C5CFC' }}
@@ -1432,11 +2271,11 @@ export default function CreatePost() {
                         className="px-2.5 py-1.5 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm flex items-center gap-1 min-h-[32px]">
                         {showTextOverlay ? <EyeOff size={9} /> : <Eye size={9} />} Text
                       </button>
-                      <button onClick={() => { setVisualModalOpen(true); setVisualPreview(null); }}
+                      <button onClick={openVisualModal}
                         className="px-2.5 py-1.5 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-sm min-h-[32px]">
                         Change
                       </button>
-                      <button onClick={() => setAttachedImage(null)}
+                      <button onClick={() => setAttachedImage(null)} aria-label="Remove visual"
                         className="w-8 h-8 rounded-lg bg-black/60 text-white flex items-center justify-center backdrop-blur-sm">
                         <X size={11} />
                       </button>
@@ -1444,7 +2283,7 @@ export default function CreatePost() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => composerContent ? setVisualModalOpen(true) : undefined}
+                    onClick={() => composerContent ? openVisualModal() : undefined}
                     disabled={!composerContent}
                     className={`w-full border-2 border-dashed rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[12px] font-medium ${
                       composerContent
@@ -1456,6 +2295,8 @@ export default function CreatePost() {
                   </button>
                 )}
               </div>
+              </>
+              )}
             </div>
           )}
 
@@ -1463,6 +2304,13 @@ export default function CreatePost() {
           {!ideasView && activeFlow !== 'write' && activeFlow !== 'repurpose' && (
             <>
               <div className="flex-shrink-0 px-5 py-2.5 flex items-center gap-3 border-t border-[rgba(124,92,252,0.04)] bg-white/20">
+                {autosaveState !== 'idle' && (
+                  <span className="text-[10px] text-brand-muted flex items-center gap-1 flex-shrink-0 animate-fadeIn" aria-live="polite">
+                    {autosaveState === 'saving'
+                      ? <><Loader2 size={9} className="animate-spin" /> Saving…</>
+                      : <><Check size={9} className="text-brand-teal" /> Saved</>}
+                  </span>
+                )}
                 <div className="flex-1 h-1 rounded-full bg-[rgba(124,92,252,0.06)]">
                   <div className={`h-full rounded-full transition-all duration-300 ${barColor}`} style={{ width: `${charPct}%` }} />
                 </div>
@@ -1470,8 +2318,13 @@ export default function CreatePost() {
                   {charLen.toLocaleString()} / {CHAR_LIMIT.toLocaleString()}
                 </span>
                 {contentHistory.length > 0 && (
-                  <button onClick={handleUndo} className="text-[11px] text-brand-purple flex items-center gap-1 hover:underline flex-shrink-0 font-medium">
+                  <button onClick={handleUndo} aria-label="Undo" className="text-[11px] text-brand-purple flex items-center gap-1 hover:underline flex-shrink-0 font-medium">
                     <Undo2 size={11} /> Undo
+                  </button>
+                )}
+                {redoStack.length > 0 && (
+                  <button onClick={handleRedo} aria-label="Redo" className="text-[11px] text-brand-purple flex items-center gap-1 hover:underline flex-shrink-0 font-medium">
+                    <Redo2 size={11} /> Redo
                   </button>
                 )}
               </div>
@@ -1618,58 +2471,79 @@ export default function CreatePost() {
               )}
 
               <div className="flex-shrink-0 px-3 sm:px-5 py-3 safe-bottom border-t border-[rgba(124,92,252,0.06)] bg-white/40 flex items-center gap-1.5 sm:gap-2 overflow-x-auto">
-                <button onClick={handleCopy} disabled={!composerContent}
+                <button onClick={handleCopy} disabled={!composerContent} aria-label={copied ? 'Copied' : 'Copy'}
                   className="btn-ghost text-xs !py-2 !px-2.5 sm:!px-3 disabled:opacity-40 flex-shrink-0">
                   {copied ? <><Check size={12} className="text-brand-teal" /> <span className="hidden sm:inline">Copied</span></> : <><Copy size={12} /> <span className="hidden sm:inline">Copy</span></>}
                 </button>
-                <button onClick={handleSaveDraft} disabled={!composerContent}
+                <button onClick={handleSaveDraft} disabled={!composerContent} aria-label={saved ? 'Saved' : 'Save draft'}
                   className="btn-ghost text-xs !py-2 !px-2.5 sm:!px-3 disabled:opacity-40 flex-shrink-0">
                   {saved ? <><Check size={12} className="text-brand-teal" /> <span className="hidden sm:inline">Saved</span></> : <><FileText size={12} /> <span className="hidden sm:inline">Save Draft</span></>}
                 </button>
                 <div className="relative flex-shrink-0" ref={scheduleRef}>
-                  <button disabled={!composerContent} onClick={() => setScheduleOpen(o => !o)}
+                  <button disabled={!composerContent} onClick={openSchedulePanel}
+                    aria-label={scheduleConfirmedFor ? `Scheduled for ${new Date(scheduleConfirmedFor).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}` : 'Schedule'}
                     className="btn-ghost text-xs !py-2 !px-2.5 sm:!px-3 disabled:opacity-40">
-                    <Calendar size={12} /> <span className="hidden sm:inline">{scheduleConfirmed && scheduleDay ? `${scheduleDay}, ${scheduleTime}` : 'Schedule'}</span>
+                    <Calendar size={12} /> <span className="hidden sm:inline">
+                      {scheduleConfirmedFor ? new Date(scheduleConfirmedFor).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : 'Schedule'}
+                    </span>
                   </button>
                   {scheduleOpen && (
-                    <div className="fixed left-4 right-4 bottom-20 sm:absolute sm:bottom-full sm:left-0 sm:right-auto sm:mb-2 sm:w-72 bg-white rounded-2xl modal-shadow border border-[rgba(124,92,252,0.1)] p-4 z-50 animate-fadeIn">
+                    <div className="fixed left-4 right-4 bottom-20 sm:left-auto sm:right-4 sm:w-80 bg-white rounded-2xl modal-shadow border border-[rgba(124,92,252,0.1)] p-4 z-50 animate-fadeIn">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Calendar size={12} className="text-brand-purple" />
                         <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">Schedule</span>
                       </div>
                       {bestTime && bestTime.recommendedDays.length > 0 && (
                         <p className="text-[11px] text-brand-purple bg-[rgba(124,92,252,0.05)] rounded-lg px-2.5 py-2 mb-3 leading-relaxed">
-                          Best time ({bestTime.basedOn}): <span className="font-semibold">{bestTime.recommendedDays.join(', ')}</span> at <span className="font-semibold">{bestTime.recommendedTimes.join(', ')}</span>. Pre-filled below.
+                          Best time ({bestTime.basedOn}): <span className="font-semibold">{bestTime.recommendedDays[0]}</span> at <span className="font-semibold">{bestTime.recommendedTimes[0]}</span> — pre-filled below.
                         </p>
                       )}
-                      <label className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-1 block">Day</label>
-                      <select value={scheduleDay} onChange={e => { setScheduleDay(e.target.value); setScheduleConfirmed(false); }}
-                        className="input !text-sm !py-2 mb-2">
-                        <option value="">Select a day…</option>
-                        {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
-                      <label className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-1 block">Time window</label>
-                      <input type="text" value={scheduleTime} onChange={e => { setScheduleTime(e.target.value); setScheduleConfirmed(false); }}
-                        placeholder="e.g. 8:00 AM" className="input !text-sm !py-2 mb-3" />
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-1 block">Date</label>
+                          <input type="date" value={scheduleDate}
+                            min={new Date().toISOString().slice(0, 10)}
+                            max={new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+                            onChange={e => { setScheduleDate(e.target.value); setScheduleConfirmedFor(null); }}
+                            className="input !text-sm !py-2" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-1 block">Time</label>
+                          <input type="time" step={1800} value={scheduleTime}
+                            onChange={e => { setScheduleTime(e.target.value); setScheduleConfirmedFor(null); }}
+                            className="input !text-sm !py-2" />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-brand-muted mb-1">Your local time zone ({Intl.DateTimeFormat().resolvedOptions().timeZone})</p>
+                      <p className="text-[10px] text-brand-muted mb-3">
+                        {scheduleSlots.length > 0 ? 'Prefilled from your ' : 'Set '}
+                        <a href="/schedule" className="text-brand-purple hover:underline">posting times</a>
+                        {scheduleSlots.length > 0 ? '.' : ' to auto-fill this next time.'}
+                      </p>
+                      {scheduleErr && <p className="text-[11px] text-red-500 mb-2" role="alert">{scheduleErr}</p>}
                       <button
-                        onClick={() => { setScheduleConfirmed(true); setScheduleOpen(false); addActivity('save', `Scheduled for ${scheduleDay || 'chosen day'}, ${scheduleTime || 'chosen time'}`); }}
-                        disabled={!scheduleDay || !scheduleTime}
+                        onClick={handleSchedulePost}
+                        disabled={!scheduleDate || !scheduleTime || scheduling}
                         className="btn-primary w-full text-xs !py-2 disabled:opacity-40">
-                        <Check size={12} /> Set schedule
+                        {scheduling ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                        {scheduling ? 'Scheduling…' : `Schedule for ${scheduleDate && scheduleTime ? new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '…'}`}
                       </button>
-                      <p className="text-[10px] text-brand-muted mt-2 leading-relaxed">Auto-publishing at the scheduled time is coming soon. For now this saves your intended slot.</p>
                     </div>
                   )}
                 </div>
                 <div className="flex-1" />
                 <div className="flex flex-col items-end gap-1">
                   <button onClick={handlePublish}
-                    disabled={!composerContent || publishing || !!publishResult?.success}
+                    disabled={!composerContent || publishing || !!publishResult?.success || !!pollData}
+                    title={pollData ? "Remove the poll to publish — LinkedIn's public API doesn't support publishing polls yet" : undefined}
                     className="btn-primary !py-2.5 !px-5 text-xs disabled:opacity-40 shadow-[0_2px_12px_rgba(124,92,252,0.25)]">
                     {publishing ? <><Loader2 size={13} className="animate-spin" /> Publishing…</>
                       : publishResult?.success ? <><Check size={13} /> Published!</>
                       : <><Send size={13} /> Post to LinkedIn</>}
                   </button>
+                  {pollData && !publishResult?.success && (
+                    <p className="text-[10px] text-amber-600 text-right max-w-[180px] leading-snug">Remove the poll to publish, or post it manually on LinkedIn</p>
+                  )}
                   {authScore && !publishResult?.success && authScore.overallScore < 80 && (
                     <div className="relative" ref={postSuggestionsRef}>
                       <button onClick={() => setPostSuggestionsOpen(o => !o)}
@@ -1706,7 +2580,7 @@ export default function CreatePost() {
                           className="text-[10px] font-semibold text-brand-purple hover:underline">
                           💡 Add a source to boost credibility · See references ↑
                         </button>
-                        <button onClick={() => setReferenceHintDismissed(true)} className="text-brand-muted hover:text-brand-dark">
+                        <button onClick={() => setReferenceHintDismissed(true)} aria-label="Dismiss" className="text-brand-muted hover:text-brand-dark">
                           <X size={10} />
                         </button>
                       </div>
@@ -1841,10 +2715,10 @@ export default function CreatePost() {
         </div>
       </div>
 
-      {/* ── VISUAL CREATION MODAL ─────────────────────────────────────────────── */}
+      {/* ── VISUAL CREATION PANEL — bottom sheet on mobile, right-side drawer on desktop ── */}
       {visualModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn">
-          <div className="bg-white rounded-t-4xl sm:rounded-4xl modal-shadow w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-stretch justify-end animate-fadeIn" onClick={closeVisualModal}>
+          <div onClick={e => e.stopPropagation()} className="bg-white rounded-t-4xl sm:rounded-none sm:rounded-l-3xl modal-shadow w-full sm:w-[400px] sm:h-full max-h-[90vh] sm:max-h-none overflow-y-auto animate-fadeIn sm:animate-slideInRight">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[rgba(124,92,252,0.06)]">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-xl gradient-primary flex items-center justify-center">
@@ -1869,10 +2743,15 @@ export default function CreatePost() {
 
               {/* Style picker */}
               <div>
-                <label className="text-[10px] font-semibold text-brand-dark uppercase tracking-widest mb-1.5 block">Visual style</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[10px] font-semibold text-brand-dark uppercase tracking-widest block">Visual style</label>
+                  {!visualStyleAutoPicked && TONE_STYLE_SUGGESTION[tone] === visualStyle && (
+                    <span className="text-[9px] text-brand-purple font-medium">Suggested for {tone} tone</span>
+                  )}
+                </div>
                 <div className="grid grid-cols-5 gap-1.5">
                   {VISUAL_STYLES.map(s => (
-                    <button key={s.id} onClick={() => setVisualStyle(s.id)}
+                    <button key={s.id} onClick={() => { setVisualStyle(s.id); setVisualStyleAutoPicked(true); }}
                       className={`flex flex-col items-center gap-1 py-2 rounded-xl border transition-all ${
                         visualStyle === s.id
                           ? 'border-brand-purple bg-[rgba(124,92,252,0.06)] text-brand-purple'
@@ -1892,6 +2771,9 @@ export default function CreatePost() {
                   ? <><Loader2 size={15} className="animate-spin" /> Generating…</>
                   : <><Sparkles size={15} /> Generate visual</>}
               </button>
+              <p className="text-[10px] text-brand-muted text-center -mt-2">
+                {generatingVisual ? 'Usually takes 8-12 seconds' : imageUsage ? `${imageUsage.used} of ${imageUsage.limit} images today` : 'Usually takes 8-12 seconds'}
+              </p>
 
               {visualError && <p className="text-xs text-red-500 text-center">{visualError}</p>}
 
@@ -1917,11 +2799,11 @@ export default function CreatePost() {
                       className="btn-primary flex-1 text-sm !py-2.5">
                       <Check size={13} /> Use this image
                     </button>
-                    <button onClick={handleGenerateVisual} disabled={generatingVisual}
+                    <button onClick={handleGenerateVisual} disabled={generatingVisual} aria-label="Regenerate visual"
                       className="btn-secondary !py-2.5 !px-3.5">
                       <RefreshCw size={13} />
                     </button>
-                    <button onClick={handleDownloadVisual}
+                    <button onClick={handleDownloadVisual} aria-label="Download visual"
                       className="btn-secondary !py-2.5 !px-3.5 flex items-center">
                       <Download size={13} />
                     </button>
@@ -1937,6 +2819,105 @@ export default function CreatePost() {
         <div className="fixed bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))] left-1/2 -translate-x-1/2 z-[60] bg-brand-dark text-white text-[12px] font-medium px-4 py-3 rounded-xl modal-shadow animate-fadeIn flex items-center gap-2 max-w-[calc(100vw-2rem)] sm:whitespace-nowrap sm:max-w-none">
           <Check size={14} className="text-brand-teal" />
           Voice updated — your next post will reflect these changes
+        </div>
+      )}
+
+      {/* Unsaved draft recovery prompt */}
+      {restorePrompt && (
+        <div className="fixed inset-x-0 top-0 z-[65] flex justify-center px-4 pt-4 animate-fadeIn" role="alert" aria-live="assertive">
+          <div className="card modal-shadow !rounded-2xl px-4 py-3 flex items-center gap-3 max-w-md w-full">
+            <div className="w-8 h-8 rounded-full bg-[rgba(124,92,252,0.08)] flex items-center justify-center flex-shrink-0">
+              <FileText size={14} className="text-brand-purple" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-brand-dark">You have an unsaved draft</p>
+              <p className="text-[11px] text-brand-muted truncate">{restorePrompt.content.slice(0, 60)}{restorePrompt.content.length > 60 ? '…' : ''}</p>
+            </div>
+            <button onClick={restoreDraft} className="text-[11px] font-semibold text-white gradient-primary rounded-full px-3 py-1.5 flex-shrink-0">
+              Restore
+            </button>
+            <button onClick={dismissRestorePrompt} aria-label="Dismiss" className="text-brand-muted hover:text-brand-dark flex-shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile bottom navigation — Ideas / Write / Repurpose / Improve */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[rgba(124,92,252,0.08)] shadow-[0_-2px_16px_rgba(0,0,0,0.06)] flex safe-bottom" style={{ height: 'calc(56px + env(safe-area-inset-bottom))' }}>
+        {[
+          { key: 'ideas', emoji: '💡', label: 'Ideas', active: ideasView, onClick: handleCardIdeas },
+          { key: 'write', emoji: '✍️', label: 'Write', active: activeFlow === 'write', onClick: handleCardWrite },
+          { key: 'repurpose', emoji: '♻️', label: 'Repurpose', active: activeFlow === 'repurpose', onClick: handleCardRepurpose },
+          { key: 'improve', emoji: '⚡', label: 'Improve', active: activeFlow === 'improve', onClick: handleCardImprove },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={tab.onClick}
+            aria-label={tab.label}
+            aria-current={tab.active ? 'page' : undefined}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 pt-1.5 min-h-[44px] relative"
+          >
+            <span className={`text-base leading-none ${tab.active ? '' : 'opacity-50'}`}>{tab.emoji}</span>
+            <span className={`text-[10px] font-semibold ${tab.active ? 'gradient-text' : 'text-[#6B7280]'}`}>{tab.label}</span>
+            {tab.active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full gradient-primary" />}
+          </button>
+        ))}
+      </nav>
+
+      {/* Keyboard shortcuts hint — desktop only */}
+      <button
+        onClick={() => setShortcutsOpen(true)}
+        aria-label="Show keyboard shortcuts"
+        className="hidden md:flex fixed bottom-3 left-3 z-30 items-center gap-1.5 text-[11px] text-brand-muted hover:text-brand-purple bg-white/80 backdrop-blur-sm border border-[rgba(124,92,252,0.1)] rounded-full px-3 py-1.5 transition-colors"
+      >
+        Press <kbd className="px-1.5 py-0.5 rounded bg-[rgba(124,92,252,0.08)] font-semibold">?</kbd> for keyboard shortcuts
+      </button>
+
+      {/* ── KEYBOARD SHORTCUTS PANEL ──────────────────────────────────────────── */}
+      {shortcutsOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn"
+          onClick={() => setShortcutsOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="shortcuts-title"
+        >
+          <div
+            className="bg-white rounded-t-4xl sm:rounded-4xl modal-shadow w-full sm:max-w-md max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[rgba(124,92,252,0.06)]">
+              <span id="shortcuts-title" className="text-sm font-bold text-brand-dark">Keyboard shortcuts</span>
+              <button onClick={() => setShortcutsOpen(false)} aria-label="Close"
+                className="min-w-[44px] min-h-[44px] rounded-xl hover:bg-[rgba(124,92,252,0.06)] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-1 safe-bottom">
+              {[
+                { keys: ['Ctrl', 'Enter'], label: 'Post to LinkedIn' },
+                { keys: ['Ctrl', 'S'], label: 'Save draft' },
+                { keys: ['Ctrl', 'G'], label: 'Generate post' },
+                { keys: ['Ctrl', 'K'], label: 'Open Aria assistant' },
+                { keys: ['Ctrl', 'Z'], label: 'Undo' },
+                { keys: ['Ctrl', 'Shift', 'Z'], label: 'Redo' },
+                { keys: ['Tab'], label: 'Insert indentation (in composer)' },
+                { keys: ['Esc'], label: 'Close panel or dropdown' },
+                { keys: ['?'], label: 'Show this panel' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center justify-between py-2">
+                  <span className="text-sm text-brand-dark">{s.label}</span>
+                  <span className="flex items-center gap-1">
+                    {s.keys.map((k, j) => (
+                      <kbd key={j} className="px-2 py-1 rounded-lg bg-[rgba(124,92,252,0.06)] text-brand-purple text-xs font-semibold min-w-[28px] text-center">{k}</kbd>
+                    ))}
+                  </span>
+                </div>
+              ))}
+              <p className="text-[10px] text-brand-muted pt-2">On Mac, use ⌘ instead of Ctrl.</p>
+            </div>
+          </div>
         </div>
       )}
     </div>

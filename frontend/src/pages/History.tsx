@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles, Calendar, X } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
 import { useFeatureGate } from '../hooks/useFeatureGate';
 
@@ -50,6 +50,19 @@ interface Post {
   published_at: string | null;
   linkedin_post_urn: string | null;
   created_at: string;
+  scheduled_for?: string | null;
+  schedule_status?: 'scheduled' | 'published' | 'failed' | 'cancelled' | null;
+}
+
+function formatCountdown(target: string): string {
+  const ms = new Date(target).getTime() - Date.now();
+  if (ms <= 0) return 'due now';
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `in ${mins} min${mins === 1 ? '' : 's'}`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `in ${hours} hour${hours === 1 ? '' : 's'}, ${mins % 60} min${mins % 60 === 1 ? '' : 's'}`;
+  const days = Math.floor(hours / 24);
+  return `in ${days} day${days === 1 ? '' : 's'}, ${hours % 24} hour${hours % 24 === 1 ? '' : 's'}`;
 }
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -84,6 +97,9 @@ export default function History() {
   const [filterTone, setFilterTone] = useState('');
   const [filterTopic, setFilterTopic] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'readability'>('date');
+  const [userId, setUserId] = useState('');
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -91,9 +107,33 @@ export default function History() {
         window.location.href = '/login';
         return;
       }
+      setUserId(data.user.id);
       loadPosts(data.user.id);
     });
   }, []);
+
+  // Re-render every 30s so scheduled-post countdowns stay live without a full reload.
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => forceTick(n => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleCancelScheduled = async (postId: string) => {
+    setCancelingId(postId);
+    try {
+      const res = await fetch(`${API_URL}/api/schedule/cancel`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, postId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, schedule_status: 'cancelled', scheduled_for: null } : p));
+    } catch (err: any) {
+      alert(err.message || 'Could not cancel scheduled post.');
+    }
+    setCancelingId(null);
+  };
 
   const loadPosts = async (userId: string) => {
     const { data } = await supabase
@@ -158,7 +198,16 @@ export default function History() {
   const { tier } = useFeatureGate('contentHistoryLimit');
   const HISTORY_LIMIT = 10;
   const isLimited = tier === 'free' && visiblePosts.length > HISTORY_LIMIT;
-  const shownPosts = isLimited ? visiblePosts.slice(0, HISTORY_LIMIT) : visiblePosts;
+
+  // Individual-tier history is unbounded, so render in batches rather than
+  // mounting every post card at once — avoids hundreds of DOM nodes (with
+  // their own analysis fetches/badges) for long-time users.
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filterHook, filterTone, filterTopic, sortBy]);
+
+  const shownPosts = isLimited ? visiblePosts.slice(0, HISTORY_LIMIT) : visiblePosts.slice(0, visibleCount);
+  const hasMore = !isLimited && visiblePosts.length > shownPosts.length;
 
   const hasAnalytics = Object.keys(analytics).length > 0;
 
@@ -269,6 +318,14 @@ export default function History() {
                       {post.status === 'published' && (
                         <span className="badge bg-[rgba(6,214,160,0.08)] text-brand-teal text-[11px]">Published</span>
                       )}
+                      {post.schedule_status === 'scheduled' && post.scheduled_for && (
+                        <span className="badge bg-[rgba(17,138,178,0.08)] text-brand-blue text-[11px]">
+                          <Calendar size={11} /> Scheduled — posts {formatCountdown(post.scheduled_for)}
+                        </span>
+                      )}
+                      {post.schedule_status === 'failed' && (
+                        <span className="badge bg-[rgba(255,69,58,0.08)] text-red-500 text-[11px]">Scheduling failed</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 text-brand-muted text-xs font-medium">
                       <Clock size={12} />
@@ -330,6 +387,16 @@ export default function History() {
                       )}
                     </span>
                     <div className="flex items-center gap-2">
+                      {post.schedule_status === 'scheduled' && (
+                        <button
+                          onClick={() => handleCancelScheduled(post.id)}
+                          disabled={cancelingId === post.id}
+                          className="btn-ghost !py-1.5 !px-3 text-xs !text-red-400 !border-red-100 hover:!bg-red-50"
+                        >
+                          {cancelingId === post.id ? <Loader2 size={13} className="animate-spin" /> : <X size={13} />}
+                          Cancel
+                        </button>
+                      )}
                       <button
                         onClick={() => handleCopy(post)}
                         className="btn-ghost !py-1.5 !px-3 text-xs"
@@ -358,6 +425,11 @@ export default function History() {
                 <p className="text-xs text-brand-muted mb-4">Free plans show your 10 most recent posts. Upgrade to see everything.</p>
                 <a href="/pricing" className="btn-primary text-sm !py-2 !px-5 inline-flex">Upgrade Now</a>
               </div>
+            )}
+            {hasMore && (
+              <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-secondary w-full text-sm !py-3">
+                Load more ({visiblePosts.length - shownPosts.length} remaining)
+              </button>
             )}
           </div>
         )}

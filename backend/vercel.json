@@ -16,6 +16,9 @@
     { "source": "/api/email/newsletter-subscribe", "destination": "/api/intelligence?action=newsletter-subscribe" },
     { "source": "/api/aria/chat", "destination": "/api/intelligence?action=aria-chat" },
     { "source": "/api/aria/history", "destination": "/api/intelligence?action=aria-history" },
+    { "source": "/api/schedule/publish-due", "destination": "/api/intelligence?action=publish-scheduled-posts" },
+    { "source": "/api/schedule/create", "destination": "/api/intelligence?action=schedule-post" },
+    { "source": "/api/schedule/cancel", "destination": "/api/intelligence?action=cancel-scheduled-post" },
     { "source": "/api/email/preferences", "destination": "/api/intelligence?action=email-preferences" },
     { "source": "/api/billing/create-checkout", "destination": "/api/billing?action=create-checkout" },
     { "source": "/api/billing/webhook", "destination": "/api/billing?action=webhook" },
@@ -32,6 +35,7 @@
   ],
   "crons": [
     { "path": "/api/weekly-digest-cron", "schedule": "0 13 * * 1" },
-    { "path": "/api/reengagement-cron", "schedule": "0 9 * * *" }
+    { "path": "/api/reengagement-cron", "schedule": "0 9 * * *" },
+    { "path": "/api/schedule/publish-due", "schedule": "0 12 * * *" }
   ]
 }

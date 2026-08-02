@@ -29,6 +29,36 @@ function parseJsonObject(text: string): any {
   return JSON.parse(match[0]);
 }
 
+const HTML_ENTITIES: Record<string, string> = {
+  '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&nbsp;': ' ',
+};
+
+// Lightweight readability extraction — no external deps: strips script/style/nav
+// chrome, tags, and collapses whitespace. Good enough for article/blog-post
+// bodies; not a full Readability-algorithm port.
+function extractReadableText(html: string): string {
+  let cleaned = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+  // Prefer <article>/<main> (or Wikipedia's content div) over the whole
+  // <body> when present — cuts most nav/sidebar chrome without a full
+  // Readability-style content-scoring algorithm.
+  const mainMatch =
+    cleaned.match(/<article[\s\S]*?>([\s\S]*?)<\/article>/i) ||
+    cleaned.match(/<main[\s\S]*?>([\s\S]*?)<\/main>/i) ||
+    cleaned.match(/id=["']mw-content-text["'][\s\S]*?>([\s\S]*?)<div[^>]*id=["']catlinks["']/i) ||
+    cleaned.match(/<body[\s\S]*?>([\s\S]*)<\/body>/i);
+  if (mainMatch) cleaned = mainMatch[1];
+  cleaned = cleaned.replace(/<\/(p|div|h[1-6]|li|br)>/gi, '\n').replace(/<[^>]+>/g, ' ');
+  cleaned = cleaned.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+  cleaned = cleaned.replace(/&[a-z]+;/gi, (m) => HTML_ENTITIES[m.toLowerCase()] ?? m);
+  return cleaned.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 async function getProfile(userId: string) {
   const { data: profile } = await supabase.from('profiles').select('role, domain, goals').eq('id', userId).single();
   const role = profile?.role || 'professional';
@@ -445,6 +475,59 @@ async function reengagementCron() {
   return { ok: true, considered: (profiles || []).length, results };
 }
 
+const API_BASE = 'https://api.eclatale.com';
+
+/**
+ * Publishes every post whose scheduled_for time has passed. Designed to be
+ * safe to call at any interval (Vercel Hobby cron only fires ~daily, so this
+ * is also exposed for an external cron service to hit every few minutes for
+ * real "publish near the scheduled time" behavior — see CRON_SECRET auth
+ * below). Reuses /api/linkedin/publish rather than duplicating its OAuth
+ * token handling, rate limiting, and error-message logic.
+ */
+async function publishScheduledPosts() {
+  const { data: due } = await supabase
+    .from('posts')
+    .select('id, user_id, scheduled_for')
+    .eq('schedule_status', 'scheduled')
+    .lte('scheduled_for', new Date().toISOString())
+    .limit(50);
+
+  const results: { postId: string; success: boolean; error?: string }[] = [];
+  for (const post of due || []) {
+    try {
+      const publishRes = await fetch(`${API_BASE}/api/linkedin/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post.id, userId: post.user_id }),
+      });
+      const publishData: any = await publishRes.json();
+      if (publishRes.ok && publishData.success) {
+        await supabase.from('posts').update({ schedule_status: 'published' }).eq('id', post.id);
+        await createNotification(
+          supabase, post.user_id, 'scheduled_post_published', 'Your scheduled post went live',
+          'The post you scheduled just published to LinkedIn.',
+          { text: 'View on LinkedIn', url: 'https://www.linkedin.com/feed/' }
+        );
+        results.push({ postId: post.id, success: true });
+      } else {
+        const errorMsg = publishData.error || 'Unknown publish error';
+        await supabase.from('posts').update({ schedule_status: 'failed' }).eq('id', post.id);
+        await createNotification(
+          supabase, post.user_id, 'scheduled_post_failed', 'A scheduled post failed to publish',
+          `We couldn't publish your scheduled post: ${errorMsg}`,
+          { text: 'Retry now', url: 'https://eclatale.com/history' }
+        );
+        results.push({ postId: post.id, success: false, error: errorMsg });
+      }
+    } catch (e: any) {
+      await supabase.from('posts').update({ schedule_status: 'failed' }).eq('id', post.id);
+      results.push({ postId: post.id, success: false, error: e.message });
+    }
+  }
+  return { ok: true, checked: (due || []).length, results };
+}
+
 async function handleUnsubscribe(token: string, type: string) {
   const { data: profile } = await supabase.from('profiles').select('id').eq('unsubscribe_token', token).maybeSingle();
   if (!profile) return { ok: false, error: 'Invalid or expired unsubscribe link' };
@@ -583,6 +666,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json(await reengagementCron());
     }
 
+    if (action === 'publish-scheduled-posts') {
+      const secret = String(body.secret || req.query.secret || '');
+      if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+        const auth = req.headers.authorization || '';
+        if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
+      }
+      return res.json(await publishScheduledPosts());
+    }
+
+    if (action === 'schedule-post') {
+      const postId = String(body.postId || '');
+      const scheduledFor = String(body.scheduledFor || '');
+      if (!userId || !postId || !scheduledFor) return res.status(400).json({ error: 'Missing userId, postId, or scheduledFor' });
+      const when = new Date(scheduledFor);
+      if (isNaN(when.getTime()) || when.getTime() < Date.now() - 60000) {
+        return res.status(400).json({ error: 'scheduledFor must be a valid future time' });
+      }
+      const maxDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+      if (when > maxDate) return res.status(400).json({ error: 'Cannot schedule more than 60 days ahead' });
+      const { error } = await supabase.from('posts')
+        .update({ scheduled_for: when.toISOString(), schedule_status: 'scheduled' })
+        .eq('id', postId).eq('user_id', userId);
+      if (error) return res.status(500).json({ error: 'Failed to schedule post' });
+      return res.json({ ok: true, scheduledFor: when.toISOString() });
+    }
+
+    if (action === 'cancel-scheduled-post') {
+      const postId = String(body.postId || '');
+      if (!userId || !postId) return res.status(400).json({ error: 'Missing userId or postId' });
+      const { data: post } = await supabase.from('posts').select('scheduled_for, schedule_status').eq('id', postId).eq('user_id', userId).maybeSingle();
+      if (!post) return res.status(404).json({ error: 'Post not found' });
+      if (post.schedule_status === 'scheduled' && post.scheduled_for && new Date(post.scheduled_for).getTime() - Date.now() < 5 * 60 * 1000) {
+        return res.status(400).json({ error: 'Too close to the scheduled time to cancel — it will publish shortly.' });
+      }
+      await supabase.from('posts').update({ schedule_status: 'cancelled', scheduled_for: null }).eq('id', postId);
+      return res.json({ ok: true });
+    }
+
     if (action === 'unsubscribe') {
       const token = String(body.token || req.query.token || '');
       const type = String(body.type || req.query.type || '');
@@ -596,6 +717,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { error } = await supabase.from('newsletter_subscribers').upsert({ email }, { onConflict: 'email' });
       if (error) return res.status(500).json({ error: 'Subscribe failed' });
       return res.json({ ok: true });
+    }
+
+    if (action === 'fetch-url') {
+      const url = String(body.url || '').trim();
+      if (!url) return res.status(400).json({ error: 'Missing url' });
+      let parsed: URL;
+      try { parsed = new URL(url); } catch { return res.status(400).json({ error: 'Invalid URL' }); }
+
+      const host = parsed.hostname.replace(/^www\./, '');
+      if (/(^|\.)linkedin\.com$/.test(host)) {
+        return res.status(422).json({ error: 'linkedin_private', message: 'LinkedIn content is private — paste the post text here instead.' });
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const pageRes = await fetch(url, {
+          signal: controller.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EclataleBot/1.0; +https://eclatale.com)' },
+        });
+        clearTimeout(timeout);
+        if (!pageRes.ok) {
+          return res.status(422).json({ error: 'fetch_failed', message: "Couldn't fetch this URL — paste the text directly instead." });
+        }
+        const html = await pageRes.text();
+        const text = extractReadableText(html);
+        if (text.length < 200) {
+          return res.status(422).json({ error: 'fetch_failed', message: "Couldn't extract readable content from this URL — paste the text directly instead." });
+        }
+        return res.json({ text: text.slice(0, 6000), domain: host });
+      } catch {
+        return res.status(422).json({ error: 'fetch_failed', message: "Couldn't fetch this URL — paste the text directly instead." });
+      }
     }
 
     if (action === 'aria-chat') {

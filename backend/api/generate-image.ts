@@ -68,8 +68,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('user_id', userId)
       .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-    if (todayUsage && todayUsage.length >= 10) {
-      return res.status(429).json({ error: 'Daily image generation limit reached (10/day). Try again tomorrow.' });
+    const usedToday = todayUsage?.length || 0;
+    const DAILY_LIMIT = 10;
+    if (usedToday >= DAILY_LIMIT) {
+      return res.status(429).json({ error: 'Daily image generation limit reached (10/day). Try again tomorrow.', usageToday: usedToday, usageLimit: DAILY_LIMIT });
     }
 
     const size = SIZES[format] || SIZES['square'];
@@ -131,6 +133,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.json({
       imageUrl,
       assetId: asset?.id,
+      usageToday: usedToday + 1,
+      usageLimit: DAILY_LIMIT,
     });
   } catch (error: any) {
     console.error('Image generation error:', error);

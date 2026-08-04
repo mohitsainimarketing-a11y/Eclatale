@@ -5,13 +5,15 @@ import {
   FileText, Image, Lightbulb, Scissors,
   Wand2, Undo2, Redo2, Calendar, PenTool, ExternalLink,
   ChevronDown, X, Download, Eye, EyeOff, ArrowRight,
-  ThumbsUp, MessageCircle, Repeat2, Monitor, Smartphone, PenLine,
+  ThumbsUp, MessageCircle, Repeat2, Monitor, Smartphone, PenLine, Menu,
 } from 'lucide-react';
 import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
 import { STYLES, formalityLabel } from '../lib/personaOptions';
 import { RICH_TEXT_STYLES } from '../lib/richText';
 import { copyToClipboard } from '../utils/clipboard';
 import { useModalBackButton } from '../hooks/useModalBackButton';
+import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../contexts/SidebarContext';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -540,6 +542,7 @@ export default function CreatePost() {
     }
     const scheduleDateParam = params.get('scheduleDate');
     if (scheduleDateParam) setScheduleDate(scheduleDateParam);
+    if (params.get('shortcuts') === '1') setShortcutsOpen(true);
     const editPostId = params.get('postId');
 
     supabase.auth.getUser().then(({ data }) => {
@@ -1511,15 +1514,26 @@ export default function CreatePost() {
     ? `Generate a post first — switch here to see it adapted as a ${CONTENT_TYPES.find(c => c.id === contentType)?.label}.`
     : 'Start typing, or ask the assistant to write your first draft…';
 
+  const { sidebarWidth, breakpoint, toggleMobile } = useSidebar();
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-app-shell flex flex-col overflow-hidden bg-[#EAE5F5]">
+    <>
+    <Sidebar />
+    <div
+      className="h-app-shell flex flex-col overflow-hidden bg-[#EAE5F5] transition-[margin] duration-200 ease-out"
+      style={{ marginLeft: breakpoint === 'mobile' ? 0 : sidebarWidth }}
+    >
 
       {/* Nav */}
       <nav className="flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-6 h-14 flex items-center justify-between z-40">
         <div className="flex items-center gap-3">
-          <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-1.5 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
+          {breakpoint === 'mobile' ? (
+            <button onClick={toggleMobile} aria-label="Open menu" className="w-9 h-9 -ml-1.5 flex items-center justify-center text-brand-dark"><Menu size={20} /></button>
+          ) : (
+            <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-1.5 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
+          )}
           <a href="/dashboard" className="text-base font-extrabold gradient-text hidden sm:block">Eclatale</a>
         </div>
         <div className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[11px]">
@@ -2921,5 +2935,6 @@ export default function CreatePost() {
         </div>
       )}
     </div>
+    </>
   );
 }

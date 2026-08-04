@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, ArrowRight, Sparkles, Check, Loader2, MessageSquare } from 'lucide-react';
 import { STYLES, formalityLabel } from '../lib/personaOptions';
+import AppShell from '../components/AppShell';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -89,16 +90,14 @@ export default function PersonaSetup() {
   const canProceed2 = expertise.length > 0;
 
   return (
+    <AppShell mobileTitle="Voice Profile">
     <div className="min-h-screen gradient-bg-page">
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back">
-            <ArrowLeft size={18} />
-          </a>
-          <a href="/dashboard" className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</a>
-        </div>
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-between">
+        <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back to dashboard">
+          <ArrowLeft size={18} />
+        </a>
         <span className="text-xs font-semibold text-brand-muted">Step {step}/4</span>
-      </nav>
+      </div>
 
       {/* Progress */}
       <div className="px-5 md:px-8 pt-4">
@@ -345,5 +344,6 @@ export default function PersonaSetup() {
         )}
       </div>
     </div>
+    </AppShell>
   );
 }

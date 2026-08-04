@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
-  ArrowLeft, Sparkles, Check, Loader2, Download, RefreshCw, Link2, Image, Type,
+  Sparkles, Check, Loader2, Download, RefreshCw, Link2, Image, Type,
 } from 'lucide-react';
 import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
 import FeatureLock from '../components/FeatureLock';
+import AppShell from '../components/AppShell';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -118,16 +119,13 @@ function CreateVisualInner() {
   const canGenerate = topic && format && style && !generating;
 
   return (
+    <AppShell mobileTitle="Visual Creator">
     <div className="min-h-screen gradient-bg-page">
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
-          <a href="/dashboard" className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</a>
-        </div>
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-end">
         <div className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple">
           <Image size={12} /> Visual Creator
         </div>
-      </nav>
+      </div>
 
       <div className="max-w-3xl mx-auto px-5 md:px-8 py-6 md:py-10">
         {!imageUrl ? (
@@ -272,5 +270,6 @@ function CreateVisualInner() {
         )}
       </div>
     </div>
+    </AppShell>
   );
 }

@@ -2,12 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   BarChart3, FileText, Flame, Trophy, Sparkles, LogOut,
-  Home, Zap, User, Clock, ArrowRight, RefreshCw, Copy, Check,
-  Loader2, Target, Settings, ChevronRight, Image, TrendingUp, PenTool, Calendar,
+  Clock, ArrowRight, RefreshCw, Copy, Check,
+  Loader2, Target, ChevronRight, Image, PenTool,
 } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
 import NotificationBell from '../components/NotificationBell';
 import { maybePromptPush } from '../lib/pushNotifications';
+import AppShell from '../components/AppShell';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -35,20 +36,149 @@ interface RecentPost {
   created_at: string;
 }
 
-function GrowthRing({ score }: { score: number }) {
-  const c = 2 * Math.PI * 45;
+type Stage = 'unknown' | 'emerging' | 'rising' | 'notable' | 'authority' | 'icon';
+const STAGE_ORDER: Stage[] = ['unknown', 'emerging', 'rising', 'notable', 'authority', 'icon'];
+const STAGE_LABELS: Record<Stage, string> = { unknown: 'Unknown', emerging: 'Emerging', rising: 'Rising', notable: 'Notable', authority: 'Authority', icon: 'Icon' };
+const STAGE_EMOJI: Record<Stage, string> = { unknown: '🌱', emerging: '🌤', rising: '📈', notable: '⭐', authority: '🏆', icon: '👑' };
+
+interface JourneyCriterion { label: string; done: boolean; current: number; target: number; }
+interface JourneyMetrics {
+  postsPublished: number; linkedinConnected: boolean; personaComplete: boolean;
+  longestStreak: number; currentStreak: number; postsThisWeek: number; bestWeek: number; daysActive: number;
+}
+interface JourneyData {
+  stage: Stage; nextStage: Stage | null; criteria: JourneyCriterion[]; metrics: JourneyMetrics;
+  momentum: { week: boolean[]; trend: 'Building' | 'Strong' | 'Slowing' | 'Stalled' };
+  badges: { key: string; unlockedAt: string }[];
+  newlyUnlocked: { key: string; emoji: string; label: string }[];
+}
+
+function GrowthJourneyCard({ journey, open, onToggle }: { journey: JourneyData | null; open: boolean; onToggle: () => void }) {
+  const stage = journey?.stage || 'unknown';
+  const stageIdx = STAGE_ORDER.indexOf(stage);
+
   return (
-    <div className="relative w-20 h-20">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(124,92,252,0.08)" strokeWidth="8" />
-        <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gr)" strokeWidth="8" strokeLinecap="round"
-          strokeDasharray={c} strokeDashoffset={c - (score / 100) * c} style={{ animation: 'ringProgress 1.2s ease forwards' }} />
-        <defs><linearGradient id="gr" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#7C5CFC" /><stop offset="50%" stopColor="#F72585" /><stop offset="100%" stopColor="#FF6B35" />
-        </linearGradient></defs>
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-extrabold text-brand-dark">{score}</span>
+    <div className="card p-6 animate-fadeIn">
+      <button onClick={onToggle} className="w-full flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-2xl flex-shrink-0">{STAGE_EMOJI[stage]}</div>
+          <div className="text-left">
+            <p className="text-[10px] font-bold text-brand-purple uppercase tracking-wide">Your journey</p>
+            <h3 className="text-lg font-extrabold text-brand-dark">{STAGE_LABELS[stage]}</h3>
+            {journey?.nextStage && (
+              <p className="text-[11px] text-brand-muted mt-0.5">
+                {journey.criteria.filter(c => !c.done).length} step{journey.criteria.filter(c => !c.done).length === 1 ? '' : 's'} until {STAGE_LABELS[journey.nextStage]}
+              </p>
+            )}
+          </div>
+        </div>
+        <ChevronRight size={18} className={`text-brand-muted flex-shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+
+      {/* Stage timeline */}
+      <div className="flex items-center mt-5 mb-1">
+        {STAGE_ORDER.map((s, i) => (
+          <React.Fragment key={s}>
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
+              i <= stageIdx ? 'gradient-primary text-white' : 'bg-[rgba(124,92,252,0.08)] text-brand-muted'
+            }`} title={STAGE_LABELS[s]}>
+              {i <= stageIdx ? STAGE_EMOJI[s] : i}
+            </div>
+            {i < STAGE_ORDER.length - 1 && (
+              <div className={`flex-1 h-1 mx-1 rounded-full ${i < stageIdx ? 'gradient-primary' : 'bg-[rgba(124,92,252,0.08)]'}`} />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+      <div className="flex justify-between text-[9px] text-brand-muted font-semibold mb-2 px-0.5">
+        {STAGE_ORDER.map(s => <span key={s} className="w-7 text-center">{STAGE_LABELS[s].slice(0, 4)}</span>)}
+      </div>
+
+      {open && (
+        <div className="mt-4 pt-4 border-t border-[rgba(124,92,252,0.08)] animate-fadeIn">
+          <p className="text-xs font-bold text-brand-dark mb-2">What you've accomplished</p>
+          <div className="space-y-1.5 mb-4">
+            {STAGE_ORDER.slice(1, stageIdx + 1).map(s => (
+              <div key={s} className="flex items-center gap-2 text-[13px] text-brand-dark">
+                <Check size={13} className="text-brand-teal flex-shrink-0" /> Reached {STAGE_LABELS[s]}
+              </div>
+            ))}
+            {stageIdx === 0 && <p className="text-[12px] text-brand-muted">Publish your first post to start your journey.</p>}
+          </div>
+          {journey?.nextStage && (
+            <>
+              <p className="text-xs font-bold text-brand-dark mb-2">What's next — {STAGE_LABELS[journey.nextStage]}</p>
+              <div className="space-y-3">
+                {journey.criteria.map((c, i) => (
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-[12px] font-medium ${c.done ? 'text-brand-teal' : 'text-brand-dark'}`}>{c.done && '✓ '}{c.label}</span>
+                      <span className="text-[11px] text-brand-muted">{Math.min(c.current, c.target)}/{c.target}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${c.done ? 'bg-brand-teal' : 'gradient-primary'}`}
+                        style={{ width: `${Math.min(100, (c.current / c.target) * 100)}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {!journey?.nextStage && journey && <p className="text-[12px] text-brand-muted">You've reached the top of the journey. 👑</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WeeklyMomentum({ momentum }: { momentum: JourneyData['momentum'] }) {
+  const trendColor: Record<string, string> = {
+    Building: 'text-brand-purple', Strong: 'text-brand-teal', Slowing: 'text-amber-500', Stalled: 'text-red-400',
+  };
+  return (
+    <div className="card p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <p className="text-[11px] font-semibold text-brand-muted mb-1.5">This week</p>
+        <div className="flex gap-1.5 text-lg">
+          {momentum.week.map((posted, i) => (
+            <span key={i} className={posted ? '' : 'opacity-20 grayscale'}>{posted ? '🔥' : '⬜'}</span>
+          ))}
+        </div>
+      </div>
+      <p className={`text-sm font-bold ${trendColor[momentum.trend]}`}>Momentum: {momentum.trend}</p>
+    </div>
+  );
+}
+
+function MilestoneCelebration({ stage, milestone, onClose }: {
+  stage: Stage | null; milestone: { emoji: string; label: string } | null; onClose: () => void;
+}) {
+  if (!stage && !milestone) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-5 animate-fadeIn" onClick={onClose}>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 40 }).map((_, i) => (
+          <span key={i} className="absolute text-xl" style={{
+            left: `${Math.random() * 100}%`, top: '-5%',
+            animation: `confettiFall ${1.6 + Math.random() * 1.4}s ease-in ${Math.random() * 0.6}s forwards`,
+          }}>{['🎉', '✨', '🎊', '⭐'][i % 4]}</span>
+        ))}
+      </div>
+      <div className="card p-8 max-w-sm w-full text-center relative animate-fadeIn" onClick={e => e.stopPropagation()}>
+        <div className="text-5xl mb-4">{stage ? STAGE_EMOJI[stage] : milestone?.emoji}</div>
+        <h2 className="text-xl font-extrabold text-brand-dark mb-1.5">
+          {stage ? `You've reached ${STAGE_LABELS[stage]}!` : milestone?.label}
+        </h2>
+        <p className="text-sm text-brand-muted mb-6">
+          {stage ? "Your consistency is paying off — keep the momentum going." : 'New milestone unlocked.'}
+        </p>
+        <div className="flex flex-col gap-2">
+          {stage && (
+            <a href={`/create?topic=${encodeURIComponent(`I just reached ${STAGE_LABELS[stage]} status on my LinkedIn growth journey — share this as a short, genuine milestone post`)}`}
+              className="btn-primary w-full text-sm">Share this milestone</a>
+          )}
+          <button onClick={onClose} className="btn-ghost w-full text-sm">Close</button>
+        </div>
       </div>
     </div>
   );
@@ -57,17 +187,6 @@ function GrowthRing({ score }: { score: number }) {
 function CheckIcon() {
   return <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
-
-const SIDEBAR_ITEMS = [
-  { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard', active: true },
-  { icon: <Zap size={18} />, label: 'Write a Post', href: '/create', active: false, cta: true },
-  { icon: <Image size={18} />, label: 'Visual Creator', href: '/create-visual', active: false },
-  { icon: <TrendingUp size={18} />, label: 'Competitor Intel', href: '/intelligence', active: false },
-  { icon: <Clock size={18} />, label: 'Content History', href: '/history', active: false },
-  { icon: <Calendar size={18} />, label: 'Schedule', href: '/schedule', active: false },
-  { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup', active: false },
-  { icon: <Settings size={18} />, label: 'Settings', href: '/settings', active: false },
-];
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
@@ -88,9 +207,10 @@ export default function Dashboard() {
   const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [linkedinName, setLinkedinName] = useState('');
   const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string } | null>(null);
-  const [aiGrowth, setAiGrowth] = useState<any>(null);
-  const [growthOpen, setGrowthOpen] = useState(false);
-  const [growthRefreshing, setGrowthRefreshing] = useState(false);
+  const [journey, setJourney] = useState<JourneyData | null>(null);
+  const [journeyOpen, setJourneyOpen] = useState(false);
+  const [celebrateStage, setCelebrateStage] = useState<Stage | null>(null);
+  const [celebrateMilestone, setCelebrateMilestone] = useState<{ emoji: string; label: string } | null>(null);
   const [patterns, setPatterns] = useState<any>(null);
 
   useEffect(() => {
@@ -167,7 +287,7 @@ export default function Dashboard() {
       .then(d => { if (d && !d.error) setBestTime(d); })
       .catch(() => {});
 
-    loadGrowthScore(userId, false);
+    loadJourney(userId);
 
     fetch(`${API_URL}/api/intelligence`, {
       method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -178,17 +298,29 @@ export default function Dashboard() {
       .catch(() => {});
   };
 
-  const loadGrowthScore = async (uid: string, refresh: boolean) => {
-    if (refresh) setGrowthRefreshing(true);
+  const loadJourney = async (uid: string) => {
     try {
       const res = await fetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ action: 'growth-score', userId: uid, refresh }),
+        body: JSON.stringify({ action: 'growth-journey', userId: uid }),
       });
-      const d = await res.json();
-      if (d && !d.error) setAiGrowth(d);
+      const d: JourneyData = await res.json();
+      if (!d || (d as any).error) return;
+      setJourney(d);
+
+      // Stage-change celebration: compare against the last stage we saw for
+      // this user (localStorage), since the server doesn't track "seen" state.
+      const key = `eclatale_last_stage_${uid}`;
+      const lastSeen = localStorage.getItem(key);
+      if (lastSeen && lastSeen !== d.stage && STAGE_ORDER.indexOf(d.stage) > STAGE_ORDER.indexOf(lastSeen as Stage)) {
+        setCelebrateStage(d.stage);
+      }
+      localStorage.setItem(key, d.stage);
+
+      if (d.newlyUnlocked?.length) {
+        setCelebrateMilestone(d.newlyUnlocked[0]);
+      }
     } catch {}
-    setGrowthRefreshing(false);
   };
 
   const fetchPostIdeas = useCallback(async (userId: string) => {
@@ -223,17 +355,11 @@ export default function Dashboard() {
     return `${Math.floor(diff / 1440)}d ago`;
   };
 
-  const growthScore = Math.min(100, Math.round(
-    (hasProfile ? 15 : 0) + (hasPersona ? 15 : 0) + Math.min(20, totalPosts * 4) + Math.min(25, streak * 5) + Math.min(25, postsThisWeek * 8)
-  ));
-  // Prefer the genuine AI-assessed score; fall back to the arithmetic baseline until it loads.
-  const displayGrowthScore = typeof aiGrowth?.overallScore === 'number' ? aiGrowth.overallScore : growthScore;
-
   const roadmap = [
     { text: 'Complete your persona setup', done: hasProfile },
     { text: 'Set up your voice profile', done: hasPersona, href: '/persona-setup' },
     { text: 'Generate your first AI post', done: totalPosts > 0, href: '/create' },
-    { text: 'Track your growth score', done: growthScore > 0 },
+    { text: 'Reach Emerging status', done: !!journey && journey.stage !== 'unknown' },
   ];
   const roadmapDone = roadmap.filter(r => r.done).length;
 
@@ -252,139 +378,28 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFE] flex">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[rgba(124,92,252,0.06)] h-app-shell sticky top-0 z-40 nav-shadow">
-        <div className="px-5 h-16 flex items-center justify-between border-b border-[rgba(124,92,252,0.06)]">
-          <a href="/dashboard" className="text-xl font-extrabold gradient-text">Eclatale</a>
-          {user && <NotificationBell userId={user.id} />}
-        </div>
-
-        <div className="px-3 pt-4 pb-2">
-          <a href="/create" onMouseEnter={prefetchCreatePage} className="btn-primary w-full text-sm !py-2.5 !rounded-xl">
-            <Sparkles size={16} /> Write a Post
-          </a>
-        </div>
-
-        <nav className="flex-1 px-3 py-2 space-y-0.5">
-          {SIDEBAR_ITEMS.filter(i => !i.cta).map((item, i) => (
-            <a key={i} href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                item.active ? 'bg-[rgba(124,92,252,0.06)] text-brand-purple' : 'text-brand-muted hover:bg-[rgba(124,92,252,0.03)] hover:text-brand-dark'
-              }`}>
-              {item.icon}
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="px-3 py-4 border-t border-[rgba(124,92,252,0.06)]">
-          <div className="flex items-center gap-3 px-3 py-2">
-            {userAvatar
-              ? <img src={userAvatar} alt={userName} loading="lazy" onError={() => setUserAvatar('')} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-              : <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                  {(() => { const p = userName.split(' ').filter(Boolean); return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : userName.substring(0,2).toUpperCase(); })()}
-                </div>
-            }
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-brand-dark truncate">{userName}</p>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 w-full transition-all mt-1">
-            <LogOut size={16} /> Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between px-5 h-14 bg-white/90 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] sticky top-0 z-40">
-          <a href="/dashboard" className="text-lg font-extrabold gradient-text">Eclatale</a>
-          <div className="flex items-center gap-1">
-            {user && <NotificationBell userId={user.id} />}
-            <button onClick={handleLogout} className="text-sm text-red-400 p-2"><LogOut size={18} /></button>
-          </div>
-        </div>
-
+    <AppShell mobileTitle="Eclatale">
+      <div className="min-w-0 pb-8">
         <div className="max-w-[960px] mx-auto px-5 md:px-8 py-6 md:py-8">
+          <div className="flex items-center justify-end gap-1 mb-2">
+            {user && <NotificationBell userId={user.id} />}
+            <button onClick={handleLogout} aria-label="Log out" className="text-sm text-red-400 p-2 hover:bg-red-50 rounded-lg transition-colors"><LogOut size={18} /></button>
+          </div>
           {/* Welcome Header */}
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Welcome back, {userName}</h1>
-              <p className="text-sm text-brand-muted mt-0.5">Here's your brand growth overview.</p>
-            </div>
-            <button onClick={() => setGrowthOpen(o => !o)} className="flex flex-col items-center group" title="View Growth Score breakdown">
-              <GrowthRing score={displayGrowthScore} />
-              <span className="text-[10px] font-semibold text-brand-purple mt-0.5 flex items-center gap-0.5 opacity-70 group-hover:opacity-100">
-                {aiGrowth ? 'AI-assessed' : 'Growth'} <ChevronRight size={10} className={`transition-transform ${growthOpen ? 'rotate-90' : ''}`} />
-              </span>
-            </button>
+          <div className="mb-2">
+            <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Welcome back, {userName}</h1>
+            <p className="text-sm text-brand-muted mt-0.5">Here's your brand growth overview.</p>
           </div>
 
-          {/* Growth Score breakdown panel */}
-          {growthOpen && (
-            <div className="card p-6 mb-6 animate-fadeIn">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="text-sm font-bold text-brand-dark">Growth Score: {displayGrowthScore}/100</h3>
-                  <p className="text-[11px] text-brand-muted">{aiGrowth ? 'AI-assessed from your real activity' : 'Complete your profile and post to unlock AI assessment'}</p>
-                </div>
-                <button onClick={() => user && loadGrowthScore(user.id, true)} disabled={growthRefreshing}
-                  className="btn-ghost text-[11px] !py-1.5 !px-2.5 disabled:opacity-50">
-                  {growthRefreshing ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />} Recalculate
-                </button>
-              </div>
-              {aiGrowth?.overallReasoning && (
-                <p className="text-[13px] text-brand-dark/80 leading-relaxed mb-4 bg-[rgba(124,92,252,0.04)] rounded-xl p-3">{aiGrowth.overallReasoning}</p>
-              )}
-              {aiGrowth?.subComponents && (
-                <div className="space-y-3">
-                  {/* Content Consistency */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-brand-dark">Content Consistency <span className="text-brand-muted font-normal">· 40%</span></span>
-                      <span className="text-xs font-bold text-brand-purple">{aiGrowth.subComponents.contentConsistency.score}/100</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-1 overflow-hidden">
-                      <div className="h-full rounded-full gradient-primary" style={{ width: `${aiGrowth.subComponents.contentConsistency.score}%` }} />
-                    </div>
-                    <p className="text-[11px] text-brand-muted leading-snug">{aiGrowth.subComponents.contentConsistency.reasoning}</p>
-                  </div>
-                  {/* Engagement Rate */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-brand-dark">Engagement Rate <span className="text-brand-muted font-normal">· 30%</span></span>
-                      <span className="text-[10px] font-semibold text-brand-muted bg-[rgba(124,92,252,0.06)] px-2 py-0.5 rounded-full">Locked</span>
-                    </div>
-                    <p className="text-[11px] text-brand-muted leading-snug">{aiGrowth.subComponents.engagementRate.reasoning}.
-                      {!linkedinConnected && <a href="/settings" className="text-brand-purple font-semibold hover:underline"> Connect →</a>}
-                    </p>
-                  </div>
-                  {/* Profile Completeness */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-brand-dark">Profile Completeness <span className="text-brand-muted font-normal">· 30%</span></span>
-                      <span className="text-xs font-bold text-brand-teal">{aiGrowth.subComponents.profileCompleteness.score}/100</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-1 overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-brand-teal to-brand-blue" style={{ width: `${aiGrowth.subComponents.profileCompleteness.score}%` }} />
-                    </div>
-                    <p className="text-[11px] text-brand-muted leading-snug">{aiGrowth.subComponents.profileCompleteness.reasoning}</p>
-                  </div>
-                </div>
-              )}
-              {!aiGrowth && <p className="text-[12px] text-brand-muted">Assessment loads once you have profile data and activity.</p>}
-            </div>
-          )}
+          <GrowthJourneyCard journey={journey} open={journeyOpen} onToggle={() => setJourneyOpen(o => !o)} />
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {/* Journey Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 mt-6">
             {[
               { label: 'Total Posts', value: totalPosts, icon: <FileText size={16} />, color: 'from-brand-purple to-[#9B7DFC]' },
-              { label: 'This Week', value: postsThisWeek, icon: <BarChart3 size={16} />, color: 'from-brand-pink to-[#FF5CAD]' },
-              { label: 'Streak', value: `${streak}d`, icon: <Flame size={16} />, color: 'from-brand-orange to-[#FF8F5E]' },
-              { label: 'Growth Score', value: `${displayGrowthScore}/100`, icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
+              { label: 'This Week', value: `${postsThisWeek}${journey ? ` / best ${journey.metrics.bestWeek}` : ''}`, icon: <BarChart3 size={16} />, color: 'from-brand-pink to-[#FF5CAD]' },
+              { label: 'Streak', value: journey ? `${journey.metrics.currentStreak}d / best ${journey.metrics.longestStreak}d` : `${streak}d`, icon: <Flame size={16} />, color: 'from-brand-orange to-[#FF8F5E]' },
+              { label: 'Days Active', value: journey?.metrics.daysActive ?? '—', icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
             ].map((s, i) => (
               <div key={i} className="card stat-card p-6">
                 <div className="flex items-center gap-2 mb-2">
@@ -395,6 +410,8 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+
+          {journey && <WeeklyMomentum momentum={journey.momentum} />}
 
           {/* Writing Insights (Piece 12 — semantic engine, Surface 3) */}
           <div className="card p-6 mb-6">
@@ -702,23 +719,11 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[rgba(124,92,252,0.06)] z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="flex items-center justify-around h-16">
-          {[
-            { icon: <Home size={20} />, label: 'Home', href: '/dashboard', active: true },
-            { icon: <Zap size={20} />, label: 'Create', href: '/create', active: false },
-            { icon: <Clock size={20} />, label: 'History', href: '/history', active: false },
-            { icon: <User size={20} />, label: 'Profile', href: '/persona-setup', active: false },
-          ].map((tab, i) => (
-            <a key={i} href={tab.href} className={`flex flex-col items-center gap-1 min-w-[60px] py-2 ${tab.active ? 'text-brand-purple' : 'text-brand-muted'}`}>
-              {tab.icon}
-              <span className="text-[10px] font-semibold">{tab.label}</span>
-            </a>
-          ))}
-        </div>
-      </nav>
-    </div>
+      <MilestoneCelebration
+        stage={celebrateStage}
+        milestone={celebrateMilestone}
+        onClose={() => { setCelebrateStage(null); setCelebrateMilestone(null); }}
+      />
+    </AppShell>
   );
 }

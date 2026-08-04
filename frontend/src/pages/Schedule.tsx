@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, ChevronLeft, ChevronRight, Settings2, X, Loader2, Check, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings2, X, Loader2, Check, Clock } from 'lucide-react';
+import AppShell from '../components/AppShell';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -134,21 +135,14 @@ export default function Schedule() {
     : slot));
 
   return (
+    <AppShell mobileTitle="Schedule">
     <div className="min-h-screen gradient-bg-page pb-20 md:pb-0">
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back">
-            <ArrowLeft size={18} />
-          </a>
-          <a href="/dashboard" className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</a>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setSlotsOpen(true)} className="btn-secondary text-sm !py-2 !px-4 flex items-center gap-1.5">
-            <Settings2 size={14} /> Posting times
-          </button>
-          <a href="/create" className="btn-primary text-sm !py-2 !px-5">New Post</a>
-        </div>
-      </nav>
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-end gap-3">
+        <button onClick={() => setSlotsOpen(true)} className="btn-secondary text-sm !py-2 !px-4 flex items-center gap-1.5">
+          <Settings2 size={14} /> Posting times
+        </button>
+        <a href="/create" className="btn-primary text-sm !py-2 !px-5">New Post</a>
+      </div>
 
       <div className="max-w-5xl mx-auto px-5 md:px-8 py-6 md:py-10">
         <div className="flex items-center justify-between mb-6">
@@ -296,5 +290,6 @@ export default function Schedule() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }

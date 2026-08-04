@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
-  ArrowLeft, Clock, FileText, Search, TrendingUp, Target,
+  Clock, FileText, Search, TrendingUp, Target,
   RefreshCw, Loader2, Sparkles, ArrowRight,
 } from 'lucide-react';
 import FeatureLock from '../components/FeatureLock';
+import AppShell from '../components/AppShell';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -65,17 +66,16 @@ function IntelligenceInner() {
       if (!data.user) { window.location.href = '/login'; return; }
       setUserId(data.user.id);
       load(data.user.id, false);
+      fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'page-view', feature: 'analytics', userId: data.user.id }),
+      }).catch(() => {});
     });
   }, [load]);
 
   return (
+    <AppShell mobileTitle="Analytics">
     <div className="min-h-screen bg-[#FAFAFE]">
-      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center gap-3">
-        <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors"><ArrowLeft size={18} /></a>
-        <a href="/dashboard" className="text-lg font-extrabold gradient-text">Eclatale</a>
-        <span className="text-brand-muted text-sm font-medium ml-2">/ Competitor Intelligence</span>
-      </nav>
-
       <div className="max-w-5xl mx-auto px-5 md:px-8 py-6 md:py-8">
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
@@ -157,5 +157,6 @@ function IntelligenceInner() {
         ) : null}
       </div>
     </div>
+    </AppShell>
   );
 }

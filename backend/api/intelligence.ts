@@ -8,6 +8,7 @@ import {
 import { readCache, writeCache } from '../lib/intelligenceCache';
 import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/digest';
 import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
+import { getProgress, getMomentum, checkMilestones } from '../lib/growthJourney';
 import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
@@ -842,6 +843,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'growth-score': {
         const result = await growthScore(userId, forceRefresh);
         return res.json(result);
+      }
+      case 'growth-journey': {
+        const [progress, momentum, newlyUnlocked] = await Promise.all([
+          getProgress(supabase, userId),
+          getMomentum(supabase, userId),
+          checkMilestones(supabase, userId),
+        ]);
+        const { data: profile } = await supabase.from('profiles').select('milestone_badges').eq('id', userId).single();
+        return res.json({
+          stage: progress.stage,
+          nextStage: progress.nextStage,
+          criteria: progress.criteria,
+          metrics: progress.metrics,
+          momentum,
+          badges: profile?.milestone_badges || [],
+          newlyUnlocked,
+        });
       }
       case 'analyze-post': {
         const postId = String(body.postId || '');

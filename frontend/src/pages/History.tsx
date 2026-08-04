@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles, Calendar, X } from 'lucide-react';
+import { Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles, Calendar, X } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
 import { useFeatureGate } from '../hooks/useFeatureGate';
+import AppShell from '../components/AppShell';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -226,20 +227,12 @@ export default function History() {
   };
 
   return (
+    <AppShell mobileTitle="Content Library">
     <div className="min-h-screen gradient-bg-page pb-20 md:pb-0">
-      {/* Nav */}
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <a href="/dashboard" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back">
-            <ArrowLeft size={18} />
-          </a>
-          <a href="/dashboard" className="text-lg font-extrabold gradient-text hidden sm:block">Eclatale</a>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-brand-muted font-medium">{posts.length} posts</span>
-          <a href="/create" className="btn-primary text-sm !py-2 !px-5">New Post</a>
-        </div>
-      </nav>
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-end gap-3">
+        <span className="text-sm text-brand-muted font-medium">{posts.length} posts</span>
+        <a href="/create" className="btn-primary text-sm !py-2 !px-5">New Post</a>
+      </div>
 
       <div className="max-w-3xl mx-auto px-5 md:px-8 py-6 md:py-10">
         <div className="mb-8">
@@ -435,5 +428,6 @@ export default function History() {
         )}
       </div>
     </div>
+    </AppShell>
   );
 }

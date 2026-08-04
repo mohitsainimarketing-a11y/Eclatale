@@ -253,6 +253,10 @@ textarea, input[type="text"] { caret-color: #7C5CFC; }
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+}
 
 .animate-fadeIn { animation: fadeIn 0.3s ease; }
 .animate-slideUp { animation: slideUp 0.4s ease; }

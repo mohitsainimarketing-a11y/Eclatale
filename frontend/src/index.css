@@ -81,25 +81,37 @@ button, a, [role="button"] {
 }
 
 /* ── Cards ── */
+/* Layered shadow: a tight, low-opacity "contact" shadow right at the edge
+   plus a larger soft ambient one further out. Two layers read as a lifted,
+   dimensional surface — a single wide blur just looks like a smudge. */
 .card {
   background: #FFFFFF;
   border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(124, 92, 252, 0.08);
-  border: 1px solid rgba(124, 92, 252, 0.06);
+  box-shadow:
+    0 1px 2px rgba(124, 92, 252, 0.05),
+    0 2px 6px rgba(124, 92, 252, 0.05),
+    0 8px 24px rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.07);
 }
 .card-hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(124, 92, 252, 0.16);
+  transform: translateY(-3px);
+  box-shadow:
+    0 2px 4px rgba(124, 92, 252, 0.06),
+    0 6px 12px rgba(124, 92, 252, 0.08),
+    0 16px 40px rgba(124, 92, 252, 0.16);
 }
 
 /* ── Modals / dropdowns ── */
 /* Shadow only — components own their border-radius (e.g. bottom sheets that
    round only the top corners), so this class must not force border-radius. */
 .modal-shadow {
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    0 8px 20px rgba(0, 0, 0, 0.08),
+    0 24px 64px rgba(0, 0, 0, 0.14);
 }
 
 /* ── Nav / sidebar ── */
@@ -357,8 +369,11 @@ input[type="range"]::-moz-range-thumb {
   cursor: default;
 }
 .stat-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(124, 92, 252, 0.1);
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px rgba(124, 92, 252, 0.05),
+    0 4px 10px rgba(124, 92, 252, 0.07),
+    0 10px 28px rgba(124, 92, 252, 0.12);
 }
 
 /* ── Line Clamp ── */

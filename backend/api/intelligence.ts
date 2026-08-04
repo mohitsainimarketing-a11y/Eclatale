@@ -20,9 +20,16 @@ import { checkGrowthMilestone, createNotification } from '../lib/notifications';
 import { requireFeature } from '../lib/featureGates';
 import { calculateVoiceMatchScore } from '../lib/voiceMatchScore';
 import { ariaChat, getAriaConversation, AriaMessage } from '../lib/aria';
+import { searchSourcesForTopic } from '../lib/webResearch';
+import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction } from '../lib/writingStyles';
+import { extractPdfText, extractDocxText, extractCsvSummary, truncateForPrompt } from '../lib/resourceParsing';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+// Base64-encoded PDF/DOCX uploads (resource-upload action) can exceed the
+// default 4.5mb body limit — raise it for this multiplexed function.
+export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
 
 function parseJsonObject(text: string): any {
   const match = text.match(/\{[\s\S]*\}/);
@@ -897,6 +904,145 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!feature) return res.status(400).json({ error: 'Missing feature' });
         await supabase.from('page_views').insert({ user_id: userId, feature, path: path || null });
         return res.json({ ok: true });
+      }
+      case 'create-talk-start': {
+        const topic = String(body.topic || '').trim();
+        if (!topic) return res.status(400).json({ error: 'Missing topic' });
+        const sources = await searchSourcesForTopic(anthropic, topic).catch(() => []);
+        const qMessage = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 200,
+          messages: [{ role: 'user', content: `Someone wants to write a LinkedIn post about: "${topic}". Ask them ONE short, genuinely useful clarifying question to sharpen the post (e.g. personal experience vs industry insight, who the reader is, what the goal is). Return ONLY the question, no preamble, no quotes.` }],
+        });
+        const clarifyingQuestion = qMessage.content[0].type === 'text' ? qMessage.content[0].text.trim() : '';
+        return res.json({ sources, clarifyingQuestion });
+      }
+      case 'create-talk-generate': {
+        const topic = String(body.topic || '').trim();
+        const styleId = String(body.style || 'storyteller');
+        const lengthId = String(body.length || 'standard');
+        const clarifyingAnswer = String(body.clarifyingAnswer || '');
+        const sources: any[] = Array.isArray(body.sources) ? body.sources : [];
+        const resourceContext = String(body.resourceContext || '').trim();
+        if (!topic || !userId) return res.status(400).json({ error: 'Missing topic or userId' });
+
+        const style = getWritingStyle(styleId);
+        const personaFragment = await buildPersonaPrompt(supabase, userId);
+        const sourcesFragment = sources.length
+          ? `\nRelevant current sources you may draw on (cite naturally, don't just list them):\n${sources.map(s => `- ${s.title} (${s.domain}): ${s.excerpt}`).join('\n')}\n`
+          : '';
+        const resourceFragment = resourceContext
+          ? `\nSource material the writer dropped in — ground the post in this, don't ignore it:\n${truncateForPrompt(resourceContext, 6000)}\n`
+          : '';
+
+        const systemPrompt = `${getDateContext()}
+
+${personaFragment ? personaFragment + '\n' : ''}${style?.prompt || ''}
+
+${clarifyingAnswer ? `Context from the writer: ${clarifyingAnswer}\n` : ''}${sourcesFragment}${resourceFragment}
+${lengthInstruction(lengthId)}
+
+${UNIVERSAL_HUMAN_WRITING_RULES}
+
+Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown formatting, no quotes around it.`;
+
+        const message = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1400,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: `Write the post about: ${topic}` }],
+        });
+        const content = message.content[0].type === 'text' ? message.content[0].text : '';
+        const avgTrust = sources.length ? Math.round(sources.reduce((s, x) => s + (x.trustScore || 0), 0) / sources.length) : null;
+        return res.json({ content, styleLabel: style?.label || styleId, sourcesUsed: sources, sourceTrust: avgTrust });
+      }
+      case 'library-tags-suggest': {
+        const postContent = String(body.postContent || '').trim();
+        if (!postContent) return res.status(400).json({ error: 'Missing postContent' });
+        const message = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 150,
+          messages: [{ role: 'user', content: `Extract 3-7 short content tags for this LinkedIn post, in the style #LeadershipLessons, #AIMarketing, #StartupGrowth (PascalCase, no spaces, one hashtag each). Return ONLY a JSON array of strings, e.g. ["#Leadership","#AI"].\n\nPost:\n${postContent.slice(0, 2000)}` }],
+        });
+        const raw = message.content[0].type === 'text' ? message.content[0].text : '[]';
+        const match = raw.match(/\[[\s\S]*\]/);
+        let tags: string[] = [];
+        try { tags = JSON.parse(match ? match[0] : raw); } catch { tags = []; }
+        return res.json({ tags: tags.slice(0, 7) });
+      }
+      case 'library-search': {
+        const query = String(body.query || '').trim();
+        if (!userId) return res.status(400).json({ error: 'Missing userId' });
+        let postsQuery = supabase.from('posts').select('id, content, topic, created_at, status').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+        if (query && !query.startsWith('#')) postsQuery = postsQuery.ilike('content', `%${query}%`);
+        const { data: posts } = await postsQuery;
+        if (!posts?.length) return res.json({ posts: [] });
+
+        const { data: analytics } = await supabase.from('post_analytics').select('post_id, topic_tags').in('post_id', posts.map(p => p.id));
+        const tagsByPost: Record<string, string[]> = {};
+        for (const a of analytics || []) tagsByPost[a.post_id] = a.topic_tags || [];
+
+        let results = posts.map(p => ({ ...p, tags: tagsByPost[p.id] || [] }));
+        if (query.startsWith('#')) {
+          const tagQuery = query.slice(1).toLowerCase();
+          results = results.filter(p => p.tags.some(t => t.toLowerCase().includes(tagQuery)));
+        }
+        return res.json({ posts: results });
+      }
+      case 'resource-analyze': {
+        const resourceText = String(body.resourceText || '').trim();
+        const resourceLabel = String(body.resourceLabel || 'this resource');
+        if (!resourceText) return res.status(400).json({ error: 'Missing resourceText' });
+        const message = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 600,
+          messages: [{ role: 'user', content: `Analyze ${resourceLabel} below. Return ONLY JSON: {"keyThemes": ["3-5 short bullet themes"], "angles": ["2-4 specific LinkedIn post angle ideas grounded in this content"], "openingLine": "one sentence a brand assistant would say to open a conversation about this, referencing the single most interesting insight"}\n\nContent:\n${truncateForPrompt(resourceText)}` }],
+        });
+        const raw = message.content[0].type === 'text' ? message.content[0].text : '{}';
+        const match = raw.match(/\{[\s\S]*\}/);
+        let parsed: any = {};
+        try { parsed = JSON.parse(match ? match[0] : raw); } catch { parsed = {}; }
+        return res.json(parsed);
+      }
+      case 'resource-converse': {
+        const resourceTexts: string[] = Array.isArray(body.resourceTexts) ? body.resourceTexts : [];
+        const history: { role: string; content: string }[] = Array.isArray(body.history) ? body.history : [];
+        const message = String(body.message || '').trim();
+        if (!message) return res.status(400).json({ error: 'Missing message' });
+        const contextBlock = resourceTexts.map((t, i) => `--- Resource ${i + 1} ---\n${truncateForPrompt(t, 6000)}`).join('\n\n');
+        const reply = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 400,
+          system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful — never generic. Keep replies to 2-4 sentences, conversational tone.`,
+          messages: [...history.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user', content: message }],
+        });
+        const text = reply.content[0].type === 'text' ? reply.content[0].text : '';
+        return res.json({ reply: text });
+      }
+      case 'resource-upload': {
+        const fileBase64 = String(body.fileBase64 || '');
+        const mimeType = String(body.mimeType || '');
+        const filename = String(body.filename || 'file');
+        if (!fileBase64) return res.status(400).json({ error: 'Missing fileBase64' });
+        const buffer = Buffer.from(fileBase64, 'base64');
+        try {
+          let text = '';
+          let pageCount: number | undefined;
+          if (mimeType === 'application/pdf' || filename.endsWith('.pdf')) {
+            const result = await extractPdfText(buffer);
+            text = result.text; pageCount = result.pageCount;
+          } else if (mimeType.includes('wordprocessingml') || filename.endsWith('.docx')) {
+            text = await extractDocxText(buffer);
+          } else if (mimeType === 'text/csv' || filename.endsWith('.csv')) {
+            text = extractCsvSummary(buffer.toString('utf-8'));
+          } else {
+            text = buffer.toString('utf-8');
+          }
+          if (!text.trim()) return res.status(422).json({ error: 'Could not extract any text from this file.' });
+          return res.json({ text: truncateForPrompt(text), pageCount });
+        } catch (e: any) {
+          return res.status(422).json({ error: e.message || 'Failed to parse file' });
+        }
       }
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });

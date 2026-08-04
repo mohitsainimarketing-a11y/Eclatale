@@ -14,6 +14,7 @@ import { copyToClipboard } from '../utils/clipboard';
 import { useModalBackButton } from '../hooks/useModalBackButton';
 import Sidebar from '../components/Sidebar';
 import { useSidebar } from '../contexts/SidebarContext';
+import CreateEntryGate from '../components/CreateEntryGate';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -458,6 +459,10 @@ export default function CreatePost() {
   const [visualError, setVisualError]         = useState('');
   const [showTextOverlay, setShowTextOverlay] = useState(true);
   const [ideasView, setIdeasView]             = useState(false);
+  const [entryGateOpen, setEntryGateOpen] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return !params.get('topic') && !params.get('action') && !params.get('postId') && !params.get('scheduleDate') && !params.get('shortcuts');
+  });
   const [ideasList, setIdeasList]             = useState<{ topic: string; whyNow: string; trending: boolean }[]>([]);
   const [loadingIdeas, setLoadingIdeas]       = useState(false);
   const [writeTopic, setWriteTopic]           = useState('');
@@ -1557,6 +1562,10 @@ export default function CreatePost() {
       <div className="flex-1 min-h-0 overflow-hidden flex items-stretch justify-center md:px-6 md:py-5 pb-14 md:pb-0">
         <div className="relative w-full max-w-[1320px] flex min-h-0 bg-white rounded-none md:rounded-2xl md:border md:border-[rgba(0,0,0,0.08)] md:shadow-[0_4px_32px_rgba(0,0,0,0.1)] overflow-hidden">
 
+        {entryGateOpen ? (
+          <CreateEntryGate onSkip={() => setEntryGateOpen(false)} />
+        ) : (
+        <>
         {/* ── LEFT: AI ASSISTANT — desktop/tablet only; mobile uses the bottom nav instead ── */}
         <aside className="hidden md:flex flex-col w-full md:w-[300px] lg:w-[380px] flex-shrink-0 border-r border-[rgba(124,92,252,0.07)] bg-white/50 overflow-hidden">
 
@@ -2726,6 +2735,8 @@ export default function CreatePost() {
             </div>
           </>
         )}
+        </>
+        )}
         </div>
       </div>
 
@@ -2858,6 +2869,7 @@ export default function CreatePost() {
       )}
 
       {/* Mobile bottom navigation — Ideas / Write / Repurpose / Improve */}
+      {!entryGateOpen && (
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[rgba(124,92,252,0.08)] shadow-[0_-2px_16px_rgba(0,0,0,0.06)] flex safe-bottom" style={{ height: 'calc(56px + env(safe-area-inset-bottom))' }}>
         {[
           { key: 'ideas', emoji: '💡', label: 'Ideas', active: ideasView, onClick: handleCardIdeas },
@@ -2878,6 +2890,7 @@ export default function CreatePost() {
           </button>
         ))}
       </nav>
+      )}
 
       {/* Keyboard shortcuts hint — desktop only */}
       <button

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles, Calendar, X } from 'lucide-react';
+import { Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Loader2, Sparkles, Calendar, X, Search, Wand2 } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
 import { useFeatureGate } from '../hooks/useFeatureGate';
 import AppShell from '../components/AppShell';
@@ -96,7 +96,8 @@ export default function History() {
   const [analytics, setAnalytics] = useState<Record<string, Analysis>>({});
   const [filterHook, setFilterHook] = useState('');
   const [filterTone, setFilterTone] = useState('');
-  const [filterTopic, setFilterTopic] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'readability'>('date');
   const [userId, setUserId] = useState('');
   const [cancelingId, setCancelingId] = useState<string | null>(null);
@@ -173,28 +174,38 @@ export default function History() {
   };
 
   // Available filter options derived from loaded analytics.
-  const { hookOptions, toneOptions, topicOptions } = useMemo(() => {
-    const hooks = new Set<string>(), tones = new Set<string>(), topics = new Set<string>();
+  const { hookOptions, toneOptions, tagCounts } = useMemo(() => {
+    const hooks = new Set<string>(), tones = new Set<string>();
+    const tags: Record<string, number> = {};
     Object.values(analytics).forEach(a => {
       if (a.hook_type) hooks.add(a.hook_type);
       if (a.tone_detected) tones.add(a.tone_detected);
-      (a.topic_tags || []).forEach(t => topics.add(t));
+      (a.topic_tags || []).forEach(t => { tags[t] = (tags[t] || 0) + 1; });
     });
-    return { hookOptions: Array.from(hooks), toneOptions: Array.from(tones), topicOptions: Array.from(topics) };
+    const tagCounts = Object.entries(tags).sort((a, b) => b[1] - a[1]);
+    return { hookOptions: Array.from(hooks), toneOptions: Array.from(tones), tagCounts };
   }, [analytics]);
+  const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
 
   const visiblePosts = useMemo(() => {
     let list = [...posts];
     if (filterHook) list = list.filter(p => analytics[p.id]?.hook_type === filterHook);
     if (filterTone) list = list.filter(p => analytics[p.id]?.tone_detected === filterTone);
-    if (filterTopic) list = list.filter(p => (analytics[p.id]?.topic_tags || []).includes(filterTopic));
+    if (selectedTags.length) list = list.filter(p => selectedTags.every(t => (analytics[p.id]?.topic_tags || []).includes(t)));
+    const q = searchQuery.trim();
+    if (q.startsWith('#')) {
+      const tagQuery = q.slice(1).toLowerCase();
+      if (tagQuery) list = list.filter(p => (analytics[p.id]?.topic_tags || []).some(t => t.toLowerCase().includes(tagQuery)));
+    } else if (q) {
+      list = list.filter(p => p.content.toLowerCase().includes(q.toLowerCase()) || p.topic?.toLowerCase().includes(q.toLowerCase()));
+    }
     if (sortBy === 'readability') {
       list.sort((a, b) => (analytics[b.id]?.readability_score || 0) - (analytics[a.id]?.readability_score || 0));
     } else {
       list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
     return list;
-  }, [posts, analytics, filterHook, filterTone, filterTopic, sortBy]);
+  }, [posts, analytics, filterHook, filterTone, selectedTags, searchQuery, sortBy]);
 
   const { tier } = useFeatureGate('contentHistoryLimit');
   const HISTORY_LIMIT = 10;
@@ -205,7 +216,7 @@ export default function History() {
   // their own analysis fetches/badges) for long-time users.
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filterHook, filterTone, filterTopic, sortBy]);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filterHook, filterTone, selectedTags, searchQuery, sortBy]);
 
   const shownPosts = isLimited ? visiblePosts.slice(0, HISTORY_LIMIT) : visiblePosts.slice(0, visibleCount);
   const hasMore = !isLimited && visiblePosts.length > shownPosts.length;
@@ -255,6 +266,28 @@ export default function History() {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-muted" />
+              <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search your posts, or type # to search tags…"
+                className="input !pl-11 !text-sm w-full" />
+            </div>
+
+            {/* Tag browser */}
+            {tagCounts.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {tagCounts.slice(0, 20).map(([tag, count]) => (
+                  <button key={tag} onClick={() => toggleTag(tag)}
+                    className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-full border transition-colors flex items-center gap-1 ${
+                      selectedTags.includes(tag) ? 'border-brand-purple bg-[rgba(124,92,252,0.08)] text-brand-purple' : 'border-[rgba(0,0,0,0.08)] text-brand-muted hover:border-brand-purple/40'
+                    }`}>
+                    {tag} <span className="opacity-60">{count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Filter / sort bar (shown once semantic analysis exists) */}
             {hasAnalytics && (
               <div className="card p-6 flex flex-wrap items-center gap-2 mb-2">
@@ -271,19 +304,13 @@ export default function History() {
                     {toneOptions.map(t => <option key={t} value={t}>{TONE_DETECTED_LABELS[t] || t}</option>)}
                   </select>
                 )}
-                {topicOptions.length > 0 && (
-                  <select value={filterTopic} onChange={e => setFilterTopic(e.target.value)} className="text-xs rounded-lg border border-[rgba(124,92,252,0.15)] px-2 py-1.5 bg-white text-brand-dark max-w-[160px]">
-                    <option value="">All topics</option>
-                    {topicOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                )}
                 <div className="flex-1" />
                 <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} className="text-xs rounded-lg border border-[rgba(124,92,252,0.15)] px-2 py-1.5 bg-white text-brand-dark">
                   <option value="date">Newest first</option>
                   <option value="readability">Highest readability</option>
                 </select>
-                {(filterHook || filterTone || filterTopic) && (
-                  <button onClick={() => { setFilterHook(''); setFilterTone(''); setFilterTopic(''); }} className="text-xs text-brand-purple font-semibold hover:underline">Clear</button>
+                {(filterHook || filterTone || selectedTags.length > 0 || searchQuery) && (
+                  <button onClick={() => { setFilterHook(''); setFilterTone(''); setSelectedTags([]); setSearchQuery(''); }} className="text-xs text-brand-purple font-semibold hover:underline">Clear</button>
                 )}
               </div>
             )}
@@ -390,6 +417,12 @@ export default function History() {
                           Cancel
                         </button>
                       )}
+                      <a
+                        href={`/create/talk?template=${post.id}`}
+                        className="btn-ghost !py-1.5 !px-3 text-xs"
+                      >
+                        <Wand2 size={13} /> Use as template
+                      </a>
                       <button
                         onClick={() => handleCopy(post)}
                         className="btn-ghost !py-1.5 !px-3 text-xs"

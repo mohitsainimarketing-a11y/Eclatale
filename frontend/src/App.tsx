@@ -10,6 +10,8 @@ const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CreatePost = lazy(() => import('./pages/CreatePost'));
+const CreateTalk = lazy(() => import('./pages/CreateTalk'));
+const CreateResource = lazy(() => import('./pages/CreateResource'));
 const History = lazy(() => import('./pages/History'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const PersonaSetup = lazy(() => import('./pages/PersonaSetup'));
@@ -78,6 +80,8 @@ function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create" element={<CreatePost />} />
+          <Route path="/create/talk" element={<CreateTalk />} />
+          <Route path="/create/resource" element={<CreateResource />} />
           <Route path="/guided" element={<Navigate to="/create" replace />} />
           <Route path="/history" element={<History />} />
           <Route path="/schedule" element={<Schedule />} />

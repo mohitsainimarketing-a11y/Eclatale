@@ -114,7 +114,7 @@ button, a, [role="button"] {
   font-weight: 600;
   padding: 14px 28px;
   border-radius: 50px;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   box-shadow: 0 4px 16px rgba(124, 92, 252, 0.25);
   min-height: 44px;
   display: inline-flex;
@@ -133,7 +133,7 @@ button, a, [role="button"] {
   padding: 14px 28px;
   border-radius: 12px;
   border: 1.5px solid rgba(124, 92, 252, 0.2);
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
@@ -150,7 +150,7 @@ button, a, [role="button"] {
   padding: 14px 28px;
   border-radius: 50px;
   border: 1px solid rgba(107, 114, 128, 0.15);
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   min-height: 44px;
   display: inline-flex;
   align-items: center;

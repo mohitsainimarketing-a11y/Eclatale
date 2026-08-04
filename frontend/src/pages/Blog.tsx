@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, Clock, Search } from 'lucide-react';
 import { blogPosts, BLOG_CATEGORIES } from '../data/blogPosts';
+import Seo from '../components/Seo';
 
 export default function Blog() {
   const [category, setCategory] = useState<string>('All');
@@ -16,6 +17,17 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen gradient-bg-page">
+      <Seo
+        title="Blog — LinkedIn growth, without the fluff"
+        description="Practical guides on personal branding, AI content, and building a LinkedIn presence that actually drives outcomes."
+        path="/blog"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Blog',
+          name: 'Eclatale Blog',
+          url: 'https://eclatale.com/blog',
+        }}
+      />
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
         <div className="max-w-5xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">
           <a href="/" className="text-xl md:text-2xl font-extrabold gradient-text">Eclatale</a>

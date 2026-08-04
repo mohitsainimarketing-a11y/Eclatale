@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
+import Seo from '../components/Seo';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen gradient-bg-page">
+      <Seo title="Privacy Policy" description="How Eclatale collects, uses, and protects your data." path="/privacy" />
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center gap-3">
         <a href="/" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back"><ArrowLeft size={18} /></a>
         <a href="/" className="text-lg font-extrabold gradient-text">Eclatale</a>

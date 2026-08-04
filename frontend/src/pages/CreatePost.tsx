@@ -1600,50 +1600,50 @@ export default function CreatePost() {
 
             {/* Quick-action cards */}
             <div>
-              <p className="text-[10px] text-brand-muted uppercase tracking-widest font-semibold mb-3">Quick actions</p>
+              <p className="text-[11px] text-brand-muted uppercase tracking-widest font-semibold mb-3">Quick actions</p>
               <div className="space-y-2">
 
                 <button onClick={handleCardIdeas}
-                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
-                  <div className="w-7 h-7 rounded-xl bg-[rgba(124,92,252,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                    <Lightbulb size={13} className="text-brand-purple" />
+                  className="w-full card !p-4 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 text-white group-hover:scale-105 transition-transform">
+                    <Lightbulb size={16} />
                   </div>
                   <div>
-                    <div className="text-[12px] font-bold text-brand-dark">Find ideas</div>
-                    <div className="text-[10px] text-brand-muted">AI-curated topics for your industry</div>
+                    <div className="text-[13px] font-bold text-brand-dark">Find ideas</div>
+                    <div className="text-[11px] text-brand-muted">AI-curated topics for your industry</div>
                   </div>
                 </button>
 
                 <button onClick={handleCardWrite}
-                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
-                  <div className="w-7 h-7 rounded-xl bg-[rgba(247,37,133,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                    <PenTool size={13} className="text-brand-pink" />
+                  className="w-full card !p-4 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 text-white group-hover:scale-105 transition-transform">
+                    <PenTool size={16} />
                   </div>
                   <div>
-                    <div className="text-[12px] font-bold text-brand-dark">Write a post</div>
-                    <div className="text-[10px] text-brand-muted">Generate from a topic or idea</div>
+                    <div className="text-[13px] font-bold text-brand-dark">Write a post</div>
+                    <div className="text-[11px] text-brand-muted">Generate from a topic or idea</div>
                   </div>
                 </button>
 
                 <button onClick={handleCardRepurpose}
-                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
-                  <div className="w-7 h-7 rounded-xl bg-[rgba(255,107,53,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                    <Scissors size={13} className="text-brand-orange" />
+                  className="w-full card !p-4 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 text-white group-hover:scale-105 transition-transform">
+                    <Scissors size={16} />
                   </div>
                   <div>
-                    <div className="text-[12px] font-bold text-brand-dark">Repurpose content</div>
-                    <div className="text-[10px] text-brand-muted">Paste an article, thread, or transcript</div>
+                    <div className="text-[13px] font-bold text-brand-dark">Repurpose content</div>
+                    <div className="text-[11px] text-brand-muted">Paste an article, thread, or transcript</div>
                   </div>
                 </button>
 
                 <button onClick={handleCardImprove}
-                  className="w-full card !p-6.5 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
-                  <div className="w-7 h-7 rounded-xl bg-[rgba(6,214,160,0.08)] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                    <Wand2 size={13} className="text-brand-teal" />
+                  className="w-full card !p-4 text-left hover:shadow-brand-md transition-all group flex items-center gap-3 !rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 text-white group-hover:scale-105 transition-transform">
+                    <Wand2 size={16} />
                   </div>
                   <div>
-                    <div className="text-[12px] font-bold text-brand-dark">Improve my draft</div>
-                    <div className="text-[10px] text-brand-muted">{composerContent ? 'Suggest improvements' : 'Write something first, then improve it'}</div>
+                    <div className="text-[13px] font-bold text-brand-dark">Improve my draft</div>
+                    <div className="text-[11px] text-brand-muted">{composerContent ? 'Suggest improvements' : 'Write something first, then improve it'}</div>
                   </div>
                 </button>
 
@@ -2270,7 +2270,7 @@ export default function CreatePost() {
                       }
                     }}
                     placeholder={composerPlaceholder}
-                    className="w-full resize-none border-0 bg-transparent text-brand-dark text-[15px] leading-[1.75] focus:outline-none placeholder:text-[#9CA3AF] font-[inherit] min-h-[220px] max-h-[520px]"
+                    className="w-full resize-none border-0 bg-transparent text-brand-dark text-[16px] leading-[1.8] focus:outline-none placeholder:text-[#9CA3AF] font-[inherit] min-h-[220px] max-h-[520px]"
                     style={{ caretColor: '#7C5CFC' }}
                   />
                 )}

@@ -2,17 +2,72 @@
 User-agent: *
 Allow: /
 Allow: /blog
+Allow: /pricing
 Allow: /signup
 Allow: /login
+Allow: /privacy
+Allow: /terms
+Allow: /refund-policy
 
 Disallow: /dashboard
 Disallow: /create
 Disallow: /create-visual
 Disallow: /history
+Disallow: /schedule
 Disallow: /persona-setup
 Disallow: /settings
 Disallow: /intelligence
 Disallow: /onboarding
 Disallow: /auth/callback
+Disallow: /auth/reset-password
+Disallow: /reset-password
+Disallow: /unsubscribe
+
+# Explicit allowances for AI/answer-engine crawlers (AEO) — same public
+# pages as above are fair game, private/app routes stay off-limits.
+User-agent: GPTBot
+Allow: /
+Disallow: /dashboard
+Disallow: /create
+Disallow: /create-visual
+Disallow: /history
+Disallow: /schedule
+Disallow: /persona-setup
+Disallow: /settings
+Disallow: /intelligence
+Disallow: /onboarding
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /dashboard
+Disallow: /create
+Disallow: /create-visual
+Disallow: /history
+Disallow: /schedule
+Disallow: /persona-setup
+Disallow: /settings
+Disallow: /intelligence
+Disallow: /onboarding
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
 
 Sitemap: https://eclatale.com/sitemap.xml

@@ -6,6 +6,11 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://eclatale.com/pricing</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://eclatale.com/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -36,9 +41,29 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://eclatale.com/#pricing</loc>
+    <loc>https://eclatale.com/blog/linkedin-engagement-rate-2026</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eclatale.com/blog/personal-brand-roi-linkedin</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eclatale.com/blog/linkedin-post-examples-ceo</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eclatale.com/blog/ai-content-creation-authentic-voice</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eclatale.com/blog/linkedin-algorithm-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://eclatale.com/signup</loc>
@@ -49,5 +74,20 @@
     <loc>https://eclatale.com/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://eclatale.com/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://eclatale.com/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://eclatale.com/refund-policy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
   </url>
 </urlset>

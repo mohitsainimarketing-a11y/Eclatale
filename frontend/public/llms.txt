@@ -1,0 +1,28 @@
+# Eclatale
+
+> Eclatale is an AI personal-brand growth platform for LinkedIn. It learns a user's authentic writing voice from samples they provide, then generates LinkedIn posts, articles, and other content that sounds like them rather than generic AI output. Every post can be checked for factual accuracy, topic freshness, and voice consistency before publishing. Eclatale publishes directly to LinkedIn through LinkedIn's official API.
+
+## What Eclatale does
+
+- Learns a user's authentic voice from writing samples and a short style profile (communication style, formality, expertise, personal history).
+- Generates LinkedIn content three ways: a conversational "Talk to AI" flow with live web research and trust-scored sources, a content-library flow for reusing/templating past posts, and a "Drop a Resource" flow that turns a PDF, document, spreadsheet, or URL into a post.
+- Six selectable writing styles (Storyteller, Contrarian, Teacher, Insider, Motivator, Analyst), each with distinct structural and tonal rules.
+- Scores generated content on factual accuracy, topic freshness, and voice match before the user posts.
+- Publishes directly to LinkedIn via LinkedIn's official API — not browser automation — so accounts stay compliant.
+- Schedules posts on a recurring or one-off basis via a calendar.
+- Tracks a "Growth Journey": a staged progression (Unknown, Emerging, Rising, Notable, Authority, Icon) computed from real posting activity, streaks, and profile completeness — not vanity metrics.
+- Offers a free tier (limited weekly posts) and an Individual paid plan (unlimited posts, competitor intelligence, analytics).
+
+## Who it's for
+
+Founders, executives, and professionals who want a consistent LinkedIn presence but don't have time to write daily, and who care about the content sounding authentically like them rather than obviously AI-generated.
+
+## Key pages
+
+- Homepage: https://eclatale.com/ — product overview, features, pricing, FAQ.
+- Pricing: https://eclatale.com/pricing — plan details and FAQ.
+- Blog: https://eclatale.com/blog — guides on LinkedIn growth, personal branding, and AI content.
+
+## Company
+
+Eclatale is a software product accessible at https://eclatale.com. Privacy policy: https://eclatale.com/privacy. Terms of service: https://eclatale.com/terms.

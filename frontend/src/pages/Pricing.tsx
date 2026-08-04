@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Check, Zap, ChevronDown, ArrowLeft, Loader2, ShieldCheck, Clock, MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { trackEvent } from '../lib/analytics';
+import Seo from '../components/Seo';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -126,6 +127,20 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen gradient-bg-page">
+      <Seo
+        title="Pricing — Simple, transparent plans"
+        description="Start free with 10 AI-generated LinkedIn posts a month. Upgrade to Individual for unlimited posts, competitor intelligence, and voice-matched content generation."
+        path="/pricing"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: FAQS.map((f: any) => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: { '@type': 'Answer', text: f.a },
+          })),
+        }}
+      />
       {/* Nav */}
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center justify-between">
         <div className="flex items-center gap-3">

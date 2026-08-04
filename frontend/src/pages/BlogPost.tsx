@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Clock, Link2, Check } from 'lucide-react';
 import { getBlogPost, getRelatedPosts } from '../data/blogPosts';
 import NewsletterSignup from '../components/NewsletterSignup';
+import Seo from '../components/Seo';
 
 const LinkedInIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -57,27 +58,28 @@ export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? getBlogPost(slug) : undefined;
 
-  useEffect(() => {
-    if (!post) return;
-    const prevTitle = document.title;
-    document.title = `${post.title} | Eclatale Blog`;
-
-    const meta = document.querySelector('meta[name="description"]');
-    const prevDescription = meta?.getAttribute('content') ?? '';
-    meta?.setAttribute('content', post.description);
-
-    return () => {
-      document.title = prevTitle;
-      meta?.setAttribute('content', prevDescription);
-    };
-  }, [post]);
-
   if (!post) return <Navigate to="/blog" replace />;
 
   const related = getRelatedPosts(post.slug);
 
   return (
     <div className="min-h-screen gradient-bg-page">
+      <Seo
+        title={post.title}
+        description={post.description}
+        path={`/blog/${post.slug}`}
+        type="article"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: post.title,
+          description: post.description,
+          datePublished: post.date,
+          author: { '@type': 'Organization', name: 'Eclatale' },
+          publisher: { '@type': 'Organization', name: 'Eclatale', logo: { '@type': 'ImageObject', url: 'https://eclatale.com/logo512.png' } },
+          mainEntityOfPage: { '@type': 'WebPage', '@id': `https://eclatale.com/blog/${post.slug}` },
+        }}
+      />
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
         <div className="max-w-3xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">
           <a href="/" className="text-xl md:text-2xl font-extrabold gradient-text">Eclatale</a>

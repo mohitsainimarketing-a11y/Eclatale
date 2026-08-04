@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 import NewsletterSignup from '../components/NewsletterSignup';
+import Seo from '../components/Seo';
 
 // lucide-react dropped brand/logo icons — small inline SVGs for the footer instead.
 const LinkedInIcon = () => (
@@ -132,6 +133,40 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
+      <Seo
+        title="Eclatale — AI Personal Brand Growth OS for LinkedIn"
+        description="Eclatale uses AI to learn your authentic voice and generate LinkedIn content that sounds exactly like you. Used by founders, CEOs and executives to grow their personal brand. Start free."
+        path="/"
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'Eclatale',
+            url: 'https://eclatale.com',
+            logo: 'https://eclatale.com/logo512.png',
+            description: 'AI personal brand growth OS that learns your authentic voice and generates LinkedIn content in your voice.',
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: 'Eclatale',
+            applicationCategory: 'BusinessApplication',
+            operatingSystem: 'Web',
+            description: 'AI that learns your authentic voice and writes LinkedIn posts that sound exactly like you, with built-in accuracy and freshness checks before you publish.',
+            offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+            url: 'https://eclatale.com',
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqs.map(f => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
+          },
+        ]}
+      />
       {/* Nav */}
       <nav ref={navRef} className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">

@@ -1,9 +1,11 @@
 import React from 'react';
 import { ArrowLeft, ShieldCheck, Clock, XCircle } from 'lucide-react';
+import Seo from '../components/Seo';
 
 export default function RefundPolicy() {
   return (
     <div className="min-h-screen gradient-bg-page">
+      <Seo title="Refund Policy" description="Eclatale's 30-day money-back guarantee and refund process." path="/refund-policy" />
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)] px-5 md:px-8 h-14 md:h-[72px] flex items-center gap-3">
         <a href="/" className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors" aria-label="Back"><ArrowLeft size={18} /></a>
         <a href="/" className="text-lg font-extrabold gradient-text">Eclatale</a>

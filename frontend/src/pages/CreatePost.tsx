@@ -15,6 +15,7 @@ import { useModalBackButton } from '../hooks/useModalBackButton';
 import Sidebar from '../components/Sidebar';
 import { useSidebar } from '../contexts/SidebarContext';
 import CreateEntryGate from '../components/CreateEntryGate';
+import Avatar from '../components/Avatar';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -332,10 +333,7 @@ function LinkedInPreviewCard({
       style={{ maxWidth: mobile ? 340 : '100%' }}>
       <div className="p-4">
         <div className="flex items-start gap-2.5 mb-3">
-          {userAvatar
-            ? <img src={userAvatar} alt={userName} loading="lazy" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
-            : <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white text-[14px] font-bold flex-shrink-0 select-none">{userInitials || 'Y'}</div>
-          }
+          <Avatar src={userAvatar} initials={userInitials || 'Y'} alt={userName} size={48} className="text-[14px]" />
           <div className="flex-1 min-w-0">
             <div className="text-[14px] font-semibold leading-tight truncate" style={{ color: '#1A1A2E' }}>{userName || 'Your Name'}</div>
             {userRole && <div className="text-[12px] leading-snug line-clamp-1" style={{ color: '#6B7280' }}>{userRole}</div>}

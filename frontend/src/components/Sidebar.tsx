@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useSidebar, EXPANDED_WIDTH, COLLAPSED_WIDTH } from '../contexts/SidebarContext';
+import Avatar from './Avatar';
 
 interface NavItem {
   icon: React.ReactNode;
@@ -115,10 +116,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
 
       {/* User */}
       <div className={`flex items-center gap-2.5 py-3.5 border-b border-[rgba(124,92,252,0.06)] flex-shrink-0 ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
-        {user.avatar
-          ? <img src={user.avatar} alt={user.name} loading="lazy" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-          : <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{user.initials}</div>
-        }
+        <Avatar src={user.avatar} initials={user.initials} alt={user.name} size={32} className="text-xs" />
         {!collapsed && (
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-brand-dark truncate">{user.name}</p>

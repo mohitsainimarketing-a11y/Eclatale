@@ -1,22 +1,26 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
-  BarChart3, FileText, Flame, Trophy, Sparkles, LogOut,
-  Clock, ArrowRight, RefreshCw, Copy, Check,
-  Loader2, Target, ChevronRight, Image, PenTool,
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
+  ComposedChart, Bar, Line, LineChart,
+} from 'recharts';
+import {
+  Sparkles, LogOut, RefreshCw, Download, ChevronRight, Check, ChevronDown,
+  Copy, Trash2, Edit3, ArrowUpRight, ArrowDownRight, Flame,
 } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
 import NotificationBell from '../components/NotificationBell';
 import { maybePromptPush } from '../lib/pushNotifications';
 import AppShell from '../components/AppShell';
+import { useToast } from '../contexts/ToastContext';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
 
-// Warms the lazy-loaded /create chunk on hover so the click feels instant —
-// webpack dedupes this against the App.tsx React.lazy() import of the same module.
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
+
 let createPagePrefetched = false;
 function prefetchCreatePage() {
   if (createPagePrefetched) return;
@@ -24,345 +28,268 @@ function prefetchCreatePage() {
   import('./CreatePost').catch(() => { createPagePrefetched = false; });
 }
 
-const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
-
-interface RecentPost {
-  id: string;
-  content: string;
-  topic: string;
-  tone: string;
-  content_type: string;
-  source: string;
-  created_at: string;
-}
-
 type Stage = 'unknown' | 'emerging' | 'rising' | 'notable' | 'authority' | 'icon';
 const STAGE_ORDER: Stage[] = ['unknown', 'emerging', 'rising', 'notable', 'authority', 'icon'];
 const STAGE_LABELS: Record<Stage, string> = { unknown: 'Unknown', emerging: 'Emerging', rising: 'Rising', notable: 'Notable', authority: 'Authority', icon: 'Icon' };
-const STAGE_EMOJI: Record<Stage, string> = { unknown: '🌱', emerging: '🌤', rising: '📈', notable: '⭐', authority: '🏆', icon: '👑' };
+const STAGE_EMOJI: Record<Stage, string> = { unknown: '🌱', emerging: '🔥', rising: '⚡', notable: '🎯', authority: '👑', icon: '🏆' };
 
-interface JourneyCriterion { label: string; done: boolean; current: number; target: number; }
-interface JourneyMetrics {
-  postsPublished: number; linkedinConnected: boolean; personaComplete: boolean;
-  longestStreak: number; currentStreak: number; postsThisWeek: number; bestWeek: number; daysActive: number;
+const DATE_RANGES = [
+  { key: '1', label: 'Today' },
+  { key: '7', label: '7 days' },
+  { key: '30', label: '30 days' },
+  { key: '90', label: '90 days' },
+  { key: '3650', label: 'All time' },
+];
+
+interface Overview {
+  brandHealth: { score: number; consistency: number; quality: number; voice: number; trend: number };
+  postingActivity: { points: { date: string; posts: number; published: number }[]; bestDay: string | null; avgPerWeek: number };
+  contentPerformance: { weekStart: string; posts: number; avgScore: number }[];
+  styleDistribution: { distribution: { tone: string; count: number; pct: number; avgScore: number }[]; strongest: any; totalAnalyzed: number };
+  activityFeed: { type: string; description: string; timestamp: string; url?: string }[];
+  growthScoreHistory: { weekStart: string; score: number }[];
+  subscriptionTier: string;
+  postsThisWeek: number;
+  longestStreak: number;
+  totalPostsPublished: number;
+  currentStreak: number;
+  bestWeek: number;
+  stage: Stage;
+  linkedinConnected: boolean;
+  voiceMatch: number | null;
+  updatedAt: string;
 }
+
 interface JourneyData {
-  stage: Stage; nextStage: Stage | null; criteria: JourneyCriterion[]; metrics: JourneyMetrics;
-  momentum: { week: boolean[]; trend: 'Building' | 'Strong' | 'Slowing' | 'Stalled' };
-  badges: { key: string; unlockedAt: string }[];
-  newlyUnlocked: { key: string; emoji: string; label: string }[];
+  stage: Stage; nextStage: Stage | null;
+  criteria: { label: string; done: boolean; current: number; target: number }[];
+  metrics: { linkedinConnected: boolean; personaComplete: boolean; postsPublished: number };
 }
 
-function GrowthJourneyCard({ journey, open, onToggle }: { journey: JourneyData | null; open: boolean; onToggle: () => void }) {
-  const stage = journey?.stage || 'unknown';
-  const stageIdx = STAGE_ORDER.indexOf(stage);
+interface ContentRow {
+  id: string; date: string; preview: string; tone: string | null; hookType: string | null;
+  wordCount: number; authScore: number | null; status: string;
+}
 
+interface Recommendation { priority: 'HIGH' | 'MEDIUM'; recommendation: string; dataPoint: string; actionUrl: string; actionLabel: string; }
+
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function scoreColor(score: number): string {
+  if (score >= 75) return '#10B981';
+  if (score >= 50) return '#F59E0B';
+  return '#EF4444';
+}
+
+function CircularProgress({ score, size = 64, stroke = 6 }: { score: number; size?: number; stroke?: number }) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
   return (
-    <div className="card p-6 animate-fadeIn">
-      <button onClick={onToggle} className="w-full flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-2xl flex-shrink-0">{STAGE_EMOJI[stage]}</div>
-          <div className="text-left">
-            <p className="text-[10px] font-bold text-brand-purple uppercase tracking-wide">Your journey</p>
-            <h3 className="text-lg font-extrabold text-brand-dark">{STAGE_LABELS[stage]}</h3>
-            {journey?.nextStage && (
-              <p className="text-[11px] text-brand-muted mt-0.5">
-                {journey.criteria.filter(c => !c.done).length} step{journey.criteria.filter(c => !c.done).length === 1 ? '' : 's'} until {STAGE_LABELS[journey.nextStage]}
-              </p>
-            )}
-          </div>
-        </div>
-        <ChevronRight size={18} className={`text-brand-muted flex-shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
-      </button>
-
-      {/* Stage timeline */}
-      <div className="flex items-center mt-5 mb-1">
-        {STAGE_ORDER.map((s, i) => (
-          <React.Fragment key={s}>
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-              i <= stageIdx ? 'gradient-primary text-white' : 'bg-[rgba(124,92,252,0.08)] text-brand-muted'
-            }`} title={STAGE_LABELS[s]}>
-              {i <= stageIdx ? STAGE_EMOJI[s] : i}
-            </div>
-            {i < STAGE_ORDER.length - 1 && (
-              <div className={`flex-1 h-1 mx-1 rounded-full ${i < stageIdx ? 'gradient-primary' : 'bg-[rgba(124,92,252,0.08)]'}`} />
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-      <div className="flex justify-between text-[9px] text-brand-muted font-semibold mb-2 px-0.5">
-        {STAGE_ORDER.map(s => <span key={s} className="w-7 text-center">{STAGE_LABELS[s].slice(0, 4)}</span>)}
-      </div>
-
-      {open && (
-        <div className="mt-4 pt-4 border-t border-[rgba(124,92,252,0.08)] animate-fadeIn">
-          <p className="text-xs font-bold text-brand-dark mb-2">What you've accomplished</p>
-          <div className="space-y-1.5 mb-4">
-            {STAGE_ORDER.slice(1, stageIdx + 1).map(s => (
-              <div key={s} className="flex items-center gap-2 text-[13px] text-brand-dark">
-                <Check size={13} className="text-brand-teal flex-shrink-0" /> Reached {STAGE_LABELS[s]}
-              </div>
-            ))}
-            {stageIdx === 0 && <p className="text-[12px] text-brand-muted">Publish your first post to start your journey.</p>}
-          </div>
-          {journey?.nextStage && (
-            <>
-              <p className="text-xs font-bold text-brand-dark mb-2">What's next — {STAGE_LABELS[journey.nextStage]}</p>
-              <div className="space-y-3">
-                {journey.criteria.map((c, i) => (
-                  <div key={i}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-[12px] font-medium ${c.done ? 'text-brand-teal' : 'text-brand-dark'}`}>{c.done && '✓ '}{c.label}</span>
-                      <span className="text-[11px] text-brand-muted">{Math.min(c.current, c.target)}/{c.target}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-500 ${c.done ? 'bg-brand-teal' : 'gradient-primary'}`}
-                        style={{ width: `${Math.min(100, (c.current / c.target) * 100)}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-          {!journey?.nextStage && journey && <p className="text-[12px] text-brand-muted">You've reached the top of the journey. 👑</p>}
-        </div>
-      )}
-    </div>
+    <svg width={size} height={size} className="flex-shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(124,92,252,0.1)" strokeWidth={stroke} fill="none" />
+      <circle
+        cx={size / 2} cy={size / 2} r={radius} stroke={scoreColor(score)} strokeWidth={stroke} fill="none"
+        strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+      />
+      <text x="50%" y="50%" textAnchor="middle" dy="0.35em" fontSize={size * 0.28} fontWeight={800} fill="#1A1A2E">{score}</text>
+    </svg>
   );
 }
 
-function WeeklyMomentum({ momentum }: { momentum: JourneyData['momentum'] }) {
-  const trendColor: Record<string, string> = {
-    Building: 'text-brand-purple', Strong: 'text-brand-teal', Slowing: 'text-amber-500', Stalled: 'text-red-400',
-  };
-  return (
-    <div className="card p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
-      <div>
-        <p className="text-[11px] font-semibold text-brand-muted mb-1.5">This week</p>
-        <div className="flex gap-1.5 text-lg">
-          {momentum.week.map((posted, i) => (
-            <span key={i} className={posted ? '' : 'opacity-20 grayscale'}>{posted ? '🔥' : '⬜'}</span>
-          ))}
-        </div>
-      </div>
-      <p className={`text-sm font-bold ${trendColor[momentum.trend]}`}>Momentum: {momentum.trend}</p>
-    </div>
-  );
+function KpiSkeleton() {
+  return <div className="card p-5"><div className="skeleton h-4 w-20 mb-3" /><div className="skeleton h-8 w-16 mb-2" /><div className="skeleton h-3 w-24" /></div>;
 }
 
-function MilestoneCelebration({ stage, milestone, onClose }: {
-  stage: Stage | null; milestone: { emoji: string; label: string } | null; onClose: () => void;
-}) {
-  const open = !!stage || !!milestone;
-  useEffect(() => {
-    if (!open) return;
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
+function Sparkline({ points }: { points: { date: string; posts: number }[] }) {
+  const last8 = points.slice(-56); // ~8 weeks of daily points, bucketed below
+  const weeks: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    const chunk = last8.slice(i * 7, i * 7 + 7);
+    weeks.push(chunk.reduce((s, p) => s + (p?.posts || 0), 0));
+  }
+  const max = Math.max(1, ...weeks);
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-5 animate-fadeIn" onClick={onClose}>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 40 }).map((_, i) => (
-          <span key={i} className="absolute text-xl" style={{
-            left: `${Math.random() * 100}%`, top: '-5%',
-            animation: `confettiFall ${1.6 + Math.random() * 1.4}s ease-in ${Math.random() * 0.6}s forwards`,
-          }}>{['🎉', '✨', '🎊', '⭐'][i % 4]}</span>
-        ))}
-      </div>
-      <div className="card p-8 max-w-sm w-full text-center relative animate-fadeIn" onClick={e => e.stopPropagation()}>
-        <div className="text-5xl mb-4">{stage ? STAGE_EMOJI[stage] : milestone?.emoji}</div>
-        <h2 className="text-xl font-extrabold text-brand-dark mb-1.5">
-          {stage ? `You've reached ${STAGE_LABELS[stage]}!` : milestone?.label}
-        </h2>
-        <p className="text-sm text-brand-muted mb-6">
-          {stage ? "Your consistency is paying off — keep the momentum going." : 'New milestone unlocked.'}
-        </p>
-        <div className="flex flex-col gap-2">
-          {stage && (
-            <a href={`/create?topic=${encodeURIComponent(`I just reached ${STAGE_LABELS[stage]} status on my LinkedIn growth journey — share this as a short, genuine milestone post`)}`}
-              className="btn-primary w-full text-sm">Share this milestone</a>
-          )}
-          <button onClick={onClose} className="btn-ghost w-full text-sm">Close</button>
-        </div>
-      </div>
+    <div className="flex items-end gap-0.5 h-6">
+      {weeks.map((w, i) => (
+        <div key={i} className="flex-1 bg-brand-purple/25 rounded-sm" style={{ height: `${Math.max(8, (w / max) * 100)}%` }} />
+      ))}
     </div>
   );
-}
-
-function CheckIcon() {
-  return <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
 
 export default function Dashboard() {
+  const { showToast } = useToast();
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [totalPosts, setTotalPosts] = useState(0);
-  const [postsThisWeek, setPostsThisWeek] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [hasProfile, setHasProfile] = useState(false);
-  const [hasPersona, setHasPersona] = useState(false);
-  const [learningInsight, setLearningInsight] = useState<string | null>(null);
-  const [postIdeas, setPostIdeas] = useState<{ topic: string; whyNow: string; trending: boolean }[]>([]);
-  const [loadingIdeas, setLoadingIdeas] = useState(false);
-  const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
-  const [userAvatar, setUserAvatar] = useState('');
-  const [weeklyGoal] = useState(5);
-  const [subscriptionTier, setSubscriptionTier] = useState('free');
-  const [linkedinConnected, setLinkedinConnected] = useState(false);
-  const [linkedinName, setLinkedinName] = useState('');
-  const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string } | null>(null);
+  const [dateRange, setDateRange] = useState('30');
+  const [overview, setOverview] = useState<Overview | null>(null);
   const [journey, setJourney] = useState<JourneyData | null>(null);
-  const [journeyOpen, setJourneyOpen] = useState(false);
-  const [celebrateStage, setCelebrateStage] = useState<Stage | null>(null);
-  const [celebrateMilestone, setCelebrateMilestone] = useState<{ emoji: string; label: string } | null>(null);
-  const [patterns, setPatterns] = useState<any>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
+  const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[] } | null>(null);
+  const [tableRows, setTableRows] = useState<ContentRow[]>([]);
+  const [tableTotal, setTableTotal] = useState(0);
+  const [tablePage, setTablePage] = useState(0);
+  const [sortKey, setSortKey] = useState<keyof ContentRow>('date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [refreshing, setRefreshing] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [healthExpanded, setHealthExpanded] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { window.location.href = '/login'; return; }
       setUser(data.user);
-      loadDashboardData(data.user.id, data.user.email || '');
+      supabase.from('profiles').select('first_name, last_name').eq('id', data.user.id).single().then(({ data: p }) => {
+        setUserName([p?.first_name, p?.last_name].filter(Boolean).join(' ') || data.user!.email?.split('@')[0] || 'there');
+      });
     });
   }, []);
 
-  const loadDashboardData = async (userId: string, userEmail = '') => {
-    const [profileRes, postsRes, personaRes, signalsRes, recentRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, subscription_tier').eq('id', userId).single(),
-      supabase.from('posts').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }),
-      supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', userId).single(),
-      supabase.from('persona_signals').select('tone, content_type').eq('user_id', userId).eq('action', 'kept').order('created_at', { ascending: false }).limit(5),
-      supabase.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(3),
-    ]);
-
-    const profile = profileRes.data;
-    setHasProfile(!!(profile?.role && profile?.domain && profile?.goals?.length));
-    setSubscriptionTier((profile as any)?.subscription_tier || 'free');
-    if (profile?.first_name || profile?.last_name) {
-      setUserName([profile.first_name, profile.last_name].filter(Boolean).join(' '));
-    } else {
-      setUserName(userEmail.split('@')[0] || 'there');
-    }
-    if (profile?.profile_photo_url) setUserAvatar(profile.profile_photo_url);
-    setHasPersona(!!personaRes.data?.persona_completed_at);
-
-    const signals = signalsRes.data || [];
-    if (signals.length >= 3) {
-      const tones = signals.map((s: any) => s.tone).filter(Boolean);
-      const topTone = tones.length > 0 ? tones.sort((a: string, b: string) => tones.filter((t: string) => t === b).length - tones.filter((t: string) => t === a).length)[0] : null;
-      if (topTone) setLearningInsight(`You tend to write in a ${topTone} voice. We've tuned suggestions to match.`);
-    }
-
-    const posts = postsRes.data || [];
-    setTotalPosts(posts.length);
-    setRecentPosts(recentRes.data || []);
-    if (posts.length > 0) maybePromptPush(userId);
-
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    setPostsThisWeek(posts.filter(p => new Date(p.created_at) >= weekAgo).length);
-
-    let currentStreak = 0;
-    if (posts.length > 0) {
-      const days = new Set(posts.map(p => new Date(p.created_at).toISOString().split('T')[0]));
-      const today = new Date();
-      for (let i = 0; i < 365; i++) {
-        const d = new Date(today); d.setDate(d.getDate() - i);
-        if (days.has(d.toISOString().split('T')[0])) currentStreak++;
-        else if (i > 0) break;
-      }
-    }
-    setStreak(currentStreak);
-    setLoading(false);
-
-    try {
-      const liRes = await fetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
-      const liData = await liRes.json();
-      setLinkedinConnected(liData.connected);
-      if (liData.name) setLinkedinName(liData.name);
-      if (liData.picture) setUserAvatar(prev => prev || liData.picture);
-    } catch {}
-
-    fetchPostIdeas(userId);
-
-    fetch(`${API_URL}/api/intelligence`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ action: 'best-time', userId }),
-    })
-      .then(r => r.json())
-      .then(d => { if (d && !d.error) setBestTime(d); })
-      .catch(() => {});
-
-    loadJourney(userId);
-
-    fetch(`${API_URL}/api/intelligence`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ action: 'user-patterns', userId }),
-    })
-      .then(r => r.json())
-      .then(d => { if (d && !d.error) setPatterns(d); })
-      .catch(() => {});
-  };
-
-  const loadJourney = async (uid: string) => {
+  const loadOverview = useCallback(async (userId: string, days: string) => {
     try {
       const res = await fetch(`${API_URL}/api/intelligence`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ action: 'growth-journey', userId: uid }),
-      });
-      const d: JourneyData = await res.json();
-      if (!d || (d as any).error) return;
-      setJourney(d);
-
-      // Stage-change celebration: compare against the last stage we saw for
-      // this user (localStorage), since the server doesn't track "seen" state.
-      const key = `eclatale_last_stage_${uid}`;
-      const lastSeen = localStorage.getItem(key);
-      if (lastSeen && lastSeen !== d.stage && STAGE_ORDER.indexOf(d.stage) > STAGE_ORDER.indexOf(lastSeen as Stage)) {
-        setCelebrateStage(d.stage);
-      }
-      localStorage.setItem(key, d.stage);
-
-      if (d.newlyUnlocked?.length) {
-        setCelebrateMilestone(d.newlyUnlocked[0]);
-      }
-    } catch {}
-  };
-
-  const fetchPostIdeas = useCallback(async (userId: string) => {
-    setLoadingIdeas(true);
-    try {
-      const res = await fetch(`${API_URL}/api/suggest-topics`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ query: '', userId }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dashboard-overview', userId, days: Number(days) }),
       });
       const data = await res.json();
-      if (Array.isArray(data.topics)) setPostIdeas(data.topics);
+      if (!data.error) setOverview(data);
+    } catch { showToast('error', 'Could not load dashboard data.'); }
+  }, [showToast]);
+
+  const loadJourney = useCallback(async (userId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'growth-journey', userId }),
+      });
+      const data = await res.json();
+      if (!data.error) setJourney(data);
     } catch {}
-    setLoadingIdeas(false);
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
+  const loadRecommendations = useCallback(async (userId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dashboard-recommendations', userId }),
+      });
+      const data = await res.json();
+      if (!data.error) setRecommendations(data.recommendations || []);
+    } catch {}
+  }, []);
+
+  const loadBestTime = useCallback(async (userId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'best-time', userId }),
+      });
+      const data = await res.json();
+      if (!data.error) setBestTime(data);
+    } catch {}
+  }, []);
+
+  const loadTable = useCallback(async (userId: string, page: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/intelligence`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dashboard-table', userId, page, pageSize: 10 }),
+      });
+      const data = await res.json();
+      if (!data.error) { setTableRows(data.rows || []); setTableTotal(data.total || 0); }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    loadOverview(user.id, dateRange);
+    loadJourney(user.id);
+    loadRecommendations(user.id);
+    loadBestTime(user.id);
+    loadTable(user.id, 0);
+    supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', user.id).then(({ count }) => {
+      if ((count || 0) > 0) maybePromptPush(user.id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadOverview(user.id, dateRange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadTable(user.id, tablePage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tablePage]);
+
+  const handleRefresh = async () => {
+    if (!user) return;
+    setRefreshing(true);
+    await Promise.all([loadOverview(user.id, dateRange), loadJourney(user.id), loadTable(user.id, tablePage)]);
+    setRefreshing(false);
+    showToast('success', 'Dashboard refreshed.');
   };
 
-  const handleCopyPost = (post: RecentPost) => {
-    copyToClipboard(post.content);
-    setCopiedId(post.id);
+  const handleExport = () => {
+    if (!tableRows.length) { showToast('warning', 'No posts to export yet.'); return; }
+    const header = 'Date,Preview,Tone,Hook,Words,Auth Score,Status\n';
+    const csv = tableRows.map(r =>
+      [new Date(r.date).toLocaleDateString(), `"${r.preview.replace(/"/g, '""')}"`, r.tone || '', r.hookType || '', r.wordCount, r.authScore ?? '', r.status].join(',')
+    ).join('\n');
+    const blob = new Blob([header + csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `eclatale-posts-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('success', 'Report exported.');
+  };
+
+  const handleCopyRow = (row: ContentRow, fullContent?: string) => {
+    copyToClipboard(fullContent || row.preview);
+    setCopiedId(row.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const formatDate = (d: string) => {
-    const diff = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
-    if (diff < 1) return 'Just now';
-    if (diff < 60) return `${diff}m ago`;
-    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
-    return `${Math.floor(diff / 1440)}d ago`;
+  const handleDeleteRow = async (id: string) => {
+    const { error } = await supabase.from('posts').delete().eq('id', id);
+    if (error) { showToast('error', "Couldn't delete that post."); return; }
+    setTableRows(prev => prev.filter(r => r.id !== id));
+    showToast('success', 'Post deleted.');
+  };
+
+  const sortedRows = useMemo(() => {
+    const rows = [...tableRows];
+    rows.sort((a, b) => {
+      const av = a[sortKey], bv = b[sortKey];
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      const cmp = typeof av === 'number' ? av - (bv as number) : String(av).localeCompare(String(bv));
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return rows;
+  }, [tableRows, sortKey, sortDir]);
+
+  const toggleSort = (key: keyof ContentRow) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('desc'); }
   };
 
   const greeting = (() => {
@@ -371,411 +298,440 @@ export default function Dashboard() {
   })();
 
   const greetingSubtext = (() => {
-    if (totalPosts === 0) return "Let's create your first post and start building your brand.";
-    if (recentPosts.length > 0 && new Date(recentPosts[0].created_at).toDateString() === new Date().toDateString()) {
-      return 'Great work posting today! Want to schedule tomorrow’s post?';
+    if (!overview) return '';
+    if (overview.totalPostsPublished === 0) return "Let's create your first post today.";
+    if (overview.currentStreak > 0 && overview.currentStreak < 30 && new Date().getHours() >= 17) {
+      return `Your ${overview.currentStreak}-day streak ends tonight. One post keeps it alive.`;
     }
-    if (streak >= 2) return `You're on a ${streak}-day streak. Keep the momentum going!`;
-    if (recentPosts.length > 0) {
-      const daysSince = Math.floor((Date.now() - new Date(recentPosts[0].created_at).getTime()) / 86400000);
-      if (daysSince >= 3) return 'Your audience is waiting. Let’s create something great today.';
-    }
-    return "Here's your brand growth overview.";
+    const postedToday = overview.postingActivity.points[overview.postingActivity.points.length - 1]?.posts > 0;
+    if (postedToday) return "Great work posting today — here's how you're growing.";
+    if (overview.currentStreak >= 2) return "You've been consistent this week — your brand is building momentum.";
+    return "Here's your brand growth, in real numbers.";
   })();
 
-  const roadmap = [
-    { text: 'Complete your persona setup', done: hasProfile },
-    { text: 'Set up your voice profile', done: hasPersona, href: '/persona-setup' },
-    { text: 'Generate your first AI post', done: totalPosts > 0, href: '/create' },
-    { text: 'Reach Emerging status', done: !!journey && journey.stage !== 'unknown' },
-  ];
-  const roadmapDone = roadmap.filter(r => r.done).length;
+  const weeklyGoal = overview?.subscriptionTier === 'individual' ? 5 : 3;
 
-  if (loading) {
+  if (!user || !overview) {
     return (
-      <div className="min-h-screen gradient-bg-page p-5 md:p-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="skeleton h-16 w-full" />
-          <div className="skeleton h-40 w-full" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <div key={i} className="skeleton h-28 w-full" />)}
+      <AppShell mobileTitle="Eclatale">
+        <div className="min-w-0 pb-8">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-8 py-6 md:py-8 space-y-6">
+            <div className="skeleton h-14 w-full rounded-2xl" />
+            <div className="skeleton h-32 w-full rounded-2xl" />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[1, 2, 3, 4, 5, 6].map(i => <KpiSkeleton key={i} />)}
+            </div>
+            <div className="skeleton h-80 w-full rounded-2xl" />
           </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
+
+  const stageIdx = STAGE_ORDER.indexOf(overview.stage);
 
   return (
     <AppShell mobileTitle="Eclatale">
       <div className="min-w-0 pb-8">
-        <div className="max-w-[960px] mx-auto px-5 md:px-8 py-6 md:py-8">
-          <div className="flex items-center justify-end gap-1 mb-2">
-            {user && <NotificationBell userId={user.id} />}
-            <button onClick={handleLogout} aria-label="Log out" className="text-sm text-red-400 p-2 hover:bg-red-50 rounded-lg transition-colors"><LogOut size={18} /></button>
-          </div>
-          {/* Welcome Header */}
-          <div className="mb-2">
-            <h1 className="text-xl md:text-2xl font-bold text-brand-dark">{greeting}, {userName}! 👋</h1>
-            <p className="text-sm text-brand-muted mt-0.5">{greetingSubtext}</p>
-          </div>
+        <div className="max-w-[1280px] mx-auto px-5 md:px-8 py-6 md:py-8">
 
-          {subscriptionTier === 'free' && (
-            <a href="/pricing" className="block mb-6 rounded-2xl p-6 text-white relative overflow-hidden group"
-              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
-              <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold mb-1">
-                    You've created {postsThisWeek} post{postsThisWeek === 1 ? '' : 's'} this week · {Math.max(0, 3 - postsThisWeek)} free post{Math.max(0, 3 - postsThisWeek) === 1 ? '' : 's'} remaining
-                  </p>
-                  <h3 className="text-lg font-extrabold mb-1">Unlock unlimited posts + all AI features</h3>
-                  <p className="text-xs text-white/80">Voice learning · Authenticity score · Competitor intelligence · Profile optimizer</p>
-                </div>
-                <div className="flex-shrink-0 text-center">
-                  <span className="inline-block bg-white text-brand-purple font-bold text-sm px-5 py-2.5 rounded-full group-hover:scale-105 transition-transform">
-                    Upgrade — LAUNCH50 for 50% off
-                  </span>
-                  <p className="text-[10px] text-white/70 mt-1.5">Resets Monday</p>
-                </div>
+          {/* Header bar */}
+          <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-xl md:text-2xl font-bold text-brand-dark">{greeting}, {userName}</h1>
+                <NotificationBell userId={user.id} />
               </div>
-              <div className="h-1.5 rounded-full bg-white/20 mt-4 overflow-hidden relative z-10">
-                <div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${Math.min(100, (postsThisWeek / 3) * 100)}%` }} />
-              </div>
-            </a>
-          )}
-
-          <GrowthJourneyCard journey={journey} open={journeyOpen} onToggle={() => setJourneyOpen(o => !o)} />
-
-          {/* Journey Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 mt-6">
-            {[
-              { label: 'Total Posts', value: totalPosts, icon: <FileText size={16} />, color: 'from-brand-purple to-[#9B7DFC]' },
-              { label: 'This Week', value: `${postsThisWeek}${journey ? ` / best ${journey.metrics.bestWeek}` : ''}`, icon: <BarChart3 size={16} />, color: 'from-brand-pink to-[#FF5CAD]' },
-              { label: 'Streak', value: journey ? `${journey.metrics.currentStreak}d / best ${journey.metrics.longestStreak}d` : `${streak}d`, icon: <Flame size={16} />, color: 'from-brand-orange to-[#FF8F5E]' },
-              { label: 'Days Active', value: journey?.metrics.daysActive ?? '—', icon: <Trophy size={16} />, color: 'from-brand-teal to-brand-blue' },
-            ].map((s, i) => (
-              <div key={i} className="card stat-card p-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white`}>{s.icon}</div>
-                  <span className="text-[11px] text-brand-muted font-medium">{s.label}</span>
-                </div>
-                <span className="text-xl font-bold text-brand-dark">{s.value}</span>
-              </div>
-            ))}
-          </div>
-
-          {journey && <WeeklyMomentum momentum={journey.momentum} />}
-
-          {/* Writing Insights (Piece 12 — semantic engine, Surface 3) */}
-          <div className="card p-6 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple to-brand-pink flex items-center justify-center text-white">
-                <PenTool size={16} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-brand-dark">Writing insights</h3>
-                <p className="text-[11px] text-brand-muted">Patterns from your own posts</p>
-              </div>
+              <p className="text-sm text-brand-muted">{greetingSubtext}</p>
             </div>
-            {patterns?.ready ? (
-              <div className="space-y-3">
-                {patterns.writingStrengths?.[0] && (
-                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[rgba(6,214,160,0.05)] border border-brand-teal/10">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold text-brand-teal uppercase tracking-wide mb-0.5">Strength</p>
-                      <p className="text-[13px] text-brand-dark leading-relaxed">{patterns.writingStrengths[0]}</p>
-                    </div>
-                    <a href={`/create?topic=${encodeURIComponent(patterns.writingStrengths[0])}`}
-                      className="text-[11px] text-brand-teal font-semibold hover:underline flex-shrink-0 whitespace-nowrap">Write about this →</a>
-                  </div>
-                )}
-                {patterns.writingOpportunities?.[0] && (
-                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[rgba(255,107,53,0.05)] border border-brand-orange/10">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold text-brand-orange uppercase tracking-wide mb-0.5">Opportunity</p>
-                      <p className="text-[13px] text-brand-dark leading-relaxed">{patterns.writingOpportunities[0]}</p>
-                    </div>
-                    <a href={`/create?topic=${encodeURIComponent(patterns.writingOpportunities[0])}`}
-                      className="text-[11px] text-brand-orange font-semibold hover:underline flex-shrink-0 whitespace-nowrap">Write about this →</a>
-                  </div>
-                )}
-                {(patterns.unusedAngles?.[0] || patterns.recommendedNextPost) && (
-                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[rgba(124,92,252,0.05)] border border-brand-purple/10">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold text-brand-purple uppercase tracking-wide mb-0.5">Next post angle</p>
-                      <p className="text-[13px] text-brand-dark leading-relaxed">{patterns.recommendedNextPost || patterns.unusedAngles[0]}</p>
-                    </div>
-                    <a href={`/create?topic=${encodeURIComponent(patterns.recommendedNextPost || patterns.unusedAngles[0])}`}
-                      className="text-[11px] text-brand-purple font-semibold hover:underline flex-shrink-0 whitespace-nowrap">Write about this →</a>
-                  </div>
-                )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative">
+                <select
+                  value={dateRange}
+                  onChange={e => setDateRange(e.target.value)}
+                  className="text-xs font-semibold text-brand-dark bg-white border border-[rgba(124,92,252,0.15)] rounded-full pl-3 pr-7 py-2 appearance-none cursor-pointer hover:border-brand-purple/30"
+                >
+                  {DATE_RANGES.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
+                </select>
+                <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
               </div>
-            ) : (
-              <p className="text-sm text-brand-muted text-center py-4">
-                Not enough data yet — generate {Math.max(0, 3 - (patterns?.postsAnalyzed || 0))} more posts to unlock your writing insights.
-              </p>
+              <button onClick={handleExport} className="btn-ghost !py-2 !px-3.5 text-xs">
+                <Download size={13} /> Export
+              </button>
+              <button onClick={handleRefresh} disabled={refreshing} className="btn-ghost !py-2 !px-3.5 text-xs" aria-label="Refresh">
+                <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+              </button>
+              <a href="/create" onMouseEnter={prefetchCreatePage} className="btn-primary !py-2.5 !px-5 text-sm">
+                <Sparkles size={14} /> Create post
+              </a>
+              <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/'; }} aria-label="Log out" className="text-brand-muted p-2 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors">
+                <LogOut size={16} />
+              </button>
+            </div>
+          </div>
+          <p className="text-[10px] text-brand-muted -mt-4 mb-6 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" /> Updated {timeAgo(overview.updatedAt)}
+          </p>
+
+          {/* Growth Journey timeline */}
+          <div className="card p-6 mb-6">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <p className="text-xs font-bold text-brand-purple uppercase tracking-wide">Growth Journey</p>
+              {journey?.nextStage && (
+                <p className="text-xs text-brand-muted">
+                  {journey.criteria.filter(c => !c.done).length === 0
+                    ? `Ready to unlock ${STAGE_LABELS[journey.nextStage]}`
+                    : `${journey.criteria.find(c => !c.done)?.current ?? 0} of ${journey.criteria.find(c => !c.done)?.target ?? 0} to ${STAGE_LABELS[journey.nextStage]}`}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center mb-1">
+              {STAGE_ORDER.map((s, i) => (
+                <React.Fragment key={s}>
+                  <div className="flex flex-col items-center flex-shrink-0" style={{ width: 64 }}>
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${i <= stageIdx ? 'gradient-primary text-white' : 'bg-[rgba(124,92,252,0.08)] text-brand-muted'}`}>
+                      {STAGE_EMOJI[s]}
+                    </div>
+                    <span className="text-[9px] font-semibold text-brand-muted mt-1">{STAGE_LABELS[s]}</span>
+                    {i === stageIdx && <span className="text-[8px] font-bold text-brand-purple mt-0.5">YOU ARE HERE</span>}
+                  </div>
+                  {i < STAGE_ORDER.length - 1 && <div className={`flex-1 h-1 mx-1 rounded-full ${i < stageIdx ? 'gradient-primary' : 'bg-[rgba(124,92,252,0.08)]'}`} />}
+                </React.Fragment>
+              ))}
+            </div>
+            {journey && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5">
+                {(journey.nextStage ? journey.criteria : []).map((c, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (c.done) return;
+                      const hrefs: Record<string, string> = { 'LinkedIn connected': '/settings', 'Voice profile complete': '/persona-setup' };
+                      window.location.href = hrefs[c.label] || '/create';
+                    }}
+                    className={`flex items-center gap-2 text-left p-3 rounded-xl border text-xs font-medium transition-colors ${c.done ? 'border-brand-teal/20 bg-[rgba(6,214,160,0.05)] text-brand-dark' : 'border-[rgba(124,92,252,0.1)] hover:border-brand-purple/25 text-brand-muted cursor-pointer'}`}
+                  >
+                    {c.done ? <Check size={14} className="text-brand-teal flex-shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border-[1.5px] border-brand-muted/40 flex-shrink-0" />}
+                    {c.label}{!c.done && ` (${Math.min(c.current, c.target)}/${c.target})`}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Persona CTA */}
-          {!hasPersona && (
-            <a href="/persona-setup" className="card card-hover p-6 mb-6 block !border-brand-purple/15 gradient-mesh">
+          {/* KPI row */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+            {/* Brand Health */}
+            <button onClick={() => setHealthExpanded(o => !o)} className="card p-4 text-left col-span-2 md:col-span-1 lg:col-span-1">
+              <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">Brand Health</p>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-white flex-shrink-0">
-                  <Target size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-brand-dark">Set up your voice profile. Takes 90 seconds.</h3>
-                  <p className="text-xs text-brand-muted">Content generated without it sounds generic.</p>
-                </div>
-                <ChevronRight size={16} className="text-brand-muted flex-shrink-0" />
-              </div>
-            </a>
-          )}
-
-          {/* Learning Insight */}
-          {learningInsight && (
-            <div className="card p-6 mb-6 !border-brand-teal/15">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white flex-shrink-0">
-                  <Sparkles size={14} />
-                </div>
+                <CircularProgress score={overview.brandHealth.score} size={56} stroke={5} />
                 <div>
-                  <p className="text-[11px] font-semibold text-brand-teal uppercase tracking-wide">Eclatale knows you</p>
-                  <p className="text-sm text-brand-dark">{learningInsight}</p>
+                  <div className={`flex items-center gap-0.5 text-xs font-bold ${overview.brandHealth.trend >= 0 ? 'text-brand-teal' : 'text-red-400'}`}>
+                    {overview.brandHealth.trend >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                    {Math.abs(overview.brandHealth.trend)} pts
+                  </div>
+                  <p className="text-[9px] text-brand-muted">vs last week</p>
                 </div>
               </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column (2/3) */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Post Ideas */}
-              <div className="card p-6 md:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-base font-bold text-brand-dark">Post ideas for you</h2>
-                    <p className="text-[10px] text-brand-muted font-medium">AI-curated based on your industry and persona</p>
-                  </div>
-                  <button onClick={() => user && fetchPostIdeas(user.id)} disabled={loadingIdeas}
-                    className="flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline">
-                    {loadingIdeas ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                    New ideas
-                  </button>
-                </div>
-                {loadingIdeas && postIdeas.length === 0 ? (
-                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-20 w-full" />)}</div>
-                ) : (
-                  <div className="space-y-3">
-                    {postIdeas.slice(0, 3).map((idea, i) => (
-                      <div key={i} className="p-4 rounded-2xl border border-[rgba(124,92,252,0.06)] hover:border-brand-purple/20 hover:shadow-brand transition-all group bg-white">
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <p className="text-[13px] text-brand-dark leading-relaxed font-medium flex-1">{idea.topic}</p>
-                          <span className={`text-[9px] font-bold px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap ${
-                            idea.trending ? 'bg-[rgba(255,107,53,0.1)] text-brand-orange' : 'bg-[rgba(107,114,128,0.1)] text-brand-muted'
-                          }`}>
-                            {idea.trending ? '🔥 Trending' : '💡 Evergreen'}
-                          </span>
-                        </div>
-                        {idea.whyNow && (
-                          <p className="text-[11px] leading-snug mb-3" style={{ color: '#6B7280' }}>
-                            <span className="font-semibold">Why now:</span> {idea.whyNow}
-                          </p>
-                        )}
-                        <a href={`/create?topic=${encodeURIComponent(idea.topic)}`}
-                          className="inline-flex items-center gap-1.5 text-xs text-brand-purple font-semibold hover:underline opacity-70 group-hover:opacity-100 transition-opacity">
-                          Generate post <ArrowRight size={12} />
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {postIdeas.length === 0 && !loadingIdeas && (
-                  <p className="text-sm text-brand-muted text-center py-6">Create your first post to get personalized ideas.</p>
-                )}
-              </div>
-
-              {/* Recent Posts */}
-              <div className="card p-6 md:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-bold text-brand-dark">Recent posts</h2>
-                  {recentPosts.length > 0 && (
-                    <a href="/history" className="text-xs text-brand-purple font-semibold hover:underline">View all</a>
-                  )}
-                </div>
-                {recentPosts.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center text-white mx-auto mb-3 opacity-50">
-                      <FileText size={20} />
+              {healthExpanded && (
+                <div className="mt-3 pt-3 border-t border-[rgba(124,92,252,0.08)] space-y-1.5">
+                  {[['Consistency', overview.brandHealth.consistency], ['Quality', overview.brandHealth.quality], ['Voice', overview.brandHealth.voice]].map(([label, val]) => (
+                    <div key={label as string} className="flex items-center justify-between text-[10px]">
+                      <span className="text-brand-muted">{label}</span>
+                      <span className="font-bold text-brand-dark">{val}</span>
                     </div>
-                    <p className="text-sm text-brand-muted mb-4">No posts yet. Create your first one!</p>
-                    <a href="/create" onMouseEnter={prefetchCreatePage} className="btn-primary text-xs !py-2 !px-5">Write a Post</a>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {recentPosts.map(post => (
-                      <div key={post.id} className="p-4 rounded-xl border border-[rgba(124,92,252,0.06)] hover:border-[rgba(124,92,252,0.12)] transition-all">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(124,92,252,0.06)] text-brand-purple">
-                              {post.content_type === 'linkedin-post' ? 'LinkedIn' : post.content_type === 'twitter-thread' ? 'X Thread' : post.content_type === 'instagram-caption' ? 'Instagram' : 'Article'}
-                            </span>
-                            <span className="text-[10px] text-brand-muted">{formatDate(post.created_at)}</span>
-                          </div>
-                          <button onClick={() => handleCopyPost(post)} className="text-brand-muted hover:text-brand-purple transition-colors p-1">
-                            {copiedId === post.id ? <Check size={14} className="text-brand-teal" /> : <Copy size={14} />}
-                          </button>
-                        </div>
-                        <p className="text-[13px] text-brand-dark leading-relaxed line-clamp-3">{post.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right Column (1/3) */}
-            <div className="space-y-6">
-              {/* Weekly Progress */}
-              <div className="card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-[rgba(124,92,252,0.06)] flex items-center justify-center">
-                    <BarChart3 size={16} className="text-brand-purple" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-brand-dark">Weekly progress</h3>
-                    <p className="text-[11px] text-brand-muted">{postsThisWeek}/{weeklyGoal} posts</p>
-                  </div>
-                </div>
-                <div className="h-2 rounded-full bg-[rgba(124,92,252,0.08)] mb-3 overflow-hidden">
-                  <div className="h-full rounded-full gradient-primary transition-all duration-700"
-                    style={{ width: `${Math.min(100, (postsThisWeek / weeklyGoal) * 100)}%` }} />
-                </div>
-                <div className="flex gap-1">
-                  {Array.from({ length: 7 }).map((_, i) => {
-                    const d = new Date(); d.setDate(d.getDate() - (6 - i));
-                    const dayLabel = d.toLocaleDateString('en', { weekday: 'short' }).charAt(0);
-                    const filled = i < postsThisWeek;
-                    return (
-                      <div key={i} className="flex-1 text-center">
-                        <div className={`w-full h-6 rounded-md mb-1 ${filled ? 'gradient-primary' : 'bg-[rgba(124,92,252,0.06)]'}`} />
-                        <span className="text-[9px] text-brand-muted font-medium">{dayLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Post Timing (AI-recommended) */}
-              {bestTime && bestTime.recommendedDays.length > 0 && (
-                <div className="card p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white">
-                      <Clock size={16} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-brand-dark">Post timing</h3>
-                      <p className="text-[10px] text-brand-muted">AI-recommended · {bestTime.basedOn}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {bestTime.recommendedDays.map(d => (
-                      <span key={d} className="badge bg-[rgba(124,92,252,0.07)] text-brand-purple text-[11px]">{d}</span>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {bestTime.recommendedTimes.map(t => (
-                      <span key={t} className="badge bg-[rgba(6,214,160,0.08)] text-brand-teal text-[11px]">{t}</span>
-                    ))}
-                  </div>
-                  {bestTime.reasoning && <p className="text-[11px] text-brand-muted leading-relaxed">{bestTime.reasoning}</p>}
+                  ))}
                 </div>
               )}
+            </button>
 
-              {/* Quick Create */}
+            {/* Total posts */}
+            <div className="card p-4">
+              <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">Total Posts</p>
+              <p className="text-2xl font-extrabold text-brand-dark mb-1">{overview.totalPostsPublished}</p>
+              <Sparkline points={overview.postingActivity.points} />
+              <p className="text-[9px] text-brand-muted mt-1">{overview.postsThisWeek} this week</p>
+            </div>
+
+            {/* Streak */}
+            <div className="card p-4">
+              <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">Streak</p>
+              <div className="flex items-center gap-1.5">
+                <Flame size={18} className="text-brand-orange" style={{ transform: `scale(${1 + Math.min(1, overview.currentStreak / 30) * 0.6})` }} />
+                <p className="text-2xl font-extrabold text-brand-dark">{overview.currentStreak}d</p>
+              </div>
+              <p className="text-[9px] text-brand-muted mt-1">Best: {overview.longestStreak}d</p>
+            </div>
+
+            {/* This week */}
+            <div className="card p-4">
+              <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">This Week</p>
+              <p className="text-2xl font-extrabold text-brand-dark mb-1.5">{overview.postsThisWeek}<span className="text-sm text-brand-muted">/{weeklyGoal}</span></p>
+              <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] overflow-hidden">
+                <div className="h-full rounded-full gradient-primary transition-all duration-700" style={{ width: `${Math.min(100, (overview.postsThisWeek / weeklyGoal) * 100)}%` }} />
+              </div>
+              <p className="text-[9px] text-brand-muted mt-1">Resets Monday</p>
+            </div>
+
+            {/* Voice match */}
+            <div className="card p-4">
+              <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">Voice Match</p>
+              {overview.voiceMatch != null ? (
+                <div className="flex items-center gap-3">
+                  <CircularProgress score={overview.voiceMatch} size={44} stroke={4} />
+                  <p className="text-[10px] font-semibold text-brand-dark">
+                    {overview.voiceMatch >= 85 ? 'Excellent' : overview.voiceMatch >= 70 ? 'Strong' : overview.voiceMatch >= 50 ? 'Building' : 'Getting started'}
+                  </p>
+                </div>
+              ) : (
+                <a href="/persona-setup" className="text-xs text-brand-purple font-semibold hover:underline">Set up voice →</a>
+              )}
+            </div>
+
+            {/* Content quality / LinkedIn */}
+            <div className="card p-4">
+              <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">Content Quality</p>
+              <p className="text-2xl font-extrabold" style={{ color: scoreColor(overview.brandHealth.quality) }}>{overview.brandHealth.quality}</p>
+              <p className="text-[9px] text-brand-muted mt-1">
+                {overview.linkedinConnected ? 'Avg. authenticity — LinkedIn reach data requires Marketing API access' : 'Avg. authenticity score'}
+              </p>
+              {!overview.linkedinConnected && <a href="/settings" className="text-[10px] text-brand-purple font-semibold hover:underline">Connect LinkedIn →</a>}
+            </div>
+          </div>
+
+          {/* Charts + Activity feed */}
+          <div className="grid grid-cols-1 lg:grid-cols-[65%_1fr] gap-6 mb-6">
+            <div className="space-y-6 min-w-0">
+              {/* Posting activity */}
               <div className="card p-6">
-                <h3 className="text-sm font-bold text-brand-dark mb-3">Quick create</h3>
-                <div className="space-y-2">
-                  <a href="/create" onMouseEnter={prefetchCreatePage} className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-purple/20 transition-all group">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple to-brand-pink flex items-center justify-center text-white group-hover:scale-105 transition-transform">
-                      <Sparkles size={14} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-brand-dark">AI Workspace</p>
-                      <p className="text-[10px] text-brand-muted">Write, repurpose, refine with AI</p>
-                    </div>
-                    <ChevronRight size={14} className="text-brand-muted" />
-                  </a>
-                  <a href="/create-visual" className="flex items-center gap-3 p-3 rounded-xl border border-[rgba(124,92,252,0.08)] hover:border-brand-teal/20 transition-all group">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-teal to-brand-blue flex items-center justify-center text-white group-hover:scale-105 transition-transform">
-                      <Image size={14} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-brand-dark">Visual Creator</p>
-                      <p className="text-[10px] text-brand-muted">AI-generated graphics</p>
-                    </div>
-                    <ChevronRight size={14} className="text-brand-muted" />
-                  </a>
+                <h3 className="text-sm font-bold text-brand-dark mb-1">Posting activity</h3>
+                <p className="text-[11px] text-brand-muted mb-4">Posts created per day</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={overview.postingActivity.points}>
+                    <defs>
+                      <linearGradient id="postGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#7C5CFC" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#7C5CFC" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,92,252,0.06)" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={(d: string) => new Date(d).toLocaleDateString('en', { month: 'short', day: 'numeric' })} minTickGap={30} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} allowDecimals={false} axisLine={false} tickLine={false} width={24} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 12, border: '1px solid rgba(124,92,252,0.15)', fontSize: 12 }}
+                      labelFormatter={((d: any) => new Date(d).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })) as any}
+                      formatter={((value: any, name: any) => [value, name === 'posts' ? 'Posts created' : 'Published']) as any}
+                    />
+                    <Area type="monotone" dataKey="posts" stroke="#7C5CFC" strokeWidth={2} fill="url(#postGradient)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 mt-2 text-[11px] text-brand-muted">
+                  {overview.postingActivity.bestDay && <span>Best posting day: <strong className="text-brand-dark">{overview.postingActivity.bestDay}</strong></span>}
+                  <span>Average: <strong className="text-brand-dark">{overview.postingActivity.avgPerWeek}</strong>/week</span>
                 </div>
               </div>
 
-              {/* LinkedIn Connection */}
+              {/* Content performance */}
               <div className="card p-6">
-                <h3 className="text-sm font-bold text-brand-dark mb-3">LinkedIn</h3>
-                {linkedinConnected ? (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#0A66C2] flex items-center justify-center text-white text-xs font-bold">in</div>
-                    <div>
-                      <p className="text-sm font-semibold text-brand-dark">{linkedinName || 'Connected'}</p>
-                      <p className="text-[10px] text-brand-teal font-medium">Ready to publish</p>
-                    </div>
-                  </div>
+                <h3 className="text-sm font-bold text-brand-dark mb-1">Content performance</h3>
+                <p className="text-[11px] text-brand-muted mb-4">Posts vs. average quality score, by week</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <ComposedChart data={overview.contentPerformance}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,92,252,0.06)" vertical={false} />
+                    <XAxis dataKey="weekStart" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={(d: string) => new Date(d).toLocaleDateString('en', { month: 'short', day: 'numeric' })} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#9CA3AF' }} allowDecimals={false} axisLine={false} tickLine={false} width={24} />
+                    <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={28} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(124,92,252,0.15)', fontSize: 12 }} />
+                    <Bar yAxisId="left" dataKey="posts" fill="rgba(124,92,252,0.5)" radius={[6, 6, 0, 0]} name="Posts" />
+                    <Line yAxisId="right" type="monotone" dataKey="avgScore" stroke="#F72585" strokeWidth={2} dot={{ r: 3 }} name="Avg quality score" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Style distribution */}
+              <div className="card p-6">
+                <h3 className="text-sm font-bold text-brand-dark mb-1">Writing style distribution</h3>
+                <p className="text-[11px] text-brand-muted mb-4">{overview.styleDistribution.totalAnalyzed} posts analyzed</p>
+                {overview.styleDistribution.distribution.length === 0 ? (
+                  <p className="text-sm text-brand-muted py-4 text-center">No analyzed posts yet.</p>
                 ) : (
-                  <a href={`${API_URL}/api/auth/linkedin/callback?userId=${user?.id}`}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[#0A66C2]/20 hover:bg-[#0A66C2]/5 transition-all">
-                    <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white text-xs font-bold">in</div>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-brand-dark">Connect LinkedIn</p>
-                      <p className="text-[10px] text-brand-muted">Publish posts directly</p>
-                    </div>
-                    <ChevronRight size={14} className="text-brand-muted" />
-                  </a>
+                  <div className="space-y-2.5">
+                    {overview.styleDistribution.distribution.map(d => (
+                      <div key={d.tone}>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-semibold text-brand-dark capitalize">{d.tone.replace(/_/g, ' ')}</span>
+                          <span className="text-brand-muted">{d.count} posts ({d.pct}%)</span>
+                        </div>
+                        <div className="h-2.5 rounded-full bg-[rgba(124,92,252,0.06)] overflow-hidden">
+                          <div className="h-full rounded-full gradient-primary" style={{ width: `${d.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {overview.styleDistribution.strongest && (
+                  <p className="text-[11px] text-brand-muted mt-4">
+                    Your strongest style: <strong className="text-brand-dark capitalize">{overview.styleDistribution.strongest.tone.replace(/_/g, ' ')}</strong> (highest avg quality score, {overview.styleDistribution.strongest.avgScore}/100)
+                  </p>
                 )}
               </div>
 
-              {/* Roadmap */}
+              {/* Growth score history */}
               <div className="card p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-brand-dark">Your roadmap</h3>
-                  <span className="text-[10px] font-semibold text-brand-purple bg-[rgba(124,92,252,0.06)] px-2 py-0.5 rounded-full">{roadmapDone}/{roadmap.length}</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] mb-4 overflow-hidden">
-                  <div className="h-full rounded-full gradient-primary transition-all duration-700"
-                    style={{ width: `${(roadmapDone / roadmap.length) * 100}%` }} />
-                </div>
-                <div className="space-y-2.5">
-                  {roadmap.map((item, i) => (
-                    <a key={i} href={item.done ? undefined : (item as any).href || '#'}
-                      className={`flex items-center gap-2.5 text-[13px] ${!item.done && (item as any).href ? 'cursor-pointer hover:text-brand-purple' : ''}`}>
-                      <div className={`w-4.5 h-4.5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 ${
-                        item.done ? 'bg-brand-teal border-brand-teal' : 'border-[rgba(124,92,252,0.2)]'
-                      }`} style={{ width: 18, height: 18 }}>
-                        {item.done && <CheckIcon />}
-                      </div>
-                      <span className={`font-medium ${item.done ? 'text-brand-muted line-through' : 'text-brand-dark'}`}>{item.text}</span>
+                <h3 className="text-sm font-bold text-brand-dark mb-1">Brand health over time</h3>
+                <p className="text-[11px] text-brand-muted mb-4">Reconstructed weekly from your actual posting and analytics history</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={overview.growthScoreHistory}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,92,252,0.06)" vertical={false} />
+                    <XAxis dataKey="weekStart" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={(d: string) => new Date(d).toLocaleDateString('en', { month: 'short', day: 'numeric' })} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={24} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(124,92,252,0.15)', fontSize: 12 }} />
+                    <Line type="monotone" dataKey="score" stroke="#7C5CFC" strokeWidth={2.5} dot={{ r: 3, fill: '#7C5CFC' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Activity feed */}
+            <div className="card p-5 h-fit lg:sticky lg:top-6">
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-sm font-bold text-brand-dark">Activity</h3>
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-teal animate-pulse" />
+              </div>
+              {overview.activityFeed.length === 0 ? (
+                <p className="text-xs text-brand-muted text-center py-6">No activity yet.</p>
+              ) : (
+                <div className="space-y-0">
+                  {overview.activityFeed.map((item, i) => (
+                    <a
+                      key={i}
+                      href={item.url || '#'}
+                      className={`block py-2.5 border-b border-[rgba(124,92,252,0.05)] last:border-0 ${item.url ? 'hover:bg-[rgba(124,92,252,0.03)] -mx-2 px-2 rounded-lg' : ''}`}
+                    >
+                      <p className="text-xs text-brand-dark leading-snug line-clamp-1">{item.description}</p>
+                      <p className="text-[10px] text-brand-muted mt-0.5">{timeAgo(item.timestamp)}</p>
                     </a>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
           </div>
+
+          {/* Content performance table */}
+          <div className="card p-6 mb-6 overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-brand-dark">Your posts</h3>
+              <a href="/history" className="text-xs text-brand-purple font-semibold hover:underline">View all →</a>
+            </div>
+            {sortedRows.length === 0 ? (
+              <p className="text-sm text-brand-muted text-center py-8">No posts yet — generate your first post to see it here.</p>
+            ) : (
+              <div className="overflow-x-auto -mx-6 px-6">
+                <table className="w-full text-xs min-w-[640px]">
+                  <thead>
+                    <tr className="text-left text-brand-muted border-b border-[rgba(124,92,252,0.08)]">
+                      {([['date', 'Date'], ['preview', 'Preview'], ['tone', 'Tone'], ['wordCount', 'Length'], ['authScore', 'Auth Score'], ['status', 'Status']] as [keyof ContentRow, string][]).map(([key, label]) => (
+                        <th key={key} onClick={() => toggleSort(key)} className="py-2.5 pr-4 font-semibold cursor-pointer select-none hover:text-brand-purple">
+                          {label} {sortKey === key && (sortDir === 'asc' ? '↑' : '↓')}
+                        </th>
+                      ))}
+                      <th className="py-2.5">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedRows.map(row => (
+                      <tr key={row.id} className="group border-b border-[rgba(124,92,252,0.04)] last:border-0 hover:bg-[rgba(124,92,252,0.02)]">
+                        <td className="py-2.5 pr-4 text-brand-muted whitespace-nowrap" title={new Date(row.date).toLocaleString()}>{timeAgo(row.date)}</td>
+                        <td className="py-2.5 pr-4 text-brand-dark max-w-[220px] truncate">{row.preview}{row.preview.length >= 60 ? '…' : ''}</td>
+                        <td className="py-2.5 pr-4">{row.tone ? <span className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px] capitalize">{row.tone.replace(/_/g, ' ')}</span> : <span className="text-brand-muted">—</span>}</td>
+                        <td className="py-2.5 pr-4 text-brand-muted">{row.wordCount}w</td>
+                        <td className="py-2.5 pr-4 font-bold" style={{ color: row.authScore != null ? scoreColor(row.authScore) : '#9CA3AF' }}>{row.authScore ?? '—'}</td>
+                        <td className="py-2.5 pr-4">
+                          <span className={`badge text-[10px] ${row.status === 'published' ? 'bg-[rgba(6,214,160,0.1)] text-brand-teal' : row.status === 'scheduled' ? 'bg-[rgba(59,130,246,0.1)] text-blue-500' : 'bg-[rgba(107,114,128,0.08)] text-brand-muted'}`}>
+                            {row.status === 'published' ? 'Published ✓' : row.status === 'scheduled' ? 'Scheduled 📅' : 'Draft 📝'}
+                          </span>
+                        </td>
+                        <td className="py-2.5">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleCopyRow(row)} className="p-1.5 text-brand-muted hover:text-brand-purple" aria-label="Copy">
+                              {copiedId === row.id ? <Check size={13} className="text-brand-teal" /> : <Copy size={13} />}
+                            </button>
+                            <a href={`/create?postId=${row.id}`} className="p-1.5 text-brand-muted hover:text-brand-purple" aria-label="Edit"><Edit3 size={13} /></a>
+                            <button onClick={() => handleDeleteRow(row.id)} className="p-1.5 text-brand-muted hover:text-red-500" aria-label="Delete"><Trash2 size={13} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {tableTotal > 10 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <button disabled={tablePage === 0} onClick={() => setTablePage(p => p - 1)} className="btn-ghost !py-1.5 !px-3 text-xs disabled:opacity-30">Previous</button>
+                <span className="text-xs text-brand-muted">Page {tablePage + 1} of {Math.ceil(tableTotal / 10)}</span>
+                <button disabled={(tablePage + 1) * 10 >= tableTotal} onClick={() => setTablePage(p => p + 1)} className="btn-ghost !py-1.5 !px-3 text-xs disabled:opacity-30">Next</button>
+              </div>
+            )}
+          </div>
+
+          {/* AI recommendations */}
+          <div className="card p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={16} className="text-brand-purple" />
+              <h3 className="text-sm font-bold text-brand-dark">What to do next</h3>
+            </div>
+            {!recommendations ? (
+              <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="skeleton h-16 w-full" />)}</div>
+            ) : recommendations.length === 0 ? (
+              <p className="text-sm text-brand-muted text-center py-4">Not enough data yet for personalized recommendations.</p>
+            ) : (
+              <div className="space-y-3">
+                {recommendations.map((r, i) => (
+                  <div key={i} className="p-4 rounded-xl border border-[rgba(124,92,252,0.08)]">
+                    <div className="flex items-start justify-between gap-3 mb-1.5">
+                      <span className={`badge text-[10px] font-bold ${r.priority === 'HIGH' ? 'bg-[rgba(239,68,68,0.1)] text-red-500' : 'bg-[rgba(245,158,11,0.1)] text-amber-500'}`}>{r.priority}</span>
+                    </div>
+                    <p className="text-sm text-brand-dark leading-relaxed mb-1.5">{r.recommendation}</p>
+                    <p className="text-[11px] text-brand-muted mb-2">{r.dataPoint}</p>
+                    <a href={r.actionUrl} className="text-xs text-brand-purple font-semibold hover:underline inline-flex items-center gap-1">
+                      {r.actionLabel} <ChevronRight size={12} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-[rgba(124,92,252,0.06)] text-xs text-brand-muted">
+              {bestTime && bestTime.recommendedDays.length > 0 && (
+                <span>Best time to post: <strong className="text-brand-dark">{bestTime.recommendedDays[0]} at {bestTime.recommendedTimes[0]}</strong></span>
+              )}
+              {journey?.nextStage && (
+                <span>Next milestone: <strong className="text-brand-dark">{journey.criteria.find(c => !c.done)?.target ?? 0} posts</strong> until {STAGE_LABELS[journey.nextStage]}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Upgrade banner */}
+          {overview.subscriptionTier === 'free' && (
+            <a href="/pricing" className="block rounded-2xl p-6 text-white relative overflow-hidden group"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
+              <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold mb-1">You've used {overview.postsThisWeek}/{weeklyGoal} free posts this week</p>
+                  <h3 className="text-lg font-extrabold">Unlock unlimited posts, AI persona learning, competitor intelligence, and more</h3>
+                </div>
+                <span className="inline-block bg-white text-brand-purple font-bold text-sm px-5 py-2.5 rounded-full group-hover:scale-105 transition-transform whitespace-nowrap">
+                  Upgrade — $19/mo · LAUNCH50 for 50% off
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-white/20 mt-4 overflow-hidden relative z-10">
+                <div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${Math.min(100, (overview.postsThisWeek / weeklyGoal) * 100)}%` }} />
+              </div>
+            </a>
+          )}
         </div>
       </div>
-      <MilestoneCelebration
-        stage={celebrateStage}
-        milestone={celebrateMilestone}
-        onClose={() => { setCelebrateStage(null); setCelebrateMilestone(null); }}
-      />
     </AppShell>
   );
 }

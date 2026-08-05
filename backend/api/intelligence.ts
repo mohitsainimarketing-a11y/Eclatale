@@ -9,6 +9,10 @@ import { readCache, writeCache } from '../lib/intelligenceCache';
 import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/digest';
 import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
 import { getProgress, getMomentum, checkMilestones, calculateStage } from '../lib/growthJourney';
+import {
+  computeBrandHealth, getPostingActivity, getContentPerformance, getStyleDistribution,
+  getActivityFeed, getContentTable, generateRecommendations,
+} from '../lib/dashboardData';
 import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
@@ -938,6 +942,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           badges: profile?.milestone_badges || [],
           newlyUnlocked,
         });
+      }
+      case 'dashboard-overview': {
+        const days = Math.max(1, Math.min(365, Number(body.days || req.query.days || 30)));
+        const [brandHealth, postingActivity, contentPerformance, styleDistribution, activityFeed, profile] = await Promise.all([
+          computeBrandHealth(supabase, userId),
+          getPostingActivity(supabase, userId, days),
+          getContentPerformance(supabase, userId, days),
+          getStyleDistribution(supabase, userId),
+          getActivityFeed(supabase, userId, 20),
+          supabase.from('profiles').select('subscription_tier, posts_this_week, longest_streak').eq('id', userId).maybeSingle(),
+        ]);
+        return res.json({
+          brandHealth, postingActivity, contentPerformance, styleDistribution, activityFeed,
+          subscriptionTier: (profile.data as any)?.subscription_tier || 'free',
+          postsThisWeek: (profile.data as any)?.posts_this_week || 0,
+          longestStreak: (profile.data as any)?.longest_streak || 0,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      case 'dashboard-recommendations': {
+        const cacheKind = 'dashboard-recommendations';
+        if (!forceRefresh) {
+          const cached = await readCache(supabase, userId, cacheKind, 24 * 60 * 60 * 1000);
+          if (cached) return res.json(cached);
+        }
+        const recommendations = await generateRecommendations(anthropic, supabase, userId);
+        const payload = { recommendations, generatedAt: new Date().toISOString() };
+        await writeCache(supabase, userId, cacheKind, payload);
+        return res.json(payload);
+      }
+      case 'dashboard-table': {
+        const page = Math.max(0, Number(body.page || req.query.page || 0));
+        const pageSize = Math.max(1, Math.min(50, Number(body.pageSize || req.query.pageSize || 10)));
+        const result = await getContentTable(supabase, userId, page, pageSize);
+        return res.json(result);
       }
       case 'analyze-post': {
         const postId = String(body.postId || '');

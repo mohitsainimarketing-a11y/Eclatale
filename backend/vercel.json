@@ -8,6 +8,7 @@
     { "source": "/api/weekly-digest-cron", "destination": "/api/intelligence?action=weekly-digest-cron" },
     { "source": "/api/analytics/page-view", "destination": "/api/intelligence?action=page-view" },
     { "source": "/api/reengagement-cron", "destination": "/api/intelligence?action=reengagement-cron" },
+    { "source": "/api/streak-risk-cron", "destination": "/api/intelligence?action=streak-risk-cron" },
     { "source": "/api/email/send-welcome", "destination": "/api/intelligence?action=send-welcome" },
     { "source": "/api/email/send-digest", "destination": "/api/intelligence?action=trigger-digest" },
     { "source": "/api/email/send-free-limit", "destination": "/api/intelligence?action=send-free-limit" },

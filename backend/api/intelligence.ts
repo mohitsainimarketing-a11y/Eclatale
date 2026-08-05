@@ -8,7 +8,7 @@ import {
 import { readCache, writeCache } from '../lib/intelligenceCache';
 import { buildDigestData, renderDigestHTML, sendDigestEmail } from '../lib/digest';
 import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
-import { getProgress, getMomentum, checkMilestones } from '../lib/growthJourney';
+import { getProgress, getMomentum, checkMilestones, calculateStage } from '../lib/growthJourney';
 import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
@@ -421,7 +421,10 @@ async function alreadySentThisWeek(userId: string, emailType: string): Promise<b
   return !!(data && data.length);
 }
 
-async function handleSendFreeLimit(userId: string) {
+export async function handleSendFreeLimit(userId: string) {
+  const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', userId).maybeSingle();
+  if ((profile?.subscription_tier || 'free') !== 'free') return { ok: true, sent: false, reason: 'not on free tier' };
+
   const count = await countPostsThisWeek(userId);
   if (count !== 3) return { ok: true, sent: false, reason: `post count is ${count}, not 3` };
   if (await alreadySentThisWeek(userId, 'free_limit')) return { ok: true, sent: false, reason: 'already_sent_this_week' };
@@ -478,6 +481,65 @@ async function reengagementCron() {
       results.push({ userId: (p as any).id, sent: !!(r as any).sent, reason: (r as any).reason });
     } catch (e: any) {
       results.push({ userId: (p as any).id, sent: false, reason: e.message });
+    }
+  }
+  return { ok: true, considered: (profiles || []).length, results };
+}
+
+/**
+ * Meant to be hit hourly by an external cron (Vercel Hobby only allows daily
+ * crons — see the CRON_SECRET convention on the other *-cron actions above).
+ * Each invocation only actually notifies the slice of users for whom it is
+ * currently ~6pm local time, so hourly external calls are what make this
+ * work across timezones at all.
+ */
+async function streakRiskCron() {
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, timezone, first_name, notif_post_reminders');
+
+  const results: { userId: string; sent: boolean; reason?: string }[] = [];
+  for (const p of profiles || []) {
+    const userId = (p as any).id;
+    if ((p as any).notif_post_reminders === false) { results.push({ userId, sent: false, reason: 'opted_out' }); continue; }
+
+    const tz = (p as any).timezone || 'UTC';
+    let localHour = -1;
+    let localDateStr = '';
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+      localHour = Number(parts.find(x => x.type === 'hour')?.value || -1);
+      const y = parts.find(x => x.type === 'year')?.value, m = parts.find(x => x.type === 'month')?.value, d = parts.find(x => x.type === 'day')?.value;
+      localDateStr = `${y}-${m}-${d}`;
+    } catch { results.push({ userId, sent: false, reason: 'bad_timezone' }); continue; }
+
+    if (localHour !== 18) continue; // only act on this user's ~6pm hourly pass
+
+    try {
+      const { metrics } = await calculateStage(supabase, userId);
+      if (metrics.currentStreak < 1) { results.push({ userId, sent: false, reason: 'no_active_streak' }); continue; }
+
+      const { data: todaysPosts } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .gte('published_at', `${localDateStr}T00:00:00.000Z`)
+        .limit(1);
+      if (todaysPosts && todaysPosts.length > 0) { results.push({ userId, sent: false, reason: 'already_posted_today' }); continue; }
+
+      const type = `streak_risk_${localDateStr}`;
+      const { data: existing } = await supabase.from('notifications').select('id').eq('user_id', userId).eq('type', type).limit(1);
+      if (existing && existing.length > 0) { results.push({ userId, sent: false, reason: 'already_sent_today' }); continue; }
+
+      await createNotification(
+        supabase, userId, type, `Your ${metrics.currentStreak}-day streak ends tonight`,
+        `⚠️ Post today to keep your ${metrics.currentStreak}-day streak alive!`,
+        { text: 'Generate a post', url: 'https://eclatale.com/create' }
+      );
+      results.push({ userId, sent: true });
+    } catch (e: any) {
+      results.push({ userId, sent: false, reason: e.message });
     }
   }
   return { ok: true, considered: (profiles || []).length, results };
@@ -681,6 +743,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
       }
       return res.json(await publishScheduledPosts());
+    }
+
+    if (action === 'streak-risk-cron') {
+      const secret = String(body.secret || req.query.secret || '');
+      if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+        const auth = req.headers.authorization || '';
+        if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
+      }
+      return res.json(await streakRiskCron());
     }
 
     if (action === 'schedule-post') {

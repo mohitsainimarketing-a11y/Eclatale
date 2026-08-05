@@ -101,5 +101,13 @@ const STREAK_MILESTONES: Record<number, string> = {
 export async function checkStreakMilestone(supabase: SupabaseClient, userId: string, streakDays: number) {
   const message = STREAK_MILESTONES[streakDays];
   if (!message) return;
-  await createNotification(supabase, userId, `streak_${streakDays}`, `${streakDays}-Day Streak`, message);
+  const type = `streak_${streakDays}`;
+  const { data: existing } = await supabase
+    .from('notifications')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', type)
+    .limit(1);
+  if (existing && existing.length > 0) return;
+  await createNotification(supabase, userId, type, `${streakDays}-Day Streak`, message);
 }

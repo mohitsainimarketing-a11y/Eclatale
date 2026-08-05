@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { checkStreakMilestone, createNotification } from './notifications';
 
 export type Stage = 'unknown' | 'emerging' | 'rising' | 'notable' | 'authority' | 'icon';
 
@@ -139,6 +140,16 @@ export async function calculateStage(supabase: SupabaseClient, userId: string): 
   if ((profile?.total_posts_published || 0) !== metrics.postsPublished) updates.total_posts_published = metrics.postsPublished;
   if (Object.keys(updates).length) await supabase.from('profiles').update(updates).eq('id', userId);
 
+  if (profile && updates.growth_stage && stage !== 'unknown') {
+    await createNotification(
+      supabase, userId, `growth_stage_${stage}`,
+      `You've reached ${stage.charAt(0).toUpperCase() + stage.slice(1)}!`,
+      `Your consistency is paying off — you've unlocked the ${stage} stage of your brand journey.`,
+      { text: 'View my journey', url: 'https://eclatale.com/dashboard' }
+    );
+  }
+  await checkStreakMilestone(supabase, userId, metrics.currentStreak);
+
   return { stage, metrics };
 }
 
@@ -245,6 +256,16 @@ export async function checkMilestones(supabase: SupabaseClient, userId: string):
       ...newlyUnlocked.map(m => ({ key: m.key, unlockedAt: new Date().toISOString() })),
     ];
     await supabase.from('profiles').update({ milestone_badges: updatedBadges }).eq('id', userId);
+
+    for (const m of newlyUnlocked) {
+      if (m.key === 'linkedin_connected') {
+        await createNotification(supabase, userId, 'linkedin_connected', 'LinkedIn Connected',
+          '🔗 LinkedIn connected! You can now publish directly from Eclatale.');
+      } else if (m.key === 'voice_complete') {
+        await createNotification(supabase, userId, 'voice_complete', 'Voice Profile Complete',
+          '🎯 Voice profile complete! Your content will now sound authentically like you.');
+      }
+    }
   }
 
   return newlyUnlocked;

@@ -7,6 +7,7 @@ import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { checkWeeklyPostLimit, incrementWeeklyPostCount } from '../lib/featureGates';
+import { handleSendFreeLimit } from './intelligence';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -89,6 +90,8 @@ ${contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : ''}`;
 
     const content = message.content[0].type === 'text' ? message.content[0].text : '';
     await incrementWeeklyPostCount(supabase, userId);
+    // No-ops unless this was exactly the 3rd post of the week on the free tier.
+    handleSendFreeLimit(userId).catch(err => console.error('free-limit notify failed:', err));
     res.json({ content, usage: message.usage });
   } catch (error: any) {
     if (isCreditsExhaustedError(error)) {

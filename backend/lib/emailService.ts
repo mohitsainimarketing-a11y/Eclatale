@@ -116,9 +116,13 @@ async function send(
     return { sent: false, reason: 'preference_off' };
   }
 
-  const token = await getUnsubscribeToken(userId);
-  const unsubscribeUrl = `https://eclatale.com/unsubscribe?token=${token}&type=${PREFERENCE_COLUMN[emailType] || emailType}`;
-  const html = renderEmail(emailType, bodyVars, { subject, unsubscribeUrl });
+  let unsubLine = '';
+  if (!TRANSACTIONAL_TYPES.has(emailType)) {
+    const token = await getUnsubscribeToken(userId);
+    const unsubscribeUrl = `https://eclatale.com/unsubscribe?token=${token}&type=${PREFERENCE_COLUMN[emailType] || emailType}`;
+    unsubLine = ` &middot; <a href="${unsubscribeUrl}" style="color:#9a92ad;">Unsubscribe</a>`;
+  }
+  const html = renderEmail(emailType, bodyVars, { subject, UNSUB_LINE: unsubLine });
 
   const { transport, from } = getTransport(emailType);
   try {

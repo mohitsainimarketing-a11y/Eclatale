@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getDateContext } from '../lib/dateContext';
+import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -53,11 +54,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Missing request body' });
-    const { topic, format, style, userId, postId } = req.body;
+    const { topic, format, style, postId } = req.body;
+    let userId = req.body.userId;
 
     if (!topic || !format || !style || !userId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+    const authCheck = await checkAuthToken(supabase, req);
+    const reconciled = reconcileUserId(userId, authCheck);
+    if (reconciled.error) return res.status(reconciled.error.status).json({ error: reconciled.error.message });
+    userId = reconciled.userId;
 
     if (!process.env.TOGETHER_API_KEY) {
       return res.status(500).json({ error: 'Image generation not configured. Add TOGETHER_API_KEY to enable.' });

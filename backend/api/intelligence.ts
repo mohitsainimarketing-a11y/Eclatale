@@ -22,6 +22,7 @@ import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { sendWelcomeEmail, sendFreeLimit, sendReengagement } from '../lib/emailService';
 import { checkGrowthMilestone, createNotification } from '../lib/notifications';
 import { requireFeature } from '../lib/featureGates';
+import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { calculateVoiceMatchScore } from '../lib/voiceMatchScore';
 import { ariaChat, getAriaConversation, AriaMessage } from '../lib/aria';
 import { searchSourcesForTopic } from '../lib/webResearch';
@@ -704,7 +705,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // POST body, since callers like persona-signal legitimately send their own
     // `action` field (e.g. "kept") in the body.
     const action = String(req.query.action || body.action || '');
-    const userId = String(body.userId || req.query.userId || '');
+    const rawUserId = String(body.userId || req.query.userId || '');
+    let userId = rawUserId;
+    if (rawUserId) {
+      const authCheck = await checkAuthToken(supabase, req);
+      const reconciled = reconcileUserId(rawUserId, authCheck);
+      if (reconciled.error) return res.status(reconciled.error.status).json({ error: reconciled.error.message });
+      userId = reconciled.userId;
+    }
     const forceRefresh = !!body.refresh || req.query.refresh === 'true';
 
     // Digest actions (no per-request userId required for the cron).

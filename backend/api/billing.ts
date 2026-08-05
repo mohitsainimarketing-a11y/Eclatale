@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { sendWelcomeEmail } from '../lib/emailService';
 import { createNotification } from '../lib/notifications';
+import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 
 export const config = {
   api: { bodyParser: false },
@@ -336,7 +337,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try { body = raw.length ? JSON.parse(raw.toString('utf-8')) : {}; } catch { body = {}; }
   }
   const query = Object.fromEntries(url.searchParams.entries());
-  const userId = String(body.userId || query.userId || '');
+  const rawUserId = String(body.userId || query.userId || '');
+  let userId = rawUserId;
+  if (rawUserId) {
+    const authCheck = await checkAuthToken(supabase, req);
+    const reconciled = reconcileUserId(rawUserId, authCheck);
+    if (reconciled.error) return res.status(reconciled.error.status).json({ error: reconciled.error.message });
+    userId = reconciled.userId;
+  }
 
   try {
     switch (action) {

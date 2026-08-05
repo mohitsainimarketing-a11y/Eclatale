@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { getValidToken } from '../../lib/linkedinTokenRefresh';
 import { checkPostMilestone } from '../../lib/notifications';
+import { checkAuthToken, reconcileUserId } from '../../lib/verifyAuth';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -18,11 +19,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Missing request body' });
-    const { postId, userId } = req.body;
+    const { postId } = req.body;
+    let userId = req.body.userId;
 
     if (!postId || !userId) {
       return res.status(400).json({ error: 'Missing postId or userId' });
     }
+    const authCheck = await checkAuthToken(supabase, req);
+    const reconciled = reconcileUserId(userId, authCheck);
+    if (reconciled.error) return res.status(reconciled.error.status).json({ error: reconciled.error.message });
+    userId = reconciled.userId;
 
     const { data: post } = await supabase
       .from('posts')

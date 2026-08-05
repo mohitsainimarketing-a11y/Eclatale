@@ -8,6 +8,7 @@ import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { checkWeeklyPostLimit, incrementWeeklyPostCount } from '../lib/featureGates';
 import { handleSendFreeLimit } from './intelligence';
+import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -22,8 +23,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Missing request body' });
-    const { topic, tone, contentType, userId, styleNudge, contentLength, angleTags, structureTag } = req.body;
+    const { topic, tone, contentType, styleNudge, contentLength, angleTags, structureTag } = req.body;
+    let userId = req.body.userId;
     if (!topic || !tone || !contentType || !userId) return res.status(400).json({ error: 'Missing required fields' });
+    const authCheck = await checkAuthToken(supabase, req);
+    const reconciled = reconcileUserId(userId, authCheck);
+    if (reconciled.error) return res.status(reconciled.error.status).json({ error: reconciled.error.message });
+    userId = reconciled.userId;
     const length: ContentLength = CONTENT_LENGTH_INSTRUCTIONS[contentLength as ContentLength] ? contentLength : 'standard';
 
     const limitCheck = await checkWeeklyPostLimit(supabase, userId);

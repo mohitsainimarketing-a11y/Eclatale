@@ -2,9 +2,14 @@
 // the parse-time cost of loading these libraries.
 
 export async function extractPdfText(buffer: Buffer): Promise<{ text: string; pageCount: number }> {
-  const pdfParse = require('pdf-parse');
-  const result = await pdfParse(buffer);
-  return { text: result.text as string, pageCount: result.numpages as number };
+  // unpdf ships PDF.js compiled for serverless/Node runtimes — plain
+  // pdf-parse (and pdfjs-dist's browser build) reference DOMMatrix, which
+  // doesn't exist outside a browser and throws "DOMMatrix is not defined"
+  // on Vercel's Node functions.
+  const { getDocumentProxy, extractText } = await import('unpdf');
+  const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  const { totalPages, text } = await extractText(pdf, { mergePages: true });
+  return { text, pageCount: totalPages };
 }
 
 export async function extractDocxText(buffer: Buffer): Promise<string> {

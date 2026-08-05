@@ -153,7 +153,15 @@ function WeeklyMomentum({ momentum }: { momentum: JourneyData['momentum'] }) {
 function MilestoneCelebration({ stage, milestone, onClose }: {
   stage: Stage | null; milestone: { emoji: string; label: string } | null; onClose: () => void;
 }) {
-  if (!stage && !milestone) return null;
+  const open = !!stage || !!milestone;
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-5 animate-fadeIn" onClick={onClose}>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

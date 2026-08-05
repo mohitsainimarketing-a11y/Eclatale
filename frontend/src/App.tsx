@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { initAnalytics, trackEvent } from './lib/analytics';
 import AriaWidget from './components/AriaWidget';
 import { SidebarProvider } from './contexts/SidebarContext';
+import { ToastProvider } from './contexts/ToastContext';
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Auth = lazy(() => import('./pages/auth'));
@@ -68,6 +69,7 @@ function App() {
 
   return (
     <Router>
+      <ToastProvider>
       <SidebarProvider>
       <PageViewTracker />
       <AriaWidget />
@@ -102,6 +104,7 @@ function App() {
         </Routes>
       </Suspense>
       </SidebarProvider>
+      </ToastProvider>
     </Router>
   );
 }

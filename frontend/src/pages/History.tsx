@@ -4,6 +4,7 @@ import { Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Load
 import { copyToClipboard } from '../utils/clipboard';
 import { useFeatureGate } from '../hooks/useFeatureGate';
 import AppShell from '../components/AppShell';
+import { useToast } from '../contexts/ToastContext';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -88,6 +89,7 @@ const TONE_LABELS: Record<string, string> = {
 };
 
 export default function History() {
+  const { showToast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -168,8 +170,13 @@ export default function History() {
 
   const handleDelete = async (postId: string) => {
     setDeleting(postId);
-    await supabase.from('posts').delete().eq('id', postId);
-    setPosts(prev => prev.filter(p => p.id !== postId));
+    const { error } = await supabase.from('posts').delete().eq('id', postId);
+    if (error) {
+      showToast('error', "Couldn't delete that post. Please try again.");
+    } else {
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      showToast('success', 'Post deleted.');
+    }
     setDeleting(null);
   };
 

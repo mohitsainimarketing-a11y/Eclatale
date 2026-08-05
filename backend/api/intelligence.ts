@@ -1010,11 +1010,16 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
         const message = String(body.message || '').trim();
         if (!message) return res.status(400).json({ error: 'Missing message' });
         const contextBlock = resourceTexts.map((t, i) => `--- Resource ${i + 1} ---\n${truncateForPrompt(t, 6000)}`).join('\n\n');
+        // The UI's opening line is an assistant message shown before any user
+        // reply — Anthropic's Messages API requires the array to start with
+        // "user", so drop any leading assistant turns before sending.
+        const trimmedHistory = [...history];
+        while (trimmedHistory.length && trimmedHistory[0].role !== 'user') trimmedHistory.shift();
         const reply = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 400,
           system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful — never generic. Keep replies to 2-4 sentences, conversational tone.`,
-          messages: [...history.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user', content: message }],
+          messages: [...trimmedHistory.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user', content: message }],
         });
         const text = reply.content[0].type === 'text' ? reply.content[0].text : '';
         return res.json({ reply: text });

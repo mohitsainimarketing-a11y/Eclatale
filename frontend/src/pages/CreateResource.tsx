@@ -56,7 +56,7 @@ export default function CreateResource() {
     try {
       const res = await fetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ action: 'resource-analyze', resourceText: text, resourceLabel: label }),
+        body: JSON.stringify({ action: 'resource-analyze', resourceText: text, resourceLabel: label, userId }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -109,7 +109,7 @@ export default function CreateResource() {
       });
       const res = await fetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ action: 'resource-upload', fileBase64: base64, mimeType: file.type, filename: file.name }),
+        body: JSON.stringify({ action: 'resource-upload', fileBase64: base64, mimeType: file.type, filename: file.name, userId }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -135,6 +135,7 @@ export default function CreateResource() {
           resourceTexts: resources.map(r => r.text),
           history: messages,
           message: userMsg,
+          userId,
         }),
       });
       const data = await res.json();

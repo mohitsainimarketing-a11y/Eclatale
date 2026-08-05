@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { copyToClipboard } from '../utils/clipboard';
 import FeatureLock from '../components/FeatureLock';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -68,7 +69,7 @@ function GuidedCreateInner() {
     if (!rawIdea || !contentType || !userId) return;
     setLoading(true); setError('');
     try {
-      const res = await fetch(`${API_URL}/api/guided-questions`, {
+      const res = await apiFetch(`${API_URL}/api/guided-questions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ rawIdea, contentType, userId }),
       });
@@ -83,7 +84,7 @@ function GuidedCreateInner() {
     if (!userId) return;
     setLoading(true); setError('');
     try {
-      const res = await fetch(`${API_URL}/api/guided-generate`, {
+      const res = await apiFetch(`${API_URL}/api/guided-generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ rawIdea, contentType, tone, questions, answers, userId }),
       });
@@ -102,7 +103,7 @@ function GuidedCreateInner() {
     copyToClipboard(isEditing ? editedContent : generatedContent);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
     if (userId) {
-      fetch(`${API_URL}/api/persona-signal`, {
+      apiFetch(`${API_URL}/api/persona-signal`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId, action: 'kept', tone, contentType, topicSnippet: rawIdea.substring(0, 100), postLength: generatedContent.length }),
       }).catch(() => {});
@@ -113,13 +114,13 @@ function GuidedCreateInner() {
     if (!postId || !userId) return;
     setPublishing(true); setPublishResult(null);
     try {
-      const statusRes = await fetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
+      const statusRes = await apiFetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
       const statusData = await statusRes.json();
       if (!statusData.connected) {
         setPublishResult({ error: 'LinkedIn not connected. Connect it from your dashboard first.' });
         setPublishing(false); return;
       }
-      const res = await fetch(`${API_URL}/api/linkedin/publish`, {
+      const res = await apiFetch(`${API_URL}/api/linkedin/publish`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ postId, userId }),
       });

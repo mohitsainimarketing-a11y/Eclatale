@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { SearchableDropdown, ROLES, INDUSTRIES, SENIORITY_LEVELS, TIMEZONES } from '../components/ProfileDropdowns';
 import AppShell from '../components/AppShell';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -200,7 +201,7 @@ export default function Settings() {
 
 
     try {
-      const liRes = await fetch(`${API_URL}/api/linkedin/status?userId=${uid}`);
+      const liRes = await apiFetch(`${API_URL}/api/linkedin/status?userId=${uid}`);
       const liData = await liRes.json();
       setLinkedinConnected(liData.connected);
       setLinkedinName(liData.name || '');
@@ -230,7 +231,7 @@ export default function Settings() {
   const loadVoiceScore = async (uid: string) => {
     setVoiceScoreLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/voice-match-score?userId=${uid}`);
+      const res = await apiFetch(`${API_URL}/api/voice-match-score?userId=${uid}`);
       const data = await res.json();
       if (!data.error) {
         setVoiceScore(data.score);
@@ -243,7 +244,7 @@ export default function Settings() {
   const loadPatterns = async (uid: string, refresh: boolean) => {
     setPatternsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'user-patterns', userId: uid, refresh }),
       });
@@ -332,7 +333,7 @@ export default function Settings() {
     if (!userId) return;
     setLinkedinDisconnecting(true);
     try {
-      await fetch(`${API_URL}/api/linkedin/status`, {
+      await apiFetch(`${API_URL}/api/linkedin/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId }),
@@ -348,7 +349,7 @@ export default function Settings() {
     if (!userId) return;
     setPortalLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/billing/customer-portal`, {
+      const res = await apiFetch(`${API_URL}/api/billing/customer-portal`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       });
@@ -365,7 +366,7 @@ export default function Settings() {
     if (!userId) return;
     setCancelSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/api/billing/cancel-subscription`, {
+      const res = await apiFetch(`${API_URL}/api/billing/cancel-subscription`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, reason: cancelReason, feedback: cancelFeedback }),
       });
@@ -384,7 +385,7 @@ export default function Settings() {
     if (!userId) return;
     setRefundSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/api/billing/request-refund`, {
+      const res = await apiFetch(`${API_URL}/api/billing/request-refund`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, reason: refundReason, details: refundDetails }),
       });

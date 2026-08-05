@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { AlertCircle } from 'lucide-react';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -56,7 +57,7 @@ export default function AuthCallback() {
 
         // Fire-and-forget: send-welcome is idempotent (checks welcome_email_sent),
         // safe to call on every confirmation callback without awaiting the result.
-        fetch(`${API_URL}/api/email/send-welcome`, {
+        apiFetch(`${API_URL}/api/email/send-welcome`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: userData.user.id }),

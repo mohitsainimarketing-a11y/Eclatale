@@ -16,6 +16,7 @@ import Sidebar from '../components/Sidebar';
 import { useSidebar } from '../contexts/SidebarContext';
 import CreateEntryGate from '../components/CreateEntryGate';
 import Avatar from '../components/Avatar';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -185,7 +186,7 @@ function friendlyErrorMessage(data: any): string {
 async function fetchJson(url: string, options: RequestInit): Promise<any> {
   let res: Response;
   try {
-    res = await fetch(url, options);
+    res = await apiFetch(url, options);
   } catch {
     throw new Error(friendlyErrorMessage({ error: '__network__' }));
   }
@@ -607,12 +608,12 @@ export default function CreatePost() {
           }
         });
       // LinkedIn picture is secondary fallback — only used if no profile_photo_url
-      fetch(`${API_URL}/api/linkedin/status?userId=${u.id}`)
+      apiFetch(`${API_URL}/api/linkedin/status?userId=${u.id}`)
         .then(r => r.json())
         .then(d => { if (d.picture) setUserAvatar(prev => prev || d.picture); })
         .catch(() => {});
       // AI-recommended best time to post (per-user, cached server-side)
-      fetch(`${API_URL}/api/intelligence`, {
+      apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'best-time', userId: u.id }),
       })
@@ -624,7 +625,7 @@ export default function CreatePost() {
         })
         .catch(() => {});
       // Writing-pattern analysis, used to power the pre-generation nudge (Piece 13)
-      fetch(`${API_URL}/api/intelligence`, {
+      apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'user-patterns', userId: u.id }),
       })
@@ -747,7 +748,7 @@ export default function CreatePost() {
     setIdeasList([]);
     setLoadingIdeas(true);
     try {
-      const res = await fetch(`${API_URL}/api/suggest-topics`, {
+      const res = await apiFetch(`${API_URL}/api/suggest-topics`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ query: '', userId }),
       });
@@ -794,7 +795,7 @@ export default function CreatePost() {
     setVoiceEditOpen(true);
     if (userId) {
       setLoadingVoiceScore(true);
-      fetch(`${API_URL}/api/voice-match-score?userId=${userId}`)
+      apiFetch(`${API_URL}/api/voice-match-score?userId=${userId}`)
         .then(r => r.json())
         .then(d => { if (typeof d.score === 'number') setVoiceMatchScore(d.score); })
         .catch(() => {})
@@ -869,7 +870,7 @@ export default function CreatePost() {
   // Never awaited in the UI path, so save/publish never waits on it.
   const queueAnalysis = (postId: string | null, content: string) => {
     if (!postId || !userId || !content.trim()) return;
-    fetch(`${API_URL}/api/intelligence`, {
+    apiFetch(`${API_URL}/api/intelligence`, {
       method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({ action: 'analyze-post', userId, postId, postContent: content }),
     }).catch(() => {});
@@ -883,7 +884,7 @@ export default function CreatePost() {
     if (!content.trim() || !userId) return;
     setCheckingToneMatch(true);
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'tone-match', userId, intendedTone: toneToCheck, postContent: content }),
       });
@@ -899,7 +900,7 @@ export default function CreatePost() {
     if (!postIdToCheck || !content.trim() || !userId) return;
     setAuthScore(null);
     const loadingTimer = setTimeout(() => setShowAuthLoading(true), 1200);
-    fetch(`${API_URL}/api/intelligence`, {
+    apiFetch(`${API_URL}/api/intelligence`, {
       method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({ action: 'authenticity-score', userId, postId: postIdToCheck, postContent: content, topic, contentLength }),
     })
@@ -970,7 +971,7 @@ export default function CreatePost() {
         checkAuthenticityScore(inserted.id, data.content, topic);
         // Fire-and-forget: server checks the actual weekly count and dedupes
         // via email_log, so it's safe to call after every generated post.
-        fetch(`${API_URL}/api/email/send-free-limit`, {
+        apiFetch(`${API_URL}/api/email/send-free-limit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId }),
@@ -1062,7 +1063,7 @@ export default function CreatePost() {
     if (!composerContent || !instruction.trim() || !userId) return;
     setRefining(true);
     try {
-      const res = await fetch(`${API_URL}/api/refine-content`, {
+      const res = await apiFetch(`${API_URL}/api/refine-content`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ currentContent: composerContent, instruction, userId }),
       });
@@ -1070,7 +1071,7 @@ export default function CreatePost() {
       if (data.error) throw new Error(friendlyErrorMessage(data));
       updateContent(data.content);
       addActivity('wand', label || `Applied: "${instruction.substring(0, 45)}${instruction.length > 45 ? '…' : ''}"`);
-      fetch(`${API_URL}/api/persona-signal`, {
+      apiFetch(`${API_URL}/api/persona-signal`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId, postId, action: 'refined', tone, contentType }),
       }).catch(() => {});
@@ -1121,7 +1122,7 @@ export default function CreatePost() {
     if (!composerContent || !userId) return;
     setAdapting(true);
     try {
-      const res = await fetch(`${API_URL}/api/adapt-content`, {
+      const res = await apiFetch(`${API_URL}/api/adapt-content`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ currentContent: composerContent, targetFormat: newFormat, userId }),
       });
@@ -1218,7 +1219,7 @@ export default function CreatePost() {
     setCopied(true); setTimeout(() => setCopied(false), 2000);
     addActivity('copy', 'Copied to clipboard');
     if (userId) {
-      fetch(`${API_URL}/api/persona-signal`, {
+      apiFetch(`${API_URL}/api/persona-signal`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId, postId, action: 'kept', tone, contentType, postLength: composerContent.length }),
       }).catch(() => {});
@@ -1328,7 +1329,7 @@ export default function CreatePost() {
     if (!composerContent || !userId) return;
     setPublishing(true); setPublishResult(null);
     try {
-      const statusRes = await fetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
+      const statusRes = await apiFetch(`${API_URL}/api/linkedin/status?userId=${userId}`);
       const statusData = await statusRes.json();
       if (!statusData.connected) {
         setPublishResult({ error: 'LinkedIn not connected. Connect it from your dashboard.' });
@@ -1346,7 +1347,7 @@ export default function CreatePost() {
       }
       queueAnalysis(activePostId, composerContent);
       if (!activePostId) throw new Error('Failed to save post. Please try again.');
-      const res = await fetch(`${API_URL}/api/linkedin/publish`, {
+      const res = await apiFetch(`${API_URL}/api/linkedin/publish`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ postId: activePostId, userId }),
       });
@@ -1355,7 +1356,7 @@ export default function CreatePost() {
       setPublishResult({ success: true, urn: data.linkedinPostUrn });
       addActivity('send', 'Published to LinkedIn');
       if (draftStorageKey) { try { localStorage.removeItem(draftStorageKey); } catch {} }
-      fetch(`${API_URL}/api/persona-signal`, {
+      apiFetch(`${API_URL}/api/persona-signal`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ userId, postId: activePostId, action: 'kept', tone, contentType, postLength: composerContent.length }),
       }).catch(() => {});

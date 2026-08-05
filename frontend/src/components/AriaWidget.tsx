@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Send, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { apiFetch } from '../lib/apiFetch';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -26,7 +27,7 @@ function quickActionsFor(pathname: string): string[] {
 }
 
 async function ariaFetch(path: string, body: Record<string, unknown>) {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await apiFetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

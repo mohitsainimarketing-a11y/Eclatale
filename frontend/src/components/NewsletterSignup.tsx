@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Mail } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
+import { apiFetch } from '../lib/apiFetch';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -18,7 +19,7 @@ export default function NewsletterSignup({ className = '', label = 'Get weekly L
     if (!email.trim()) return;
     setStatus('loading');
     try {
-      const res = await fetch(`${API_URL}/api/email/newsletter-subscribe`, {
+      const res = await apiFetch(`${API_URL}/api/email/newsletter-subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),

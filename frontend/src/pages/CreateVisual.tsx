@@ -6,6 +6,7 @@ import {
 import { OVERLAY_STYLES, deriveHeadline, compositeOverlay } from '../lib/imageOverlay';
 import FeatureLock from '../components/FeatureLock';
 import AppShell from '../components/AppShell';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -67,7 +68,7 @@ function CreateVisualInner() {
     if (!topic || !format || !style || !userId) return;
     setGenerating(true); setError(''); setImageUrl('');
     try {
-      const res = await fetch(`${API_URL}/api/generate-image`, {
+      const res = await apiFetch(`${API_URL}/api/generate-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ topic, format, style, userId }),

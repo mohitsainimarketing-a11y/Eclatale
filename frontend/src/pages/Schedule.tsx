@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, ChevronRight, Settings2, X, Loader2, Check, Clock } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -93,7 +94,7 @@ export default function Schedule() {
   const handleCancelScheduled = async (postId: string) => {
     setCancelingId(postId);
     try {
-      const res = await fetch(`${API_URL}/api/schedule/cancel`, {
+      const res = await apiFetch(`${API_URL}/api/schedule/cancel`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, postId }),
       });

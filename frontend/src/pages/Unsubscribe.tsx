@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { apiFetch } from '../lib/apiFetch';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -24,7 +25,7 @@ export default function Unsubscribe() {
       if (!token || !type) { setStatus('error'); return; }
       setLabel(TYPE_LABELS[type] || type);
       try {
-        const res = await fetch(`${API_URL}/api/email/unsubscribe`, {
+        const res = await apiFetch(`${API_URL}/api/email/unsubscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, type }),

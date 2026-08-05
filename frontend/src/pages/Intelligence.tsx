@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import FeatureLock from '../components/FeatureLock';
 import AppShell from '../components/AppShell';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -46,7 +47,7 @@ function IntelligenceInner() {
     if (refresh) setRefreshing(true); else setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'competitor', userId: uid, refresh }),
@@ -66,7 +67,7 @@ function IntelligenceInner() {
       if (!data.user) { window.location.href = '/login'; return; }
       setUserId(data.user.id);
       load(data.user.id, false);
-      fetch(`${API_URL}/api/intelligence`, {
+      apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'page-view', feature: 'analytics', userId: data.user.id }),
       }).catch(() => {});

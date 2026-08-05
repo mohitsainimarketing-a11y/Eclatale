@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, ArrowRight, Sparkles, Check, Loader2, MessageSquare } from 'lucide-react';
 import { STYLES, formalityLabel } from '../lib/personaOptions';
 import AppShell from '../components/AppShell';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -50,7 +51,7 @@ export default function PersonaSetup() {
     setGenerating(true);
     try {
       await savePersona(false);
-      const res = await fetch(`${API_URL}/api/generate`, {
+      const res = await apiFetch(`${API_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({

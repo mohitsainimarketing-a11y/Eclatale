@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Send, Loader2, ExternalLink, Sparkles, Check } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import AppShell from '../components/AppShell';
+import { apiFetch } from '../lib/apiFetch';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -69,7 +70,7 @@ export default function CreateTalk() {
         }
       }
 
-      fetch(`${API_URL}/api/suggest-topics`, {
+      apiFetch(`${API_URL}/api/suggest-topics`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: '', userId: u.id }),
       }).then(r => r.json()).then(d => {
@@ -98,7 +99,7 @@ export default function CreateTalk() {
 
     setResearching(true);
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'create-talk-start', topic: finalTopic, userId }),
       });
@@ -119,7 +120,7 @@ export default function CreateTalk() {
     setGenerating(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
           action: 'create-talk-generate', topic, style, length, clarifyingAnswer, sources, userId,

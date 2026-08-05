@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Loader2, Check, Send, X, FileText, Link2, Upload, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import AppShell from '../components/AppShell';
+import { apiFetch } from '../lib/apiFetch';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -54,7 +55,7 @@ export default function CreateResource() {
     setProcessing(label);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'resource-analyze', resourceText: text, resourceLabel: label, userId }),
       });
@@ -74,7 +75,7 @@ export default function CreateResource() {
     setProcessing(`Fetching ${urlInput}…`);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'fetch-url', url: urlInput.trim() }),
       });
@@ -107,7 +108,7 @@ export default function CreateResource() {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'resource-upload', fileBase64: base64, mimeType: file.type, filename: file.name, userId }),
       });
@@ -128,7 +129,7 @@ export default function CreateResource() {
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setChatBusy(true);
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
           action: 'resource-converse',
@@ -153,7 +154,7 @@ export default function CreateResource() {
     setGenerating(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
           action: 'create-talk-generate', topic, style, length, userId,

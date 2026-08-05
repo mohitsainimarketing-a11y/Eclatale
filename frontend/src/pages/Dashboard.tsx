@@ -13,6 +13,7 @@ import NotificationBell from '../components/NotificationBell';
 import { maybePromptPush } from '../lib/pushNotifications';
 import AppShell from '../components/AppShell';
 import { useToast } from '../contexts/ToastContext';
+import { apiFetch } from '../lib/apiFetch';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -161,7 +162,7 @@ export default function Dashboard() {
 
   const loadOverview = useCallback(async (userId: string, days: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'dashboard-overview', userId, days: Number(days) }),
       });
@@ -172,7 +173,7 @@ export default function Dashboard() {
 
   const loadJourney = useCallback(async (userId: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'growth-journey', userId }),
       });
@@ -183,7 +184,7 @@ export default function Dashboard() {
 
   const loadRecommendations = useCallback(async (userId: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'dashboard-recommendations', userId }),
       });
@@ -194,7 +195,7 @@ export default function Dashboard() {
 
   const loadBestTime = useCallback(async (userId: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'best-time', userId }),
       });
@@ -205,7 +206,7 @@ export default function Dashboard() {
 
   const loadTable = useCallback(async (userId: string, page: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/intelligence`, {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'dashboard-table', userId, page, pageSize: 10 }),
       });

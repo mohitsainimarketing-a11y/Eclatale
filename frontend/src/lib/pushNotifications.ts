@@ -1,3 +1,5 @@
+import { apiFetch } from './apiFetch';
+
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -29,7 +31,7 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
       })
     );
 
-    await fetch(`${API_URL}/api/push/subscribe`, {
+    await apiFetch(`${API_URL}/api/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, subscription: subscription.toJSON() }),

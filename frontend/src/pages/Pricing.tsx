@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Check, Zap, ChevronDown, ArrowLeft, Loader2, ShieldCheck, Clock, MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { trackEvent } from '../lib/analytics';
+import { apiFetch } from '../lib/apiFetch';
 import Seo from '../components/Seo';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
@@ -106,7 +107,7 @@ export default function Pricing() {
     setCheckingOut(true);
     trackEvent('pricing_trial_click', { billingCycle });
     try {
-      const res = await fetch(`${API_URL}/api/billing/create-checkout`, {
+      const res = await apiFetch(`${API_URL}/api/billing/create-checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

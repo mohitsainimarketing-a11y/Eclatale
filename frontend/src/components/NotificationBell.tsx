@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bell, X, Loader2, Flame, TrendingUp, Sparkles, Zap, Target, Lightbulb, Link2, ArrowUp, Calendar, MessageCircle, BellOff } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { apiFetch } from '../lib/apiFetch';
 
 const TYPE_ICON: Record<string, { icon: React.ElementType; bg: string; fg: string }> = {
   streak: { icon: Flame, bg: '#FEF3C7', fg: '#D97706' },
@@ -69,7 +70,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/notifications?userId=${userId}`);
+      const res = await apiFetch(`${API_URL}/api/notifications?userId=${userId}`);
       if (!res.ok) throw new Error('bad response');
       const data = await res.json();
       setNotifications(data.notifications || []);
@@ -135,7 +136,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const markRead = async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     setUnreadCount(c => Math.max(0, c - 1));
-    fetch(`${API_URL}/api/notifications/${id}/read`, {
+    apiFetch(`${API_URL}/api/notifications/${id}/read`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     }).catch(() => {});
@@ -144,7 +145,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const markAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
-    fetch(`${API_URL}/api/notifications/read-all`, {
+    apiFetch(`${API_URL}/api/notifications/read-all`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     }).catch(() => {});

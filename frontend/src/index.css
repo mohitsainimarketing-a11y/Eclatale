@@ -269,6 +269,16 @@ textarea, input[type="text"] { caret-color: #7C5CFC; }
   0% { transform: translateY(0) rotate(0deg); opacity: 1; }
   100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
 }
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(-10deg); }
+  20% { transform: rotate(10deg); }
+  30% { transform: rotate(-10deg); }
+  40% { transform: rotate(10deg); }
+  50% { transform: rotate(-10deg); }
+  60% { transform: rotate(10deg); }
+  70% { transform: rotate(0deg); }
+}
 
 .animate-fadeIn { animation: fadeIn 0.3s ease; }
 .animate-slideUp { animation: slideUp 0.4s ease; }
@@ -280,6 +290,7 @@ textarea, input[type="text"] { caret-color: #7C5CFC; }
 .animate-shake { animation: shake 0.4s ease; }
 .animate-checkmark { animation: checkmark 0.3s ease; }
 .animate-spin { animation: spin 1s linear infinite; }
+.animate-bellRing { animation: bellRing 0.5s ease; transform-origin: top center; }
 
 .skeleton {
   background: linear-gradient(90deg, #F3F0FF 0%, #E8E3FF 50%, #F3F0FF 100%);

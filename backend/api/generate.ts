@@ -20,6 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Missing request body' });
     const { topic, tone, contentType, userId, styleNudge, contentLength, angleTags, structureTag } = req.body;
     if (!topic || !tone || !contentType || !userId) return res.status(400).json({ error: 'Missing required fields' });
     const length: ContentLength = CONTENT_LENGTH_INSTRUCTIONS[contentLength as ContentLength] ? contentLength : 'standard';

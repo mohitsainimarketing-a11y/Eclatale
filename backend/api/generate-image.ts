@@ -52,6 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Missing request body' });
     const { topic, format, style, userId, postId } = req.body;
 
     if (!topic || !format || !style || !userId) {

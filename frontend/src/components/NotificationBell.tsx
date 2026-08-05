@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bell, X, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
@@ -26,28 +27,67 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+const BASE_POLL_MS = 5 * 60 * 1000; // 5 min fallback poll — realtime subscription handles instant updates
+const MAX_POLL_MS = 20 * 60 * 1000;
+
 export default function NotificationBell({ userId }: { userId: string }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [ringing, setRinging] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const backoffRef = useRef(BASE_POLL_MS);
 
   const load = async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/notifications?userId=${userId}`);
+      if (!res.ok) throw new Error('bad response');
       const data = await res.json();
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
-    } catch {}
+      backoffRef.current = BASE_POLL_MS;
+    } catch {
+      backoffRef.current = Math.min(backoffRef.current * 2, MAX_POLL_MS);
+    }
     setLoading(false);
   };
 
   useEffect(() => {
+    let cancelled = false;
     load();
-    const interval = setInterval(load, 60000);
-    return () => clearInterval(interval);
+
+    const scheduleNext = () => {
+      if (cancelled) return;
+      timeoutRef.current = setTimeout(async () => {
+        await load();
+        scheduleNext();
+      }, backoffRef.current);
+    };
+    scheduleNext();
+
+    const channel = supabase
+      .channel(`notifications-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        (payload: any) => {
+          const n = payload.new as Notification;
+          setNotifications(prev => [n, ...prev]);
+          setUnreadCount(c => c + 1);
+          setRinging(true);
+          setTimeout(() => setRinging(false), 500);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
@@ -84,7 +124,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
         className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-muted hover:text-brand-purple transition-colors"
         aria-label="Notifications"
       >
-        <Bell size={19} />
+        <Bell size={19} className={ringing ? 'animate-bellRing' : ''} />
         {unreadCount > 0 && (
           <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-brand-pink text-white text-[10px] font-bold flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}

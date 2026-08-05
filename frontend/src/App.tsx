@@ -28,6 +28,7 @@ const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const ExtensionAuth = lazy(() => import('./pages/ExtensionAuth'));
 
 function PageLoader() {
   return (
@@ -100,6 +101,7 @@ function App() {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/extension-auth" element={<ExtensionAuth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

@@ -53,7 +53,8 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        window.location.href = '/dashboard';
+        const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+        window.location.href = returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard';
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;

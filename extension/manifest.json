@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Eclatale — LinkedIn Brand Assistant",
+  "version": "1.0.0",
+  "description": "Your AI brand assistant on LinkedIn. Get post ideas, copy your profile to optimize it, and repurpose content from anywhere.",
+  "permissions": ["activeTab", "storage", "contextMenus", "notifications"],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://eclatale.com/*",
+    "https://backend-xi-olive-8eewk5s8qv.vercel.app/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["content.js"],
+      "css": ["sidebar/sidebar.css"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-repurpose.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "externally_connectable": {
+    "matches": ["https://eclatale.com/*"]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["sidebar/sidebar.html", "icons/icon-48.png"],
+      "matches": ["https://www.linkedin.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

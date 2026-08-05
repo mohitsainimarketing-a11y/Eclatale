@@ -204,6 +204,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState('');
   const [userAvatar, setUserAvatar] = useState('');
   const [weeklyGoal] = useState(5);
+  const [subscriptionTier, setSubscriptionTier] = useState('free');
   const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [linkedinName, setLinkedinName] = useState('');
   const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[]; reasoning: string; basedOn: string } | null>(null);
@@ -223,7 +224,7 @@ export default function Dashboard() {
 
   const loadDashboardData = async (userId: string, userEmail = '') => {
     const [profileRes, postsRes, personaRes, signalsRes, recentRes] = await Promise.all([
-      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url').eq('id', userId).single(),
+      supabase.from('profiles').select('role, domain, goals, first_name, last_name, profile_photo_url, subscription_tier').eq('id', userId).single(),
       supabase.from('posts').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('persona_profiles').select('persona_completed_at').eq('user_id', userId).single(),
       supabase.from('persona_signals').select('tone, content_type').eq('user_id', userId).eq('action', 'kept').order('created_at', { ascending: false }).limit(5),
@@ -232,6 +233,7 @@ export default function Dashboard() {
 
     const profile = profileRes.data;
     setHasProfile(!!(profile?.role && profile?.domain && profile?.goals?.length));
+    setSubscriptionTier((profile as any)?.subscription_tier || 'free');
     if (profile?.first_name || profile?.last_name) {
       setUserName([profile.first_name, profile.last_name].filter(Boolean).join(' '));
     } else {
@@ -355,6 +357,24 @@ export default function Dashboard() {
     return `${Math.floor(diff / 1440)}d ago`;
   };
 
+  const greeting = (() => {
+    const hour = new Date().getHours();
+    return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  })();
+
+  const greetingSubtext = (() => {
+    if (totalPosts === 0) return "Let's create your first post and start building your brand.";
+    if (recentPosts.length > 0 && new Date(recentPosts[0].created_at).toDateString() === new Date().toDateString()) {
+      return 'Great work posting today! Want to schedule tomorrow’s post?';
+    }
+    if (streak >= 2) return `You're on a ${streak}-day streak. Keep the momentum going!`;
+    if (recentPosts.length > 0) {
+      const daysSince = Math.floor((Date.now() - new Date(recentPosts[0].created_at).getTime()) / 86400000);
+      if (daysSince >= 3) return 'Your audience is waiting. Let’s create something great today.';
+    }
+    return "Here's your brand growth overview.";
+  })();
+
   const roadmap = [
     { text: 'Complete your persona setup', done: hasProfile },
     { text: 'Set up your voice profile', done: hasPersona, href: '/persona-setup' },
@@ -387,9 +407,33 @@ export default function Dashboard() {
           </div>
           {/* Welcome Header */}
           <div className="mb-2">
-            <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Welcome back, {userName}</h1>
-            <p className="text-sm text-brand-muted mt-0.5">Here's your brand growth overview.</p>
+            <h1 className="text-xl md:text-2xl font-bold text-brand-dark">{greeting}, {userName}! 👋</h1>
+            <p className="text-sm text-brand-muted mt-0.5">{greetingSubtext}</p>
           </div>
+
+          {subscriptionTier === 'free' && (
+            <a href="/pricing" className="block mb-6 rounded-2xl p-6 text-white relative overflow-hidden group"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
+              <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold mb-1">
+                    You've created {postsThisWeek} post{postsThisWeek === 1 ? '' : 's'} this week · {Math.max(0, 3 - postsThisWeek)} free post{Math.max(0, 3 - postsThisWeek) === 1 ? '' : 's'} remaining
+                  </p>
+                  <h3 className="text-lg font-extrabold mb-1">Unlock unlimited posts + all AI features</h3>
+                  <p className="text-xs text-white/80">Voice learning · Authenticity score · Competitor intelligence · Profile optimizer</p>
+                </div>
+                <div className="flex-shrink-0 text-center">
+                  <span className="inline-block bg-white text-brand-purple font-bold text-sm px-5 py-2.5 rounded-full group-hover:scale-105 transition-transform">
+                    Upgrade — LAUNCH50 for 50% off
+                  </span>
+                  <p className="text-[10px] text-white/70 mt-1.5">Resets Monday</p>
+                </div>
+              </div>
+              <div className="h-1.5 rounded-full bg-white/20 mt-4 overflow-hidden relative z-10">
+                <div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${Math.min(100, (postsThisWeek / 3) * 100)}%` }} />
+              </div>
+            </a>
+          )}
 
           <GrowthJourneyCard journey={journey} open={journeyOpen} onToggle={() => setJourneyOpen(o => !o)} />
 

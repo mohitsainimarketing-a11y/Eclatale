@@ -11,7 +11,7 @@ import { gatherGrowthData, buildGrowthScorePrompt } from '../lib/growthScore';
 import { getProgress, getMomentum, checkMilestones, calculateStage } from '../lib/growthJourney';
 import {
   computeBrandHealth, getPostingActivity, getContentPerformance, getStyleDistribution,
-  getActivityFeed, getContentTable, generateRecommendations,
+  getActivityFeed, getContentTable, generateRecommendations, getGrowthScoreHistory,
 } from '../lib/dashboardData';
 import { analyzePost, analyzeUserPatterns, compareIntendedVsActualTone } from '../lib/semanticAnalysis';
 import { getDateContext } from '../lib/dateContext';
@@ -945,19 +945,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       case 'dashboard-overview': {
         const days = Math.max(1, Math.min(365, Number(body.days || req.query.days || 30)));
-        const [brandHealth, postingActivity, contentPerformance, styleDistribution, activityFeed, profile] = await Promise.all([
+        const [brandHealth, postingActivity, contentPerformance, styleDistribution, activityFeed, profile, growthScoreHistory, stageResult, voiceMatch] = await Promise.all([
           computeBrandHealth(supabase, userId),
           getPostingActivity(supabase, userId, days),
           getContentPerformance(supabase, userId, days),
           getStyleDistribution(supabase, userId),
           getActivityFeed(supabase, userId, 20),
           supabase.from('profiles').select('subscription_tier, posts_this_week, longest_streak').eq('id', userId).maybeSingle(),
+          getGrowthScoreHistory(supabase, userId),
+          calculateStage(supabase, userId),
+          calculateVoiceMatchScore(supabase, userId).catch(() => null),
         ]);
         return res.json({
-          brandHealth, postingActivity, contentPerformance, styleDistribution, activityFeed,
+          brandHealth, postingActivity, contentPerformance, styleDistribution, activityFeed, growthScoreHistory,
           subscriptionTier: (profile.data as any)?.subscription_tier || 'free',
           postsThisWeek: (profile.data as any)?.posts_this_week || 0,
           longestStreak: (profile.data as any)?.longest_streak || 0,
+          totalPostsPublished: stageResult.metrics.postsPublished,
+          currentStreak: stageResult.metrics.currentStreak,
+          bestWeek: stageResult.metrics.bestWeek,
+          stage: stageResult.stage,
+          linkedinConnected: stageResult.metrics.linkedinConnected,
+          voiceMatch: voiceMatch ? (voiceMatch as any).score : null,
           updatedAt: new Date().toISOString(),
         });
       }

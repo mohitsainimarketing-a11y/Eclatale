@@ -47,6 +47,24 @@ async function scoreAsOf(supabase: SupabaseClient, userId: string, cutoff: Date)
   return Math.round(consistency * 0.4 + quality * 0.35 + voice * 0.25);
 }
 
+// Real historical reconstruction (not simulated/random): re-runs the exact
+// same weighted formula as of each past week boundary, using only the data
+// that existed by that date. Capped at 12 points so a long-tenured account
+// doesn't send back an unbounded array.
+export async function getGrowthScoreHistory(supabase: SupabaseClient, userId: string): Promise<{ weekStart: string; score: number }[]> {
+  const { data: profile } = await supabase.from('profiles').select('created_at').eq('id', userId).maybeSingle();
+  const createdAt = (profile as any)?.created_at ? new Date((profile as any).created_at) : new Date(Date.now() - 30 * DAY_MS);
+  const weeksActive = Math.min(12, Math.max(1, Math.ceil((Date.now() - createdAt.getTime()) / (7 * DAY_MS))));
+
+  const points: { weekStart: string; score: number }[] = [];
+  for (let w = weeksActive - 1; w >= 0; w--) {
+    const cutoff = new Date(Date.now() - w * 7 * DAY_MS);
+    const score = await scoreAsOf(supabase, userId, cutoff);
+    points.push({ weekStart: cutoff.toISOString().split('T')[0], score });
+  }
+  return points;
+}
+
 export async function computeBrandHealth(supabase: SupabaseClient, userId: string): Promise<BrandHealthBreakdown> {
   const now = new Date();
   const lastWeek = new Date(now.getTime() - 7 * DAY_MS);

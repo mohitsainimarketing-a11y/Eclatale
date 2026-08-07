@@ -1,0 +1,48 @@
+// Proven opening lines / closing lines a user can drop into the editor.
+// Static reference content — not model-generated, so it's instant and free.
+
+export const HOOK_TEMPLATES: string[] = [
+  "Nobody tells you this, but...",
+  "I was wrong about this for years.",
+  "Everyone's doing this. Almost nobody's doing this right.",
+  "Here's what changed my mind about this completely.",
+  "Three years ago I would have disagreed with this.",
+  "The data on this surprised even me.",
+  "Most advice on this is wrong. Here's why.",
+  "I almost didn't post this.",
+  "This took me way too long to figure out.",
+  "Unpopular opinion, but I'll say it anyway.",
+  "You've probably heard this before. You haven't heard it like this.",
+  "A client asked me this last week. My answer surprised them.",
+  "This is the one thing I'd tell my younger self.",
+  "I used to believe the opposite of what I'm about to say.",
+  "Here's a pattern I keep seeing and nobody talks about.",
+  "Let me save you a very expensive mistake.",
+  "This changed how I think about the next five years.",
+  "I've stopped doing this. Here's what I do instead.",
+  "The best advice I got this year came from an unlikely place.",
+  "If you only read one thing this week, make it this.",
+];
+
+export const CTA_TEMPLATES: string[] = [
+  "What's your take? I'd genuinely like to know.",
+  "Curious if others have seen the same thing. Drop a comment.",
+  "Save this if you'll need it later.",
+  "Tag someone who needs to see this today.",
+  "Repost if this resonated with you.",
+  "What would you add to this list?",
+  "Follow along if you want more like this.",
+  "Let me know what I'm missing here.",
+  "Have you run into this? How did you handle it?",
+  "Reply with your experience, I read every one.",
+  "If you disagree, I want to hear why.",
+  "DM me if you want to talk through your own version of this.",
+  "Which of these hit closest to home for you?",
+  "Bookmark this for the next time you need it.",
+  "What's worked for you? Share below.",
+  "I'll be writing more on this. Follow if that's useful.",
+  "Would love your perspective in the comments.",
+  "Send this to someone building through this right now.",
+  "What did I get wrong? Tell me.",
+  "This is part of a series. More coming this week.",
+];

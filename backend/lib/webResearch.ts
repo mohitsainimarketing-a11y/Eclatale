@@ -13,7 +13,7 @@ const ACADEMIC_DOMAINS = /\.(edu|gov)$|nber\.org|nature\.com|sciencedirect\.com|
 const MAJOR_PUBLICATIONS = /hbr\.org|nytimes\.com|wsj\.com|economist\.com|forbes\.com|bloomberg\.com|reuters\.com|techcrunch\.com|wired\.com|theatlantic\.com|ft\.com|mckinsey\.com|bain\.com|bcg\.com|axios\.com|theverge\.com/i;
 const INDUSTRY_BLOGS = /medium\.com|substack\.com|dev\.to|hashnode\.com/i;
 
-function domainAuthorityScore(domain: string): number {
+export function domainAuthorityScore(domain: string): number {
   if (ACADEMIC_DOMAINS.test(domain)) return 100;
   if (MAJOR_PUBLICATIONS.test(domain)) return 90;
   if (INDUSTRY_BLOGS.test(domain)) return 75;
@@ -31,14 +31,14 @@ function recencyScore(publishedDate: string | null): number {
   return 25;
 }
 
-function computeTrustScore(domain: string, publishedDate: string | null): number {
+export function computeTrustScore(domain: string, publishedDate: string | null): number {
   const authority = domainAuthorityScore(domain);
   const recency = recencyScore(publishedDate);
   // Authority weighted higher than recency — a stale HBR piece still beats a fresh unknown blog.
   return Math.round(authority * 0.65 + recency * 0.35);
 }
 
-function extractDomain(url: string): string {
+export function extractDomain(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
 }
 

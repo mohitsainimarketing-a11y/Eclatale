@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
+import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction, TALK_LENGTH_OPTIONS } from '../lib/writingStyles';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
@@ -24,6 +25,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Missing request body' });
     const { topic, tone, contentType, styleNudge, contentLength, angleTags, structureTag } = req.body;
+    // Smart Canvas angle-driven generation (Phase 2): `angle` carries the
+    // style/hook/insight picked in Phase 1, `spark` is optional grounding
+    // context (a URL's extracted text, or free-typed context) already
+    // resolved to plain text client-side via /api/intelligence?action=fetch-url.
+    const angle: { style?: string; styleId?: string; hook?: string; insight?: string } | undefined =
+      req.body.angle && typeof req.body.angle === 'object' ? req.body.angle : undefined;
+    const spark = typeof req.body.spark === 'string' ? req.body.spark.trim() : '';
     let userId = req.body.userId;
     if (!topic || !tone || !contentType || !userId) return res.status(400).json({ error: 'Missing required fields' });
     const authCheck = await checkAuthToken(supabase, req);
@@ -31,6 +39,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (reconciled.error) return res.status(reconciled.error.status).json({ error: reconciled.error.message });
     userId = reconciled.userId;
     const length: ContentLength = CONTENT_LENGTH_INSTRUCTIONS[contentLength as ContentLength] ? contentLength : 'standard';
+    // Angle-driven posts use the word-count length tiers from writingStyles.ts
+    // (matches the Smart Canvas length pills exactly); non-angle callers keep
+    // the legacy character-count tiers for backward compatibility.
+    const useWordLength = !!angle && TALK_LENGTH_OPTIONS.some(o => o.id === contentLength);
 
     const limitCheck = await checkWeeklyPostLimit(supabase, userId);
     if (!limitCheck.allowed) {
@@ -63,6 +75,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? `\nStructure the post using ${STRUCTURE_FRAMEWORKS[structureTag]}.\n`
       : '';
 
+    const writingStyle = angle?.styleId ? getWritingStyle(angle.styleId) : undefined;
+    const hookFragment = angle?.hook
+      ? `\nOpen with or closely riff on this exact hook — keep its energy and specificity, minor wording changes are fine: "${angle.hook}"\n`
+      : '';
+    const insightFragment = angle?.insight ? `\nWhy this angle resonates with this reader: ${angle.insight}\n` : '';
+    const sparkFragment = spark
+      ? `\nWhat sparked this post — ground the content in this, don't ignore it:\n${spark.slice(0, 4000)}\n`
+      : '';
+
     const personaFragment = await buildPersonaPrompt(supabase, userId);
     const trendResult = await getTrendContext(anthropic, supabase, industry, role);
     const trendFragment = buildTrendPromptFragment(trendResult, industry);
@@ -77,15 +98,15 @@ ${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 ${goalsText}
 
 ${trendFragment ? trendFragment + '\n' : ''}
-${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}
+${writingStyle ? writingStyle.prompt : (TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional)}
 
 ${styleNudge ? `Additional instruction based on this person's own writing patterns: ${styleNudge}\n` : ''}
-${angleFragment}${structureFragment}
+${angleFragment}${structureFragment}${hookFragment}${insightFragment}${sparkFragment}
 ${OUTPUT_RULES}
-
+${angle ? `\n${UNIVERSAL_HUMAN_WRITING_RULES}\n` : ''}
 ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}
 
-${contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : ''}`;
+${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : '')}`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',

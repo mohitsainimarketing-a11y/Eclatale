@@ -57,6 +57,8 @@ function CreateVisualInner() {
     const params = new URLSearchParams(window.location.search);
     const topicParam = params.get('topic');
     if (topicParam) setTopic(topicParam);
+    const formatParam = params.get('format');
+    if (formatParam && FORMATS.some(f => f.id === formatParam)) setFormat(formatParam);
 
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) window.location.href = '/login';

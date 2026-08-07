@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/create/angles", "destination": "/api/intelligence?action=create-angles" },
     { "source": "/api/voice-match-score", "destination": "/api/intelligence?action=voice-match-score" },
     { "source": "/api/persona-signal", "destination": "/api/intelligence?action=persona-signal" },
     { "source": "/api/admin/trigger-digest", "destination": "/api/intelligence?action=trigger-digest" },

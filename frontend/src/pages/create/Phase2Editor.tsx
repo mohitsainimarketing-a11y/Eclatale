@@ -10,7 +10,8 @@ import { copyToClipboard } from '../../utils/clipboard';
 import { RICH_TEXT_STYLES } from '../../lib/richText';
 import { useToast } from '../../contexts/ToastContext';
 import { Angle, Source, PostLength, LENGTH_OPTIONS, AuthenticityScoreResult } from './types';
-import { HOOK_TEMPLATES, CTA_TEMPLATES } from './hookCtaTemplates';
+import { CTA_TEMPLATES } from './hookCtaTemplates';
+import HookLibraryPanel from './HookLibraryPanel';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 const BOLD = RICH_TEXT_STYLES.find(s => s.id === 'bold')!.apply;
@@ -40,6 +41,8 @@ interface Phase2Props {
   userName: string;
   userInitials: string;
   userAvatar: string;
+  userRole: string;
+  userDomain: string;
   angle: Angle | null;
   customTopic: string;
   sources: Source[];
@@ -53,7 +56,7 @@ interface Phase2Props {
 }
 
 export default function Phase2Editor({
-  userId, userName, userInitials, userAvatar, angle, customTopic, sources,
+  userId, userName, userInitials, userAvatar, userRole, userDomain, angle, customTopic, sources,
   editMode, initialPostId, initialContent, selectedLength, onLengthChange, onBack, onPublished,
 }: Phase2Props) {
   const { showToast } = useToast();
@@ -214,6 +217,23 @@ export default function Phase2Editor({
     const next = content.slice(0, start) + text + content.slice(end);
     setContent(next);
     requestAnimationFrame(() => { el.focus(); el.selectionStart = el.selectionEnd = start + text.length; });
+  };
+
+  // Same as insertAtCursor, but if the inserted text has a [placeholder],
+  // selects it so the user can just start typing over it — a textarea has
+  // no rich-text highlighting, so a text selection is the closest thing.
+  const insertHookTemplate = (text: string) => {
+    const el = textareaRef.current;
+    const insertText = text + '\n\n';
+    const bracketMatch = insertText.match(/\[[^\]]+\]/);
+    if (!el) { setContent(c => c + insertText); return; }
+    const start = el.selectionStart ?? content.length;
+    const end = el.selectionEnd ?? content.length;
+    const next = content.slice(0, start) + insertText + content.slice(end);
+    setContent(next);
+    const selStart = bracketMatch ? start + (bracketMatch.index || 0) : start + insertText.length;
+    const selEnd = bracketMatch ? selStart + bracketMatch[0].length : selStart;
+    requestAnimationFrame(() => { el.focus(); el.selectionStart = selStart; el.selectionEnd = selEnd; });
   };
 
   const transformSelection = (fn: (t: string) => string) => {
@@ -428,13 +448,12 @@ export default function Phase2Editor({
                 Hooks <ChevronDown size={12} />
               </button>
               {hooksOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-80 max-h-72 overflow-y-auto">
-                  {HOOK_TEMPLATES.map((h, i) => (
-                    <button key={i} onClick={() => { insertAtCursor(h + '\n\n'); setHooksOpen(false); }} className="block w-full text-left text-[12px] px-2.5 py-2 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
-                      {h}
-                    </button>
-                  ))}
-                </div>
+                <HookLibraryPanel
+                  userId={userId}
+                  userRole={userRole}
+                  userDomain={userDomain}
+                  onInsert={text => { insertHookTemplate(text); setHooksOpen(false); }}
+                />
               )}
             </div>
             <div className="relative">

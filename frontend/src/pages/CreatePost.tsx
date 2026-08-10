@@ -192,6 +192,7 @@ export default function CreatePost() {
       <div className="flex-1 min-h-0 flex flex-col" style={{ opacity: phaseTransitioning ? 0 : 1, transition: 'opacity 0.2s ease' }}>
         {currentPhase === 1 && (
           <Phase1Angles
+            userId={userId || ''}
             userRole={userRole}
             userDomain={userDomain}
             angles={angles}
@@ -213,6 +214,8 @@ export default function CreatePost() {
             userId={userId}
             userName={userName}
             userInitials={userInitials}
+            userRole={userRole}
+            userDomain={userDomain}
             userAvatar={userAvatar}
             angle={editMode ? null : selectedAngle}
             customTopic={editMode ? '' : customInput}

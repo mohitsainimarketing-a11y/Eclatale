@@ -33,6 +33,7 @@ import {
   generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs,
 } from '../lib/freeTools';
 import { getIndustryIntelligence } from '../lib/industryIntelligence';
+import { getHookLibrary } from '../lib/hookLibrary';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -1251,6 +1252,11 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
           domain = domain || profile.industry;
         }
         const result = await getIndustryIntelligence(anthropic, supabase, role, domain, forceRefresh);
+        return res.json(result);
+      }
+      case 'create-hooks': {
+        const profile = await getProfile(userId);
+        const result = await getHookLibrary(anthropic, supabase, userId, profile.role, profile.industry);
         return res.json(result);
       }
       case 'library-tags-suggest': {

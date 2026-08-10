@@ -1,28 +1,7 @@
-// Proven opening lines / closing lines a user can drop into the editor.
-// Static reference content — not model-generated, so it's instant and free.
-
-export const HOOK_TEMPLATES: string[] = [
-  "Nobody tells you this, but...",
-  "I was wrong about this for years.",
-  "Everyone's doing this. Almost nobody's doing this right.",
-  "Here's what changed my mind about this completely.",
-  "Three years ago I would have disagreed with this.",
-  "The data on this surprised even me.",
-  "Most advice on this is wrong. Here's why.",
-  "I almost didn't post this.",
-  "This took me way too long to figure out.",
-  "Unpopular opinion, but I'll say it anyway.",
-  "You've probably heard this before. You haven't heard it like this.",
-  "A client asked me this last week. My answer surprised them.",
-  "This is the one thing I'd tell my younger self.",
-  "I used to believe the opposite of what I'm about to say.",
-  "Here's a pattern I keep seeing and nobody talks about.",
-  "Let me save you a very expensive mistake.",
-  "This changed how I think about the next five years.",
-  "I've stopped doing this. Here's what I do instead.",
-  "The best advice I got this year came from an unlikely place.",
-  "If you only read one thing this week, make it this.",
-];
+// Proven closing lines a user can drop into the editor. Static reference
+// content — not model-generated, so it's instant and free. (The opening-line
+// counterpart, HOOK_TEMPLATES, was replaced by the real Hook Library panel —
+// see HookLibraryPanel.tsx / backend/lib/hookLibrary.ts.)
 
 export const CTA_TEMPLATES: string[] = [
   "What's your take? I'd genuinely like to know.",

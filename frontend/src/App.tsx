@@ -29,6 +29,8 @@ const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const ExtensionAuth = lazy(() => import('./pages/ExtensionAuth'));
+const ToolsHub = lazy(() => import('./pages/tools/ToolsHub'));
+const ToolPage = lazy(() => import('./pages/tools/ToolPage'));
 
 function PageLoader() {
   return (
@@ -102,6 +104,8 @@ function App() {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/extension-auth" element={<ExtensionAuth />} />
+          <Route path="/tools" element={<ToolsHub />} />
+          <Route path="/tools/:toolSlug" element={<ToolPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

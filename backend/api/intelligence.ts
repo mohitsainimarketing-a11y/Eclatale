@@ -28,6 +28,10 @@ import { ariaChat, getAriaConversation, AriaMessage } from '../lib/aria';
 import { searchSourcesForTopic, computeTrustScore, extractDomain } from '../lib/webResearch';
 import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction } from '../lib/writingStyles';
 import { extractPdfText, extractDocxText, extractCsvSummary, truncateForPrompt } from '../lib/resourceParsing';
+import {
+  extractClientIp, checkToolRateLimit, logToolUsage,
+  generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs,
+} from '../lib/freeTools';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -911,6 +915,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { error } = await supabase.from('newsletter_subscribers').upsert({ email }, { onConflict: 'email' });
       if (error) return res.status(500).json({ error: 'Subscribe failed' });
       return res.json({ ok: true });
+    }
+
+    // Anonymous, public /tools pages — no auth, IP rate-limited (10/hr).
+    if (action === 'tools-generate') {
+      const tool = String(body.tool || '');
+      const ip = extractClientIp(req.headers as any, req.socket?.remoteAddress || 'unknown');
+      const allowed = await checkToolRateLimit(supabase, ip);
+      if (!allowed) {
+        return res.status(429).json({ error: 'rate_limited', message: "You've hit the free tool limit for this hour — try again soon, or sign up for unlimited access." });
+      }
+      await logToolUsage(supabase, ip, tool);
+      try {
+        switch (tool) {
+          case 'hook-generator': {
+            const hooks = await generateHooks(anthropic, String(body.topic || ''), String(body.style || 'Contrarian'));
+            return res.json({ hooks });
+          }
+          case 'post-generator': {
+            const content = await generateDemoPost(anthropic, String(body.topic || ''), String(body.style || 'storyteller'), String(body.length || 'standard'));
+            return res.json({ content, wordCount: content ? content.trim().split(/\s+/).length : 0 });
+          }
+          case 'headline-analyzer': {
+            const result = await analyzeHeadline(anthropic, String(body.headline || ''));
+            return res.json(result);
+          }
+          case 'viral-score': {
+            const result = await scoreViralPotential(anthropic, String(body.post || ''));
+            return res.json(result);
+          }
+          case 'about-generator': {
+            const content = await generateAboutSection(
+              anthropic, String(body.role || ''), String(body.industry || ''), String(body.specialty || ''), String(body.achievement || ''), String(body.tone || 'Professional')
+            );
+            return res.json({ content });
+          }
+          case 'cta-generator': {
+            const ctas = await generateCTAs(anthropic, String(body.topic || ''), String(body.goal || 'Comment'));
+            return res.json({ ctas });
+          }
+          default:
+            return res.status(400).json({ error: 'Unknown tool' });
+        }
+      } catch (error: any) {
+        if (isCreditsExhaustedError(error)) return res.status(503).json(creditsExhaustedBody());
+        console.error('tools-generate error:', error);
+        return res.status(500).json({ error: error.message || 'Tool generation failed' });
+      }
     }
 
     if (action === 'fetch-url') {

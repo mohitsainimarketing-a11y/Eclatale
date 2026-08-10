@@ -61,7 +61,11 @@ export default function CreateTalk() {
       const { data: lastPost } = await supabase.from('posts').select('topic').eq('user_id', u.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (lastPost?.topic) setLastTopic(lastPost.topic);
 
-      const templateId = new URLSearchParams(window.location.search).get('template');
+      const params = new URLSearchParams(window.location.search);
+      const styleParam = params.get('style');
+      if (styleParam && WRITING_STYLES.some(s => s.id === styleParam)) setStyle(styleParam);
+
+      const templateId = params.get('template');
       if (templateId) {
         const { data: templatePost } = await supabase.from('posts').select('content').eq('id', templateId).eq('user_id', u.id).single();
         if (templatePost?.content) {

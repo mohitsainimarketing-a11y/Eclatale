@@ -88,6 +88,7 @@ export default function Settings() {
   const [notifDigest, setNotifDigest] = useState(true);
   const [notifReminders, setNotifReminders] = useState(true);
   const [notifPublish, setNotifPublish] = useState(true);
+  const [notifBriefing, setNotifBriefing] = useState(true);
   const [notifSaved, setNotifSaved] = useState(false);
 
   // Persist a notification preference. Guarded so a missing column can't break Settings.
@@ -215,13 +216,14 @@ export default function Settings() {
     try {
       const { data: notifRow } = await supabase
         .from('profiles')
-        .select('notif_weekly_digest, notif_post_reminders, notif_publish_confirm')
+        .select('notif_weekly_digest, notif_post_reminders, notif_publish_confirm, notif_industry_briefing')
         .eq('id', uid)
         .maybeSingle();
       if (notifRow) {
         if (typeof notifRow.notif_weekly_digest === 'boolean') setNotifDigest(notifRow.notif_weekly_digest);
         if (typeof notifRow.notif_post_reminders === 'boolean') setNotifReminders(notifRow.notif_post_reminders);
         if (typeof notifRow.notif_publish_confirm === 'boolean') setNotifPublish(notifRow.notif_publish_confirm);
+        if (typeof (notifRow as any).notif_industry_briefing === 'boolean') setNotifBriefing((notifRow as any).notif_industry_briefing);
       }
     } catch { /* columns not present yet */ }
 
@@ -1063,6 +1065,7 @@ export default function Settings() {
                     { label: 'Weekly email digest', desc: 'A personalized Monday summary with your stats and 3 fresh topic ideas', value: notifDigest, set: setNotifDigest, col: 'notif_weekly_digest' },
                     { label: 'Post reminders', desc: 'Gentle nudge when you haven\'t posted in a while', value: notifReminders, set: setNotifReminders, col: 'notif_post_reminders' },
                     { label: 'Publish confirmations', desc: 'Email confirmation when a post is published to LinkedIn', value: notifPublish, set: setNotifPublish, col: 'notif_publish_confirm' },
+                    { label: 'Weekly intelligence briefing', desc: "What's working in your industry this week, plus your personal stats and 3 fresh angles", value: notifBriefing, set: setNotifBriefing, col: 'notif_industry_briefing' },
                   ].map((n, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div>

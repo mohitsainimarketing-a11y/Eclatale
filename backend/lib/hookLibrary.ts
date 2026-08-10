@@ -26,7 +26,7 @@ function firstLine(content: string): string {
 
 // ── Personal best (this user's own post_analytics) ──────────────────────────
 
-async function getPersonalBest(supabase: SupabaseClient, userId: string): Promise<PersonalBestHook[]> {
+export async function getPersonalBest(supabase: SupabaseClient, userId: string): Promise<PersonalBestHook[]> {
   const { data: rows } = await supabase
     .from('post_analytics')
     .select('hook_type, hook_strength, post_id, posts(content)')

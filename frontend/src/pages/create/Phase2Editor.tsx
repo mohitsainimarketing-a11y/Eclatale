@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ArrowLeft, Copy, Save, Calendar, Bold, Italic, Smile, Minus, List, ListOrdered,
   ChevronDown, Send, Sparkles, ShieldCheck, AlertTriangle, Clock, LayoutGrid,
-  ThumbsUp, MessageCircle, Repeat2, ExternalLink, X, Check,
+  ThumbsUp, MessageCircle, Repeat2, X, Check,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';

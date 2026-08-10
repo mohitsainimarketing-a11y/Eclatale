@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-type EmailType = 'confirmation' | 'password_reset' | 'welcome' | 'digest' | 'free_limit' | 'reengagement';
+type EmailType = 'confirmation' | 'password_reset' | 'welcome' | 'digest' | 'free_limit' | 'reengagement' | 'industry_briefing';
 
 const TEMPLATE_FILE: Record<EmailType, string> = {
   confirmation: 'confirmation.html',
@@ -14,6 +14,7 @@ const TEMPLATE_FILE: Record<EmailType, string> = {
   digest: 'weekly-digest.html',
   free_limit: 'free-limit.html',
   reengagement: 'reengagement.html',
+  industry_briefing: 'industry-briefing.html',
 };
 
 const SUBJECTS: Record<EmailType, string> = {
@@ -23,15 +24,17 @@ const SUBJECTS: Record<EmailType, string> = {
   digest: 'Your Eclatale brand update this week 📊',
   free_limit: "You've used all your free posts this week ⚡",
   reengagement: 'Your personal brand is waiting 👋',
+  industry_briefing: "What's working this week",
 };
 
 // Preference gating uses the existing notif_* boolean columns on profiles
 // (already wired to toggles in Settings.tsx) rather than a separate jsonb
 // column, so unsubscribing here matches what the in-app settings show.
 // welcome/free_limit have no dedicated toggle yet and always send.
-const PREFERENCE_COLUMN: Partial<Record<EmailType, 'notif_weekly_digest' | 'notif_post_reminders'>> = {
+const PREFERENCE_COLUMN: Partial<Record<EmailType, 'notif_weekly_digest' | 'notif_post_reminders' | 'notif_industry_briefing'>> = {
   digest: 'notif_weekly_digest',
   reengagement: 'notif_post_reminders',
+  industry_briefing: 'notif_industry_briefing',
 };
 
 const FROM_NOREPLY = process.env.GMAIL_FROM_NOREPLY || 'noreply@eclatale.com';
@@ -180,6 +183,64 @@ export async function sendWeeklyDigest(
     growthScore: String(stats.growthScore),
     topicsHtml,
     tipOfWeek: tip,
+    ctaUrl: 'https://eclatale.com/create',
+  });
+}
+
+export interface IndustryBriefingAngle { style: string; hook: string; }
+
+export async function sendIndustryBriefing(
+  userId: string,
+  email: string,
+  firstName: string,
+  data: {
+    domain: string;
+    postsThisWeek: number;
+    postsLastWeek: number;
+    currentStreak: number;
+    trendingTopics: { topic: string }[];
+    formatInsight: string;
+    opportunityText: string;
+    opportunityStyleSlug: string;
+    angles: IndustryBriefingAngle[];
+    postingFrequency: number;
+  }
+) {
+  const trendingTopicsHtml = data.trendingTopics.map(t => `
+    <tr><td style="padding:0 0 8px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #efeafc;border-radius:12px;">
+        <tr><td style="padding:12px 16px;">
+          <p style="margin:0;font-family:'Plus Jakarta Sans',Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#1A1A2E;font-weight:600;">${escapeHtml(t.topic)}</p>
+        </td></tr>
+      </table>
+    </td></tr>`).join('');
+
+  const anglesHtml = data.angles.map(a => `
+    <tr><td style="padding:0 0 10px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #efeafc;border-radius:12px;">
+        <tr><td style="padding:14px 16px;">
+          <p style="margin:0 0 6px 0;font-family:'Plus Jakarta Sans',Arial,Helvetica,sans-serif;font-size:10px;color:#7C5CFC;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(a.style)}</p>
+          <p style="margin:0 0 8px 0;font-family:'Plus Jakarta Sans',Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1A1A2E;">${escapeHtml(a.hook)}</p>
+          <a href="https://eclatale.com/create" style="font-family:'Plus Jakarta Sans',Arial,Helvetica,sans-serif;font-size:12px;color:#7C5CFC;text-decoration:none;font-weight:700;">Write this &rarr;</a>
+        </td></tr>
+      </table>
+    </td></tr>`).join('');
+
+  const streakDisplay = data.currentStreak > 0 ? `${data.currentStreak}d 🔥` : '—';
+  const streakLabel = data.currentStreak > 0 ? 'current streak' : 'streak reset — restart this week?';
+
+  return send(userId, 'industry_briefing', email, `What's working in ${data.domain} this week, ${firstName}`, {
+    domain: data.domain,
+    postsThisWeek: String(data.postsThisWeek),
+    postsLastWeek: String(data.postsLastWeek),
+    streakDisplay,
+    streakLabel,
+    trendingTopicsHtml,
+    formatInsight: data.formatInsight,
+    opportunityText: data.opportunityText,
+    opportunityCtaUrl: `https://eclatale.com/create/talk?style=${encodeURIComponent(data.opportunityStyleSlug)}`,
+    anglesHtml,
+    postingFrequency: String(data.postingFrequency),
     ctaUrl: 'https://eclatale.com/create',
   });
 }

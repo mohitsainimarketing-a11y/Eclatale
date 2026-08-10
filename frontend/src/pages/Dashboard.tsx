@@ -12,6 +12,7 @@ import { copyToClipboard } from '../utils/clipboard';
 import NotificationBell from '../components/NotificationBell';
 import { maybePromptPush } from '../lib/pushNotifications';
 import AppShell from '../components/AppShell';
+import WeeklyBriefingCard from '../components/WeeklyBriefingCard';
 import { useToast } from '../contexts/ToastContext';
 import { apiFetch } from '../lib/apiFetch';
 
@@ -373,6 +374,8 @@ export default function Dashboard() {
           <p className="text-[10px] text-brand-muted -mt-4 mb-6 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" /> Updated {timeAgo(overview.updatedAt)}
           </p>
+
+          <WeeklyBriefingCard userId={user.id} />
 
           {/* Growth Journey timeline */}
           <div className="card p-6 mb-6">

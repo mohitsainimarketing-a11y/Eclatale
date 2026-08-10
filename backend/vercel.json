@@ -10,6 +10,8 @@
     { "source": "/api/persona-signal", "destination": "/api/intelligence?action=persona-signal" },
     { "source": "/api/admin/trigger-digest", "destination": "/api/intelligence?action=trigger-digest" },
     { "source": "/api/weekly-digest-cron", "destination": "/api/intelligence?action=weekly-digest-cron" },
+    { "source": "/api/admin/trigger-weekly-industry-briefing", "destination": "/api/intelligence?action=weekly-industry-briefing" },
+    { "source": "/api/weekly-industry-briefing-cron", "destination": "/api/intelligence?action=weekly-industry-briefing-cron" },
     { "source": "/api/analytics/page-view", "destination": "/api/intelligence?action=page-view" },
     { "source": "/api/reengagement-cron", "destination": "/api/intelligence?action=reengagement-cron" },
     { "source": "/api/streak-risk-cron", "destination": "/api/intelligence?action=streak-risk-cron" },
@@ -41,6 +43,7 @@
   "crons": [
     { "path": "/api/weekly-digest-cron", "schedule": "0 13 * * 1" },
     { "path": "/api/reengagement-cron", "schedule": "0 9 * * *" },
-    { "path": "/api/schedule/publish-due", "schedule": "0 12 * * *" }
+    { "path": "/api/schedule/publish-due", "schedule": "0 12 * * *" },
+    { "path": "/api/weekly-industry-briefing-cron", "schedule": "0 7 * * 1" }
   ]
 }

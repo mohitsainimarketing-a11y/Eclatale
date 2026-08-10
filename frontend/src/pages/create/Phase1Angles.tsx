@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { RefreshCw, PenLine, Check, TrendingUp, User, ShieldCheck, MessageCircle } from 'lucide-react';
-import { Angle } from './types';
+import { Angle, AngleStyle } from './types';
+import IndustryIntelligencePanel from './IndustryIntelligencePanel';
 
 const PERF_ICONS: Record<string, React.ComponentType<any>> = {
   'trending-up': TrendingUp,
@@ -80,6 +81,7 @@ function AngleCardSkeleton() {
 }
 
 interface Phase1Props {
+  userId: string;
   userRole: string;
   userDomain: string;
   angles: Angle[];
@@ -97,17 +99,24 @@ interface Phase1Props {
 }
 
 export default function Phase1Angles({
-  userRole, userDomain, angles, loading, error, updatedAt,
+  userId, userRole, userDomain, angles, loading, error, updatedAt,
   selectedAngleId, onSelectAngle, onRefresh,
   customInput, onCustomInputChange, voiceLabel, onContinue, canContinue,
 }: Phase1Props) {
   const [refreshing, setRefreshing] = useState(false);
+  const [styleFilter, setStyleFilter] = useState<AngleStyle | null>(null);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     await onRefresh();
     setRefreshing(false);
   };
+
+  const filteredAngles = useMemo(() => {
+    if (!styleFilter) return angles;
+    const matches = angles.filter(a => a.style === styleFilter);
+    return matches.length > 0 ? matches : angles;
+  }, [angles, styleFilter]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
@@ -153,10 +162,15 @@ export default function Phase1Angles({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
           {loading
             ? Array.from({ length: 4 }).map((_, i) => <AngleCardSkeleton key={i} />)
-            : angles.map(angle => (
+            : filteredAngles.map(angle => (
                 <AngleCard key={angle.id} angle={angle} selected={selectedAngleId === angle.id} onClick={() => onSelectAngle(angle)} />
               ))}
         </div>
+        {!loading && styleFilter && filteredAngles === angles && (
+          <p className="text-center text-[11px] max-w-3xl mx-auto -mt-2 mb-2" style={{ color: '#9CA3AF' }}>
+            No {styleFilter} angles right now — showing all styles instead.
+          </p>
+        )}
 
         {/* Custom input */}
         <div className="max-w-3xl mx-auto mt-4">
@@ -176,6 +190,15 @@ export default function Phase1Angles({
             <span className="text-[11px] font-medium whitespace-nowrap hidden sm:inline" style={{ color: '#9CA3AF' }}>or paste a URL</span>
           </div>
         </div>
+
+        <IndustryIntelligencePanel
+          userId={userId}
+          userDomain={userDomain}
+          userRole={userRole}
+          onTopicClick={onCustomInputChange}
+          onStyleFilterChange={setStyleFilter}
+          activeStyleFilter={styleFilter}
+        />
       </div>
 
       {/* Footer */}

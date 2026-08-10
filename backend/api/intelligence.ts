@@ -32,6 +32,7 @@ import {
   extractClientIp, checkToolRateLimit, logToolUsage,
   generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs,
 } from '../lib/freeTools';
+import { getIndustryIntelligence } from '../lib/industryIntelligence';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -1239,6 +1240,17 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
       }
       case 'create-angles': {
         const result = await createAngles(userId, forceRefresh);
+        return res.json(result);
+      }
+      case 'industry-intelligence': {
+        let role = String(body.role || '').trim();
+        let domain = String(body.domain || '').trim();
+        if (!role || !domain) {
+          const profile = await getProfile(userId);
+          role = role || profile.role;
+          domain = domain || profile.industry;
+        }
+        const result = await getIndustryIntelligence(anthropic, supabase, role, domain, forceRefresh);
         return res.json(result);
       }
       case 'library-tags-suggest': {

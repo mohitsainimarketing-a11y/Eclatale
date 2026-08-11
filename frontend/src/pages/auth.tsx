@@ -1,12 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, Mail, Lock, Loader2, CheckCircle2 } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
+import { apiFetch } from '../lib/apiFetch';
+import { loadGoogleIdentityScript, generateNonce } from '../lib/googleIdentity';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
+
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
+
+// Set once the Google Cloud OAuth Client has eclatale.com registered as an
+// Authorized JavaScript origin (Supabase Dashboard -> Authentication ->
+// Providers -> Google has the matching Client ID). Until then this stays
+// unset and the button below falls back to the old Supabase-hosted redirect
+// flow (which shows the supabase.co domain on Google's consent screen).
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
 type ViewMode = 'auth' | 'forgot' | 'forgot-sent';
 
@@ -24,8 +35,76 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
   const [resetError, setResetError] = useState('');
 
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [gisReady, setGisReady] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const nonceRef = useRef<string | undefined>(undefined);
 
-  const handleGoogleLogin = async () => {
+  // Runs after Google returns an ID token directly to this page (no redirect
+  // through Supabase's domain) — hands it to Supabase to create the session,
+  // then mirrors AuthCallback.tsx's new-vs-returning-user routing.
+  const handleGoogleCredential = useCallback(async (response: { credential: string }) => {
+    setGoogleLoading(true);
+    setMessage('');
+    try {
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+        nonce: nonceRef.current,
+      });
+      if (error) throw error;
+      if (!data.user) throw new Error('Could not sign in with Google.');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, domain, goals')
+        .eq('id', data.user.id)
+        .single();
+      const hasProfile = !!(profile?.role && profile?.domain && profile?.goals?.length);
+
+      apiFetch(`${API_URL}/api/email/send-welcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: data.user.id }),
+      }).catch(() => {});
+
+      if (!hasProfile) trackEvent('signup_complete');
+
+      const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+      if (hasProfile && returnTo && returnTo.startsWith('/')) window.location.href = returnTo;
+      else window.location.href = hasProfile ? '/dashboard' : '/onboarding';
+    } catch (error: any) {
+      setMessage(error.message || 'Google sign-in failed.');
+      setGoogleLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || view !== 'auth') return;
+    let cancelled = false;
+    loadGoogleIdentityScript().then(async () => {
+      if (cancelled || !googleBtnRef.current) return;
+      const google = (window as any).google;
+      const { nonce, hashedNonce } = await generateNonce();
+      nonceRef.current = nonce;
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        nonce: hashedNonce,
+        use_fedcm_for_prompt: true,
+      });
+      google.accounts.id.renderButton(googleBtnRef.current, {
+        type: 'standard', theme: 'outline', size: 'large', shape: 'rectangular',
+        text: 'continue_with', logo_alignment: 'left',
+        width: googleBtnRef.current.offsetWidth || 360,
+      });
+      if (!cancelled) setGisReady(true);
+    }).catch(() => setGisReady(false));
+    return () => { cancelled = true; };
+  }, [view, handleGoogleCredential]);
+
+  // Fallback used only when GOOGLE_CLIENT_ID isn't configured yet, or GIS
+  // failed to load — same Supabase-hosted redirect flow as before.
+  const handleGoogleLoginFallback = async () => {
     setGoogleLoading(true);
     setMessage('');
     const { error } = await supabase.auth.signInWithOAuth({
@@ -124,24 +203,41 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
         <div className="card p-7 md:p-8 overflow-hidden">
           {view === 'auth' && (
             <div className="animate-fadeIn">
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={googleLoading || loading}
-                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-[rgba(0,0,0,0.1)] bg-white text-[15px] font-semibold text-brand-dark hover:bg-[rgba(0,0,0,0.02)] hover:border-[rgba(0,0,0,0.16)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {googleLoading ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                    <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
-                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
-                    <path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/>
-                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
-                  </svg>
-                )}
-                {googleLoading ? 'Redirecting to Google…' : 'Continue with Google'}
-              </button>
+              {/* Real Google-rendered button (shown once GIS has initialized) —
+                  runs the sign-in entirely from this page, so Google's account
+                  chooser shows eclatale.com instead of the Supabase project domain. */}
+              <div
+                ref={googleBtnRef}
+                className={GOOGLE_CLIENT_ID && gisReady && !googleLoading ? 'w-full flex justify-center' : 'hidden'}
+              />
+              {googleLoading && GOOGLE_CLIENT_ID && gisReady && (
+                <div className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-brand-muted">
+                  <Loader2 size={16} className="animate-spin" /> Signing in…
+                </div>
+              )}
+
+              {/* Fallback: custom button using the old Supabase-hosted redirect
+                  flow, shown until GOOGLE_CLIENT_ID is configured or if GIS fails to load. */}
+              {(!GOOGLE_CLIENT_ID || !gisReady) && (
+                <button
+                  type="button"
+                  onClick={handleGoogleLoginFallback}
+                  disabled={googleLoading || loading}
+                  className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-[rgba(0,0,0,0.1)] bg-white text-[15px] font-semibold text-brand-dark hover:bg-[rgba(0,0,0,0.02)] hover:border-[rgba(0,0,0,0.16)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {googleLoading ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+                      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+                      <path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/>
+                      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+                    </svg>
+                  )}
+                  {googleLoading ? 'Redirecting to Google…' : 'Continue with Google'}
+                </button>
+              )}
 
               <div className="flex items-center gap-3 my-5">
                 <div className="flex-1 h-px bg-[rgba(0,0,0,0.08)]" />

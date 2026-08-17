@@ -49,7 +49,7 @@ export async function logToolUsage(supabase: SupabaseClient, ip: string, tool: s
 
 export async function generateHooks(anthropic: Anthropic, topic: string, style: string): Promise<string[]> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 500,
     system: getDateContext(),
     messages: [{
@@ -100,7 +100,7 @@ export interface HeadlineAnalysis {
 
 export async function analyzeHeadline(anthropic: Anthropic, headline: string): Promise<HeadlineAnalysis> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 900,
     system: getDateContext(),
     messages: [{
@@ -137,7 +137,7 @@ export interface ViralScoreResult {
 
 export async function scoreViralPotential(anthropic: Anthropic, post: string): Promise<ViralScoreResult> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 700,
     system: getDateContext(),
     messages: [{
@@ -168,7 +168,7 @@ export async function generateAboutSection(
   anthropic: Anthropic, role: string, industry: string, specialty: string, achievement: string, tone: string
 ): Promise<string> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 700,
     system: getDateContext(),
     messages: [{
@@ -183,7 +183,7 @@ export async function generateAboutSection(
 
 export async function generateCTAs(anthropic: Anthropic, topic: string, goal: string): Promise<string[]> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 500,
     system: getDateContext(),
     messages: [{

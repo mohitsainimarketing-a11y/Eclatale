@@ -1197,7 +1197,7 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
         const postContent = String(body.postContent || '').trim();
         if (!postContent) return res.status(400).json({ error: 'Missing postContent' });
         const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 150,
           messages: [{ role: 'user', content: `Extract 3-7 short content tags for this LinkedIn post, in the style #LeadershipLessons, #AIMarketing, #StartupGrowth (PascalCase, no spaces, one hashtag each). Return ONLY a JSON array of strings, e.g. ["#Leadership","#AI"].\n\nPost:\n${postContent.slice(0, 2000)}` }],
         });

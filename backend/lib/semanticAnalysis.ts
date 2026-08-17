@@ -87,7 +87,7 @@ export async function analyzePost(
   contentLength?: string
 ): Promise<PostAnalysis> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
     system: `${getDateContext()}\n\n${buildAnalyzePostPrompt(contentLength)}`,
     messages: [{ role: 'user', content: `Post to analyze:\n\n${postContent}` }],

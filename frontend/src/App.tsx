@@ -31,6 +31,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const ExtensionAuth = lazy(() => import('./pages/ExtensionAuth'));
 const ToolsHub = lazy(() => import('./pages/tools/ToolsHub'));
 const ToolPage = lazy(() => import('./pages/tools/ToolPage'));
+const Discover = lazy(() => import('./pages/Discover'));
 
 function PageLoader() {
   return (
@@ -94,6 +95,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/create-visual" element={<CreateVisual />} />
           <Route path="/intelligence" element={<Intelligence />} />
+          <Route path="/discover" element={<Discover />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />

@@ -49,6 +49,8 @@ export default function CreateTalk() {
   const [error, setError] = useState('');
   const [templateContent, setTemplateContent] = useState('');
   const [templatePreview, setTemplatePreview] = useState('');
+  const [repurposeUrl, setRepurposeUrl] = useState('');
+  const [repurposeContent, setRepurposeContent] = useState('');
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -64,6 +66,15 @@ export default function CreateTalk() {
       const params = new URLSearchParams(window.location.search);
       const styleParam = params.get('style');
       if (styleParam && WRITING_STYLES.some(s => s.id === styleParam)) setStyle(styleParam);
+
+      const topicParam = params.get('topic');
+      const repurposeUrlParam = params.get('repurposeUrl');
+      if (repurposeUrlParam) setRepurposeUrl(repurposeUrlParam);
+      if (topicParam) {
+        setTopic(topicParam);
+        // auto-start research so the user lands straight in compose step
+        setTimeout(() => startResearch(topicParam, repurposeUrlParam || ''), 0);
+      }
 
       const templateId = params.get('template');
       if (templateId) {
@@ -86,14 +97,13 @@ export default function CreateTalk() {
     });
   }, []);
 
-  const startResearch = async (t: string) => {
+  const startResearch = async (t: string, rUrl?: string) => {
     const finalTopic = t.trim();
     if (!finalTopic) return;
     setTopic(finalTopic);
     setError('');
+    const sourceUrl = rUrl ?? repurposeUrl;
 
-    // Using an existing post as a structure template — skip fresh web research
-    // and go straight to style/length; the template's structure does the work.
     if (templateContent) {
       setSources([]);
       setClarifyingQuestion('');
@@ -103,14 +113,26 @@ export default function CreateTalk() {
 
     setResearching(true);
     try {
-      const res = await apiFetch(`${API_URL}/api/intelligence`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ action: 'create-talk-start', topic: finalTopic, userId }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setSources(data.sources || []);
-      setClarifyingQuestion(data.clarifyingQuestion || '');
+      const [talkRes, fetchRes] = await Promise.allSettled([
+        apiFetch(`${API_URL}/api/intelligence`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({ action: 'create-talk-start', topic: finalTopic, userId }),
+        }).then(r => r.json()),
+        sourceUrl
+          ? apiFetch(`${API_URL}/api/intelligence`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+              body: JSON.stringify({ action: 'fetch-url', url: sourceUrl, userId }),
+            }).then(r => r.json())
+          : Promise.resolve(null),
+      ]);
+
+      if (talkRes.status === 'fulfilled' && !talkRes.value.error) {
+        setSources(talkRes.value.sources || []);
+        setClarifyingQuestion(talkRes.value.clarifyingQuestion || '');
+      }
+      if (fetchRes.status === 'fulfilled' && fetchRes.value?.text) {
+        setRepurposeContent(fetchRes.value.text);
+      }
       setStep('compose');
     } catch (e: any) {
       setError(e.message || 'Something went wrong finding sources — you can still continue.');
@@ -128,7 +150,11 @@ export default function CreateTalk() {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
           action: 'create-talk-generate', topic, style, length, clarifyingAnswer, sources, userId,
-          resourceContext: templateContent ? `Mimic the structure, pacing, and format of this reference post — but write entirely new content about the new topic:\n\n${templateContent}` : undefined,
+          resourceContext: repurposeContent
+            ? `Repurpose the key insights from this article into a LinkedIn post. Extract the most interesting ideas and express them in a fresh, original way:\n\n${repurposeContent.slice(0, 5000)}`
+            : templateContent
+            ? `Mimic the structure, pacing, and format of this reference post — but write entirely new content about the new topic:\n\n${templateContent}`
+            : undefined,
         }),
       });
       const data = await res.json();
@@ -160,6 +186,12 @@ export default function CreateTalk() {
               <h1 className="text-2xl font-extrabold text-brand-dark mb-6">
                 Hi {firstName || 'there'} 👋 What would you like to write about today?
               </h1>
+              {repurposeUrl && (
+                <div className="mb-4 p-3 rounded-xl bg-[rgba(247,37,133,0.05)] border border-[rgba(247,37,133,0.15)] text-[12px] text-brand-dark flex items-center gap-2">
+                  <span className="text-base">↻</span>
+                  <span><span className="font-semibold text-brand-pink">Repurposing: </span>{repurposeUrl.length > 60 ? repurposeUrl.slice(0, 60) + '…' : repurposeUrl}</span>
+                </div>
+              )}
               {templatePreview && (
                 <div className="mb-4 p-3 rounded-xl bg-[rgba(124,92,252,0.05)] border border-[rgba(124,92,252,0.15)] text-[12px] text-brand-dark">
                   <span className="font-semibold text-brand-purple">Using as structure reference: </span>
@@ -175,7 +207,7 @@ export default function CreateTalk() {
                   className="input !text-[15px] !min-h-[120px] !resize-none w-full !leading-relaxed !pr-14"
                   autoFocus
                 />
-                <button onClick={() => startResearch(topic)} disabled={!topic.trim() || researching}
+                <button onClick={() => startResearch(topic)} disabled={!topic.trim() || researching || !userId}
                   aria-label="Start"
                   className="absolute right-3 bottom-3 w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-white disabled:opacity-40 transition-opacity">
                   {researching ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}

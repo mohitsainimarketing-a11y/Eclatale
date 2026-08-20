@@ -25,7 +25,7 @@ import { requireFeature } from '../lib/featureGates';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { calculateVoiceMatchScore } from '../lib/voiceMatchScore';
 import { ariaChat, getAriaConversation, AriaMessage } from '../lib/aria';
-import { searchSourcesForTopic } from '../lib/webResearch';
+import { searchSourcesForTopic, computeTrustScore, extractDomain } from '../lib/webResearch';
 import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction } from '../lib/writingStyles';
 import { extractPdfText, extractDocxText, extractCsvSummary, truncateForPrompt } from '../lib/resourceParsing';
 import {
@@ -1161,6 +1161,66 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
         const content = message.content[0].type === 'text' ? message.content[0].text : '';
         const avgTrust = sources.length ? Math.round(sources.reduce((s, x) => s + (x.trustScore || 0), 0) / sources.length) : null;
         return res.json({ content, styleLabel: style?.label || styleId, sourcesUsed: sources, sourceTrust: avgTrust });
+      }
+      case 'content-discovery': {
+        const query = String(body.query || '').trim();
+        const cacheSlug = query
+          ? `q-${query.toLowerCase().replace(/\W+/g, '-').slice(0, 30)}`
+          : 'auto';
+        const cacheKind = `discovery-${cacheSlug}`;
+
+        if (!forceRefresh) {
+          const cached = await readCache(supabase, userId, cacheKind, 2 * 60 * 60 * 1000);
+          if (cached) return res.json(cached);
+        }
+
+        const { role, industry } = await getProfile(userId);
+
+        const searchInstruction = query
+          ? `Search for 8 recent (last 30 days preferred) high-quality articles about: "${query}". Include diverse perspectives and source types.`
+          : `You are discovering content for a ${role} in ${industry}. Search for recent articles (last 30 days preferred) across these 4 categories:
+1. "${industry} industry news 2025" — latest developments
+2. "${role} leadership professional growth" — career and leadership insights
+3. "AI technology ${industry} trends 2025" — tech innovation in their field
+4. "${industry} future disruption startups" — emerging players and bold ideas
+
+Find 3 articles per category (12 total). Prioritise well-known publications and vary the content format (news, opinion, research, how-to).`;
+
+        const message = await (anthropic.messages.create as any)({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 3000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
+          messages: [{
+            role: 'user',
+            content: `${searchInstruction}
+
+After searching, return ONLY a valid JSON array with no prose or markdown fences:
+[{"title":"...","url":"...","domain":"example.com","excerpt":"one clear sentence summary of the key insight","publishedDate":"YYYY-MM-DD or null","category":"Industry News|Trends|Leadership|Technology|Research|Opinion|Marketing|Career|Innovation"}]`,
+          }],
+        });
+
+        const textBlock = (message.content || []).find((b: any) => b.type === 'text');
+        const raw = textBlock?.text || '[]';
+        const jsonMatch = raw.match(/\[[\s\S]*\]/);
+        let rawItems: any[] = [];
+        try { rawItems = JSON.parse(jsonMatch ? jsonMatch[0] : raw); } catch { rawItems = []; }
+
+        const items = rawItems.slice(0, 16).map((item: any) => {
+          const domain = String(item.domain || extractDomain(String(item.url || '')));
+          return {
+            title: String(item.title || '').slice(0, 200),
+            url: String(item.url || ''),
+            domain,
+            excerpt: String(item.excerpt || '').slice(0, 300),
+            publishedDate: item.publishedDate || null,
+            trustScore: computeTrustScore(domain, item.publishedDate || null),
+            category: String(item.category || 'General'),
+          };
+        }).filter((item: any) => item.url && item.title);
+
+        const payload = { items, role, industry, query: query || null };
+        await writeCache(supabase, userId, cacheKind, payload);
+        return res.json({ ...payload, generatedAt: new Date().toISOString(), cached: false });
       }
       case 'profile-optimizer': {
         const locked = await requireFeature(supabase, userId, 'profileOptimizer');

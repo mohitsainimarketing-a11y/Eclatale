@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Home, Sparkles, BarChart3, TrendingUp, FolderOpen, Target, UserCog, Settings,
+  Home, Sparkles, BarChart3, Compass, FolderOpen, Target, UserCog, Settings,
   MessageCircle, ChevronLeft, ChevronRight, Menu, X,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -17,8 +17,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard' },
   { icon: <Sparkles size={18} />, label: 'Create', href: '/create', primary: true },
-  { icon: <BarChart3 size={18} />, label: 'Analytics', href: '/intelligence' },
-  { icon: <TrendingUp size={18} />, label: 'Competitor Intel', href: '/intelligence' },
+  { icon: <Compass size={18} />, label: 'Discover', href: '/discover' },
+  { icon: <BarChart3 size={18} />, label: 'Intelligence', href: '/intelligence' },
   { icon: <FolderOpen size={18} />, label: 'Content Library', href: '/history' },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup' },
   { icon: <UserCog size={18} />, label: 'Profile Optimizer', href: '/intelligence' },

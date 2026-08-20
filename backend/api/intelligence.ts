@@ -1162,6 +1162,59 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
         const avgTrust = sources.length ? Math.round(sources.reduce((s, x) => s + (x.trustScore || 0), 0) / sources.length) : null;
         return res.json({ content, styleLabel: style?.label || styleId, sourcesUsed: sources, sourceTrust: avgTrust });
       }
+      case 'profile-optimizer': {
+        const locked = await requireFeature(supabase, userId, 'profileOptimizer');
+        if (locked) return res.status(403).json(locked);
+
+        const cacheKind = 'profile-optimizer';
+        if (!forceRefresh) {
+          const cached = await readCache(supabase, userId, cacheKind, 24 * 60 * 60 * 1000);
+          if (cached) return res.json({ ...cached, cached: true });
+        }
+
+        const { role, industry } = await getProfile(userId);
+        const { data: profileRow } = await supabase
+          .from('profiles')
+          .select('bio, seniority_level, company_name, goals, first_name')
+          .eq('id', userId)
+          .maybeSingle();
+
+        const headline = String(body.headline || '').trim();
+        const about = String(body.about || profileRow?.bio || '').trim();
+        if (!headline && !about) return res.status(400).json({ error: 'Provide a headline or About section to analyze' });
+
+        const seniority = profileRow?.seniority_level || '';
+        const company = profileRow?.company_name || '';
+        const goals: string[] = profileRow?.goals || [];
+
+        const prompt = `You are a LinkedIn profile expert. Analyze this LinkedIn profile for a ${seniority ? seniority + ' ' : ''}${role} in ${industry}${company ? ` at ${company}` : ''}.
+
+${headline ? `HEADLINE:\n${headline}\n` : ''}${about ? `\nABOUT SECTION:\n${about}\n` : ''}${goals.length ? `\nUser goals: ${goals.join(', ')}` : ''}
+
+Return ONLY valid JSON with this exact shape:
+{
+  "headlineScore": <0-100, omit if no headline provided>,
+  "aboutScore": <0-100, omit if no about provided>,
+  "headlineStrengths": [<1-2 short strings, omit if no headline>],
+  "headlineIssues": [<1-3 specific improvement areas, omit if no headline>],
+  "aboutStrengths": [<1-2 short strings, omit if no about>],
+  "aboutIssues": [<1-3 specific improvement areas, omit if no about>],
+  "optimizedHeadline": "<rewritten headline under 220 chars, omit if none provided>",
+  "optimizedAbout": "<rewritten About section, preserve voice, max 2600 chars, omit if none provided>",
+  "quickWins": ["<3 concrete one-sentence actions ranked by impact>"]
+}`;
+
+        const message = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1800,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
+        const parsed = parseJsonObject(text);
+        const payload = { ...parsed, generatedAt: new Date().toISOString(), cached: false };
+        await writeCache(supabase, userId, cacheKind, parsed);
+        return res.json(payload);
+      }
       case 'create-angles': {
         const result = await createAngles(anthropic, supabase, userId, forceRefresh);
         return res.json(result);

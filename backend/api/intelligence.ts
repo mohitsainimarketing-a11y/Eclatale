@@ -1179,18 +1179,16 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
         const today = new Date().toISOString().slice(0, 10);
         const searchInstruction = query
           ? `Today is ${today}. Search for the most recent high-quality articles published in the last 14 days about: "${query}". Prioritise articles from the last 7 days. Include diverse perspectives and source types. Aim for 8 articles.`
-          : `Today is ${today}. You are discovering content for a ${role} in ${industry}. Search for the MOST RECENT articles published in the last 14 days across these 4 categories:
-1. "${industry} industry news site:reuters.com OR site:bloomberg.com OR site:techcrunch.com OR site:axios.com after:${today.slice(0, 7)}" — breaking news
-2. "${role} leadership ${industry} after:${today.slice(0, 7)}" — fresh leadership insights
-3. "AI technology ${industry} after:${today.slice(0, 7)}" — latest AI developments
-4. "${industry} startups funding innovation after:${today.slice(0, 7)}" — newest market moves
+          : `Today is ${today}. You are discovering content for a ${role} in ${industry}. Do 2 targeted searches to find the most recent articles from the last 14 days:
+1. Search: "${industry} news ${today.slice(0, 7)}" — find 5 fresh industry headlines
+2. Search: "${role} leadership AI ${today.slice(0, 7)}" — find 5 leadership and tech insights
 
-Find 3 articles per category (12 total). Only include articles published in the last 30 days — no older content. Prefer articles from the last 7 days. Vary source types.`;
+Only include articles published in the last 30 days. Prefer the last 7 days. Use reputable publications.`;
 
         const message = await (anthropic.messages.create as any)({
           model: 'claude-sonnet-4-6',
           max_tokens: 3000,
-          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4 }],
           messages: [{
             role: 'user',
             content: `${searchInstruction}

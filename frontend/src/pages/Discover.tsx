@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Search, RefreshCw, Loader2, Lightbulb, Repeat2,
-  ExternalLink, Calendar, ChevronDown,
+  ExternalLink, Calendar, ArrowUpDown,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { apiFetch } from '../lib/apiFetch';
@@ -233,6 +233,7 @@ export default function Discover() {
   const [activeQuery, setActiveQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [repurposeItem, setRepurposeItem] = useState<DiscoveredItem | null>(null);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const load = useCallback(async (uid: string, query: string, refresh: boolean) => {
     setLoading(true);
@@ -278,8 +279,10 @@ export default function Discover() {
     ? ['All', ...Array.from(new Set(data.items.map(i => i.category)))]
     : ['All'];
 
+  const toTs = (d: string | null) => d ? new Date(d).getTime() : 0;
   const visibleItems = data
-    ? (activeCategory === 'All' ? data.items : data.items.filter(i => i.category === activeCategory))
+    ? (activeCategory === 'All' ? [...data.items] : data.items.filter(i => i.category === activeCategory))
+        .sort((a, b) => sortOrder === 'newest' ? toTs(b.publishedDate) - toTs(a.publishedDate) : toTs(a.publishedDate) - toTs(b.publishedDate))
     : [];
 
   return (
@@ -319,26 +322,34 @@ export default function Discover() {
             </button>
           </form>
 
-          {/* Category filters */}
+          {/* Category filters + sort */}
           {!loading && data && (
-            <div className="flex gap-2 flex-wrap mb-6">
-              {allCategories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`text-[12px] font-semibold px-3 py-1.5 rounded-full transition-all border ${
-                    activeCategory === cat
-                      ? 'bg-brand-purple text-white border-brand-purple'
-                      : 'bg-white text-brand-muted border-[rgba(124,92,252,0.15)] hover:border-brand-purple/30 hover:text-brand-dark'
-                  }`}>
-                  {cat}
-                  {cat !== 'All' && (
-                    <span className="ml-1.5 opacity-60">
-                      {data.items.filter(i => i.category === cat).length}
-                    </span>
-                  )}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 flex-wrap mb-6">
+              <div className="flex gap-2 flex-wrap flex-1">
+                {allCategories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`text-[12px] font-semibold px-3 py-1.5 rounded-full transition-all border ${
+                      activeCategory === cat
+                        ? 'bg-brand-purple text-white border-brand-purple'
+                        : 'bg-white text-brand-muted border-[rgba(124,92,252,0.15)] hover:border-brand-purple/30 hover:text-brand-dark'
+                    }`}>
+                    {cat}
+                    {cat !== 'All' && (
+                      <span className="ml-1.5 opacity-60">
+                        {data.items.filter(i => i.category === cat).length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
+                className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full border border-[rgba(124,92,252,0.15)] bg-white text-brand-muted hover:border-brand-purple/30 hover:text-brand-dark transition-all flex-shrink-0">
+                <ArrowUpDown size={12} />
+                {sortOrder === 'newest' ? 'Latest first' : 'Oldest first'}
+              </button>
             </div>
           )}
 

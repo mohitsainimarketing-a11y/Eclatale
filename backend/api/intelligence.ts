@@ -1176,18 +1176,19 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
 
         const { role, industry } = await getProfile(userId);
 
+        const today = new Date().toISOString().slice(0, 10);
         const searchInstruction = query
-          ? `Search for 8 recent (last 30 days preferred) high-quality articles about: "${query}". Include diverse perspectives and source types.`
-          : `You are discovering content for a ${role} in ${industry}. Search for recent articles (last 30 days preferred) across these 4 categories:
-1. "${industry} industry news 2025" — latest developments
-2. "${role} leadership professional growth" — career and leadership insights
-3. "AI technology ${industry} trends 2025" — tech innovation in their field
-4. "${industry} future disruption startups" — emerging players and bold ideas
+          ? `Today is ${today}. Search for the most recent high-quality articles published in the last 14 days about: "${query}". Prioritise articles from the last 7 days. Include diverse perspectives and source types. Aim for 8 articles.`
+          : `Today is ${today}. You are discovering content for a ${role} in ${industry}. Search for the MOST RECENT articles published in the last 14 days across these 4 categories:
+1. "${industry} industry news site:reuters.com OR site:bloomberg.com OR site:techcrunch.com OR site:axios.com after:${today.slice(0, 7)}" — breaking news
+2. "${role} leadership ${industry} after:${today.slice(0, 7)}" — fresh leadership insights
+3. "AI technology ${industry} after:${today.slice(0, 7)}" — latest AI developments
+4. "${industry} startups funding innovation after:${today.slice(0, 7)}" — newest market moves
 
-Find 3 articles per category (12 total). Prioritise well-known publications and vary the content format (news, opinion, research, how-to).`;
+Find 3 articles per category (12 total). Only include articles published in the last 30 days — no older content. Prefer articles from the last 7 days. Vary source types.`;
 
         const message = await (anthropic.messages.create as any)({
-          model: 'claude-haiku-4-5-20251001',
+          model: 'claude-sonnet-4-6',
           max_tokens: 3000,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
           messages: [{
@@ -1205,6 +1206,7 @@ After searching, return ONLY a valid JSON array with no prose or markdown fences
         let rawItems: any[] = [];
         try { rawItems = JSON.parse(jsonMatch ? jsonMatch[0] : raw); } catch { rawItems = []; }
 
+        const toTimestamp = (d: string | null) => d ? new Date(d).getTime() : 0;
         const items = rawItems.slice(0, 16).map((item: any) => {
           const domain = String(item.domain || extractDomain(String(item.url || '')));
           return {
@@ -1216,7 +1218,8 @@ After searching, return ONLY a valid JSON array with no prose or markdown fences
             trustScore: computeTrustScore(domain, item.publishedDate || null),
             category: String(item.category || 'General'),
           };
-        }).filter((item: any) => item.url && item.title);
+        }).filter((item: any) => item.url && item.title)
+          .sort((a: any, b: any) => toTimestamp(b.publishedDate) - toTimestamp(a.publishedDate));
 
         const payload = { items, role, industry, query: query || null };
         await writeCache(supabase, userId, cacheKind, payload);

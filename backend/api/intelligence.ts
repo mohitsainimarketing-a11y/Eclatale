@@ -34,7 +34,7 @@ import {
 } from '../lib/freeTools';
 import { getIndustryIntelligence } from '../lib/industryIntelligence';
 import { getHookLibrary } from '../lib/hookLibrary';
-import { createAngles } from '../lib/angles';
+import { createAngles, ANGLE_STYLE_META } from '../lib/angles';
 import { sendBriefingToUser, weeklyIndustryBriefingCron, buildBriefingData } from '../lib/weeklyBriefing';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -1279,6 +1279,60 @@ Return ONLY valid JSON with this exact shape:
       case 'create-angles': {
         const result = await createAngles(anthropic, supabase, userId, forceRefresh);
         return res.json(result);
+      }
+      case 'trending-preview': {
+        const { industry } = await getProfile(userId);
+        const cacheKind = `trending-preview-${industry.slice(0, 40)}`;
+        const cached = !forceRefresh ? await readCache(supabase, userId, cacheKind, 30 * 60 * 1000) : null;
+        if (cached) return res.json(cached);
+        const today = new Date().toISOString().slice(0, 10);
+        const trendMsg = await (anthropic.messages.create as any)({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 400,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
+          system: getDateContext(),
+          messages: [{ role: 'user', content: `Today is ${today}. Search for the top 3 trending topics in ${industry} right now. Return ONLY valid JSON (no prose, no markdown): {"topics":["2-5 word topic 1","2-5 word topic 2","2-5 word topic 3"]}` }],
+        });
+        const trendText = ((trendMsg.content || []).find((b: any) => b.type === 'text') || {}).text || '{}';
+        let trendParsed: any = {};
+        try { trendParsed = JSON.parse((trendText.match(/\{[\s\S]*\}/) || ['{}'])[0]); } catch { trendParsed = {}; }
+        const topics: string[] = Array.isArray(trendParsed.topics) ? trendParsed.topics.slice(0, 3) : [];
+        const trendResult = { topics, industry, generatedAt: new Date().toISOString() };
+        await writeCache(supabase, userId, cacheKind, { topics, industry });
+        return res.json(trendResult);
+      }
+      case 'from-idea': {
+        const idea = String(body.idea || '').trim();
+        if (!idea) return res.status(400).json({ error: 'Missing idea' });
+        const { role, industry } = await getProfile(userId);
+        const styleNames = Object.keys(ANGLE_STYLE_META).join(', ');
+        const ideaMsg = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2000,
+          system: getDateContext(),
+          messages: [{ role: 'user', content: `Generate 5 distinct LinkedIn post angles based on this idea from a ${role} in ${industry}:\n\nIDEA: "${idea.slice(0, 500)}"\n\nFor each angle:\n- Write a compelling hook (2-3 sentences) that directly builds on their idea\n- Assign a style from exactly these options (use exact casing): ${styleNames}\n- Write one sentence explaining why this framing works\n- Add a realistic performance stat\n\nReturn ONLY valid JSON (no prose, no markdown):\n{"angles":[{"style":"Contrarian","hook":"...","insight":"...","performanceStat":"..."}]}` }],
+        });
+        const ideaText = ideaMsg.content[0].type === 'text' ? ideaMsg.content[0].text : '{}';
+        let ideaParsed: any = {};
+        try { ideaParsed = JSON.parse((ideaText.match(/\{[\s\S]*\}/) || ['{}'])[0]); } catch { ideaParsed = {}; }
+        const rawAngles: any[] = Array.isArray(ideaParsed.angles) ? ideaParsed.angles : [];
+        const angles = rawAngles.slice(0, 5).map((a: any, i: number) => {
+          const meta = ANGLE_STYLE_META[a.style] || ANGLE_STYLE_META.Storyteller;
+          return {
+            id: `idea-angle-${Date.now()}-${i}`,
+            style: ANGLE_STYLE_META[a.style] ? a.style : 'Storyteller',
+            styleId: meta.writingStyleId,
+            styleEmoji: meta.emoji,
+            hook: String(a.hook || ''),
+            insight: String(a.insight || ''),
+            performanceStat: String(a.performanceStat || ''),
+            performanceIcon: meta.performanceIcon,
+            performanceColor: meta.performanceColor,
+            badgeColor: meta.badgeColor,
+            badgeTextColor: meta.badgeTextColor,
+          };
+        });
+        return res.json({ angles, sources: [], generatedAt: new Date().toISOString() });
       }
       case 'industry-briefing-preview': {
         // Read-only, user-scoped preview of their own weekly briefing data —

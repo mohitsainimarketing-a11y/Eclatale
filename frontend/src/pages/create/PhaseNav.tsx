@@ -7,7 +7,8 @@ const STEPS = [
   { n: 3 as const, label: 'Publish and grow' },
 ];
 
-export default function PhaseNav({ currentPhase }: { currentPhase: 1 | 2 | 3 }) {
+export default function PhaseNav({ currentPhase }: { currentPhase: 0 | 1 | 2 | 3 }) {
+  if (currentPhase === 0) return null;
   return (
     <div className="bg-white border-b flex items-center justify-center overflow-x-auto" style={{ borderColor: '#EDE8FF' }}>
       <div className="flex items-center">

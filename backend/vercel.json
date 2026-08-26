@@ -6,6 +6,8 @@
     { "source": "/api/tools/generate", "destination": "/api/intelligence?action=tools-generate" },
     { "source": "/api/create/industry-intelligence", "destination": "/api/intelligence?action=industry-intelligence" },
     { "source": "/api/create/hooks", "destination": "/api/intelligence?action=create-hooks" },
+    { "source": "/api/create/trending-preview", "destination": "/api/intelligence?action=trending-preview" },
+    { "source": "/api/create/from-idea", "destination": "/api/intelligence?action=from-idea" },
     { "source": "/api/voice-match-score", "destination": "/api/intelligence?action=voice-match-score" },
     { "source": "/api/persona-signal", "destination": "/api/intelligence?action=persona-signal" },
     { "source": "/api/admin/trigger-digest", "destination": "/api/intelligence?action=trigger-digest" },

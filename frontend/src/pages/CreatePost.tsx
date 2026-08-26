@@ -4,6 +4,7 @@ import Sidebar, { MobileHeader } from '../components/Sidebar';
 import { useSidebar } from '../contexts/SidebarContext';
 import { apiFetch } from '../lib/apiFetch';
 import PhaseNav from './create/PhaseNav';
+import Phase0Picker from './create/Phase0Picker';
 import Phase1Angles from './create/Phase1Angles';
 import Phase2Editor from './create/Phase2Editor';
 import Phase3Publish from './create/Phase3Publish';
@@ -14,7 +15,7 @@ const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim(
 const LAST_ANGLE_STORAGE_KEY = 'eclatale_create_last_angle';
 const LENGTH_STORAGE_KEY = 'eclatale_create_length';
 
-type Phase = 1 | 2 | 3;
+type Phase = 0 | 1 | 2 | 3;
 
 export default function CreatePost() {
   const { sidebarWidth, breakpoint } = useSidebar();
@@ -27,7 +28,7 @@ export default function CreatePost() {
   const [userInitials, setUserInitials] = useState('Y');
   const [userAvatar, setUserAvatar] = useState('');
 
-  const [currentPhase, setCurrentPhase] = useState<Phase>(1);
+  const [currentPhase, setCurrentPhase] = useState<Phase>(0);
   const [phaseTransitioning, setPhaseTransitioning] = useState(false);
 
   // Angle picker state
@@ -43,6 +44,7 @@ export default function CreatePost() {
   const [postId, setPostId] = useState<string | null>(null);
   const [initialContent, setInitialContent] = useState('');
   const [editMode, setEditMode] = useState(false);
+  const [preloadedSpark, setPreloadedSpark] = useState('');
   const [selectedLength, setSelectedLength] = useState<PostLength>(() => {
     try { return (localStorage.getItem(LENGTH_STORAGE_KEY) as PostLength) || 'short'; } catch { return 'short'; }
   });
@@ -116,6 +118,7 @@ export default function CreatePost() {
         return;
       }
 
+      // Background-fetch angles so Phase 1 is ready when user arrives
       fetchAngles(u.id, false);
     });
   }, [fetchAngles]);
@@ -151,6 +154,7 @@ export default function CreatePost() {
     setEditMode(false);
     setPostId(null);
     setInitialContent('');
+    setPreloadedSpark('');
     goToPhase(2);
   };
 
@@ -160,6 +164,7 @@ export default function CreatePost() {
   };
 
   const handleBackToAngles = () => goToPhase(1);
+  const handleBackToPicker = () => goToPhase(0);
 
   const handlePublished = (id: string, urn: string) => {
     setPostId(id);
@@ -180,16 +185,71 @@ export default function CreatePost() {
 
   const handleMaybeLater = () => { window.location.href = '/dashboard'; };
 
-  const voiceLabel = `${preferredTone.charAt(0).toUpperCase()}${preferredTone.slice(1)}${userDomain ? ' · ' + userDomain : ''}`;
+  // Phase 0 handlers
+  const handleGoIdeas = () => {
+    goToPhase(1);
+  };
 
+  const handleGoTrending = (topic: string) => {
+    if (topic) {
+      setCustomInput(topic);
+      setSelectedAngle(null);
+    }
+    goToPhase(1);
+  };
+
+  const handleGoRepurpose = (spark: string) => {
+    setPreloadedSpark(spark);
+    setEditMode(false);
+    setPostId(null);
+    setInitialContent('');
+    // Use customInput as topic hint
+    setCustomInput('repurposed content');
+    setSelectedAngle(null);
+    goToPhase(2);
+  };
+
+  const handleGoIdea = (ideaAngles: Angle[], ideaSources: Source[]) => {
+    if (ideaAngles.length > 0) {
+      setAngles(ideaAngles);
+      setSources(ideaSources);
+      setAnglesUpdatedAt(new Date().toISOString());
+      setSelectedAngle(ideaAngles[0]);
+      setCustomInput('');
+    }
+    goToPhase(1);
+  };
+
+  const voiceLabel = `${preferredTone.charAt(0).toUpperCase()}${preferredTone.slice(1)}${userDomain ? ' · ' + userDomain : ''}`;
   const contentOffset = breakpoint === 'mobile' ? 0 : sidebarWidth;
 
   return (
     <div className="h-app-shell flex flex-col" style={{ marginLeft: contentOffset, background: '#F4F0FF', transition: 'margin-left 0.2s ease' }}>
       <Sidebar />
       <MobileHeader title="Create" />
+      {currentPhase > 0 && !editMode && (
+        <div className="bg-white border-b border-[rgba(124,92,252,0.06)] px-4 py-1.5 flex items-center">
+          <button
+            onClick={handleBackToPicker}
+            className="text-[12px] font-semibold text-brand-muted hover:text-brand-purple transition-colors flex items-center gap-1"
+          >
+            ← Change starting point
+          </button>
+        </div>
+      )}
       <PhaseNav currentPhase={currentPhase} />
       <div className="flex-1 min-h-0 flex flex-col" style={{ opacity: phaseTransitioning ? 0 : 1, transition: 'opacity 0.2s ease' }}>
+        {currentPhase === 0 && userId && (
+          <Phase0Picker
+            userId={userId}
+            firstName={userName}
+            voiceLabel={voiceLabel}
+            onGoIdeas={handleGoIdeas}
+            onGoTrending={handleGoTrending}
+            onGoRepurpose={handleGoRepurpose}
+            onGoIdea={handleGoIdea}
+          />
+        )}
         {currentPhase === 1 && (
           <Phase1Angles
             userId={userId || ''}
@@ -227,6 +287,7 @@ export default function CreatePost() {
             onLengthChange={handleLengthChange}
             onBack={handleBackToAngles}
             onPublished={handlePublished}
+            preloadedSpark={preloadedSpark || undefined}
           />
         )}
         {currentPhase === 3 && userId && (

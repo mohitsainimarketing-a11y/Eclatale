@@ -53,11 +53,13 @@ interface Phase2Props {
   onLengthChange: (l: PostLength) => void;
   onBack: () => void;
   onPublished: (postId: string, urn: string) => void;
+  preloadedSpark?: string;
 }
 
 export default function Phase2Editor({
   userId, userName, userInitials, userAvatar, userRole, userDomain, angle, customTopic, sources,
   editMode, initialPostId, initialContent, selectedLength, onLengthChange, onBack, onPublished,
+  preloadedSpark,
 }: Phase2Props) {
   const { showToast } = useToast();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -67,7 +69,7 @@ export default function Phase2Editor({
   const [isGenerating, setIsGenerating] = useState(!editMode);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [genError, setGenError] = useState('');
-  const [sparkInput, setSparkInput] = useState('');
+  const [sparkInput, setSparkInput] = useState(preloadedSpark || '');
 
   const [hooksOpen, setHooksOpen] = useState(false);
   const [ctasOpen, setCtasOpen] = useState(false);

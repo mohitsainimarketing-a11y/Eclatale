@@ -77,7 +77,39 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
   let parsed: any = {};
   try { parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw); } catch { parsed = {}; }
 
-  const rawAngles: any[] = Array.isArray(parsed.angles) ? parsed.angles : [];
+  let rawAngles: any[] = Array.isArray(parsed.angles) ? parsed.angles : [];
+
+  // Fallback: if web_search yielded no angles (credits exhausted or empty response),
+  // retry without web_search so users always get something useful.
+  if (rawAngles.length === 0) {
+    const fallback = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      system: getDateContext(),
+      messages: [{
+        role: 'user',
+        content: `Generate 4 distinct LinkedIn post angles for a ${role} in ${industry}.
+
+For each angle:
+- Write a compelling hook (2-3 sentences) — the actual opening of the post
+- Assign a style from exactly these 6 (use exact casing): Contrarian, Storyteller, Data-driven, Insider, Teacher, Motivator
+- Write one sentence explaining why this works for a ${role} in ${industry}
+- Add a realistic performance stat (e.g. "2.4x more comments")
+
+${UNIVERSAL_HUMAN_WRITING_RULES}
+
+Return ONLY valid JSON (no prose, no markdown fences):
+{"angles":[{"style":"Contrarian","hook":"...","insight":"...","performanceStat":"..."}],"sources":[]}`,
+      }],
+    });
+    const fbText = fallback.content[0].type === 'text' ? fallback.content[0].text : '{}';
+    const fbMatch = fbText.match(/\{[\s\S]*\}/);
+    let fbParsed: any = {};
+    try { fbParsed = JSON.parse(fbMatch ? fbMatch[0] : fbText); } catch { fbParsed = {}; }
+    rawAngles = Array.isArray(fbParsed.angles) ? fbParsed.angles : [];
+    if (!Array.isArray(parsed.sources)) parsed.sources = fbParsed.sources || [];
+  }
+
   const angles = rawAngles.slice(0, 4).map((a: any, i: number) => {
     const meta = ANGLE_STYLE_META[a.style] || ANGLE_STYLE_META.Storyteller;
     return {
@@ -108,7 +140,10 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
     };
   }).sort((a, b) => b.trustScore - a.trustScore);
 
+  // Don't cache empty results — forces fresh generation on next load
   const payload = { angles, sources, role, industry, generatedAt: new Date().toISOString(), cached: false };
-  await writeCache(supabase, userId, 'angles', { angles, sources, role, industry });
+  if (angles.length > 0) {
+    await writeCache(supabase, userId, 'angles', { angles, sources, role, industry });
+  }
   return payload;
 }

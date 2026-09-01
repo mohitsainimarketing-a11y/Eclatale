@@ -146,8 +146,15 @@ export default function Settings() {
       const b: any = billingRes.data;
       setSubTier((b.subscription_tier || 'free') as 'free' | 'individual');
       setSubStatus(b.subscription_status || 'free');
-      setPostsThisWeek(b.posts_this_week || 0);
-      setWeekResetsAt(b.week_reset_at || null);
+      // Auto-reset the weekly counter client-side if the DB value is from a previous week
+      const now = new Date();
+      const dayOfWeek = now.getUTCDay();
+      const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const thisMondayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday));
+      const nextMondayUTC = new Date(thisMondayUTC.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const weekResetAt = b.week_reset_at ? new Date(b.week_reset_at) : new Date(0);
+      setPostsThisWeek(weekResetAt < thisMondayUTC ? 0 : (b.posts_this_week || 0));
+      setWeekResetsAt(nextMondayUTC.toISOString());
       setTrialEndsAt(b.trial_ends_at || null);
       setCurrentPeriodEnd(b.current_period_end || null);
       setCancelAtPeriodEnd(!!b.cancel_at_period_end);

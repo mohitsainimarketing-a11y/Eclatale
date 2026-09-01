@@ -234,23 +234,36 @@ export default function Discover() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [repurposeItem, setRepurposeItem] = useState<DiscoveredItem | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [loadingSlow, setLoadingSlow] = useState(false);
 
   const load = useCallback(async (uid: string, query: string, refresh: boolean) => {
     setLoading(true);
+    setLoadingSlow(false);
     setError('');
+    const slowTimer = setTimeout(() => setLoadingSlow(true), 8000);
+    const controller = new AbortController();
+    const hardTimeout = setTimeout(() => controller.abort(), 90000);
     try {
       const res = await apiFetch(`${API_URL}/api/intelligence`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ action: 'content-discovery', userId: uid, query: query || undefined, refresh }),
-      });
+        signal: controller.signal,
+      } as any);
       const json = await res.json();
       if (json.error) throw new Error(json.error);
       setData(json);
       setActiveCategory('All');
     } catch (e: any) {
-      setError(e.message || 'Failed to load content');
+      if (e.name === 'AbortError') {
+        setError('Search timed out — please try again.');
+      } else {
+        setError(e.message || 'Failed to load content');
+      }
     }
+    clearTimeout(slowTimer);
+    clearTimeout(hardTimeout);
+    setLoadingSlow(false);
     setLoading(false);
   }, []);
 
@@ -355,10 +368,17 @@ export default function Discover() {
 
           {/* States */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="skeleton h-56 w-full rounded-2xl" />
-              ))}
+            <div>
+              {loadingSlow && (
+                <p className="text-center text-[13px] text-brand-muted mb-4 animate-pulse">
+                  Searching the web for the latest articles — usually takes 20–30 seconds…
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="skeleton h-56 w-full rounded-2xl" />
+                ))}
+              </div>
             </div>
           ) : error ? (
             <div className="card p-8 text-center">

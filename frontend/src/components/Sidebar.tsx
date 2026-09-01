@@ -46,7 +46,7 @@ function useSidebarUser(): SidebarUser {
       if (!u || !mounted) return;
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name, profile_photo_url, subscription_tier, posts_this_week')
+        .select('first_name, last_name, profile_photo_url, subscription_tier, posts_this_week, week_reset_at')
         .eq('id', u.id).single();
       if (!mounted) return;
       const fn = (profile?.first_name || '').trim();
@@ -54,12 +54,18 @@ function useSidebarUser(): SidebarUser {
       const name = [fn, ln].filter(Boolean).join(' ') || (u.email?.split('@')[0] || 'You');
       const initials = fn && ln ? (fn[0] + ln[0]).toUpperCase() : name.substring(0, 2).toUpperCase();
       const tier = (profile?.subscription_tier === 'individual' ? 'individual' : 'free') as 'free' | 'individual';
+      // Auto-reset counter client-side if stored value is from a prior week
+      const now = new Date();
+      const dow = now.getUTCDay();
+      const thisMon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (dow === 0 ? 6 : dow - 1)));
+      const weekResetAt = (profile as any)?.week_reset_at ? new Date((profile as any).week_reset_at) : new Date(0);
+      const postsThisWeek = weekResetAt < thisMon ? 0 : (profile?.posts_this_week || 0);
       setUser({
         name,
         avatar: profile?.profile_photo_url || '',
         initials,
         tier,
-        postsThisWeek: profile?.posts_this_week || 0,
+        postsThisWeek,
         postsAllowed: tier === 'individual' ? -1 : 3,
       });
     });

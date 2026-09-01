@@ -78,7 +78,7 @@ export default function AriaWidget() {
     (async () => {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, subscription_tier, created_at, posts_this_week')
+        .select('first_name, subscription_tier, created_at, posts_this_week, week_reset_at')
         .eq('id', userId)
         .maybeSingle();
       if (profile?.first_name) setFirstName(profile.first_name);
@@ -97,11 +97,16 @@ export default function AriaWidget() {
         ? (Date.now() - new Date(posts[0].created_at).getTime()) / (24 * 60 * 60 * 1000)
         : Infinity;
 
+      const nowA = new Date(); const dowA = nowA.getUTCDay();
+      const thisMonA = new Date(Date.UTC(nowA.getUTCFullYear(), nowA.getUTCMonth(), nowA.getUTCDate() - (dowA === 0 ? 6 : dowA - 1)));
+      const wraA = (profile as any)?.week_reset_at ? new Date((profile as any).week_reset_at) : new Date(0);
+      const actualPostsThisWeek = wraA < thisMonA ? 0 : (profile?.posts_this_week || 0);
+
       if (isNewAccount && (!posts || posts.length === 0)) {
         setProactiveMsg(`Hi ${name}! I'm Aria, your personal brand assistant. Want me to help you generate your first post? 🚀`);
       } else if (daysSinceLastPost >= 3 && daysSinceLastPost !== Infinity) {
         setProactiveMsg(`Hey ${name}, it's been a few days since your last post — want me to help you generate something in 30 seconds?`);
-      } else if (profile?.subscription_tier === 'free' && (profile?.posts_this_week || 0) >= 3) {
+      } else if (profile?.subscription_tier === 'free' && actualPostsThisWeek >= 3) {
         setProactiveMsg(`You've hit your free limit this week. Want me to show you what's included in the Individual plan?`);
       }
     })().catch(() => {});

@@ -166,6 +166,13 @@ export default function Phase1Angles({
                 <AngleCard key={angle.id} angle={angle} selected={selectedAngleId === angle.id} onClick={() => onSelectAngle(angle)} />
               ))}
         </div>
+        {!loading && !error && angles.length === 0 && (
+          <div className="max-w-3xl mx-auto mb-4 px-4 py-5 rounded-2xl text-center" style={{ background: 'rgba(124,92,252,0.04)', border: '1.5px dashed rgba(124,92,252,0.2)' }}>
+            <p className="text-[13px] font-semibold text-brand-dark mb-1">Couldn't load AI angles right now</p>
+            <p className="text-[12px] text-brand-muted mb-3">Type your own topic below, or try refreshing.</p>
+            <button onClick={onRefresh} className="text-[12px] font-bold text-brand-purple hover:underline">↻ Refresh angles</button>
+          </div>
+        )}
         {!loading && styleFilter && filteredAngles === angles && (
           <p className="text-center text-[11px] max-w-3xl mx-auto -mt-2 mb-2" style={{ color: '#9CA3AF' }}>
             No {styleFilter} angles right now — showing all styles instead.

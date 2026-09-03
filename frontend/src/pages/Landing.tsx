@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Sparkles, TrendingUp, Zap, ArrowRight, ChevronDown, Menu, X,
   Check, Shield, Lock, Star, AudioWaveform, ShieldCheck, LineChart, Layers,
@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { trackEvent } from '../lib/analytics';
+import { apiFetch } from '../lib/apiFetch';
+import { loadGoogleIdentityScript, generateNonce } from '../lib/googleIdentity';
+import { writePendingDemo } from '../lib/pendingDemo';
 import NewsletterSignup from '../components/NewsletterSignup';
 import Seo from '../components/Seo';
 
@@ -13,6 +16,11 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
   process.env.REACT_APP_SUPABASE_ANON_KEY!
 );
+
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
+// Empty until the Google Cloud OAuth client lists eclatale.com as an origin —
+// the modal then falls back to the Supabase-hosted redirect flow.
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
 const LinkedInIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -97,9 +105,6 @@ const TOPIC_CHIPS = [
   { label: 'The future of AI in marketing', style: 'contrarian' },
 ];
 
-// Handoff key read by CreatePost — keep in sync with PENDING_DEMO_KEY there.
-const PENDING_DEMO_KEY = 'eclatale_demo_pending';
-
 // ── Signup modal ──────────────────────────────────────────────────────────────
 // The demo is signup-gated: no Claude call is ever made for an anonymous
 // visitor. We capture the topic they picked, create the account, then generate
@@ -108,8 +113,98 @@ function SignupModal({ topic, style, onClose }: { topic: string; style: string; 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [gisReady, setGisReady] = useState(false);
   const [error, setError] = useState('');
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const nonceRef = useRef<string | undefined>(undefined);
+
+  // Persist the handoff as soon as the modal opens, not on submit: Google
+  // sign-in can navigate away (GIS callback or a full redirect to Google)
+  // before any submit handler of ours runs, and the topic must survive that.
+  useEffect(() => {
+    writePendingDemo(topic, style);
+  }, [topic, style]);
+
+  // Where to land once authenticated. A brand-new user needs onboarding first;
+  // a returning user goes straight to /create, which picks up the pending
+  // topic and starts writing it.
+  const routeAfterAuth = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, domain, goals')
+      .eq('id', userId)
+      .single();
+    const hasProfile = !!(profile?.role && profile?.domain && profile?.goals?.length);
+    window.location.href = hasProfile ? '/create' : '/onboarding';
+  };
+
+  const handleGoogleCredential = useCallback(async (response: { credential: string }) => {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const { data, error: authErr } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+        nonce: nonceRef.current,
+      });
+      if (authErr) throw authErr;
+      if (!data.user) throw new Error('Could not sign in with Google.');
+      trackEvent('begin_signup', { location: 'demo_modal_google' });
+      // Idempotent server-side (guards on welcome_email_sent).
+      apiFetch(`${API_URL}/api/email/send-welcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: data.user.id }),
+      }).catch(() => {});
+      await routeAfterAuth(data.user.id);
+    } catch (err: any) {
+      setError(err.message || 'Google sign-in failed.');
+      setGoogleLoading(false);
+    }
+  }, []);
+
+  // Render Google's own button inside the modal. Falls back to the Supabase
+  // redirect flow below if the client ID is unset or the script won't load.
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    let cancelled = false;
+    loadGoogleIdentityScript().then(async () => {
+      if (cancelled || !googleBtnRef.current) return;
+      const google = (window as any).google;
+      const { nonce, hashedNonce } = await generateNonce();
+      nonceRef.current = nonce;
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        nonce: hashedNonce,
+        use_fedcm_for_prompt: true,
+      });
+      google.accounts.id.renderButton(googleBtnRef.current, {
+        type: 'standard', theme: 'outline', size: 'large', shape: 'pill',
+        text: 'continue_with', logo_alignment: 'left',
+        width: googleBtnRef.current.offsetWidth || 320,
+      });
+      if (!cancelled) setGisReady(true);
+    }).catch(() => setGisReady(false));
+    return () => { cancelled = true; };
+  }, [handleGoogleCredential]);
+
+  const handleGoogleFallback = async () => {
+    setGoogleLoading(true);
+    setError('');
+    const { error: authErr } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: 'https://eclatale.com/auth/callback' },
+    });
+    if (authErr) {
+      setError(authErr.message);
+      setGoogleLoading(false);
+    }
+    // On success the browser leaves for Google immediately.
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,11 +220,6 @@ function SignupModal({ topic, style, onClose }: { topic: string; style: string; 
       setLoading(false);
       return;
     }
-    // Hand the picked topic to /create, which generates the post once
-    // onboarding completes. Wrapped because Safari private mode throws.
-    try {
-      localStorage.setItem(PENDING_DEMO_KEY, JSON.stringify({ topic, style, createdAt: Date.now() }));
-    } catch {}
     trackEvent('begin_signup', { location: 'demo_modal' });
     window.location.href = '/onboarding';
   };
@@ -149,40 +239,88 @@ function SignupModal({ topic, style, onClose }: { topic: string; style: string; 
           Create your free account and we'll write{topic ? ` "${topic}"` : ' your post'} straight into your dashboard — plus 3 free posts every week.
         </p>
 
-        <form onSubmit={handleSignup} className="space-y-3">
-          <input
-            type="email"
-            required
-            autoFocus
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="Work email"
-            className="input"
-          />
-          <div className="relative">
-            <input
-              type={showPw ? 'text' : 'password'}
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Create password (6+ chars)"
-              className="input !pr-10"
-            />
-            <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-purple transition-colors">
-              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
+        {googleLoading ? (
+          <div className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-brand-purple">
+            <div className="w-4 h-4 border-2 border-[rgba(124,92,252,0.25)] border-t-brand-purple rounded-full animate-spin" />
+            Signing you in…
           </div>
-          {error && <p className="text-xs text-red-500">{error}</p>}
-          <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
-            {loading ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Creating account…</> : <><Sparkles size={15} /> Create Free Account & Write My Post</>}
-          </button>
-        </form>
+        ) : (
+          <>
+            {/* Google's rendered button; the styled fallback shows only if GIS
+                never becomes ready (no client ID, or the script was blocked). */}
+            <div ref={googleBtnRef} className="w-full flex justify-center min-h-[40px]" />
+            {!gisReady && (
+              <button
+                type="button"
+                onClick={handleGoogleFallback}
+                className="w-full flex items-center justify-center gap-2.5 text-sm font-semibold px-4 py-2.5 rounded-full border border-[rgba(124,92,252,0.22)] text-brand-dark hover:bg-[rgba(124,92,252,0.04)] transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.57c2.08-1.92 3.27-4.74 3.27-8.09Z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
+                  <path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.05l3.66 2.84c.87-2.6 3.3-4.51 6.16-4.51Z" />
+                </svg>
+                Continue with Google
+              </button>
+            )}
 
-        <p className="text-xs text-brand-muted text-center mt-4">
-          Already have an account?{' '}
-          <a href="/login" className="text-brand-purple font-semibold hover:underline">Sign in</a>
-        </p>
-        <p className="text-[10px] text-brand-muted/60 text-center mt-2">No credit card · Cancel anytime</p>
+            {!showEmailForm ? (
+              <>
+                {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
+                <button
+                  type="button"
+                  onClick={() => setShowEmailForm(true)}
+                  className="w-full text-xs font-semibold text-brand-muted hover:text-brand-purple transition-colors mt-3"
+                >
+                  or sign up with email
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-[rgba(124,92,252,0.12)]" />
+                  <span className="text-[10px] font-semibold text-brand-muted/70 uppercase tracking-wide">or</span>
+                  <div className="flex-1 h-px bg-[rgba(124,92,252,0.12)]" />
+                </div>
+                <form onSubmit={handleSignup} className="space-y-3">
+                  <input
+                    type="email"
+                    required
+                    autoFocus
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="Work email"
+                    className="input"
+                  />
+                  <div className="relative">
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Create password (6+ chars)"
+                      className="input !pr-10"
+                    />
+                    <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-purple transition-colors">
+                      {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  {error && <p className="text-xs text-red-500">{error}</p>}
+                  <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
+                    {loading ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Creating account…</> : <><Sparkles size={15} /> Create Account & Write My Post</>}
+                  </button>
+                </form>
+              </>
+            )}
+
+            <p className="text-xs text-brand-muted text-center mt-4">
+              Already have an account?{' '}
+              <a href="/login" className="text-brand-purple font-semibold hover:underline">Sign in</a>
+            </p>
+            <p className="text-[10px] text-brand-muted/60 text-center mt-2">No credit card · Cancel anytime</p>
+          </>
+        )}
       </div>
     </div>
   );

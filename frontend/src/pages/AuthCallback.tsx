@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { AlertCircle } from 'lucide-react';
 import { apiFetch } from '../lib/apiFetch';
+import { hasPendingDemo } from '../lib/pendingDemo';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -64,7 +65,11 @@ export default function AuthCallback() {
         }).catch(() => {});
 
         const hasProfile = !!(profile?.role && profile?.domain && profile?.goals?.length);
-        window.location.href = hasProfile ? '/dashboard' : '/onboarding';
+        // A homepage-demo signup is owed the post they asked for, so send an
+        // already-onboarded user to /create rather than the dashboard. A new
+        // user still onboards first; Onboarding forwards to /create after.
+        if (hasProfile && hasPendingDemo()) window.location.href = '/create';
+        else window.location.href = hasProfile ? '/dashboard' : '/onboarding';
       } catch (err: any) {
         setError(err.message || 'Something went wrong confirming your account.');
       }

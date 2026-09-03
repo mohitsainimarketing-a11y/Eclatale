@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Check, ArrowRight, ArrowLeft, Sparkles, Link2 } from 'lucide-react';
 import { SearchableDropdown, ROLES, INDUSTRIES } from '../components/ProfileDropdowns';
+import { hasPendingDemo } from '../lib/pendingDemo';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -50,9 +51,7 @@ export default function Onboarding() {
     }
     // If they came from the homepage demo, land them in the create flow —
     // CreatePost picks up the pending topic and writes the post immediately.
-    let pendingDemo: string | null = null;
-    try { pendingDemo = localStorage.getItem('eclatale_demo_pending'); } catch {}
-    window.location.href = pendingDemo ? '/create' : '/dashboard';
+    window.location.href = hasPendingDemo() ? '/create' : '/dashboard';
   };
 
   return (

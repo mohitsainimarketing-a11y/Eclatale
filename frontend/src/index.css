@@ -80,28 +80,37 @@ button, a, [role="button"] {
     radial-gradient(at 10% 70%, rgba(6,214,160,0.05) 0%, transparent 50%);
 }
 
-/* ── Cards ── */
-/* Layered shadow: a tight, low-opacity "contact" shadow right at the edge
-   plus a larger soft ambient one further out. Two layers read as a lifted,
-   dimensional surface — a single wide blur just looks like a smudge. */
+/* ── Elevation ──
+   Stripe-style layered shadows. Three things make them read as refined
+   rather than as a grey smudge:
+   1. A hairline `0 0 0 1px` ring defines the edge crisply at any zoom, so
+      the blurred layers never have to do that job.
+   2. The tint is slate (60,66,87), not black — a neutral-cool cast sits
+      naturally over off-white pages, where pure black reads muddy.
+   3. Tight contact layer + wider ambient layer, each low-opacity, instead
+      of one big blur.
+   Purple is reserved for interactive glow (focus rings, primary button) so
+   structural depth stays quiet and the brand colour still means something. */
+/* The edge is a real 1px border, not a `0 0 0 1px` shadow ring. Callers
+   override the colour alone (`card !border-red-100`), and a Tailwind
+   border-{color} utility sets no width — so a ring-only edge would make
+   every one of those overrides silently render borderless. */
 .card {
   background: #FFFFFF;
-  border-radius: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(60, 66, 87, 0.09);
   box-shadow:
-    0 1px 2px rgba(124, 92, 252, 0.05),
-    0 2px 6px rgba(124, 92, 252, 0.05),
-    0 8px 24px rgba(124, 92, 252, 0.08);
-  border: 1px solid rgba(124, 92, 252, 0.07);
+    0 1px 3px rgba(60, 66, 87, 0.06),
+    0 4px 12px rgba(60, 66, 87, 0.05);
 }
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .card-hover:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow:
-    0 2px 4px rgba(124, 92, 252, 0.06),
-    0 6px 12px rgba(124, 92, 252, 0.08),
-    0 16px 40px rgba(124, 92, 252, 0.16);
+    0 4px 10px rgba(60, 66, 87, 0.08),
+    0 12px 28px rgba(60, 66, 87, 0.10);
 }
 
 /* ── Modals / dropdowns ── */
@@ -109,9 +118,9 @@ button, a, [role="button"] {
    round only the top corners), so this class must not force border-radius. */
 .modal-shadow {
   box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.05),
-    0 8px 20px rgba(0, 0, 0, 0.08),
-    0 24px 64px rgba(0, 0, 0, 0.14);
+    0 0 0 1px rgba(60, 66, 87, 0.05),
+    0 5px 15px rgba(0, 0, 0, 0.08),
+    0 15px 35px rgba(60, 66, 87, 0.15);
 }
 
 /* ── Nav / sidebar ── */
@@ -119,78 +128,121 @@ button, a, [role="button"] {
   box-shadow: 2px 0 16px rgba(0, 0, 0, 0.06);
 }
 
-/* ── Buttons ── */
+/* ── Buttons ──
+   Stripe geometry: 8px radius rather than a full pill, 500 weight, and a
+   1px lift on hover instead of a scale. Scaling a button subtly reflows the
+   text under the cursor and reads playful; a translate reads precise.
+   Height is 40px for pointer devices but relaxes to Apple's 44px minimum on
+   touch, where the cursor is a fingertip. */
 .btn-primary {
   background: linear-gradient(135deg, #7C5CFC 0%, #F72585 100%);
   color: white;
-  font-weight: 600;
-  padding: 14px 28px;
-  border-radius: 50px;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.25);
-  min-height: 44px;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  box-shadow:
+    0 0 0 1px rgba(124, 92, 252, 0.20),
+    0 1px 2px rgba(60, 66, 87, 0.10),
+    0 2px 6px rgba(124, 92, 252, 0.18);
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
 }
-.btn-primary:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(124, 92, 252, 0.30); }
-.btn-primary:active { transform: scale(0.97); }
-.btn-primary:disabled { opacity: 0.4; transform: none; box-shadow: none; cursor: not-allowed; }
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 0 0 1px rgba(124, 92, 252, 0.24),
+    0 2px 4px rgba(60, 66, 87, 0.10),
+    0 6px 14px rgba(124, 92, 252, 0.24);
+}
+.btn-primary:active { transform: translateY(0); filter: brightness(0.98); }
+.btn-primary:disabled { opacity: 0.45; transform: none; box-shadow: none; filter: none; cursor: not-allowed; }
 
 .btn-secondary {
   background: white;
   color: #7C5CFC;
-  font-weight: 600;
-  padding: 14px 28px;
-  border-radius: 12px;
-  border: 1.5px solid rgba(124, 92, 252, 0.2);
-  transition: all 0.2s ease;
-  min-height: 44px;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 92, 252, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow: 0 1px 2px rgba(60, 66, 87, 0.06);
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
 }
-.btn-secondary:hover { transform: scale(1.02); border-color: #7C5CFC; background: #F5F0FF; }
-.btn-secondary:active { transform: scale(0.97); }
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  border-color: rgba(124, 92, 252, 0.45);
+  background: #FAF8FF;
+  box-shadow: 0 2px 6px rgba(60, 66, 87, 0.08);
+}
+.btn-secondary:active { transform: translateY(0); }
 
 .btn-ghost {
   background: transparent;
   color: #6B7280;
   font-weight: 500;
-  padding: 14px 28px;
-  border-radius: 50px;
-  border: 1px solid rgba(107, 114, 128, 0.15);
-  transition: all 0.2s ease;
-  min-height: 44px;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(107, 114, 128, 0.18);
+  transition: transform 0.15s ease, color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
 }
-.btn-ghost:hover { color: #7C5CFC; border-color: rgba(124, 92, 252, 0.2); background: rgba(124, 92, 252, 0.04); }
-.btn-ghost:active { transform: scale(0.97); }
+.btn-ghost:hover { color: #7C5CFC; border-color: rgba(124, 92, 252, 0.28); background: rgba(124, 92, 252, 0.04); }
+.btn-ghost:active { transform: translateY(0); }
 
-/* ── Inputs ── */
+/* Fingertips need a larger target than a mouse pointer does. */
+@media (hover: none) {
+  .btn-primary, .btn-secondary, .btn-ghost { min-height: 44px; padding: 12px 20px; }
+}
+
+/* ── Inputs ──
+   font-size stays at 16px on small screens on purpose: iOS Safari zooms the
+   viewport when focusing any field under 16px, which yanks the layout around
+   mid-form. Desktop drops to 14px to match the tightened button scale. */
 .input {
   background: #FFFFFF;
-  border: 1.5px solid rgba(124, 92, 252, 0.12);
-  border-radius: 12px;
-  padding: 14px 16px;
+  border: 1px solid rgba(60, 66, 87, 0.16);
+  border-radius: 8px;
+  padding: 10px 12px;
   font-size: 16px;
   color: #1A1A2E;
   caret-color: #7C5CFC;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 2px rgba(60, 66, 87, 0.05);
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
 }
 textarea, input[type="text"] { caret-color: #7C5CFC; }
 .input::placeholder { color: #9CA3AF; }
+.input:hover:not(:focus) { border-color: rgba(60, 66, 87, 0.28); }
 .input:focus {
   outline: none;
   border-color: #7C5CFC;
-  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.15);
+  box-shadow:
+    0 0 0 3px rgba(124, 92, 252, 0.13),
+    0 1px 2px rgba(60, 66, 87, 0.06);
+}
+
+@media (min-width: 768px) {
+  .input { font-size: 14px; }
+}
+@media (hover: none) {
+  .input { min-height: 44px; padding: 12px 14px; }
 }
 
 /* ── Typography ── */

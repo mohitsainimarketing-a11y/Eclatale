@@ -183,9 +183,10 @@ function SignupModal({ topic, style, onClose }: { topic: string; style: string; 
         use_fedcm_for_prompt: true,
       });
       google.accounts.id.renderButton(googleBtnRef.current, {
-        type: 'standard', theme: 'outline', size: 'large', shape: 'pill',
+        // rectangular matches the 8px button scale; pill would fight it.
+        type: 'standard', theme: 'outline', size: 'large', shape: 'rectangular',
         text: 'continue_with', logo_alignment: 'left',
-        width: googleBtnRef.current.offsetWidth || 320,
+        width: googleBtnRef.current.offsetWidth || 332,
       });
       if (!cancelled) setGisReady(true);
     }).catch(() => setGisReady(false));
@@ -226,36 +227,36 @@ function SignupModal({ topic, style, onClose }: { topic: string; style: string; 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 animate-fadeIn relative">
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-brand-muted hover:bg-[rgba(124,92,252,0.06)] transition-colors">
-          <X size={16} />
+      <div className="bg-white rounded-xl modal-shadow w-full max-w-[380px] p-6 animate-fadeIn relative">
+        <button onClick={onClose} aria-label="Close" className="absolute top-3.5 right-3.5 w-7 h-7 rounded-md flex items-center justify-center text-brand-muted hover:bg-[rgba(60,66,87,0.06)] transition-colors">
+          <X size={15} />
         </button>
 
-        <div className="w-10 h-10 rounded-2xl gradient-primary flex items-center justify-center text-white mb-4">
-          <Sparkles size={18} />
-        </div>
-        <h2 className="text-lg font-bold text-brand-dark mb-1">Write my post — it's free</h2>
-        <p className="text-sm text-brand-muted mb-5">
-          Create your free account and we'll write{topic ? ` "${topic}"` : ' your post'} straight into your dashboard — plus 3 free posts every week.
+        <h2 className="text-base font-bold text-brand-dark tracking-[-0.01em] pr-7">Write my post</h2>
+        <p className="text-[13px] leading-snug text-brand-muted mt-1 mb-5">
+          {topic
+            ? <>Free account · we'll write <span className="text-brand-dark font-medium">“{topic}”</span> into your dashboard.</>
+            : <>Free account · 3 posts every week.</>}
         </p>
 
         {googleLoading ? (
-          <div className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-brand-purple">
-            <div className="w-4 h-4 border-2 border-[rgba(124,92,252,0.25)] border-t-brand-purple rounded-full animate-spin" />
+          <div className="flex items-center justify-center gap-2 py-6 text-[13px] font-medium text-brand-purple">
+            <div className="w-3.5 h-3.5 border-2 border-[rgba(124,92,252,0.25)] border-t-brand-purple rounded-full animate-spin" />
             Signing you in…
           </div>
         ) : (
           <>
             {/* Google's rendered button; the styled fallback shows only if GIS
                 never becomes ready (no client ID, or the script was blocked). */}
-            <div ref={googleBtnRef} className="w-full flex justify-center min-h-[40px]" />
+            <div ref={googleBtnRef} className="w-full flex justify-center empty:hidden" />
             {!gisReady && (
               <button
                 type="button"
                 onClick={handleGoogleFallback}
-                className="w-full flex items-center justify-center gap-2.5 text-sm font-semibold px-4 py-2.5 rounded-full border border-[rgba(124,92,252,0.22)] text-brand-dark hover:bg-[rgba(124,92,252,0.04)] transition-colors"
+                className="w-full flex items-center justify-center gap-2.5 text-[13px] font-medium px-4 rounded-lg border border-[rgba(60,66,87,0.16)] text-brand-dark min-h-[40px] hover:bg-[rgba(60,66,87,0.03)] hover:border-[rgba(60,66,87,0.28)] transition-colors"
+                style={{ boxShadow: '0 1px 2px rgba(60,66,87,0.05)' }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.57c2.08-1.92 3.27-4.74 3.27-8.09Z" />
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
                   <path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z" />
@@ -267,11 +268,11 @@ function SignupModal({ topic, style, onClose }: { topic: string; style: string; 
 
             {!showEmailForm ? (
               <>
-                {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
+                {error && <p className="text-[12px] text-red-500 mt-2.5">{error}</p>}
                 <button
                   type="button"
                   onClick={() => setShowEmailForm(true)}
-                  className="w-full text-xs font-semibold text-brand-muted hover:text-brand-purple transition-colors mt-3"
+                  className="w-full text-[12px] font-medium text-brand-muted hover:text-brand-purple transition-colors mt-3"
                 >
                   or sign up with email
                 </button>
@@ -279,46 +280,60 @@ function SignupModal({ topic, style, onClose }: { topic: string; style: string; 
             ) : (
               <>
                 <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 h-px bg-[rgba(124,92,252,0.12)]" />
-                  <span className="text-[10px] font-semibold text-brand-muted/70 uppercase tracking-wide">or</span>
-                  <div className="flex-1 h-px bg-[rgba(124,92,252,0.12)]" />
+                  <div className="flex-1 h-px bg-[rgba(60,66,87,0.10)]" />
+                  <span className="text-[10px] font-semibold text-brand-muted/60 uppercase tracking-[0.08em]">or</span>
+                  <div className="flex-1 h-px bg-[rgba(60,66,87,0.10)]" />
                 </div>
-                <form onSubmit={handleSignup} className="space-y-3">
-                  <input
-                    type="email"
-                    required
-                    autoFocus
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="Work email"
-                    className="input"
-                  />
-                  <div className="relative">
+                <form onSubmit={handleSignup} className="space-y-3.5">
+                  <div>
+                    <label htmlFor="demo-email" className="block text-[12px] font-medium text-brand-dark mb-1.5">Email</label>
                     <input
-                      type={showPw ? 'text' : 'password'}
+                      id="demo-email"
+                      type="email"
                       required
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="Create password (6+ chars)"
-                      className="input !pr-10"
+                      autoFocus
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      className="input"
                     />
-                    <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-purple transition-colors">
-                      {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
                   </div>
-                  {error && <p className="text-xs text-red-500">{error}</p>}
-                  <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
-                    {loading ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Creating account…</> : <><Sparkles size={15} /> Create Account & Write My Post</>}
+                  <div>
+                    <label htmlFor="demo-password" className="block text-[12px] font-medium text-brand-dark mb-1.5">Password</label>
+                    <div className="relative">
+                      <input
+                        id="demo-password"
+                        type={showPw ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="6+ characters"
+                        className="input !pr-9"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPw(v => !v)}
+                        aria-label={showPw ? 'Hide password' : 'Show password'}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-purple transition-colors"
+                      >
+                        {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+                  {error && <p className="text-[12px] text-red-500">{error}</p>}
+                  <button type="submit" disabled={loading} className="btn-primary w-full">
+                    {loading
+                      ? <><div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Creating account…</>
+                      : 'Create account'}
                   </button>
                 </form>
               </>
             )}
 
-            <p className="text-xs text-brand-muted text-center mt-4">
+            <p className="text-[12px] text-brand-muted text-center mt-4">
               Already have an account?{' '}
-              <a href="/login" className="text-brand-purple font-semibold hover:underline">Sign in</a>
+              <a href="/login" className="text-brand-purple font-medium hover:underline">Sign in</a>
             </p>
-            <p className="text-[10px] text-brand-muted/60 text-center mt-2">No credit card · Cancel anytime</p>
           </>
         )}
       </div>

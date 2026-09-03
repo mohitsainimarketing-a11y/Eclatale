@@ -14,6 +14,28 @@ const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim(
 
 const LAST_ANGLE_STORAGE_KEY = 'eclatale_create_last_angle';
 const LENGTH_STORAGE_KEY = 'eclatale_create_length';
+// Written by the signup-gated homepage demo (see PENDING_DEMO_KEY in Landing).
+// Consumed once, then cleared, so a later visit to /create starts at Phase 0.
+const PENDING_DEMO_KEY = 'eclatale_demo_pending';
+const PENDING_DEMO_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function readPendingDemo(): { topic: string; style: string } | null {
+  let raw: string | null = null;
+  try { raw = localStorage.getItem(PENDING_DEMO_KEY); } catch { return null; }
+  if (!raw) return null;
+  try { localStorage.removeItem(PENDING_DEMO_KEY); } catch {}
+  try {
+    const parsed = JSON.parse(raw);
+    const topic = String(parsed?.topic || '').trim();
+    if (!topic) return null;
+    // Ignore a stale handoff — a topic picked days ago is no longer what
+    // they came back for, and silently generating it would be surprising.
+    if (Date.now() - Number(parsed?.createdAt || 0) > PENDING_DEMO_MAX_AGE_MS) return null;
+    return { topic, style: String(parsed?.style || '') };
+  } catch {
+    return null;
+  }
+}
 
 type Phase = 0 | 1 | 2 | 3;
 
@@ -45,6 +67,8 @@ export default function CreatePost() {
   const [initialContent, setInitialContent] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [preloadedSpark, setPreloadedSpark] = useState('');
+  // Style the visitor picked on the homepage demo chip, carried through signup.
+  const [presetStyleId, setPresetStyleId] = useState('');
   const [selectedLength, setSelectedLength] = useState<PostLength>(() => {
     try { return (localStorage.getItem(LENGTH_STORAGE_KEY) as PostLength) || 'short'; } catch { return 'short'; }
   });
@@ -115,6 +139,21 @@ export default function CreatePost() {
           setCurrentPhase(2);
         }
         setAnglesLoading(false);
+        return;
+      }
+
+      // Homepage demo handoff: they picked this topic before signing up, so
+      // drop them straight into the editor on it rather than making them
+      // re-pick. Phase 2 generates from customTopic on mount.
+      const pending = readPendingDemo();
+      if (pending) {
+        setCustomInput(pending.topic);
+        setPresetStyleId(pending.style);
+        setSelectedAngle(null);
+        setCurrentPhase(2);
+        setAnglesLoading(false);
+        // Still warm the angles cache so "back" lands on a populated Phase 1.
+        fetchAngles(u.id, false);
         return;
       }
 
@@ -288,6 +327,7 @@ export default function CreatePost() {
             onBack={handleBackToAngles}
             onPublished={handlePublished}
             preloadedSpark={preloadedSpark || undefined}
+            presetStyleId={presetStyleId || undefined}
           />
         )}
         {currentPhase === 3 && userId && (

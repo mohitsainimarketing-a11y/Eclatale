@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ArrowLeft, Copy, Save, Calendar, Bold, Italic, Smile, Minus, List, ListOrdered,
-  ChevronDown, Send, Sparkles, ShieldCheck, AlertTriangle, Clock, LayoutGrid,
-  ThumbsUp, MessageCircle, Repeat2, X, Check,
+  ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
+  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
@@ -54,12 +54,15 @@ interface Phase2Props {
   onBack: () => void;
   onPublished: (postId: string, urn: string) => void;
   preloadedSpark?: string;
+  // Writing style chosen outside the angle picker (currently the homepage
+  // demo chips). Only consulted when there is no angle to take a style from.
+  presetStyleId?: string;
 }
 
 export default function Phase2Editor({
   userId, userName, userInitials, userAvatar, userRole, userDomain, angle, customTopic, sources,
   editMode, initialPostId, initialContent, selectedLength, onLengthChange, onBack, onPublished,
-  preloadedSpark,
+  preloadedSpark, presetStyleId,
 }: Phase2Props) {
   const { showToast } = useToast();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -122,7 +125,9 @@ export default function Phase2Editor({
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
           topic, tone: 'professional', contentType: 'linkedin-post', contentLength: selectedLength,
-          angle: angle ? { style: angle.style, styleId: angle.styleId, hook: angle.hook, insight: angle.insight } : undefined,
+          angle: angle
+            ? { style: angle.style, styleId: angle.styleId, hook: angle.hook, insight: angle.insight }
+            : (presetStyleId ? { styleId: presetStyleId } : undefined),
           spark: spark || undefined,
           userId,
         }),
@@ -139,7 +144,7 @@ export default function Phase2Editor({
       setGenError(e.message || "Couldn't generate a post — try again.");
     }
     setIsGenerating(false);
-  }, [angle, customTopic, selectedLength, sparkInput, userId]);
+  }, [angle, customTopic, selectedLength, sparkInput, userId, presetStyleId]);
 
   useEffect(() => {
     if (!editMode) handleGenerate();
@@ -567,28 +572,64 @@ export default function Phase2Editor({
             </div>
           </div>
 
-          {/* Voice signal */}
+          {/* Content Signal */}
           <div className="bg-white rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
-            <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Voice Signal</p>
+            <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Content Signal</p>
             {authLocked ? (
-              <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to check authenticity.</p>
+              <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to enable AI content check.</p>
             ) : authLoading ? (
-              <div className="space-y-1.5"><div className="skeleton h-3 w-3/4 rounded" /><div className="skeleton h-6 w-full rounded" /></div>
-            ) : authScore ? (
+              <div className="space-y-2">
+                <div className="skeleton h-3 w-2/3 rounded" />
+                <div className="skeleton h-5 w-full rounded" />
+                <div className="skeleton h-3 w-full rounded" />
+              </div>
+            ) : authScore?.signal ? (
               <>
-                <p className="text-[11px] font-bold flex items-center gap-1 mb-2" style={{ color: authScore.overallScore >= 70 ? '#10B981' : '#F59E0B' }}>
-                  {authScore.overallScore >= 70 ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
-                  {authScore.overallScore >= 70 ? 'Sounds like you' : (authScore.voice?.suggestion || 'One thing to adjust')}
-                </p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[['Accuracy', authScore.accuracy?.score], ['Freshness', authScore.freshness?.score], ['Voice', authScore.voice?.score]].map(([label, score]) => (
-                    <div key={label as string} className="text-center rounded-lg py-1.5" style={{ background: '#F8F5FF' }}>
-                      <p className="text-[12px] font-extrabold" style={{ color: scoreColor(Number(score) || 0) }}>{score ?? '—'}</p>
-                      <p className="text-[8px] font-semibold" style={{ color: '#9CA3AF' }}>{label as string}</p>
-                    </div>
-                  ))}
+                {/* Signal label + traffic light */}
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="text-[13px] font-extrabold" style={{ color: '#1A1A2E' }}>
+                    {authScore.signal.label}
+                  </span>
+                  <span
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    title={authScore.signal.readyToPost ? 'Ready to post' : 'Review suggested'}
+                    style={{
+                      background: authScore.signal.readyToPost ? '#10B981' : '#F59E0B',
+                      boxShadow: authScore.signal.readyToPost
+                        ? '0 0 0 3px rgba(16,185,129,0.2)'
+                        : '0 0 0 3px rgba(245,158,11,0.2)',
+                    }}
+                  />
                 </div>
+                {authScore.signal.readyToPost ? (
+                  <p className="text-[11px] font-semibold" style={{ color: '#10B981' }}>
+                    ✓ Looks ready to post
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase" style={{ color: '#F59E0B' }}>
+                      {authScore.signal.issues.length} thing{authScore.signal.issues.length !== 1 ? 's' : ''} to check
+                    </p>
+                    {authScore.signal.issues.map((issue, i) => (
+                      <div key={i} className="rounded-lg p-2" style={{ background: '#FFFBF0', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <p className="text-[10px] leading-snug mb-1" style={{ color: '#92400E' }}>
+                          <AlertTriangle size={9} className="inline mr-1" style={{ verticalAlign: 'middle' }} />
+                          {issue.message}
+                        </p>
+                        <p className="text-[9px] flex items-start gap-0.5" style={{ color: '#B45309' }}>
+                          <ChevronRight size={9} className="flex-shrink-0 mt-0.5" />
+                          {issue.suggestion}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
+            ) : authScore ? (
+              // Fallback for old API responses without signal field
+              <p className="text-[11px] font-semibold" style={{ color: authScore.readyToPost ? '#10B981' : '#F59E0B' }}>
+                {authScore.readyToPost ? '✓ Looks ready to post' : 'One thing to review'}
+              </p>
             ) : (
               <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Checking in a moment...</p>
             )}

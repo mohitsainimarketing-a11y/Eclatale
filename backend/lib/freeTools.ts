@@ -4,7 +4,9 @@ import { getWritingStyle, WRITING_STYLES, UNIVERSAL_HUMAN_WRITING_RULES, lengthI
 import { getDateContext } from './dateContext';
 
 const BANNED_WORDS = 'delve, leverage, synergy, transformative, game-changer';
-const RATE_LIMIT_PER_HOUR = 10;
+// Anonymous ceiling for the public /tools pages. The homepage demo no longer
+// hits this endpoint at all (it is signup-gated), so this only governs /tools.
+const RATE_LIMIT_PER_HOUR = 1;
 const HOUR_MS = 60 * 60 * 1000;
 
 function parseJsonArray(text: string): any[] {

@@ -36,7 +36,7 @@ async function generateOpportunity(
     : "They don't have enough post history yet to show a personal pattern.";
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 300,
     system: getDateContext(),
     messages: [{

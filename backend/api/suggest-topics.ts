@@ -65,7 +65,7 @@ For EACH topic, decide whether it's "trending" (tied to something happening this
 Return ONLY a JSON array of 5 objects, each shaped exactly like: { "topic": "the topic text", "whyNow": "one sentence on why this is timely right now", "trending": true or false }. No other text.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 900,
       system: topicPrompt,
       messages: [{ role: 'user', content: userMessage }],

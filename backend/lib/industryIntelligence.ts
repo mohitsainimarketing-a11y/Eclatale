@@ -106,7 +106,7 @@ export async function getIndustryIntelligence(
 
 async function generateSupplement(anthropic: Anthropic, role: string, domain: string) {
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 900,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
     system: getDateContext(),
@@ -127,7 +127,7 @@ async function generateSupplement(anthropic: Anthropic, role: string, domain: st
 
 async function generateFullEstimate(anthropic: Anthropic, role: string, domain: string): Promise<Omit<IndustryIntelligenceResult, 'dataSource' | 'postsAnalyzed' | 'generatedAt'>> {
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1200,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
     system: getDateContext(),

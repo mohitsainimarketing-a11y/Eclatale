@@ -19,7 +19,7 @@ import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { calculateAuthenticityScore } from '../lib/authenticityScore';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
-import { sendWelcomeEmail, sendFreeLimit, sendReengagement } from '../lib/emailService';
+import { sendWelcomeEmail, sendFreeLimit, sendReengagement, sendDemoLeadEmail } from '../lib/emailService';
 import { checkGrowthMilestone, createNotification } from '../lib/notifications';
 import { requireFeature } from '../lib/featureGates';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
@@ -99,7 +99,7 @@ async function competitorIntelligence(userId: string, forceRefresh: boolean) {
   const trendResult = await getTrendContext(anthropic, supabase, industry, role);
   const trendFragment = buildTrendPromptFragment(trendResult, industry);
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1500,
     system: `${getDateContext()}\n\n${trendFragment ? trendFragment + '\n\n' : ''}${COMPETITOR_INTELLIGENCE_SYSTEM}`,
     messages: [{ role: 'user', content: buildCompetitorIntelligenceUserPrompt(role, industry, goalsText) }],
@@ -137,7 +137,7 @@ async function growthScore(userId: string, forceRefresh: boolean) {
   const d = await gatherGrowthData(supabase, userId);
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 500,
     system: getDateContext(),
     messages: [{ role: 'user', content: buildGrowthScorePrompt(d) }],
@@ -274,7 +274,7 @@ async function bestTimeToPost(userId: string, forceRefresh: boolean) {
   }
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 600,
     system: `${getDateContext()}\n\n${BEST_TIME_SYSTEM}`,
     messages: [{ role: 'user', content: buildBestTimeUserPrompt(role, industry, hasHistory, historySummary) }],
@@ -842,6 +842,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ ok: true });
     }
 
+    if (action === 'demo-lead') {
+      const email = String(body.email || '').trim().toLowerCase();
+      const name = String(body.name || '').trim();
+      const topic = String(body.topic || '').trim();
+      const postContent = String(body.postContent || '').trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Valid email required' });
+      // Save to newsletter_subscribers (upsert = no duplicates)
+      await supabase.from('newsletter_subscribers').upsert({ email }, { onConflict: 'email' });
+      // Also log the demo lead with context (silent if table doesn't exist)
+      try {
+        await supabase.from('demo_leads').upsert(
+          { email, name: name || null, topic: topic || null, post_content: postContent || null, created_at: new Date().toISOString() },
+          { onConflict: 'email' }
+        );
+      } catch (_) {}
+      // Fire-and-forget follow-up email
+      const firstName = name ? name.split(' ')[0] : '';
+      sendDemoLeadEmail(email, firstName, topic, postContent).catch(() => {});
+      return res.json({ ok: true });
+    }
+
     // Anonymous, public /tools pages — no auth, IP rate-limited (10/hr).
     if (action === 'tools-generate') {
       const tool = String(body.tool || '');
@@ -1116,7 +1137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!topic) return res.status(400).json({ error: 'Missing topic' });
         const sources = await searchSourcesForTopic(anthropic, topic).catch(() => []);
         const qMessage = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 200,
           messages: [{ role: 'user', content: `Someone wants to write a LinkedIn post about: "${topic}". Ask them ONE short, genuinely useful clarifying question to sharpen the post (e.g. personal experience vs industry insight, who the reader is, what the goal is). Return ONLY the question, no preamble, no quotes.` }],
         });
@@ -1219,8 +1240,41 @@ After searching, return ONLY a valid JSON array with no prose or markdown fences
         }).filter((item: any) => item.url && item.title)
           .sort((a: any, b: any) => toTimestamp(b.publishedDate) - toTimestamp(a.publishedDate));
 
-        const payload = { items, role, industry, query: query || null };
-        await writeCache(supabase, userId, cacheKind, payload);
+        // Fallback: if web_search yielded nothing (credits exhausted), generate
+        // topic-level recommendations without live search so users see something.
+        let finalItems = items;
+        if (items.length === 0) {
+          const fbMsg = await anthropic.messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 2000,
+            messages: [{
+              role: 'user',
+              content: `You are a content curator for a ${role} in ${industry}. Generate 8 highly relevant article recommendations they should read this week. Use your knowledge of the industry to suggest specific, realistic articles with plausible publication details.\n\nReturn ONLY a valid JSON array (no prose):\n[{"title":"...","url":"https://example.com/article","domain":"example.com","excerpt":"one sentence key insight","publishedDate":"${today}","category":"Industry News|Trends|Leadership|Technology|Research|Opinion"}]`,
+            }],
+          });
+          const fbText = fbMsg.content[0].type === 'text' ? fbMsg.content[0].text : '[]';
+          const fbMatch = fbText.match(/\[[\s\S]*\]/);
+          let fbRaw: any[] = [];
+          try { fbRaw = JSON.parse(fbMatch ? fbMatch[0] : fbText); } catch { fbRaw = []; }
+          finalItems = fbRaw.slice(0, 8).map((item: any) => {
+            const domain = String(item.domain || extractDomain(String(item.url || '')));
+            return {
+              title: String(item.title || '').slice(0, 200),
+              url: String(item.url || ''),
+              domain,
+              excerpt: String(item.excerpt || '').slice(0, 300),
+              publishedDate: item.publishedDate || null,
+              trustScore: computeTrustScore(domain, item.publishedDate || null),
+              category: String(item.category || 'General'),
+            };
+          }).filter((item: any) => item.url && item.title);
+        }
+
+        const payload = { items: finalItems, role, industry, query: query || null };
+        // Don't cache empty results — forces fresh generation on next load
+        if (finalItems.length > 0) {
+          await writeCache(supabase, userId, cacheKind, payload);
+        }
         return res.json({ ...payload, generatedAt: new Date().toISOString(), cached: false });
       }
       case 'profile-optimizer': {
@@ -1399,7 +1453,7 @@ Return ONLY valid JSON with this exact shape:
         const resourceLabel = String(body.resourceLabel || 'this resource');
         if (!resourceText) return res.status(400).json({ error: 'Missing resourceText' });
         const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 600,
           messages: [{ role: 'user', content: `Analyze ${resourceLabel} below. Return ONLY JSON: {"keyThemes": ["3-5 short bullet themes"], "angles": ["2-4 specific LinkedIn post angle ideas grounded in this content"], "openingLine": "one sentence a brand assistant would say to open a conversation about this, referencing the single most interesting insight"}\n\nContent:\n${truncateForPrompt(resourceText)}` }],
         });

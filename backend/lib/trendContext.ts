@@ -63,7 +63,7 @@ export async function getTrendContext(anthropic: Anthropic, supabase: SupabaseCl
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 700,
       system: `${getDateContext()}\n\nYou are a trend researcher. Use web search to find what is genuinely trending right now, not historical or evergreen topics.`,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],

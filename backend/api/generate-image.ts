@@ -16,7 +16,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // removes anything phrase-like for the model to echo back as fake typography.
 async function abstractVisualTheme(topic: string): Promise<string> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 100,
     system: getDateContext(),
     messages: [{

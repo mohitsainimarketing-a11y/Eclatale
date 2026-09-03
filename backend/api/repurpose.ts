@@ -80,7 +80,7 @@ ${repurposeMode === 'reaction' ? `- The author has a specific personal reaction 
     let extractedPattern = '';
     if (repurposeMode === 'pattern') {
       const patternMsg = await anthropic.messages.create({
-        model: 'claude-haiku-4-5',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 150,
         messages: [{
           role: 'user',

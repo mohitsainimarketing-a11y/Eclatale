@@ -305,7 +305,7 @@ export async function generateRecommendations(
 
   const summary = distribution.map(d => `${d.tone}: ${d.count} posts, avg readability ${d.avgScore}/100`).join('\n');
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 700,
     messages: [{
       role: 'user',

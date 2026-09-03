@@ -61,7 +61,7 @@ export async function runTopicFreshnessCheck(
   anthropic: Anthropic, postContent: string, userRole: string, userDomain: string
 ): Promise<FreshnessResult> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 500,
     system: getDateContext(),
     messages: [{
@@ -100,7 +100,7 @@ export async function runVoiceAuthenticityCheck(
 ): Promise<VoiceResult> {
   const lengthNote = contentLength ? CONTENT_LENGTH_VOICE_NOTE[contentLength] || '' : '';
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 500,
     system: getDateContext(),
     messages: [{
@@ -174,6 +174,18 @@ export async function runSupportingReferences(anthropic: Anthropic, postContent:
   }
 }
 
+export interface ContentIssue {
+  type: 'unverified_claim' | 'stale_topic' | 'voice_mismatch';
+  message: string;
+  suggestion: string;
+}
+
+export interface ContentSignal {
+  label: string;
+  readyToPost: boolean;
+  issues: ContentIssue[];
+}
+
 export interface AuthenticityScoreResult {
   overallScore: number;
   readyToPost: boolean;
@@ -182,6 +194,70 @@ export interface AuthenticityScoreResult {
   voice: VoiceResult;
   references: ReferencesResult;
   topSuggestion: string;
+  signal: ContentSignal;
+}
+
+async function classifyContentTone(anthropic: Anthropic, postContent: string): Promise<string> {
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 20,
+      messages: [{
+        role: 'user',
+        content: `Classify the primary tone of this LinkedIn post. Reply with ONLY one word from: Insightful | Motivational | Inspirational | Thought-Leadership | Authentic\n\nPost:\n${postContent.slice(0, 600)}`,
+      }],
+    });
+    const t = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
+    return ['Insightful', 'Motivational', 'Inspirational', 'Thought-Leadership', 'Authentic'].includes(t) ? t : 'Authentic';
+  } catch {
+    return 'Authentic';
+  }
+}
+
+const TONE_LABEL: Record<string, string> = {
+  'Insightful': 'Looks Insightful',
+  'Motivational': 'Looks Motivational',
+  'Inspirational': 'Looks Inspirational',
+  'Thought-Leadership': 'Looks Thought-Provoking',
+  'Authentic': 'Looks Authentic',
+};
+
+function buildContentSignal(
+  tone: string, accuracy: AccuracyResult, freshness: FreshnessResult, voice: VoiceResult
+): ContentSignal {
+  const label = TONE_LABEL[tone] || 'Looks Good!';
+  const issues: ContentIssue[] = [];
+
+  if (!accuracy.isOpinionBased) {
+    const bad = accuracy.claims.filter(c => c.status === 'Unverifiable' || c.status === 'False');
+    for (const claim of bad.slice(0, 2)) {
+      issues.push({
+        type: 'unverified_claim',
+        message: `"${claim.claim.length > 60 ? claim.claim.slice(0, 60) + '…' : claim.claim}" — ${claim.note}`,
+        suggestion: claim.status === 'False'
+          ? 'Remove or correct this claim before posting'
+          : 'Rephrase as your perspective, or add a citation',
+      });
+    }
+  }
+
+  if (freshness.score < 60 && freshness.suggestion) {
+    issues.push({
+      type: 'stale_topic',
+      message: `Topic saturation is ${freshness.topicSaturation.toLowerCase()} on LinkedIn right now`,
+      suggestion: freshness.suggestion,
+    });
+  }
+
+  if (voice.score < 65 && voice.suggestion) {
+    issues.push({
+      type: 'voice_mismatch',
+      message: voice.specificMismatches[0] || 'Some parts don\'t quite match your established voice',
+      suggestion: voice.suggestion,
+    });
+  }
+
+  return { label, readyToPost: issues.length === 0, issues };
 }
 
 function pickTopSuggestion(accuracy: AccuracyResult, freshness: FreshnessResult, voice: VoiceResult): string {
@@ -205,22 +281,25 @@ export async function calculateAuthenticityScore(
   personaContext: string,
   contentLength?: string
 ): Promise<AuthenticityScoreResult> {
-  const [accuracy, freshness, voice, references] = await Promise.all([
+  const [accuracy, freshness, voice, references, tone] = await Promise.all([
     runFactualAccuracyCheck(anthropic, postContent),
     runTopicFreshnessCheck(anthropic, postContent, userRole, userDomain),
     runVoiceAuthenticityCheck(anthropic, personaContext, postContent, contentLength),
     runSupportingReferences(anthropic, postContent),
+    classifyContentTone(anthropic, postContent),
   ]);
 
   const overallScore = Math.round(accuracy.score * 0.4 + freshness.score * 0.3 + voice.score * 0.3);
+  const signal = buildContentSignal(tone, accuracy, freshness, voice);
 
   return {
     overallScore,
-    readyToPost: overallScore >= 70,
+    readyToPost: signal.readyToPost,
     accuracy,
     freshness,
     voice,
     references,
     topSuggestion: pickTopSuggestion(accuracy, freshness, voice),
+    signal,
   };
 }

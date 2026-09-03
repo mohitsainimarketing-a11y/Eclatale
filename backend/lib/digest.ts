@@ -107,7 +107,7 @@ Generate a JSON object with EXACTLY these fields:
 No em dashes, en dashes, or arrows. Return ONLY valid JSON.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 900,
     system: getDateContext(),
     messages: [{ role: 'user', content: prompt }],

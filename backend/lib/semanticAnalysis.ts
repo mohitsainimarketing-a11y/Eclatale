@@ -87,7 +87,7 @@ export async function analyzePost(
   contentLength?: string
 ): Promise<PostAnalysis> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-haiku-4-5-20251001-20251001',
     max_tokens: 1024,
     system: `${getDateContext()}\n\n${buildAnalyzePostPrompt(contentLength)}`,
     messages: [{ role: 'user', content: `Post to analyze:\n\n${postContent}` }],
@@ -265,7 +265,7 @@ Assess: does the writing actually match the intended tone? Return a JSON object:
 Return ONLY valid JSON, no other text.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 400,
     system: getDateContext(),
     messages: [{ role: 'user', content: prompt }],

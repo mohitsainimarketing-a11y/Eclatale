@@ -2,6 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── shadcn/ui tokens ────────────────────────────────────────────────────────
+   Consumed by the colour names in tailwind.config.js. Tinted toward the brand
+   (primary = #7C5CFC, ring = the same purple) so shadcn components look native
+   here rather than default-zinc.
+
+   Deliberately NOT included, because adoption is incremental and the existing
+   app must keep rendering exactly as it does today:
+     * { @apply border-border }        — would repaint every border in the app
+     body { @apply bg-background ... } — would flatten the gradient page
+                                         backgrounds set below
+   Add those only if/when the whole app moves onto shadcn tokens.
+
+   --radius stays 0.5rem: that is what makes the generated lg/md/sm radii equal
+   Tailwind's stock values, so existing rounded-* classes do not shift. */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 28% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 28% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 28% 14%;
+  --primary: 252 96% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 250 40% 96%;
+  --secondary-foreground: 240 28% 14%;
+  --muted: 250 20% 96%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 250 40% 96%;
+  --accent-foreground: 240 28% 14%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 228 16% 84%;
+  --input: 228 16% 84%;
+  --ring: 252 96% 67%;
+  --radius: 0.5rem;
+}
+
+/* Defined for completeness. darkMode is class-based and nothing toggles a
+   `.dark` class today, so these values are inert until something does. */
+.dark {
+  --background: 240 28% 8%;
+  --foreground: 0 0% 98%;
+  --card: 240 28% 10%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 28% 10%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 252 96% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 20% 18%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 20% 18%;
+  --muted-foreground: 220 9% 65%;
+  --accent: 240 20% 18%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62% 45%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 20% 22%;
+  --input: 240 20% 22%;
+  --ring: 252 96% 67%;
+}
+
 /* ── Base ── */
 html {
   height: -webkit-fill-available;

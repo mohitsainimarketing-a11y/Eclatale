@@ -3,39 +3,69 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@radix-ui/react-slot": "^1.3.3",
     "@stripe/stripe-js": "^9.8.0",
     "@supabase/supabase-js": "^2.108.1",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.126",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "axios": "^1.18.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "lucide-react": "^1.18.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-is": "^19.2.8",
     "react-router-dom": "^7.17.0",
-    "react-scripts": "5.0.1",
+    "react-snap": "^1.23.0",
     "recharts": "^3.8.1",
     "stripe": "^22.2.1",
-    "tailwindcss": "^3.4.19",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^3.4.19"
   },
+  "type": "module",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "reactSnap": {
+    "puppeteerArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ],
+    "skipThirdPartyRequests": true,
+    "crawl": true,
+    "inlineCss": false,
+    "include": [
+      "/",
+      "/pricing",
+      "/blog",
+      "/tools",
+      "/tools/hook-generator",
+      "/tools/post-generator",
+      "/tools/headline-analyzer",
+      "/tools/viral-score",
+      "/tools/engagement-calculator",
+      "/tools/readability-checker",
+      "/tools/about-generator",
+      "/tools/cta-generator",
+      "/tools/post-length-analyzer",
+      "/blog/linkedin-content-strategy-founders-2026",
+      "/blog/ai-linkedin-post-generator-authentic-voice",
+      "/blog/linkedin-personal-brand-ceo-executives",
+      "/blog/taplio-alternative-linkedin-safe",
+      "/blog/linkedin-post-ideas-professionals",
+      "/blog/linkedin-engagement-rate-2026",
+      "/blog/personal-brand-roi-linkedin",
+      "/blog/linkedin-post-examples-ceo",
+      "/blog/ai-content-creation-authentic-voice",
+      "/blog/linkedin-algorithm-2026"
+    ],
+    "minifyHtml": {
+      "collapseWhitespace": false,
+      "removeComments": false
+    }
   },
   "browserslist": {
     "production": [
@@ -50,7 +80,12 @@
     ]
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.5.0",
-    "postcss": "^8.5.15"
+    "postcss": "^8.5.15",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.9.3",
+    "vite": "^8.2.2"
   }
 }

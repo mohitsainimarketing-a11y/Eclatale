@@ -5,8 +5,11 @@ import { getDateContext } from './dateContext';
 
 const BANNED_WORDS = 'delve, leverage, synergy, transformative, game-changer';
 // Anonymous ceiling for the public /tools pages. The homepage demo no longer
-// hits this endpoint at all (it is signup-gated), so this only governs /tools.
-const RATE_LIMIT_PER_HOUR = 1;
+// hits this endpoint at all (it is signup-gated), so this only governs /tools —
+// nine tools that exist to be sampled. At 1/hr a visitor who tried the hook
+// generator was locked out of the other eight, which defeats the page. Five
+// leaves room to explore while still capping scripted abuse.
+const RATE_LIMIT_PER_HOUR = 5;
 const HOUR_MS = 60 * 60 * 1000;
 
 function parseJsonArray(text: string): any[] {

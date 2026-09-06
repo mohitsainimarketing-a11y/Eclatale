@@ -141,6 +141,26 @@ button, a, [role="button"] {
     radial-gradient(at 10% 70%, rgba(6,214,160,0.05) 0%, transparent 50%);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   @layer components — everything from here to the end of the Inputs block.
+
+   Why this wrapper exists: these classes are routinely combined with Tailwind
+   utilities (`card border-2 border-brand-purple`, `input !pr-9`). Unlayered,
+   they sit AFTER @tailwind utilities in source order at equal specificity, so
+   the component class quietly won and the utility did nothing — the Individual
+   pricing plan lost its purple border that way, invisibly, for months.
+
+   Inside @layer components, Tailwind emits these into the components cascade
+   layer, which the utilities layer always beats regardless of source order.
+   Utilities now behave the way anyone reading the JSX would expect.
+
+   Deliberately NOT layered: the typography block below (.h1/.h2/.body-text).
+   18 call sites pair `body-text` with a text-size utility and currently render
+   at .body-text's size; layering it would resize all of them at once. That is
+   a separate, intentional decision — not a side effect of this fix.
+   ───────────────────────────────────────────────────────────────────────── */
+@layer components {
+
 /* ── Elevation ──
    Stripe-style layered shadows. Three things make them read as refined
    rather than as a grey smudge:
@@ -305,6 +325,8 @@ textarea, input[type="text"] { caret-color: #7C5CFC; }
 @media (hover: none) {
   .input { min-height: 44px; padding: 12px 14px; }
 }
+
+} /* end @layer components */
 
 /* ── Typography ── */
 .h1 { font-size: 36px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }

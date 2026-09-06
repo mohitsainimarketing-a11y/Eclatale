@@ -206,11 +206,7 @@ export default function Pricing() {
           </div>
 
           {/* Individual */}
-          {/* Border utilities need `!`: .card declares a `border` shorthand and
-              is defined after @tailwind utilities in index.css, so at equal
-              specificity it wins on source order and a plain border-2 /
-              border-brand-purple never renders. */}
-          <div className="relative card p-7 md:p-8 !border-2 !border-brand-purple shadow-brand-lg scale-[1.02] bg-[rgba(124,92,252,0.04)]">
+          <div className="relative card p-7 md:p-8 border-2 border-brand-purple shadow-brand-lg scale-[1.02] bg-[rgba(124,92,252,0.04)]">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 badge bg-brand-purple text-white text-[11px] font-bold px-3 py-1">MOST POPULAR</div>
             <div className="text-sm font-semibold text-brand-purple uppercase tracking-wide mb-3">Individual</div>
             <div className="flex items-end gap-2 mb-1 flex-wrap">

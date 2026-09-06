@@ -1,11 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -13,14 +10,23 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    // "node" is required even though this is browser code: the source reads
+    // process.env.REACT_APP_* in ~10 files, and Vite substitutes those for
+    // literals at build time. Setting "types" at all replaces the default
+    // "include every @types package" behaviour, so omitting node here makes
+    // the `process` global vanish and every one of those reads fail to compile.
+    "types": ["vite/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": [
-    "src"
-, "auth.tsx"  ]
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

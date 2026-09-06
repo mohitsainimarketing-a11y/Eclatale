@@ -2,10 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16.png" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#7C5CFC" />
 
@@ -33,8 +33,8 @@
     <meta name="twitter:description" content="AI that learns your voice and writes LinkedIn posts that sound exactly like you." />
     <meta name="twitter:image" content="https://eclatale.com/og-image.jpg" />
 
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Eclatale" />
@@ -59,25 +59,51 @@
         "@type": "SoftwareApplication",
         "name": "Eclatale",
         "applicationCategory": "BusinessApplication",
-        "description": "AI-powered personal brand growth OS for LinkedIn professionals. Generates authentic content in your voice, tracks career outcomes, and provides competitor intelligence.",
+        "operatingSystem": "Web",
+        "applicationSubCategory": "Social Media Management",
+        "description": "AI-powered personal brand growth OS for LinkedIn. Generates authentic content in your voice, tracks trends, and provides competitor intelligence.",
         "url": "https://eclatale.com",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
-          "description": "Free plan available"
-        },
+        "sameAs": ["https://www.linkedin.com/company/eclatale"],
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Free Plan",
+            "price": "0",
+            "priceCurrency": "USD",
+            "description": "3 AI-generated LinkedIn posts per week, no credit card required"
+          },
+          {
+            "@type": "Offer",
+            "name": "Individual Plan",
+            "price": "19",
+            "priceCurrency": "USD",
+            "billingIncrement": "month",
+            "description": "Unlimited posts, full AI persona learning, competitor intelligence, profile optimizer"
+          }
+        ],
         "featureList": [
           "AI content generation in your authentic voice",
-          "LinkedIn direct publishing",
+          "LinkedIn direct publishing via official API",
           "Persona learning engine",
-          "Content authenticity score",
+          "Content authenticity scoring",
           "Competitor intelligence",
           "Profile optimizer",
-          "Growth analytics"
-        ],
-        "operatingSystem": "Web",
-        "applicationSubCategory": "Social Media Management"
+          "Weekly industry briefing",
+          "Hook and CTA library",
+          "Content scheduling"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Eclatale",
+        "url": "https://eclatale.com",
+        "logo": "https://eclatale.com/og-image.jpg",
+        "description": "Eclatale is an AI-powered LinkedIn personal brand growth platform that helps founders, CEOs, and executives create authentic content in their own voice.",
+        "foundingDate": "2025",
+        "areaServed": "Worldwide"
       }
     </script>
     <script type="application/ld+json">
@@ -90,15 +116,15 @@
             "name": "How is Eclatale different from other LinkedIn tools?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Eclatale isn't a LinkedIn optimizer. It's a growth engine. We learn your authentic voice, track real career outcomes (not vanity metrics), and build a personalized strategy based on your goals."
+              "text": "Eclatale isn't just a post scheduler. It's a personal brand OS. It learns your authentic voice through AI persona training, surfaces trending content in your industry, scores post authenticity, and publishes via LinkedIn's official API — so your account stays safe."
             }
           },
           {
             "@type": "Question",
-            "name": "Will the content sound like me?",
+            "name": "Will the AI content sound like me?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Our AI analyzes your writing style, industry expertise, and personality to generate content that sounds authentically you. Every post is unique to your voice."
+              "text": "Yes. Eclatale's persona engine analyzes your writing style, industry expertise, and communication patterns to generate LinkedIn posts that sound authentically like you. Every post is uniquely calibrated to your voice."
             }
           },
           {
@@ -106,7 +132,7 @@
             "name": "Is Eclatale safe for my LinkedIn account?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Eclatale publishes exclusively through LinkedIn's official API, so there is zero risk of automation-related account bans, unlike browser-extension tools."
+              "text": "Yes. Eclatale publishes exclusively through LinkedIn's official API, so there is zero risk of automation-related account restrictions or bans — unlike browser-extension tools that mimic human clicks."
             }
           },
           {
@@ -114,7 +140,23 @@
             "name": "Is there a free plan?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Start with 10 AI generations per month for free. Upgrade when you're ready to scale your content creation."
+              "text": "Yes. The free plan includes 3 AI-generated LinkedIn posts per week with no credit card required. Upgrade to Individual for unlimited posts and the full growth toolkit."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a free trial for the paid plan?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The Individual plan comes with a 7-day free trial, no credit card required. You can cancel anytime before the trial ends."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the best AI tool for LinkedIn posts?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Eclatale is built specifically for LinkedIn personal branding. Unlike generic AI writers, it learns your unique voice, uses real-time web search to ground posts in current trends, and publishes via LinkedIn's official API — making it the best AI tool for authentic LinkedIn content."
             }
           }
         ]
@@ -128,5 +170,6 @@
     <!-- End Google Tag Manager (noscript) -->
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

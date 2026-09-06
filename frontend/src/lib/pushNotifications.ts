@@ -2,11 +2,20 @@ import { apiFetch } from './apiFetch';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+// Returns Uint8Array<ArrayBuffer> rather than plain Uint8Array: since TS 5.7
+// the type is generic over ArrayBufferLike, and applicationServerKey requires
+// a BufferSource, which SharedArrayBuffer-backed views do not satisfy.
+// Allocating the ArrayBuffer explicitly pins the backing type — Uint8Array.from
+// would infer the looser ArrayBufferLike and fail to typecheck.
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
-  return Uint8Array.from(rawData.split('').map(c => c.charCodeAt(0)));
+  const output = new Uint8Array(new ArrayBuffer(rawData.length));
+  for (let i = 0; i < rawData.length; i += 1) {
+    output[i] = rawData.charCodeAt(i);
+  }
+  return output;
 }
 
 export function pushSupported(): boolean {

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    // No "noEmit": a composite/referenced project is not allowed to disable
+    // emit (TS6310). Declarations land in the ignored tsbuildinfo dir instead.
+    "emitDeclarationOnly": true,
+    "declarationDir": "./node_modules/.tmp/tsconfig.node",
+    "types": ["node"]
+  },
+  "include": ["vite.config.ts"]
+}

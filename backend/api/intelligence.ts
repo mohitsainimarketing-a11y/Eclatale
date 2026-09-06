@@ -558,7 +558,19 @@ async function streakRiskCron() {
   return { ok: true, considered: (profiles || []).length, results };
 }
 
-const API_BASE = 'https://api.eclatale.com';
+// Self-call base for publishScheduledPosts below.
+//
+// This was hardcoded to https://api.eclatale.com, which is registered as a
+// domain on the Vercel project but has NO DNS record — NXDOMAIN on both
+// 8.8.8.8 and 1.1.1.1. Every scheduled publish therefore failed at DNS, hit
+// the catch, and marked the post schedule_status:'failed'. The frontend was
+// unaffected because it calls the vercel.app host below via REACT_APP_API_URL.
+//
+// Once the DNS record exists, set PUBLIC_API_BASE_URL=https://api.eclatale.com
+// in the backend project env — no code change needed.
+const API_BASE = (
+  process.env.PUBLIC_API_BASE_URL || 'https://backend-xi-olive-8eewk5s8qv.vercel.app'
+).replace(/\/+$/, '');
 
 /**
  * Publishes every post whose scheduled_for time has passed. Designed to be

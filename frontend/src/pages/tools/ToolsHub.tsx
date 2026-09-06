@@ -8,16 +8,27 @@ export default function ToolsHub() {
     <div className="min-h-screen gradient-bg-page">
       <Seo
         title="Free LinkedIn Tools | Eclatale"
-        description="9 free AI-powered tools to write better LinkedIn posts, headlines, and About sections. No signup required, instant results."
+        description="9 free AI-powered LinkedIn tools — hook generator, post generator, headline analyzer, viral score checker, and more. No signup required, instant results."
         path="/tools"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'ItemList',
-          name: 'Free LinkedIn Tools',
-          itemListElement: TOOLS.map((t, i) => ({
-            '@type': 'ListItem', position: i + 1, name: t.name, url: `https://eclatale.com/tools/${t.slug}`,
-          })),
-        }}
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: 'Free LinkedIn Tools by Eclatale',
+            description: 'Free AI-powered tools for LinkedIn content creation and personal branding',
+            itemListElement: TOOLS.map((t, i) => ({
+              '@type': 'ListItem', position: i + 1, name: t.name, url: `https://eclatale.com/tools/${t.slug}`, description: t.seoDescription,
+            })),
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://eclatale.com' },
+              { '@type': 'ListItem', position: 2, name: 'Free Tools', item: 'https://eclatale.com/tools' },
+            ],
+          },
+        ]}
       />
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
         <div className="max-w-5xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">
@@ -35,7 +46,7 @@ export default function ToolsHub() {
           9 free tools to write better, grow faster, and stand out on LinkedIn. No account required.
         </p>
         <p className="text-xs font-semibold text-brand-muted">
-          Used 24,000+ times this month · No signup · Instant results
+          No signup · No card · Instant results
         </p>
       </header>
 

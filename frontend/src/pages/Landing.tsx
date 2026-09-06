@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Sparkles, TrendingUp, Zap, ArrowRight, ChevronDown, Menu, X,
-  Check, Shield, Lock, Star, AudioWaveform, ShieldCheck, LineChart, Layers,
+  Check, Shield, Lock, AudioWaveform, ShieldCheck, LineChart, Layers,
   ThumbsUp, MessageSquare, Repeat2, Eye, EyeOff,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
@@ -531,14 +531,6 @@ export default function Landing() {
     { icon: <TrendingUp size={24} />, title: 'Your Brand, Compounding', desc: 'Thirty days from now, Eclatale will know you better than any tool you\'ve ever used. Sixty days in, your content will feel effortless. This is what compounding looks like for personal brands.' },
   ];
 
-  const testimonials = [
-    { quote: 'My profile views went from 200 to 1,400 in 6 weeks.', name: 'Sarah K.', role: 'VP of Product' },
-    { quote: 'I landed my first consulting client directly from a LinkedIn post.', name: 'Marcus J.', role: 'Startup Founder' },
-    { quote: 'For the first time, my posts actually sound like me.', name: 'Priya R.', role: 'Marketing Director' },
-    { quote: 'I went from posting once a month to posting three times a week — and loving it.', name: 'David L.', role: 'Agency Owner' },
-    { quote: 'My CEO asked me how I got so good at LinkedIn. I told him about Eclatale.', name: 'Amara T.', role: 'Chief of Staff' },
-    { quote: 'The authenticity score changed how I think about content entirely.', name: 'James O.', role: 'Solo Consultant' },
-  ];
 
   const faqs = [
     { q: 'What exactly does Eclatale do?', a: 'Eclatale is a personal brand growth engine. It learns your authentic voice, checks every post for accuracy and freshness before you publish, and tracks the real career outcomes that matter — not vanity metrics — as part of a strategy built around your goals.' },
@@ -555,7 +547,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white overflow-x-hidden">
       <Seo
         title="Eclatale — AI Personal Brand Growth OS for LinkedIn"
-        description="Eclatale uses AI to learn your authentic voice and generate LinkedIn content that sounds exactly like you. Used by founders, CEOs and executives to grow their personal brand. Start free."
+        description="Eclatale uses AI to learn your authentic voice and generate LinkedIn content that sounds exactly like you. Built for founders, CEOs and executives growing their personal brand. Start free."
         path="/"
         jsonLd={[
           {
@@ -648,20 +640,16 @@ export default function Landing() {
             </a>
           </div>
 
-          <div className="mt-8 md:mt-10 flex flex-col items-center gap-2 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
-            <div className="flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {['SK', 'MJ', 'PR', 'DL', 'AT'].map((initials, i) => (
-                  <div key={i} className="w-8 h-8 rounded-full gradient-primary border-2 border-white flex items-center justify-center text-white text-[10px] font-bold">
-                    {initials}
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} className="fill-brand-orange text-brand-orange" />)}
-              </div>
-            </div>
-            <p className="text-sm text-brand-muted font-medium">Join 500+ founders and executives</p>
+          {/* Early access, stated plainly. No invented user counts, star
+              ratings or avatar clusters — there are no customers to represent
+              yet, and being first is its own pitch. */}
+          <div className="mt-8 md:mt-10 flex flex-col items-center gap-2.5 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
+            <span className="badge bg-[rgba(6,214,160,0.10)] text-brand-teal font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" /> Early access — just launched
+            </span>
+            <p className="text-sm text-brand-muted font-medium">
+              Built by a founder in Toronto. Free to start, no card.
+            </p>
           </div>
         </div>
 
@@ -727,16 +715,18 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Social proof stats */}
+      {/* Product facts, not usage metrics. Every number here is checkable
+          against the product itself, so none of it goes stale or turns into a
+          claim we cannot back. Swap in real usage numbers once they exist. */}
       <section className="gradient-primary py-12 md:py-16 px-5 md:px-8">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center">
           {[
-            { value: 500, suffix: '+', label: 'professionals' },
-            { value: 10000, suffix: '+', label: 'posts generated' },
-            { value: 87, suffix: '%', label: 'avg. voice match' },
-            { value: 4.8, suffix: '/5', label: 'rating', decimals: 1 },
+            { value: 3, suffix: '', label: 'free posts every week' },
+            { value: 9, suffix: '', label: 'free tools, no signup' },
+            { value: 100, suffix: '%', label: 'official LinkedIn API' },
+            { value: 0, suffix: '', label: 'card required to start' },
           ].map((stat, i) => (
-            <StatCounter key={i} value={stat.value} suffix={stat.suffix} label={stat.label} decimals={stat.decimals} />
+            <StatCounter key={i} value={stat.value} suffix={stat.suffix} label={stat.label} />
           ))}
         </div>
       </section>
@@ -744,9 +734,12 @@ export default function Landing() {
       {/* Trust signals */}
       <section className="py-16 md:py-20 px-5 md:px-8 bg-white">
         <div className="max-w-5xl mx-auto">
-          <p className="tiny text-brand-muted text-center mb-6">BUILT FOR PROFESSIONALS AT</p>
+          {/* "BUILT FOR PROFESSIONALS AT <Fortune 500>" read like a customer
+              logo wall. Reframed as the roles the product is designed around,
+              which is what it actually meant. */}
+          <p className="tiny text-brand-muted text-center mb-6">WHO IT'S DESIGNED FOR</p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 mb-12 md:mb-16">
-            {['Series A Startups', 'Fortune 500 Companies', 'Consulting Firms', 'Growth-Stage SaaS', 'Boutique Agencies'].map(name => (
+            {['Founders', 'Executives', 'Consultants', 'Agency Owners', 'Job Seekers'].map(name => (
               <span key={name} className="text-sm md:text-base font-bold text-brand-muted/60 tracking-tight">{name}</span>
             ))}
           </div>
@@ -822,26 +815,42 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* Founder note replaces six invented testimonials. With no customers
+          yet there is nothing honest to quote, and "we just launched, here is
+          why" is a stronger early-stage pitch than fabricated praise. Bring
+          testimonials back the moment there are real ones to print. */}
       <section className="py-16 md:py-24 px-5 md:px-8 bg-brand-bg">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="h2 text-brand-dark mb-12 md:mb-16">Loved by <span className="gradient-text">ambitious</span> professionals</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-            {testimonials.map((t, i) => (
-              <div key={i} className="card p-6 md:p-7 text-left relative bg-white">
-                <div className="absolute top-5 left-6 text-4xl font-serif gradient-text opacity-30">"</div>
-                <p className="text-sm text-brand-dark leading-relaxed mb-5 mt-4">{t.quote}</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold">
-                    {t.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-brand-dark">{t.name}</div>
-                    <div className="text-xs text-brand-muted">{t.role}</div>
-                  </div>
-                </div>
+        <div className="max-w-2xl mx-auto">
+          <p className="tiny text-brand-muted text-center mb-6">WHY THIS EXISTS</p>
+          <div className="card p-7 md:p-9">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 rounded-full gradient-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                MS
               </div>
-            ))}
+              <div>
+                <div className="text-sm font-bold text-brand-dark">Mohit Saini</div>
+                <div className="text-xs text-brand-muted">Founder · Toronto</div>
+              </div>
+            </div>
+            <div className="space-y-4 text-sm md:text-[15px] text-brand-dark leading-relaxed">
+              <p>
+                I kept opening LinkedIn to post something, staring at the box, and closing it.
+                Not because I had nothing to say — because everything I wrote came out sounding
+                like a press release.
+              </p>
+              <p>
+                Every tool I tried made that worse. They all generate the same confident, hollow
+                paragraphs, and you can feel it reading them. So I built the thing I actually
+                wanted: something that learns how <em>you</em> write, checks what it claims before
+                you publish, and posts through LinkedIn's official API so your account is never
+                at risk.
+              </p>
+              <p className="text-brand-muted">
+                Eclatale is new — I'm building it in the open and the free plan is genuinely free.
+                If you try it and it sounds nothing like you, email me and tell me. That feedback
+                is worth more to me right now than a signup.
+              </p>
+            </div>
           </div>
         </div>
       </section>

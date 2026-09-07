@@ -13,6 +13,7 @@ import NotificationBell from '../components/NotificationBell';
 import { maybePromptPush } from '../lib/pushNotifications';
 import AppShell from '../components/AppShell';
 import WeeklyBriefingCard from '../components/WeeklyBriefingCard';
+import LinkedInInsights from '../components/LinkedInInsights';
 import { useToast } from '../contexts/ToastContext';
 import { apiFetch } from '../lib/apiFetch';
 
@@ -376,6 +377,8 @@ export default function Dashboard() {
           </p>
 
           <WeeklyBriefingCard userId={user.id} />
+
+          <LinkedInInsights userId={user.id} />
 
           {/* Growth Journey timeline */}
           <div className="card p-6 mb-6">

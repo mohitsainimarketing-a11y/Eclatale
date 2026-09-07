@@ -69,16 +69,29 @@ export default function BlogPost() {
         description={post.description}
         path={`/blog/${post.slug}`}
         type="article"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Article',
-          headline: post.title,
-          description: post.description,
-          datePublished: post.date,
-          author: { '@type': 'Organization', name: 'Eclatale' },
-          publisher: { '@type': 'Organization', name: 'Eclatale', logo: { '@type': 'ImageObject', url: 'https://eclatale.com/logo512.png' } },
-          mainEntityOfPage: { '@type': 'WebPage', '@id': `https://eclatale.com/blog/${post.slug}` },
-        }}
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: post.title,
+            description: post.description,
+            datePublished: post.date,
+            dateModified: post.date,
+            author: { '@type': 'Organization', name: 'Eclatale', url: 'https://eclatale.com' },
+            publisher: { '@type': 'Organization', name: 'Eclatale', logo: { '@type': 'ImageObject', url: 'https://eclatale.com/logo512.png' } },
+            mainEntityOfPage: { '@type': 'WebPage', '@id': `https://eclatale.com/blog/${post.slug}` },
+            image: { '@type': 'ImageObject', url: 'https://eclatale.com/og-image.jpg', width: 1200, height: 630 },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://eclatale.com' },
+              { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://eclatale.com/blog' },
+              { '@type': 'ListItem', position: 3, name: post.title, item: `https://eclatale.com/blog/${post.slug}` },
+            ],
+          },
+        ]}
       />
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
         <div className="max-w-3xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">

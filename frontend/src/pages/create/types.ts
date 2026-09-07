@@ -32,12 +32,25 @@ export const LENGTH_OPTIONS: { id: PostLength; emoji: string; label: string }[] 
   { id: 'longform', emoji: '📚', label: 'Long' },
 ];
 
+export interface ContentIssue {
+  type: 'unverified_claim' | 'stale_topic' | 'voice_mismatch';
+  message: string;
+  suggestion: string;
+}
+
+export interface ContentSignal {
+  label: string;
+  readyToPost: boolean;
+  issues: ContentIssue[];
+}
+
 export interface AuthenticityScoreResult {
   overallScore: number;
   readyToPost: boolean;
   accuracy: { score: number; [key: string]: any };
   freshness: { score: number; [key: string]: any };
   voice: { score: number; suggestion?: string; [key: string]: any };
+  signal?: ContentSignal;
   [key: string]: any;
 }
 

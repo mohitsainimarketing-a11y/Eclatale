@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // kick the user to LinkedIn's authorization screen.
   if (!code && !oauthError && connectUserId) {
     const state = crypto.randomBytes(16).toString('hex') + ':' + String(connectUserId);
-    const scopes = ['openid', 'profile', 'email', 'w_member_social'];
+    const scopes = ['openid', 'profile', 'email', 'w_member_social', 'r_network_size'];
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: process.env.LINKEDIN_CLIENT_ID!,
@@ -85,11 +85,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect(302, 'https://eclatale.com/dashboard?linkedin=error&message=no_member_id');
     }
 
+    // Fetch follower count via LinkedIn network size API
+    let followerCount: number | null = null;
+    try {
+      const memberUrn = encodeURIComponent(`urn:li:member:${linkedinMemberId}`);
+      const networkRes = await fetch(
+        `https://api.linkedin.com/rest/networkSizes/${memberUrn}?edgeType=MEMBER_TO_FOLLOWER`,
+        { headers: { Authorization: `Bearer ${accessToken}`, 'LinkedIn-Version': '202503' } }
+      );
+      if (networkRes.ok) {
+        const networkData: any = await networkRes.json();
+        followerCount = networkData.firstDegreeSize ?? networkData.followerCount ?? null;
+      }
+    } catch (_) { /* non-fatal */ }
+
     await supabase.from('linkedin_connections').upsert({
       user_id: userId,
       linkedin_member_id: linkedinMemberId,
       linkedin_name: linkedinName,
       linkedin_picture_url: linkedinPicture,
+      follower_count: followerCount,
       access_token: accessToken,
       refresh_token: refreshToken,
       token_expires_at: tokenExpiresAt,

@@ -270,3 +270,59 @@ export async function sendReengagement(
 function escapeHtml(s: string): string {
   return String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 }
+
+// Standalone mailer for anonymous demo leads — no userId, no template system.
+export async function sendDemoLeadEmail(email: string, firstName: string, topic: string, postContent: string): Promise<void> {
+  const host = process.env.GMAIL_SMTP_HOST || 'smtp.gmail.com';
+  const port = Number(process.env.GMAIL_SMTP_PORT || 587);
+  const transport = nodemailer.createTransport({
+    host, port, secure: false,
+    auth: { user: FROM_HELLO, pass: process.env.GMAIL_HELLO_PASSWORD },
+  });
+
+  const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : 'Hi there,';
+  const postHtml = escapeHtml(postContent).replace(/\n/g, '<br>');
+  const subject = `Your LinkedIn post is ready — plus 3 free posts/week on Eclatale`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f5ff;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f5ff;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" style="max-width:560px;" cellpadding="0" cellspacing="0">
+        <!-- Logo -->
+        <tr><td style="padding-bottom:24px;text-align:center;">
+          <span style="font-size:24px;font-weight:900;background:linear-gradient(135deg,#7C5CFC,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Eclatale</span>
+        </td></tr>
+        <!-- Card -->
+        <tr><td style="background:#ffffff;border-radius:16px;padding:32px;border:1px solid #efeafc;">
+          <p style="margin:0 0 16px;font-size:16px;color:#1A1A2E;">${greeting}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5a5280;line-height:1.6;">Here's the LinkedIn post you generated about <strong style="color:#1A1A2E;">"${escapeHtml(topic)}"</strong>:</p>
+          <!-- Post preview -->
+          <div style="background:#f9f5ff;border-left:3px solid #7C5CFC;border-radius:0 12px 12px 0;padding:20px 20px 20px 24px;margin-bottom:28px;">
+            <p style="margin:0;font-size:14px;color:#1A1A2E;line-height:1.7;white-space:pre-wrap;">${postHtml}</p>
+          </div>
+          <p style="margin:0 0 8px;font-size:15px;color:#5a5280;line-height:1.6;">This is a generic demo post. On Eclatale, every post is generated in <em>your</em> authentic voice — learned from your own writing samples.</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5a5280;line-height:1.6;"><strong style="color:#1A1A2E;">Free plan: 3 AI posts per week. No credit card. Takes 3 minutes to set up.</strong></p>
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:50px;background:linear-gradient(135deg,#7C5CFC,#c084fc);">
+            <a href="https://eclatale.com/signup" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:50px;">Start Free on Eclatale &rarr;</a>
+          </td></tr></table>
+        </td></tr>
+        <!-- Footer -->
+        <tr><td style="padding:20px 0 0;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#9a92ad;">You received this because you tried the Eclatale LinkedIn demo.
+          &middot; <a href="https://eclatale.com/unsubscribe?email=${encodeURIComponent(email)}&type=demo" style="color:#9a92ad;">Unsubscribe</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    await transport.sendMail({ from: `"Eclatale" <${FROM_HELLO}>`, to: email, subject, html });
+  } catch {
+    // Fire-and-forget — do not throw
+  }
+}

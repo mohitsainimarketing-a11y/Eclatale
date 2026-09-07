@@ -50,11 +50,10 @@ async function createCheckout(userId: string, email: string, priceId: string, ap
       trial_period_days: 7,
       metadata: { userId, eclatale_tier: 'individual' },
     },
+    payment_method_collection: 'if_required',
     success_url: `${APP_URL}/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${APP_URL}/pricing?cancelled=true`,
     metadata: { userId },
-    billing_address_collection: 'auto',
-    customer_update: { address: 'auto' },
   });
 
   return { checkoutUrl: session.url };

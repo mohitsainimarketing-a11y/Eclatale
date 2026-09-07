@@ -32,14 +32,27 @@ export default function ToolPage() {
 
   if (!tool || !ToolComponent) return <Navigate to="/tools" replace />;
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: tool.name,
-    applicationCategory: 'BusinessApplication',
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    description: tool.seoDescription,
-  };
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: tool.name,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'Free, no signup required' },
+      description: tool.seoDescription,
+      url: `https://eclatale.com/tools/${tool.slug}`,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://eclatale.com' },
+        { '@type': 'ListItem', position: 2, name: 'Free Tools', item: 'https://eclatale.com/tools' },
+        { '@type': 'ListItem', position: 3, name: tool.name, item: `https://eclatale.com/tools/${tool.slug}` },
+      ],
+    },
+  ];
 
   return (
     <>

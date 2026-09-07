@@ -1,6 +1,13 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://eclatale.com",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/api/create/angles", "destination": "/api/intelligence?action=create-angles" },
     { "source": "/api/tools/generate", "destination": "/api/intelligence?action=tools-generate" },
@@ -23,6 +30,7 @@
     { "source": "/api/email/send-reengagement", "destination": "/api/intelligence?action=send-reengagement" },
     { "source": "/api/email/unsubscribe", "destination": "/api/intelligence?action=unsubscribe" },
     { "source": "/api/email/newsletter-subscribe", "destination": "/api/intelligence?action=newsletter-subscribe" },
+    { "source": "/api/demo/lead", "destination": "/api/intelligence?action=demo-lead" },
     { "source": "/api/aria/chat", "destination": "/api/intelligence?action=aria-chat" },
     { "source": "/api/aria/history", "destination": "/api/intelligence?action=aria-history" },
     { "source": "/api/schedule/publish-due", "destination": "/api/intelligence?action=publish-scheduled-posts" },

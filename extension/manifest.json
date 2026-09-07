@@ -24,6 +24,11 @@
       "css": ["sidebar/sidebar.css"]
     },
     {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["content-insights.js"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": ["<all_urls>"],
       "js": ["content-repurpose.js"]
     }

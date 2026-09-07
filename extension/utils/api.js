@@ -2,7 +2,7 @@
 // the same /api/intelligence multiplexer the web app uses — no separate
 // extension-only API surface, so there's nothing new to keep in sync.
 
-const ECLATALE_API = 'https://backend-xi-olive-8eewk5s8qv.vercel.app';
+const ECLATALE_API = 'https://api.eclatale.com';
 
 async function apiCall(action, body = {}) {
   const { token, user } = await getAuth();

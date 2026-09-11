@@ -46,14 +46,43 @@ export const WRITING_STYLES: WritingStyle[] = [
   },
 ];
 
-export const UNIVERSAL_HUMAN_WRITING_RULES = `CRITICAL HUMAN WRITING RULES — follow these without exception:
-- Never use the word 'delve', 'leverage', 'synergy', 'empower', 'transformative', 'game-changer', 'cutting-edge', 'holistic', 'paradigm', or 'utilize' — these are AI tells
-- Never start with 'In today's...' or 'In the ever-evolving...' or 'As a...'
-- Never use 3-word sentences followed by 3-word sentences followed by 3-word sentences — this is a known AI rhythm pattern
-- Use contractions naturally (it's, you're, I've, they're)
-- Vary sentence length dramatically — some very short. Others can run longer and build on themselves before landing a point.
-- Include one specific detail that feels almost too specific — a number, a name, a moment — this is what makes writing feel real
-- The post should feel like it was written by a specific human who has a specific perspective, not a machine trying to sound like all humans at once`;
+export const UNIVERSAL_HUMAN_WRITING_RULES = `CRITICAL HUMAN WRITING RULES — follow every rule without exception:
+
+── 2026 LINKEDIN ALGORITHM RULES (data-backed) ──
+- NEVER open with a question — question-first openers lose −34% median likes; move any question to the close where it gains +3%
+- PREFER number-first openers — "47% of..." or "$2.4M later..." gains +34% median likes vs vague openers
+- Target 1,000–1,300 characters and 20+ sentences for maximum algorithmic lift
+- Allow maximum ONE contrast and ONE triple per post — more than this flags as AI-generated
+- ZERO reveal bridges — never write "The result?", "Here's the thing:", "It's not X, it's Y", "The truth?", "What happened next?" — these cost −4.3% to −6.7% reach
+- Hook must land in the first 210 characters (before the "see more" fold) — the hook's only job is to earn that click
+- Em dashes: maximum 1 per 100 words. More than this is an AI tell
+
+── BANNED VOCABULARY (AI tells — never use these) ──
+- Single-word bans: delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, insights, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative
+- Banned openers: "In today's...", "In the ever-evolving...", "As a [title]...", "Here's what...", "I wanted to share...", "Let me be honest"
+- Banned closers: "What do you think?", "Tag someone who needs this", "Drop a comment below", "Let me know your thoughts", "Like and share if you agree"
+
+── BANNED STRUCTURAL PATTERNS ──
+- No staccato stacks: "No X. No Y. Just Z." — this pattern is flagged by LinkedIn's slop filter
+- No one-word paragraphs used for dramatic effect
+- No negative parallelism in any of its 6 forms ("Not A. Not B. Not C.")
+- No pseudo-Socratic Q&A within the post body
+- No announced candor: never write "I'll be honest", "Real talk:", "Genuinely:", "I have to say"
+- No "-ing" clause openers at sentence start (5.3x human rate — major AI tell)
+- No noun chains (3+ nouns strung together as modifier: "customer success team onboarding process optimization")
+
+── REQUIRED HUMAN MARKERS (include ALL of these) ──
+- ONE odd-precision number with a referent: not "many companies" but "73 of the 91 companies we surveyed"
+- ONE named entity: a real person's name, company name, city, or publication
+- ONE first-person specific detail: something only the author would know ("when we cut our CAC from $340 to $180...")
+- ONE contradiction stated flat — no hedging, no disclaimer ("We do less. We earn more.")
+- VARY sentence length dramatically: some very short. Others build and build before landing the point, giving the reader momentum before the release.
+
+── AUTHENTICITY ──
+- Write as one specific human with one specific perspective — not a machine averaging all possible humans
+- Use contractions naturally (it's, you're, I've, they're, we've)
+- Human readers identify AI by vocabulary (53%) and sentence structure (36%) — attack both`;
+
 
 export function getWritingStyle(id: string): WritingStyle | undefined {
   return WRITING_STYLES.find(s => s.id === id);

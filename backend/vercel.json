@@ -48,7 +48,7 @@
     { "source": "/api/notifications/:id/read", "destination": "/api/intelligence?action=notifications-mark-read&id=:id" },
     { "source": "/api/notifications/:id", "destination": "/api/intelligence?action=notifications-item&id=:id" },
     { "source": "/api/push/subscribe", "destination": "/api/intelligence?action=push-subscribe" },
-    { "source": "/api/linkedin/sync-insights", "destination": "/api/linkedin/sync-insights" },
+    { "source": "/api/linkedin/sync-insights", "destination": "/api/intelligence?action=linkedin-sync-insights" },
     { "source": "/api/linkedin/publish", "destination": "/api/linkedin/publish" },
     { "source": "/api/linkedin/status", "destination": "/api/linkedin/status" },
     { "source": "/api/(.*)", "destination": "/api/$1" }

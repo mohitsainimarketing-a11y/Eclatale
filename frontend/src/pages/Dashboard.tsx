@@ -442,11 +442,36 @@ export default function Dashboard() {
                 </div>
               </div>
               {healthExpanded && (
-                <div className="mt-3 pt-3 border-t border-[rgba(124,92,252,0.08)] space-y-1.5">
-                  {[['Consistency', overview.brandHealth.consistency], ['Quality', overview.brandHealth.quality], ['Voice', overview.brandHealth.voice]].map(([label, val]) => (
-                    <div key={label as string} className="flex items-center justify-between text-[10px]">
-                      <span className="text-brand-muted">{label}</span>
-                      <span className="font-bold text-brand-dark">{val}</span>
+                <div className="mt-3 pt-3 border-t border-[rgba(124,92,252,0.08)] space-y-3">
+                  {([
+                    {
+                      label: 'Consistency', val: overview.brandHealth.consistency,
+                      tip: overview.brandHealth.consistency >= 80 ? 'Excellent — keep the streak going'
+                        : overview.brandHealth.consistency >= 60 ? 'Good — try posting every week without a gap'
+                        : 'Post at least once a week for 4 consecutive weeks',
+                    },
+                    {
+                      label: 'Quality', val: overview.brandHealth.quality,
+                      tip: overview.brandHealth.quality >= 80 ? 'High authenticity scores — strong voice'
+                        : overview.brandHealth.quality >= 60 ? 'Good — add specific numbers and named details to posts'
+                        : 'Publish more to build quality history, or review authenticity scores',
+                    },
+                    {
+                      label: 'Voice', val: overview.brandHealth.voice,
+                      tip: overview.brandHealth.voice >= 80 ? 'Strong voice profile — Claude knows your style'
+                        : overview.brandHealth.voice >= 60 ? 'Good — add 2–3 more voice samples in Settings'
+                        : 'Complete your voice profile in Settings to train your AI clone',
+                    },
+                  ] as { label: string; val: number; tip: string }[]).map(({ label, val, tip }) => (
+                    <div key={label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-semibold" style={{ color: '#374151' }}>{label}</span>
+                        <span className="text-[10px] font-bold" style={{ color: scoreColor(val) }}>{val}</span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: '#F0EEF8' }}>
+                        <div className="h-full rounded-full transition-all" style={{ width: `${val}%`, background: val >= 80 ? '#10B981' : val >= 60 ? '#7C5CFC' : '#F59E0B' }} />
+                      </div>
+                      <p className="text-[9px] mt-0.5" style={{ color: '#9CA3AF' }}>{tip}</p>
                     </div>
                   ))}
                 </div>

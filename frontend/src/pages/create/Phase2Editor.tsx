@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ArrowLeft, Copy, Save, Calendar, Bold, Italic, Smile, Minus, List, ListOrdered,
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
-  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight,
+  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
@@ -80,6 +80,7 @@ export default function Phase2Editor({
 
   const [ariaInput, setAriaInput] = useState('');
   const [ariaRefining, setAriaRefining] = useState(false);
+  const [humanizing, setHumanizing] = useState(false);
 
   const [authScore, setAuthScore] = useState<AuthenticityScoreResult | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
@@ -212,6 +213,28 @@ export default function Phase2Editor({
       showToast('error', e.message || 'Refine failed — try again.');
     }
     setAriaRefining(false);
+  };
+
+  // ── 4-pass humanizer ─────────────────────────────────────────────────────
+
+  const handleHumanize = async () => {
+    if (!content.trim() || humanizing) return;
+    setHumanizing(true);
+    try {
+      const res = await apiFetch(`${API_URL}/api/humanize-post`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ postContent: content, userId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setContent(data.content);
+      checkedRef.current = false;
+      if (postId) await supabase.from('posts').update({ content: data.content }).eq('id', postId);
+      showToast('success', 'AI tells removed — post humanized.');
+    } catch (e: any) {
+      showToast('error', e.message || 'Humanize failed — try again.');
+    }
+    setHumanizing(false);
   };
 
   // ── Toolbar helpers ──────────────────────────────────────────────────────
@@ -519,7 +542,19 @@ export default function Phase2Editor({
 
           {/* Editor footer */}
           <div className="flex items-center justify-between gap-3 px-4 py-3 border-t flex-wrap" style={{ borderColor: '#EDE8FF' }}>
-            <span className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>{content.length} / 3,000</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>{content.length} / 3,000</span>
+              <button
+                onClick={handleHumanize}
+                disabled={humanizing || !content.trim()}
+                title="Remove AI tells — banned words, staccato stacks, reveal bridges, and more"
+                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full disabled:opacity-40 transition-opacity"
+                style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
+              >
+                <Wand2 size={10} />
+                {humanizing ? 'Humanizing…' : 'Humanize'}
+              </button>
+            </div>
             <div className="flex items-center gap-2 flex-1 max-w-md">
               <Sparkles size={14} style={{ color: '#7C5CFC', flexShrink: 0 }} />
               <input

@@ -1580,6 +1580,36 @@ Return ONLY valid JSON with this exact shape:
         return res.json({ ok: true });
       }
 
+      case 'humanize-post': {
+        const raw = String(body.postContent || '');
+        if (!raw.trim()) return res.status(422).json({ error: 'postContent is required' });
+
+        const msg = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2000,
+          system: `You are a post editor that removes every AI tell from LinkedIn posts. You apply four passes in your head before returning the result:
+
+PASS 1 — BANNED WORDS: Replace every occurrence of these words with a plain human alternative: delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative.
+
+PASS 2 — STRUCTURAL PATTERNS: Remove these AI-tell structures:
+- Staccato stacks ("No X. No Y. Just Z." → rewrite as one flowing sentence)
+- Reveal bridges ("The result?", "Here's the thing:", "It's not X, it's Y", "The truth?", "What happened next?" → delete or rewrite without the bridge)
+- Negative parallelism ("Not A. Not B. Not C." → rewrite as a positive statement)
+- -ing clause openers at sentence start ("Building trust takes time." → "Trust takes time to build.")
+- Announced candor ("I'll be honest", "Real talk:", "Let me be honest" → delete, just say the thing)
+- One-word paragraphs used for drama → merge with adjacent sentence
+
+PASS 3 — RHYTHM AND SPECIFICITY: Vary sentence lengths. If all sentences are similar length, break one long sentence into two or make one short sentence longer. If the post lacks a specific number or named entity, add one plausibly (e.g. a realistic percentage or a generic company type — never fabricate a fake named person or real company).
+
+PASS 4 — FINAL VERIFICATION: Ensure the post does NOT open with a question. If it does, restructure the opener as a statement.
+
+Return ONLY the cleaned post text. No explanation, no preamble, no quotes around it.`,
+          messages: [{ role: 'user', content: raw }],
+        });
+        const cleaned = msg.content[0].type === 'text' ? msg.content[0].text.trim() : raw;
+        return res.json({ content: cleaned });
+      }
+
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

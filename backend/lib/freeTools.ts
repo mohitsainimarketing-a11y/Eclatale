@@ -3,7 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { getWritingStyle, WRITING_STYLES, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction, TALK_LENGTH_OPTIONS } from './writingStyles';
 import { getDateContext } from './dateContext';
 
-const BANNED_WORDS = 'delve, leverage, synergy, transformative, game-changer';
+const BANNED_WORDS = 'delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative';
 // Anonymous ceiling for the public /tools pages. The homepage demo no longer
 // hits this endpoint at all (it is signup-gated), so this only governs /tools —
 // nine tools that exist to be sampled. At 1/hr a visitor who tried the hook

@@ -7,7 +7,7 @@
   "host_permissions": [
     "https://www.linkedin.com/*",
     "https://eclatale.com/*",
-    "https://backend-xi-olive-8eewk5s8qv.vercel.app/*"
+    "https://api.eclatale.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",

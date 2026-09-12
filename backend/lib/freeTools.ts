@@ -55,11 +55,20 @@ export async function logToolUsage(supabase: SupabaseClient, ip: string, tool: s
 export async function generateHooks(anthropic: Anthropic, topic: string, style: string): Promise<string[]> {
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 500,
+    max_tokens: 600,
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `Generate 5 LinkedIn hook lines for this topic: ${topic}. Style: ${style}. Each hook must be under 15 words, stop scrolling worthy, and follow this style perfectly. Never use: ${BANNED_WORDS}. Return ONLY a JSON array of 5 strings, no prose, no markdown fences.`,
+      content: `Generate 5 LinkedIn hook lines for this topic: "${topic}". Style requested: ${style}.
+
+Each hook must:
+- Be under 210 characters (before the "see more" fold)
+- Use one of these proven 2026 formulas for at least 3 of the 5: Number Opener (lead with a stat/%), Dollar/Revenue ($X later...), Result Reveal (went from A to B in X days), Contrarian (everyone says X, the data says otherwise), Nobody Told Me (nobody told me this when I started...), Process Reveal (here's exactly how I...)
+- NEVER open with a question — question-first hooks lose −34% median likes
+- NEVER use: ${BANNED_WORDS}
+- Feel like it was written by a specific human, not a machine
+
+Return ONLY a JSON array of 5 strings, no prose, no markdown fences.`,
     }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '[]';

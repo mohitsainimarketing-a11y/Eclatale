@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiFetch } from '../../lib/apiFetch';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
 interface PersonalBestHook { hookType: string; avgHookStrength: number; exampleHook: string; postCount: number; }
-interface HookTemplate { text: string; performanceBadge: string; }
-interface IndustryHookCategory { type: string; templates: HookTemplate[]; }
+interface HookTemplate { formulaId: string; formulaName: string; text: string; performanceBadge: string; liftLabel: string; }
 interface TrendingHook { hook: string; why: string; }
 interface HookLibraryResult {
   personalBest: PersonalBestHook[];
-  industryTemplates: IndustryHookCategory[];
+  formulaTemplates: HookTemplate[];
   trending: TrendingHook[];
 }
 
@@ -28,7 +27,10 @@ function BracketText({ text }: { text: string }) {
 }
 
 const BADGE_COLOR: Record<string, string> = {
-  'High reach': '#10B981', 'High comments': '#7C5CFC', 'High saves': '#F59E0B',
+  'High reach': '#10B981',
+  'High comments': '#7C5CFC',
+  'High saves': '#F59E0B',
+  'Balanced': '#6B7280',
 };
 
 interface Props {
@@ -42,6 +44,7 @@ export default function HookLibraryPanel({ userId, userRole, userDomain, onInser
   const [data, setData] = useState<HookLibraryResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -56,8 +59,12 @@ export default function HookLibraryPanel({ userId, userRole, userDomain, onInser
     }).catch(e => setError(e.message || "Couldn't load the hook library.")).finally(() => setLoading(false));
   }, [userId]);
 
+  const visibleFormulas = data
+    ? (showAll ? data.formulaTemplates : data.formulaTemplates.slice(0, 8))
+    : [];
+
   return (
-    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl z-20 modal-shadow w-[380px] max-h-[420px] overflow-y-auto p-3">
+    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl z-20 modal-shadow w-[420px] max-h-[480px] overflow-y-auto p-3">
       {loading && (
         <div className="space-y-2 p-2">
           <div className="skeleton h-3 w-full rounded" />
@@ -68,50 +75,74 @@ export default function HookLibraryPanel({ userId, userRole, userDomain, onInser
       {error && !loading && <p className="text-[12px] p-2" style={{ color: '#F72585' }}>{error}</p>}
       {data && !loading && (
         <div className="space-y-5">
+
           {/* Section 1: personal best */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide px-1 mb-2" style={{ color: '#9CA3AF' }}>Your best-performing hook patterns</p>
-            {data.personalBest.length === 0 ? (
-              <p className="text-[11px] px-1" style={{ color: '#9CA3AF' }}>Not enough post history yet — this fills in as you publish more.</p>
-            ) : (
+          {data.personalBest.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide px-1 mb-2" style={{ color: '#9CA3AF' }}>Your best-performing hook patterns</p>
               <div className="space-y-1.5">
                 {data.personalBest.map((p, i) => (
                   <button key={i} onClick={() => onInsert(p.exampleHook)} className="block w-full text-left px-2.5 py-2 rounded-lg hover:bg-[rgba(124,92,252,0.06)]">
                     <p className="text-[12px] font-semibold" style={{ color: '#1A1A2E' }}>
-                      Your {p.hookType} hooks average hook strength {p.avgHookStrength}/100 <span style={{ color: '#9CA3AF', fontWeight: 400 }}>({p.postCount} posts)</span>
+                      Your {p.hookType} hooks avg strength {p.avgHookStrength}/100{' '}
+                      <span style={{ color: '#9CA3AF', fontWeight: 400 }}>({p.postCount} posts)</span>
                     </p>
                     {p.exampleHook && <p className="text-[11px] mt-0.5 italic" style={{ color: '#6B7280' }}>"{p.exampleHook}"</p>}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Section 2: industry templates */}
+          {/* Section 2: 20 formula templates */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wide px-1 mb-2" style={{ color: '#9CA3AF' }}>
-              Proven hooks for {userRole || 'your role'}s in {userDomain || 'your industry'}
+              20 proven hook formulas · personalised for {userRole || 'your role'}s in {userDomain || 'your industry'}
             </p>
-            <div className="space-y-3">
-              {data.industryTemplates.map(cat => (
-                <div key={cat.type}>
-                  <p className="text-[10px] font-bold px-1 mb-1" style={{ color: '#7C5CFC' }}>{cat.type.toUpperCase()}</p>
-                  {cat.templates.map((t, i) => (
-                    <div key={i} className="flex items-start justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.04)] group">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] leading-snug"><BracketText text={t.text} /></p>
-                        <span className="inline-block text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded-full" style={{ background: `${BADGE_COLOR[t.performanceBadge]}1A`, color: BADGE_COLOR[t.performanceBadge] }}>
-                          {t.performanceBadge}
-                        </span>
-                      </div>
-                      <button onClick={() => onInsert(t.text)} className="text-[10px] font-bold flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#7C5CFC' }}>
-                        Use this →
-                      </button>
+            <div className="space-y-1">
+              {visibleFormulas.map(t => (
+                <div
+                  key={t.formulaId}
+                  className="flex items-start justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-[rgba(124,92,252,0.04)] group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[9px] font-mono font-bold px-1 py-0.5 rounded" style={{ background: '#F3F0FF', color: '#7C5CFC' }}>
+                        {t.formulaId}
+                      </span>
+                      <span className="text-[10px] font-semibold" style={{ color: '#374151' }}>{t.formulaName}</span>
+                      <span
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto"
+                        style={{ background: `${BADGE_COLOR[t.performanceBadge] || '#6B7280'}1A`, color: BADGE_COLOR[t.performanceBadge] || '#6B7280' }}
+                      >
+                        {t.liftLabel}
+                      </span>
                     </div>
-                  ))}
+                    <p className="text-[11px] leading-snug" style={{ color: '#4B5563' }}>
+                      <BracketText text={t.text} />
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onInsert(t.text)}
+                    className="text-[10px] font-bold flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1"
+                    style={{ color: '#7C5CFC' }}
+                  >
+                    Use →
+                  </button>
                 </div>
               ))}
             </div>
+
+            {data.formulaTemplates.length > 8 && (
+              <button
+                onClick={() => setShowAll(v => !v)}
+                className="flex items-center gap-1 mt-2 px-2.5 text-[11px] font-semibold"
+                style={{ color: '#7C5CFC' }}
+              >
+                {showAll ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                {showAll ? 'Show fewer' : `See all ${data.formulaTemplates.length} formulas`}
+              </button>
+            )}
           </div>
 
           {/* Section 3: trending */}
@@ -130,6 +161,7 @@ export default function HookLibraryPanel({ userId, userRole, userDomain, onInser
               </div>
             </div>
           )}
+
         </div>
       )}
     </div>

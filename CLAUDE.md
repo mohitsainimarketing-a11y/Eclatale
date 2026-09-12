@@ -25,17 +25,17 @@ Eclatale (eclatale.com) — AI personal brand growth OS for LinkedIn. Solo found
 - Phase 0 starting point picker (4 modes)
 - Free tools page /tools (9 tools)
 - Industry Pattern Intelligence
-- Hook Library
+- Hook Library with 20 proven formulas (F01–F20) + 2026 algorithm lift labels
 - Weekly Industry Briefing
-- Analytical dashboard
+- Analytical dashboard with 3-dimension brand score (Consistency/Quality/Voice)
 - Google OAuth (Google Identity Services)
 - Notification system
+- LinkedIn Insights dashboard (Chrome extension scraper + sync backend)
+- 4-pass humanizer (Humanize button in Phase2Editor)
+- UNIVERSAL_HUMAN_WRITING_RULES — 2026 algorithm data + 30+ banned words + structural anti-patterns
 
 ## Still needs fixing
-1. url.parse() in backend/api/intelligence.js → replace with new URL()
-2. Stripe webhook signature verification → raw body parser fix
-3. Three-dimension brand score full UI implementation
-4. Post-publish Phase 3 loop
+- None known
 
 ## Pending manual steps (Mohit only)
 - Supabase Site URL → https://eclatale.com

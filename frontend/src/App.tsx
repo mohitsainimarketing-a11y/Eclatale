@@ -32,6 +32,7 @@ const ExtensionAuth = lazy(() => import('./pages/ExtensionAuth'));
 const ToolsHub = lazy(() => import('./pages/tools/ToolsHub'));
 const ToolPage = lazy(() => import('./pages/tools/ToolPage'));
 const Discover = lazy(() => import('./pages/Discover'));
+const Resources = lazy(() => import('./pages/Resources'));
 
 function PageLoader() {
   return (
@@ -106,6 +107,7 @@ function App() {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/extension-auth" element={<ExtensionAuth />} />
+          <Route path="/resources" element={<Resources />} />
           <Route path="/tools" element={<ToolsHub />} />
           <Route path="/tools/:toolSlug" element={<ToolPage />} />
           <Route path="*" element={<NotFound />} />

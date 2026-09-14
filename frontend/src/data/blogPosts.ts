@@ -27,7 +27,7 @@ export const blogPosts: BlogPost[] = [
     readTime: '8 min read',
     keyword: 'LinkedIn content strategy founders',
     content: [
-      { type: 'p', text: 'If you\'re a founder in 2026 and you\'re not posting on LinkedIn, you\'re leaving one of the highest-leverage channels available to early-stage companies completely untouched. Investors check it before they take a call. Candidates check it before they accept an offer. Customers check it before they trust a cold outbound email. Your LinkedIn profile has quietly become your company\'s second homepage — and for many buyers, it\'s the one they actually read.' },
+      { type: 'p', text: 'If you\'re a founder in 2026 and you\'re not posting on LinkedIn, you\'re leaving one of the highest-return channels available to early-stage companies completely untouched. Investors check it before they take a call. Candidates check it before they accept an offer. Customers check it before they trust a cold outbound email. Your LinkedIn profile has quietly become your company\'s second homepage — and for many buyers, it\'s the one they actually read.' },
       { type: 'h2', text: 'Why founders specifically need a LinkedIn content strategy' },
       { type: 'p', text: 'A company page has almost no reach. LinkedIn\'s algorithm heavily favors personal profiles because people trust people, not logos. When a founder posts consistently, that content routinely reaches 10-50x further than the same message posted from the company account. That reach compounds: every post that performs well introduces your name to a slice of your target market who would never have found your company page organically.' },
       { type: 'p', text: 'There\'s also a trust dimension that\'s easy to underestimate. Founder content lets prospects, investors, and hires get a read on how you think before they ever get on a call with you. It pre-sells your judgment. A thoughtful post about a hard decision you made last quarter does more to build credibility than a polished case study, because it\'s unscripted and specific.' },
@@ -171,7 +171,7 @@ export const blogPosts: BlogPost[] = [
         'A metric you were chasing that turned out to be the wrong one',
         'The first time a customer told you something you didn\'t want to hear — and what changed after',
         'A tool or process you abandoned after investing heavily in it',
-        'A negotiation you lost and what you learned about your own leverage',
+        'A negotiation you lost and what you learned about your own bargaining position',
         'A piece of advice you followed that turned out to be wrong for your situation',
         'The most expensive mistake you\'ve made in your career, in dollar terms',
         'A time you were overconfident and it cost you',
@@ -782,7 +782,7 @@ export const blogPosts: BlogPost[] = [
     readTime: '9 min read',
     keyword: 'LinkedIn for SaaS founders',
     content: [
-      { type: 'p', text: 'LinkedIn is the highest-leverage growth channel most SaaS founders ignore. It reaches the exact people who buy your product, back your company, join your team, and write about your space — and it does this organically, without ad spend, in a format where personal credibility compounds over time instead of resetting with every campaign. A SaaS founder who posts consistently and specifically for 12 months builds something that can\'t be bought: a reputation.' },
+      { type: 'p', text: 'LinkedIn is the highest-return growth channel most SaaS founders ignore. It reaches the exact people who buy your product, back your company, join your team, and write about your space — and it does this organically, without ad spend, in a format where personal credibility compounds over time instead of resetting with every campaign. A SaaS founder who posts consistently and specifically for 12 months builds something that can\'t be bought: a reputation.' },
       { type: 'h2', text: 'What LinkedIn actually moves for SaaS companies' },
       { type: 'p', text: 'Before building a system, it\'s worth being specific about what founder LinkedIn content actually produces. The categories that show up repeatedly across early-stage SaaS companies:' },
       { type: 'ul', items: [
@@ -842,7 +842,7 @@ export const blogPosts: BlogPost[] = [
       { type: 'p', text: 'The referral engine accelerates when you post about the specific type of client you want more of. A post titled "The three situations where a fractional CFO engagement actually pays for itself" reaches your existing network and helps them identify which of their contacts they should introduce you to.' },
       { type: 'h2', text: 'The profile that converts LinkedIn visitors to conversations' },
       { type: 'p', text: 'When LinkedIn content works, people click your profile. The profile then either converts them to a conversation or loses them. The elements that matter most: a headline that names the specific problem you solve (not your job title), an About section that reads as if you\'re talking to a potential client (not a recruiter), and a Featured section showing the kind of work you actually want to do more of.' },
-      { type: 'p', text: 'One tactical addition that significantly increases conversion: a single, specific, low-friction CTA at the end of your About section. Not "let\'s connect" but "If this sounds like your situation, a 30-minute call is usually enough to know if there\'s a fit. [Calendly link]." This works because potential clients who have read three posts and then your profile are already pre-sold — they just need a clear next step.' },
+      { type: 'p', text: 'One tactical addition that measurably lifts conversion: a single, specific, low-friction CTA at the end of your About section. Not "let\'s connect" but "If this sounds like your situation, a 30-minute call is usually enough to know if there\'s a fit. [Calendly link]." This works because potential clients who have read three posts and then your profile are already pre-sold — they just need a clear next step.' },
       { type: 'h2', text: 'The sustainable system for busy consultants' },
       { type: 'p', text: 'The consultants who maintain a consistent LinkedIn presence do it by capturing ideas during client work rather than scheduling separate "content creation time." A specific observation from a client meeting, an insight from a diagnosis session, a question that came up in a workshop — any of these is a post. Voice memo it immediately. The raw material is already being generated every week; the system just needs to capture it before it disappears.' },
     ],

@@ -812,7 +812,7 @@ export default function Landing() {
             </div>
           </div>
           <p className="text-center text-xl md:text-3xl font-extrabold text-brand-dark leading-snug max-w-2xl mx-auto">
-            This isn't a scheduler. This isn't a template library.<br className="hidden sm:block" /> This is the AI that learns <span className="gradient-text">you</span>.
+            The AI that learns how you write and builds your brand —<br className="hidden sm:block" /> not from a template, but from <span className="gradient-text">you</span>.
           </p>
         </div>
       </section>

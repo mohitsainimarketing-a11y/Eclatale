@@ -593,6 +593,7 @@ export default function Landing() {
             <a href="#features" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Features</a>
             <a href="/pricing" onClick={handleViewPricing} className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Pricing</a>
             <a href="/blog" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Blog</a>
+            <a href="/resources" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Resources</a>
             <a href="#faq" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">FAQ</a>
             <a href="/login" className="text-sm font-medium text-brand-muted hover:text-brand-purple hover:underline transition-colors">Sign In</a>
             <a href="/signup" onClick={handleStartFree} className="btn-primary text-sm !py-2.5 !px-6">Start Free</a>
@@ -606,6 +607,7 @@ export default function Landing() {
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">Features</a>
             <a href="/pricing" onClick={() => { setMobileMenuOpen(false); handleViewPricing(); }} className="block py-3 text-sm font-medium text-brand-muted">Pricing</a>
             <a href="/blog" className="block py-3 text-sm font-medium text-brand-muted">Blog</a>
+            <a href="/resources" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">Resources</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">FAQ</a>
             <a href="/login" className="block py-3 text-sm font-medium text-brand-muted">Sign In</a>
             <a href="/signup" onClick={handleStartFree} className="btn-primary text-sm w-full text-center mt-2">Start Free</a>
@@ -946,6 +948,7 @@ export default function Landing() {
               <a href="/blog" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Blog</a>
               <a href="/pricing" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Pricing</a>
               <a href="/tools" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Free Tools</a>
+              <a href="/resources" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Resources</a>
               <a href="/privacy" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Privacy</a>
               <a href="/terms" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Terms</a>
               <a href="/refund-policy" className="text-sm text-brand-muted hover:text-brand-purple transition-colors">Refund Policy</a>

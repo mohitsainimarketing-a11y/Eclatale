@@ -192,7 +192,7 @@ function RepurposeDrawer({ item, onClose }: { item: DiscoveredItem; onClose: () 
         </div>
 
         <p className="text-[13px] text-brand-muted mb-4 leading-relaxed">
-          Choose a style and we'll fetch the article, extract its key insights, and write a LinkedIn post in your voice.
+          Choose a style and we'll fetch the article, pull the key ideas, and write a LinkedIn post in your voice.
         </p>
 
         <div className="grid grid-cols-2 gap-2 mb-4">

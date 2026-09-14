@@ -99,7 +99,7 @@ export default function Phase3Publish({
               />
             </div>
             <p className="text-[11px] mt-2" style={{ color: '#9CA3AF' }}>
-              {Math.max(0, primaryCriterion.target - primaryCriterion.current)} more posts to unlock {nextStageMeta.label} · {tipFor(primaryCriterion.label)}
+              {Math.max(0, primaryCriterion.target - primaryCriterion.current)} more posts to reach {nextStageMeta.label} · {tipFor(primaryCriterion.label)}
             </p>
           </div>
         )}

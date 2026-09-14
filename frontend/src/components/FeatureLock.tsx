@@ -27,7 +27,7 @@ export default function FeatureLock({ feature, children, description }: FeatureL
         </div>
         <div className="absolute top-3 right-3">
           <a href="/pricing" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[rgba(124,92,252,0.2)] text-[11px] font-bold text-brand-purple shadow-sm hover:shadow-md transition-all">
-            <Lock size={11} /> Unlock with Individual
+            <Lock size={11} /> Available on Individual
           </a>
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function FeatureLock({ feature, children, description }: FeatureL
             <Lock size={20} className="text-brand-purple" />
           </div>
           <p className="text-xs font-bold uppercase tracking-wide text-brand-purple mb-1">Individual Plan</p>
-          <h3 className="text-base font-extrabold text-brand-dark mb-2">Unlock {label}</h3>
+          <h3 className="text-base font-extrabold text-brand-dark mb-2">Get {label}</h3>
           <p className="text-sm text-brand-muted mb-4">
             {description || `${label} is available on the Individual plan.`}
           </p>

@@ -193,14 +193,14 @@ export default function Onboarding() {
                   Connect LinkedIn
                 </div>
                 <h2 className="h2 text-brand-dark mb-2">Connect your <span className="gradient-text">LinkedIn</span></h2>
-                <p className="body-text text-sm">Unlock your growth score, track followers, and publish posts directly.</p>
+                <p className="body-text text-sm">Access your growth score, track followers, and publish posts directly.</p>
               </div>
               <div className="card p-6 md:p-7 flex flex-col items-center gap-5">
                 <div className="w-14 h-14 rounded-2xl bg-[rgba(10,102,194,0.08)] flex items-center justify-center">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45Z"/></svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-brand-dark mb-1">What you unlock:</p>
+                  <p className="text-sm font-semibold text-brand-dark mb-1">What you get:</p>
                   <ul className="text-xs text-brand-muted space-y-1 mt-2">
                     <li className="flex items-center gap-2"><Check size={12} className="text-brand-teal flex-shrink-0" /> Real follower count as your Growth Score</li>
                     <li className="flex items-center gap-2"><Check size={12} className="text-brand-teal flex-shrink-0" /> One-click post publishing to LinkedIn</li>

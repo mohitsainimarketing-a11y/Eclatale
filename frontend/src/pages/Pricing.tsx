@@ -28,7 +28,7 @@ const INDIVIDUAL_FEATURES = [
   'Visual creator',
   'Weekly growth digest',
   'Post scheduling',
-  'Full content history & writing insights',
+  'Full content history & writing patterns',
 ];
 
 const COMPARISON_ROWS: { label: string; free: string | boolean; individual: string | boolean }[] = [
@@ -46,7 +46,7 @@ const COMPARISON_ROWS: { label: string; free: string | boolean; individual: stri
   { label: 'Weekly digest', free: false, individual: true },
   { label: 'Post scheduling', free: false, individual: true },
   { label: 'Content history', free: 'Last 10', individual: 'Unlimited' },
-  { label: 'Writing insights', free: false, individual: true },
+  { label: 'Writing patterns', free: false, individual: true },
   { label: 'Analytics page', free: false, individual: true },
 ];
 

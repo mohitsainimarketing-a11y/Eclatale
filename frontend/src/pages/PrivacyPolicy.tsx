@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="How we use it">
-          <p>To generate AI content tailored to your voice and role, to personalize recommendations (best time to post, competitor insights, growth score), to send transactional and opted-in marketing emails, and to process subscription billing.</p>
+          <p>To generate AI content tailored to your voice and role, to personalize recommendations (best time to post, competitor data, growth score), to send transactional and opted-in marketing emails, and to process subscription billing.</p>
           <p>We do not sell your personal data to third parties.</p>
         </Section>
 

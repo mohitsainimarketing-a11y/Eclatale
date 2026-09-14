@@ -198,7 +198,7 @@ export default function BlogPost() {
         </div>
 
         <div className="mt-14 card p-8 md:p-10 text-center bg-brand-bg">
-          <h3 className="text-lg md:text-xl font-bold text-brand-dark mb-2">Enjoyed this? Get weekly LinkedIn growth insights</h3>
+          <h3 className="text-lg md:text-xl font-bold text-brand-dark mb-2">Enjoyed this? Get weekly LinkedIn growth tips</h3>
           <p className="text-sm text-brand-muted mb-6 max-w-sm mx-auto">Practical tips like this, straight to your inbox — no fluff, unsubscribe anytime.</p>
           <div className="flex justify-center">
             <NewsletterSignup label="" />

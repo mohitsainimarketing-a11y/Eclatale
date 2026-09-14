@@ -385,7 +385,7 @@ type Tab = 'competitor' | 'profile';
 
 export default function Intelligence() {
   return (
-    <FeatureLock feature="competitorIntelligence" description="AI-curated competitor insights and profile optimization are part of the Individual plan.">
+    <FeatureLock feature="competitorIntelligence" description="AI-curated competitor data and profile optimization are part of the Individual plan.">
       <IntelligenceInner />
     </FeatureLock>
   );
@@ -417,7 +417,7 @@ function IntelligenceInner() {
         <div className="max-w-5xl mx-auto px-5 md:px-8 py-6 md:py-8">
           <div className="mb-6">
             <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Intelligence</h1>
-            <p className="text-sm text-brand-muted mt-1">AI-powered insights to grow your LinkedIn presence.</p>
+            <p className="text-sm text-brand-muted mt-1">AI-powered analysis to grow your LinkedIn presence.</p>
           </div>
 
           {/* Tabs */}

@@ -135,7 +135,7 @@ export function featureLockedResponse(feature: string) {
     feature,
     requiredTier: 'individual',
     upgradeUrl: 'https://eclatale.com/pricing',
-    message: 'Upgrade to Individual to unlock this feature',
+    message: 'Upgrade to Individual to access this feature',
   };
 }
 

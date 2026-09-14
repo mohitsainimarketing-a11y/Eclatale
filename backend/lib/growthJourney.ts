@@ -144,7 +144,7 @@ export async function calculateStage(supabase: SupabaseClient, userId: string): 
     await createNotification(
       supabase, userId, `growth_stage_${stage}`,
       `You've reached ${stage.charAt(0).toUpperCase() + stage.slice(1)}!`,
-      `Your consistency is paying off — you've unlocked the ${stage} stage of your brand journey.`,
+      `Your consistency is paying off — you've reached the ${stage} stage of your brand journey.`,
       { text: 'View my journey', url: 'https://eclatale.com/dashboard' }
     );
   }

@@ -847,7 +847,7 @@ export default function Settings() {
                 )}
                 {patterns && !patterns.ready && personaCompleted && (
                   <div className="card p-6 mt-6 text-center">
-                    <p className="text-sm text-brand-muted">Not enough data yet. {patterns.postsAnalyzed || 0}/3 posts analyzed. Generate {Math.max(0, 3 - (patterns.postsAnalyzed || 0))} more to unlock your writing patterns.</p>
+                    <p className="text-sm text-brand-muted">Not enough data yet. {patterns.postsAnalyzed || 0}/3 posts analyzed. Generate {Math.max(0, 3 - (patterns.postsAnalyzed || 0))} more to see your writing patterns.</p>
                   </div>
                 )}
 
@@ -1051,7 +1051,7 @@ export default function Settings() {
                   <button disabled className="btn-ghost text-sm opacity-50 cursor-not-allowed">
                     <Key size={14} /> Generate API Key
                   </button>
-                  <p className="text-[11px] text-brand-muted mt-2">Available on the Pro plan. Upgrade to unlock API access.</p>
+                  <p className="text-[11px] text-brand-muted mt-2">Available on the Pro plan. Upgrade to get API access.</p>
                 </div>
               </div>
             )}

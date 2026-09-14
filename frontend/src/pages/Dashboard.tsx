@@ -387,7 +387,7 @@ export default function Dashboard() {
               {journey?.nextStage && (
                 <p className="text-xs text-brand-muted">
                   {journey.criteria.filter(c => !c.done).length === 0
-                    ? `Ready to unlock ${STAGE_LABELS[journey.nextStage]}`
+                    ? `Ready to reach ${STAGE_LABELS[journey.nextStage]}`
                     : `${journey.criteria.find(c => !c.done)?.current ?? 0} of ${journey.criteria.find(c => !c.done)?.target ?? 0} to ${STAGE_LABELS[journey.nextStage]}`}
                 </p>
               )}
@@ -751,7 +751,7 @@ export default function Dashboard() {
               <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold mb-1">You've used {overview.postsThisWeek}/{weeklyGoal} free posts this week</p>
-                  <h3 className="text-lg font-extrabold">Unlock unlimited posts, AI persona learning, competitor intelligence, and more</h3>
+                  <h3 className="text-lg font-extrabold">Get unlimited posts, AI persona learning, competitor intelligence, and more</h3>
                 </div>
                 <span className="inline-block bg-white text-brand-purple font-bold text-sm px-5 py-2.5 rounded-full group-hover:scale-105 transition-transform whitespace-nowrap">
                   Upgrade — $19/mo · LAUNCH50 for 50% off

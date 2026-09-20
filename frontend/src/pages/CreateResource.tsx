@@ -51,6 +51,19 @@ export default function CreateResource() {
     });
   }, []);
 
+  // Text selected on another site via the Eclatale extension's "Repurpose with
+  // Eclatale" button or right-click menu arrives here as ?text=...&truncated=1.
+  useEffect(() => {
+    if (!userId) return;
+    const params = new URLSearchParams(window.location.search);
+    const text = params.get('text');
+    if (!text) return;
+    window.history.replaceState({}, '', '/create/resource');
+    const truncated = params.get('truncated') === '1';
+    analyzeAndAdd(truncated ? 'Selected text (truncated to 2000 characters)' : 'Selected text', text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
   const analyzeAndAdd = async (label: string, text: string, pageCount?: number) => {
     setProcessing(label);
     setError('');

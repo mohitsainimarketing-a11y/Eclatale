@@ -24,7 +24,7 @@ function ShareButtons({ title, url }: { title: string; url: string }) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* clipboard unavailable — ignore */ }
+    } catch { /* clipboard unavailable, ignore */ }
   };
 
   return (
@@ -189,7 +189,7 @@ export default function BlogPost() {
               Ready to grow your LinkedIn?
             </h3>
             <p className="text-white/80 mb-6 text-sm md:text-base">
-              Start free on Eclatale — no credit card required.
+              Start free on Eclatale. No credit card required.
             </p>
             <a href="/signup" className="inline-flex items-center gap-2 bg-white text-brand-purple font-semibold px-7 py-3.5 rounded-full hover:bg-brand-bg transition-all shadow-brand-lg text-sm">
               Start Free <ArrowRight size={16} />
@@ -199,7 +199,7 @@ export default function BlogPost() {
 
         <div className="mt-14 card p-8 md:p-10 text-center bg-brand-bg">
           <h3 className="text-lg md:text-xl font-bold text-brand-dark mb-2">Enjoyed this? Get weekly LinkedIn growth tips</h3>
-          <p className="text-sm text-brand-muted mb-6 max-w-sm mx-auto">Practical tips like this, straight to your inbox — no fluff, unsubscribe anytime.</p>
+          <p className="text-sm text-brand-muted mb-6 max-w-sm mx-auto">Practical tips like this, straight to your inbox. No fluff, unsubscribe anytime.</p>
           <div className="flex justify-center">
             <NewsletterSignup label="" />
           </div>

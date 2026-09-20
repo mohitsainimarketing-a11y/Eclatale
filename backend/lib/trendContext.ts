@@ -44,7 +44,7 @@ async function writeTrendCache(supabase: SupabaseClient, domain: string, role: s
 /**
  * Fetches (or reuses a ≤6h cached) list of 3-5 currently trending angles for a
  * domain, via Claude web search. Cached per-domain (not per-user) since trends
- * are shared across everyone in the same industry — this is a distinct cache
+ * are shared across everyone in the same industry. This is a distinct cache
  * table from intelligence_cache because that one is keyed per-user.
  * Never throws: search/parse failures degrade to an empty trend list so a
  * content-generation call never fails because trend lookup failed.
@@ -58,7 +58,7 @@ export async function getTrendContext(anthropic: Anthropic, supabase: SupabaseCl
   const year = now.getFullYear();
 
   // Bounded so a slow/cold web search can never block content generation
-  // indefinitely — worst case, the caller proceeds without live trend context.
+  // indefinitely. Worst case, the caller proceeds without live trend context.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {

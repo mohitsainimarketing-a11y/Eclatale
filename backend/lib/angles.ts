@@ -5,7 +5,7 @@ import { readCache, writeCache } from './intelligenceCache';
 import { computeTrustScore, extractDomain } from './webResearch';
 import { UNIVERSAL_HUMAN_WRITING_RULES } from './writingStyles';
 
-// Fixed visual metadata per angle style — kept server-side (not model-generated)
+// Fixed visual metadata per angle style, kept server-side (not model-generated)
 // so every card renders with exact design-system colors instead of hoping
 // Claude picks matching hex values. `writingStyleId` maps to WRITING_STYLES
 // (writingStyles.ts) so /api/generate can reuse the same style prompt later.
@@ -50,8 +50,8 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
 Use web search to find 2-3 trending topics in ${industry} right now (last 7 days).
 
 For each angle:
-- Write a compelling hook (2-3 sentences) — the actual opening of the post
-- The hook must reference something genuinely current — never reference anything from 2022-2024 as if it were recent
+- Write a compelling hook (2-3 sentences). This is the actual opening of the post
+- The hook must reference something genuinely current. Never reference anything from 2022-2024 as if it were recent
 - Assign a style from exactly these 6 (use this exact casing): Contrarian, Storyteller, Data-driven, Insider, Teacher, Motivator
 - Write one sentence explaining why this works for a ${role} in ${industry} (mention their specific role)
 - Add a realistic performance stat specific to the style type (e.g. "2.4x more comments")
@@ -91,7 +91,7 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
         content: `Generate 4 distinct LinkedIn post angles for a ${role} in ${industry}.
 
 For each angle:
-- Write a compelling hook (2-3 sentences) — the actual opening of the post
+- Write a compelling hook (2-3 sentences). This is the actual opening of the post
 - Assign a style from exactly these 6 (use exact casing): Contrarian, Storyteller, Data-driven, Insider, Teacher, Motivator
 - Write one sentence explaining why this works for a ${role} in ${industry}
 - Add a realistic performance stat (e.g. "2.4x more comments")
@@ -140,7 +140,7 @@ Return ONLY valid JSON (no prose, no markdown fences):
     };
   }).sort((a, b) => b.trustScore - a.trustScore);
 
-  // Don't cache empty results — forces fresh generation on next load
+  // Don't cache empty results, so this forces fresh generation on next load
   const payload = { angles, sources, role, industry, generatedAt: new Date().toISOString(), cached: false };
   if (angles.length > 0) {
     await writeCache(supabase, userId, 'angles', { angles, sources, role, industry });

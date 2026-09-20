@@ -1,10 +1,10 @@
 // Runs only on linkedin.com. Injects a floating Aria button + slide-in
 // sidebar. This script NEVER reads LinkedIn page content, DOM, or
-// cookies — it only looks at window.location to classify which kind of
+// cookies. It only looks at window.location to classify which kind of
 // page the user is on (feed / a post / a profile / a company page), so
 // the sidebar can show relevant copy. All real data (stats, ideas) comes
 // from Eclatale's own API, authenticated with the Eclatale token stored
-// by the extension — never from LinkedIn itself.
+// by the extension, never from LinkedIn itself.
 
 (function () {
   if (window.top !== window.self) return; // don't inject into LinkedIn's iframes

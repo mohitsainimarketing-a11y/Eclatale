@@ -1,4 +1,4 @@
-// Google Identity Services (GIS) — lets "Continue with Google" run entirely
+// Google Identity Services (GIS). Lets "Continue with Google" run entirely
 // from our own page (eclatale.com) instead of redirecting through Supabase's
 // hosted /auth/v1/authorize endpoint, which is what put "supabase.co" in
 // front of users on the Google consent screen. GIS gives us an ID token
@@ -29,7 +29,7 @@ export function loadGoogleIdentityScript(): Promise<void> {
 
 // Supabase's signInWithIdToken flow wants the RAW nonce (to verify against
 // the ID token's nonce claim), but Google's client library wants the
-// SHA-256 hash of it — see https://supabase.com/docs/guides/auth/social-login/auth-google#authentication-flow.
+// SHA-256 hash of it. See https://supabase.com/docs/guides/auth/social-login/auth-google#authentication-flow.
 export async function generateNonce(): Promise<{ nonce: string; hashedNonce: string }> {
   const randomBytes = Array.from(crypto.getRandomValues(new Uint8Array(32)));
   const nonce = btoa(String.fromCharCode(...randomBytes));

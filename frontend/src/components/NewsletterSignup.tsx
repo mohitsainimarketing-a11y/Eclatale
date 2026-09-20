@@ -35,7 +35,7 @@ export default function NewsletterSignup({ className = '', label = 'Get weekly L
   if (status === 'success') {
     return (
       <div className={`flex items-center gap-2 text-sm font-semibold text-brand-teal ${className}`}>
-        <Check size={16} /> You're subscribed — check your inbox!
+        <Check size={16} /> You're subscribed. Check your inbox!
       </div>
     );
   }
@@ -56,7 +56,7 @@ export default function NewsletterSignup({ className = '', label = 'Get weekly L
           {status === 'loading' ? '...' : 'Subscribe'}
         </button>
       </div>
-      {status === 'error' && <p className="text-xs text-red-500 mt-1.5">Something went wrong — please try again.</p>}
+      {status === 'error' && <p className="text-xs text-red-500 mt-1.5">Something went wrong. Please try again.</p>}
     </form>
   );
 }

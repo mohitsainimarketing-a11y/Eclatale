@@ -58,7 +58,7 @@ export default function ViralScoreChecker() {
       <label className="text-xs font-bold text-brand-muted uppercase tracking-wide">Paste your LinkedIn post</label>
       <textarea value={post} onChange={e => setPost(e.target.value)} placeholder="Paste your full post here..." rows={8} className="input mt-2 mb-2 resize-none" />
       {cutoffIdx !== -1 && (
-        <p className="text-xs text-brand-muted mb-3">"See more" cutoff hits at character 210 — {post.slice(0, 40)}... <span className="text-brand-purple font-semibold">| cutoff here</span></p>
+        <p className="text-xs text-brand-muted mb-3">"See more" cutoff hits at character 210 · {post.slice(0, 40)}... <span className="text-brand-purple font-semibold">| cutoff here</span></p>
       )}
       <button onClick={handleAnalyze} disabled={loading || !post.trim()} className="btn-primary w-full sm:w-auto mt-3">
         {loading ? 'Analyzing...' : 'Check viral score'}

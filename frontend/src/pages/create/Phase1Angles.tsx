@@ -137,7 +137,7 @@ export default function Phase1Angles({
               </span>
             </h1>
             <p className="text-[13px] mt-1.5" style={{ color: '#6B7280' }}>
-              Pick an angle that resonates — each one shows why it works for your audience.
+              Pick an angle that resonates. Each one shows why it works for your audience.
             </p>
           </div>
           <button
@@ -175,7 +175,7 @@ export default function Phase1Angles({
         )}
         {!loading && styleFilter && filteredAngles === angles && (
           <p className="text-center text-[11px] max-w-3xl mx-auto -mt-2 mb-2" style={{ color: '#9CA3AF' }}>
-            No {styleFilter} angles right now — showing all styles instead.
+            No {styleFilter} angles right now. Showing all styles instead.
           </p>
         )}
 
@@ -190,7 +190,7 @@ export default function Phase1Angles({
               type="text"
               value={customInput}
               onChange={e => onCustomInputChange(e.target.value)}
-              placeholder="Or describe what's on your mind — a reaction, a question you keep getting asked, something that happened..."
+              placeholder="Or describe what's on your mind: a reaction, a question you keep getting asked, something that happened..."
               className="flex-1 min-w-0 text-[13px] bg-transparent outline-none"
               style={{ color: '#1A1A2E' }}
             />

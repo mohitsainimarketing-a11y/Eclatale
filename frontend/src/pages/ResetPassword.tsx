@@ -33,7 +33,7 @@ export default function ResetPassword() {
 
   useEffect(() => {
     // Supabase redirects expired/already-used links back with
-    // #error=access_denied&error_code=otp_expired&error_description=... —
+    // #error=access_denied&error_code=otp_expired&error_description=...,
     // most commonly caused by an email client's link-scanner pre-fetching
     // (and consuming) the one-time-use token before the user clicks it.
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));

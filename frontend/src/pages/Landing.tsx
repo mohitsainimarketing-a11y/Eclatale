@@ -18,7 +18,7 @@ const supabase = createClient(
 );
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
-// Empty until the Google Cloud OAuth client lists eclatale.com as an origin —
+// Empty until the Google Cloud OAuth client lists eclatale.com as an origin,
 // the modal then falls back to the Supabase-hosted redirect flow.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
@@ -355,7 +355,7 @@ function LiveDemo() {
 
   // Signup-gated by design: an anonymous visitor never triggers a Claude call.
   // The topic is handed to /create, which writes the post once the account
-  // exists — so the API spend always maps to a real, rate-limited user.
+  // exists, so the API spend always maps to a real, rate-limited user.
   const handleGenerate = () => {
     if (!selectedTopic.trim()) return;
     trackEvent('homepage_demo_generate', { topic: selectedTopic });
@@ -413,7 +413,7 @@ function LiveDemo() {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Your name (optional — shows in preview)"
+              placeholder="Your name (optional, shows in preview)"
               className="input !text-sm !py-2.5"
             />
 
@@ -422,7 +422,7 @@ function LiveDemo() {
               disabled={!selectedTopic.trim()}
               className="btn-primary w-full justify-center !py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed mt-auto"
             >
-              <Sparkles size={14} /> Generate — Free
+              <Sparkles size={14} /> Generate for Free
             </button>
             <p className="text-[10px] text-brand-muted text-center -mt-1">Free account · 3 posts every week · No card</p>
           </div>
@@ -458,7 +458,7 @@ function LiveDemo() {
                     </div>
                   </div>
 
-                  {/* Locked teaser. Deliberately not real output — the post is
+                  {/* Locked teaser. Deliberately not real output. The post is
                       written after signup so no Claude call is spent on an
                       anonymous visitor. aria-hidden: it's decorative filler. */}
                   <div className="px-4 pb-3 flex-1 relative overflow-hidden">
@@ -488,7 +488,7 @@ function LiveDemo() {
                   </div>
                   <div className="px-4 py-3 border-t border-[rgba(124,92,252,0.08)] bg-[rgba(124,92,252,0.02)]">
                     <button onClick={handleGenerate} className="w-full btn-primary justify-center text-xs !py-2">
-                      <Sparkles size={12} /> Write My Post — Free
+                      <Sparkles size={12} /> Write My Post for Free
                     </button>
                   </div>
                 </>
@@ -523,30 +523,30 @@ export default function Landing() {
   const handleViewPricing = () => trackEvent('view_pricing');
 
   const features = [
-    { icon: <AudioWaveform size={24} />, title: 'Learns Your Voice', desc: 'Feed Eclatale a few writing samples. Tell it your communication style. The more you use it, the more it sounds like the real you — not a polished, corporate, forgettable version of you.' },
+    { icon: <AudioWaveform size={24} />, title: 'Learns Your Voice', desc: 'Feed Eclatale a few writing samples. Tell it your communication style. The more you use it, the more it sounds like the real you, not a polished, corporate, forgettable version of you.' },
     { icon: <Sparkles size={24} />, title: 'Smart Content Engine', desc: 'Two ways to create. Auto-generate from a topic in seconds, or bring your own idea and let Eclatale shape it into something worth reading. You control how much AI helps.' },
     { icon: <ShieldCheck size={24} />, title: 'Confidence Score Before You Post', desc: 'Before every post goes live, Eclatale checks it. Factual accuracy. Topic freshness. Voice consistency. You see a score, specific suggestions, and supporting references. Post with evidence, not hope.' },
-    { icon: <LineChart size={24} />, title: 'Real Growth Intelligence', desc: 'Track what actually matters — not vanity metrics, but patterns. Which hooks work for you. Which topics resonate. Which times drive real engagement. Intelligence that makes your next post better than your last.' },
+    { icon: <LineChart size={24} />, title: 'Real Growth Intelligence', desc: 'Track what actually matters. Not vanity metrics, but patterns. Which hooks work for you. Which topics resonate. Which times drive real engagement. Intelligence that makes your next post better than your last.' },
     { icon: <Layers size={24} />, title: 'One Post, Every Platform', desc: "Write once. Eclatale adapts it for LinkedIn, Twitter, Instagram, and more. Each version tuned for that platform's style, character limit, and audience expectation." },
     { icon: <TrendingUp size={24} />, title: 'Your Brand, Compounding', desc: 'Thirty days from now, Eclatale will know you better than any tool you\'ve ever used. Sixty days in, your content will feel effortless. This is what compounding looks like for personal brands.' },
   ];
 
 
   const faqs = [
-    { q: 'What exactly does Eclatale do?', a: 'Eclatale is a personal brand growth engine. It learns your authentic voice, checks every post for accuracy and freshness before you publish, and tracks the real career outcomes that matter — not vanity metrics — as part of a strategy built around your goals.' },
+    { q: 'What exactly does Eclatale do?', a: 'Eclatale is a personal brand growth engine. It learns your authentic voice, checks every post for accuracy and freshness before you publish, and tracks the real career outcomes that matter (not vanity metrics) as part of a strategy built around your goals.' },
     { q: 'Will the content sound like me?', a: 'Yes. Our AI analyzes your writing style, industry expertise, and personality to generate content that sounds authentically you. Every post is unique to your voice.' },
     { q: 'Is Eclatale safe for my LinkedIn account?', a: "Yes. Eclatale publishes exclusively through LinkedIn's official API, so your account stays fully compliant with zero risk of automation-related bans." },
     { q: 'Is there a free plan?', a: 'Yes! The free plan gives you 3 AI-generated LinkedIn posts per week with no credit card required. Upgrade to Individual for unlimited posts and the full growth toolkit.' },
     { q: 'Does the 7-day trial require a credit card?', a: 'No. The 7-day Individual trial starts without a card. Payment details are only requested after the trial ends and only if you choose to continue.' },
-    { q: 'How quickly will I see results?', a: 'Most users see engagement increase within 2–3 weeks of consistent posting. Personal brand growth compounds — the earlier and more consistently you post, the faster it builds.' },
-    { q: 'Does it work for non-English speakers?', a: 'Eclatale is currently optimized for English. Support for other languages is coming soon — join the waitlist from Settings and we\'ll let you know when yours is ready.' },
-    { q: 'Can I use Eclatale for my company LinkedIn page?', a: 'The Individual plan covers personal profiles. Company page support is coming in our upcoming SMB plan — reach out if you want early access.' },
+    { q: 'How quickly will I see results?', a: 'Most users see engagement increase within 2 to 3 weeks of consistent posting. Personal brand growth compounds. The earlier and more consistently you post, the faster it builds.' },
+    { q: 'Does it work for non-English speakers?', a: 'Eclatale is currently optimized for English. Support for other languages is coming soon. Join the waitlist from Settings and we\'ll let you know when yours is ready.' },
+    { q: 'Can I use Eclatale for my company LinkedIn page?', a: 'The Individual plan covers personal profiles. Company page support is coming in our upcoming SMB plan. Reach out if you want early access.' },
   ];
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <Seo
-        title="Eclatale — AI Personal Brand Growth OS for LinkedIn"
+        title="Eclatale: AI Personal Brand Growth OS for LinkedIn"
         description="Eclatale uses AI to learn your authentic voice and generate LinkedIn content that sounds exactly like you. Built for founders, CEOs and executives growing their personal brand. Start free."
         path="/"
         jsonLd={[
@@ -568,8 +568,8 @@ export default function Landing() {
             operatingSystem: 'Web',
             description: 'AI that learns your authentic voice and writes LinkedIn posts that sound exactly like you, with built-in accuracy and freshness checks before you publish.',
             offers: [
-              { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'Free plan — 3 posts/week, no credit card required' },
-              { '@type': 'Offer', price: '19', priceCurrency: 'USD', description: 'Individual plan — unlimited posts, full persona engine, $19/month' },
+              { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'Free plan: 3 posts/week, no credit card required' },
+              { '@type': 'Offer', price: '19', priceCurrency: 'USD', description: 'Individual plan: unlimited posts, full persona engine, $19/month' },
             ],
             url: 'https://eclatale.com',
           },
@@ -635,7 +635,7 @@ export default function Landing() {
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fadeIn" style={{ animationDelay: '0.3s' }}>
             <a href="/signup" onClick={handleStartFree} className="btn-primary w-full sm:w-auto text-base">
-              Start Free — No Credit Card <ArrowRight size={18} />
+              Start Free · No Credit Card <ArrowRight size={18} />
             </a>
             <a href="#demo" className="btn-secondary w-full sm:w-auto text-base">
               See How It Works →
@@ -643,11 +643,11 @@ export default function Landing() {
           </div>
 
           {/* Early access, stated plainly. No invented user counts, star
-              ratings or avatar clusters — there are no customers to represent
+              ratings or avatar clusters. There are no customers to represent
               yet, and being first is its own pitch. */}
           <div className="mt-8 md:mt-10 flex flex-col items-center gap-2.5 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
             <span className="badge bg-[rgba(6,214,160,0.10)] text-brand-teal font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" /> Early access — just launched
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" /> Early access · just launched
             </span>
             <p className="text-sm text-brand-muted font-medium">
               Built by a founder in Toronto. Free to start, no card.
@@ -710,7 +710,7 @@ export default function Landing() {
               Generate a real LinkedIn post. <span className="gradient-text">No account needed.</span>
             </h2>
             <p className="body-text max-w-lg mx-auto">
-              Pick a topic, get a real AI-generated post, and see it in a LinkedIn preview — in under 30 seconds.
+              Pick a topic, get a real AI-generated post, and see it in a LinkedIn preview, in under 30 seconds.
             </p>
           </div>
           <LiveDemo />
@@ -752,7 +752,7 @@ export default function Landing() {
             <div className="card p-6 md:p-7 text-center">
               <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center text-white mx-auto mb-4"><Shield size={22} /></div>
               <h3 className="text-sm font-bold text-brand-dark mb-2">100% LinkedIn compliant</h3>
-              <p className="text-sm text-brand-muted leading-relaxed">Official API only. Zero ban risk — no browser automation, ever.</p>
+              <p className="text-sm text-brand-muted leading-relaxed">Official API only. Zero ban risk. No browser automation, ever.</p>
             </div>
             <div className="card p-6 md:p-7 text-center">
               <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center text-white mx-auto mb-4"><Lock size={22} /></div>
@@ -798,12 +798,12 @@ export default function Landing() {
             <div className="card card-hover p-7 md:p-8">
               <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-white mb-5"><AudioWaveform size={26} /></div>
               <h3 className="text-lg font-bold text-brand-dark mb-2.5">Your voice, not a template</h3>
-              <p className="text-sm text-brand-muted leading-relaxed">Eclatale doesn't give you 50 post templates. It learns exactly how you write, think, and express ideas — then generates content that sounds like you wrote it on your best day.</p>
+              <p className="text-sm text-brand-muted leading-relaxed">Eclatale doesn't give you 50 post templates. It learns exactly how you write, think, and express ideas, then generates content that sounds like you wrote it on your best day.</p>
             </div>
             <div className="card card-hover p-7 md:p-8">
               <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-white mb-5"><ShieldCheck size={26} /></div>
               <h3 className="text-lg font-bold text-brand-dark mb-2.5">Confidence before you publish</h3>
-              <p className="text-sm text-brand-muted leading-relaxed">Every post you create gets checked for factual accuracy, topic freshness, and voice consistency before it goes live. Post knowing it's authentic — not hoping it is.</p>
+              <p className="text-sm text-brand-muted leading-relaxed">Every post you create gets checked for factual accuracy, topic freshness, and voice consistency before it goes live. Post knowing it's authentic, not hoping it is.</p>
             </div>
             <div className="card card-hover p-7 md:p-8">
               <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-white mb-5"><LineChart size={26} /></div>
@@ -812,7 +812,7 @@ export default function Landing() {
             </div>
           </div>
           <p className="text-center text-xl md:text-3xl font-extrabold text-brand-dark leading-snug max-w-2xl mx-auto">
-            The AI that learns how you write and builds your brand —<br className="hidden sm:block" /> not from a template, but from <span className="gradient-text">you</span>.
+            The AI that learns how you write and builds your brand,<br className="hidden sm:block" /> not from a template, but from <span className="gradient-text">you</span>.
           </p>
         </div>
       </section>
@@ -837,7 +837,7 @@ export default function Landing() {
             <div className="space-y-4 text-sm md:text-[15px] text-brand-dark leading-relaxed">
               <p>
                 I kept opening LinkedIn to post something, staring at the box, and closing it.
-                Not because I had nothing to say — because everything I wrote came out sounding
+                Not because I had nothing to say, but because everything I wrote came out sounding
                 like a press release.
               </p>
               <p>
@@ -848,7 +848,7 @@ export default function Landing() {
                 at risk.
               </p>
               <p className="text-brand-muted">
-                Eclatale is new — I'm building it in the open and the free plan is genuinely free.
+                Eclatale is new. I'm building it in the open and the free plan is genuinely free.
                 If you try it and it sounds nothing like you, email me and tell me. That feedback
                 is worth more to me right now than a signup.
               </p>
@@ -881,7 +881,7 @@ export default function Landing() {
               ))}
             </ul>
             <a href="/signup" onClick={handleStartFree} className="btn-primary w-full text-center justify-center text-[15px]">
-              Start Free — No Credit Card
+              Start Free · No Credit Card
             </a>
           </div>
         </div>

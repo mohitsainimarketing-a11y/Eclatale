@@ -9,7 +9,7 @@ interface AvatarProps {
 }
 
 // Bulletproof avatar: falls back to an initials badge if src is missing OR
-// fails to load (revoked LinkedIn/Google photo URL, 404, etc.) — never
+// fails to load (revoked LinkedIn/Google photo URL, 404, etc.). Never
 // shows a broken image icon.
 export default function Avatar({ src, initials, alt, size = 32, className = '' }: AvatarProps) {
   const [errored, setErrored] = useState(false);

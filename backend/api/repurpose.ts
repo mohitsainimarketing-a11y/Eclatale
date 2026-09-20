@@ -68,14 +68,14 @@ ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-
 ${contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : ''}
 
 REPURPOSING RULES:
-- Do NOT copy phrases verbatim from the source. Synthesize, filter, and elevate.
+- Do NOT copy phrases verbatim from the source. Synthesize, filter, and sharpen.
 - Find the angle that resonates most for a ${role} in ${industry}.
 - The source material is raw material. The output should feel original.
 ${repurposeMode === 'voice' ? `- Extract the core insight, argument, or most valuable idea from the source material.
-- Reframe it completely in the author's authentic voice — this is their commentary on it, not a repost.
-- Add a personal perspective frame — the reader should feel this is the author's genuine take, not borrowed content.` : ''}
-${repurposeMode === 'pattern' ? `- Identify the STRUCTURAL pattern the source uses (its hook type, how it builds, how it closes) and reuse that exact structure/shape for a completely different, original point — the pattern is what's borrowed, never the content or opinion.` : ''}
-${repurposeMode === 'reaction' ? `- The author has a specific personal reaction to this source, provided below. Build the post around THEIR reaction/opinion, using the source only as the trigger or backdrop — the source's ideas are not the point, the author's take on them is.` : ''}`;
+- Reframe it completely in the author's authentic voice. This is their commentary on it, not a repost.
+- Add a personal perspective frame. The reader should feel this is the author's genuine take, not borrowed content.` : ''}
+${repurposeMode === 'pattern' ? `- Identify the STRUCTURAL pattern the source uses (its hook type, how it builds, how it closes) and reuse that exact structure/shape for a completely different, original point. The pattern is what's borrowed, never the content or opinion.` : ''}
+${repurposeMode === 'reaction' ? `- The author has a specific personal reaction to this source, provided below. Build the post around THEIR reaction/opinion, using the source only as the trigger or backdrop. The source's ideas are not the point, the author's take on them is.` : ''}`;
 
     let extractedPattern = '';
     if (repurposeMode === 'pattern') {
@@ -84,7 +84,7 @@ ${repurposeMode === 'reaction' ? `- The author has a specific personal reaction 
         max_tokens: 150,
         messages: [{
           role: 'user',
-          content: `Describe the structural pattern of this piece of content in one short line, arrow-separated, e.g. "Hook: bold statement → 3 numbered insights → Question CTA". Be specific about the actual structure used, not generic.\n\nCONTENT:\n${sourceText.substring(0, 3000)}`,
+          content: `Describe the structural pattern of this piece of content in one short line, arrow-separated, e.g. "Hook: bold statement → 3 numbered points → Question CTA". Be specific about the actual structure used, not generic.\n\nCONTENT:\n${sourceText.substring(0, 3000)}`,
         }],
       });
       extractedPattern = patternMsg.content[0]?.type === 'text' ? patternMsg.content[0].text.trim() : '';
@@ -99,11 +99,11 @@ ${sourceText.substring(0, 4000)}
 MY REACTION / TAKE:
 ${String(userReaction).substring(0, 1000)}
 
-Write the post primarily from my reaction — the source is backdrop, not the subject.`
+Write the post primarily from my reaction. The source is backdrop, not the subject.`
       : repurposeMode === 'pattern'
       ? `Repurpose this into a compelling ${contentType.replace(/-/g, ' ')}, reusing this exact structural pattern: ${extractedPattern}
 
-SOURCE MATERIAL (for context only — do not reuse its ideas or opinions, only its shape):
+SOURCE MATERIAL (for context only, do not reuse its ideas or opinions, only its shape):
 ${sourceText.substring(0, 4000)}
 
 Fill that structure with a completely original point relevant to a ${role} in ${industry}.`

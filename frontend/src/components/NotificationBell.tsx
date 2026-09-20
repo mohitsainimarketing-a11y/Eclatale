@@ -54,7 +54,7 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-const BASE_POLL_MS = 5 * 60 * 1000; // 5 min fallback poll — realtime subscription handles instant updates
+const BASE_POLL_MS = 5 * 60 * 1000; // 5 min fallback poll. Realtime subscription handles instant updates
 const MAX_POLL_MS = 20 * 60 * 1000;
 
 export default function NotificationBell({ userId }: { userId: string }) {

@@ -21,7 +21,7 @@ export default function RefundPolicy() {
               <ShieldCheck size={18} className="text-brand-teal" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-brand-dark">0–7 days since your first charge</h3>
+              <h3 className="text-sm font-bold text-brand-dark">0 to 7 days since your first charge</h3>
               <p className="text-xs text-brand-muted mt-1">Full refund, automatically approved, no questions asked. Submitted from Settings → Billing → Request Refund.</p>
             </div>
           </div>
@@ -30,7 +30,7 @@ export default function RefundPolicy() {
               <Clock size={18} className="text-brand-orange" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-brand-dark">8–30 days since your first charge</h3>
+              <h3 className="text-sm font-bold text-brand-dark">8 to 30 days since your first charge</h3>
               <p className="text-xs text-brand-muted mt-1">Reviewed manually by our team. We respond within 48 hours of your request.</p>
             </div>
           </div>
@@ -40,7 +40,7 @@ export default function RefundPolicy() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-brand-dark">30+ days since your first charge</h3>
-              <p className="text-xs text-brand-muted mt-1">Refunds are not available past this window. You can still cancel anytime to stop future billing — you'll keep access until the end of your current period.</p>
+              <p className="text-xs text-brand-muted mt-1">Refunds are not available past this window. You can still cancel anytime to stop future billing. You'll keep access until the end of your current period.</p>
             </div>
           </div>
         </div>
@@ -52,11 +52,11 @@ export default function RefundPolicy() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-brand-dark mb-2">Processing time</h2>
-            <p>Approved refunds are issued immediately via Stripe and typically appear on your statement within 5–10 business days, depending on your bank.</p>
+            <p>Approved refunds are issued immediately via Stripe and typically appear on your statement within 5 to 10 business days, depending on your bank.</p>
           </div>
           <div>
             <h2 className="text-lg font-bold text-brand-dark mb-2">Partial refunds</h2>
-            <p>We issue full refunds only — there are no partial or prorated refunds for unused time within a billing period, except at our discretion during the manual review window.</p>
+            <p>We issue full refunds only. There are no partial or prorated refunds for unused time within a billing period, except at our discretion during the manual review window.</p>
           </div>
           <div>
             <h2 className="text-lg font-bold text-brand-dark mb-2">Contact</h2>

@@ -1,0 +1,516 @@
+<title>20 LinkedIn Headline Formulas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --purple: #7C5CFC;
+    --purple-dark: #5B3FD4;
+    --purple-light: #F0ECFF;
+    --purple-mid: #E3DAFF;
+    --purple-border: #D4C8FF;
+    --ink: #0F0A1E;
+    --ink-mid: #3D3557;
+    --ink-muted: #7A6E94;
+    --ground: #F8F7FC;
+    --white: #FFFFFF;
+    --teal: #0EA5A0;
+    --teal-light: #E6FAF9;
+    --amber: #D97706;
+    --amber-light: #FEF3C7;
+    --rose: #E11D48;
+    --rose-light: #FFF1F4;
+    --sage: #16A34A;
+    --sage-light: #F0FDF4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --purple: #9B7FFF; --purple-dark: #7C5CFC; --purple-light: #1E1633;
+      --purple-mid: #2A2048; --purple-border: #3D3066;
+      --ink: #F0ECFF; --ink-mid: #C4BAE8; --ink-muted: #8B80AA;
+      --ground: #0F0A1E; --white: #1A1430;
+      --teal-light: #0A2825; --amber-light: #2A1F08; --rose-light: #250A14; --sage-light: #0A1F0E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --purple: #9B7FFF; --purple-dark: #7C5CFC; --purple-light: #1E1633;
+    --purple-mid: #2A2048; --purple-border: #3D3066;
+    --ink: #F0ECFF; --ink-mid: #C4BAE8; --ink-muted: #8B80AA;
+    --ground: #0F0A1E; --white: #1A1430;
+    --teal-light: #0A2825; --amber-light: #2A1F08; --rose-light: #250A14; --sage-light: #0A1F0E;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--ground); color: var(--ink); line-height: 1.6; padding: 0 16px; }
+
+  /* Print bar */
+  .print-bar { position: sticky; top: 0; z-index: 100; background: var(--purple); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; font-size: 13px; font-weight: 600; gap: 12px; }
+  .print-bar span { opacity: 0.8; font-weight: 400; }
+  .print-btn { background: #fff; color: var(--purple); border: none; border-radius: 8px; padding: 7px 18px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .print-btn:hover { opacity: 0.88; }
+
+  .page { max-width: 920px; margin: 0 auto; padding-bottom: 80px; }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(140deg, #0F0A1E 0%, #2D1B8C 50%, #5B3FD4 100%);
+    border-radius: 20px; padding: 64px 48px 52px; margin: 28px 0 48px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 280px; height: 280px; border-radius: 50%;
+    background: rgba(124,92,252,0.25);
+  }
+  .cover::after {
+    content: ''; position: absolute; bottom: -80px; left: 20px;
+    width: 360px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .cover-label { display: inline-block; background: rgba(255,255,255,0.15); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 14px; border-radius: 20px; margin-bottom: 22px; }
+  .cover h1 { font-family: 'Fraunces', serif; font-size: clamp(34px, 5.5vw, 58px); font-weight: 900; color: #fff; line-height: 1.08; text-wrap: balance; margin-bottom: 18px; position: relative; z-index: 1; }
+  .cover h1 em { font-style: italic; font-weight: 300; color: #C4B5FD; }
+  .cover-sub { color: rgba(255,255,255,0.75); font-size: 15.5px; line-height: 1.65; max-width: 500px; margin-bottom: 32px; position: relative; z-index: 1; }
+  .cover-meta { display: flex; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .cover-meta-item { color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; }
+  .cover-logo { position: absolute; bottom: 26px; right: 40px; font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; color: rgba(255,255,255,0.35); z-index: 1; }
+
+  /* Intro */
+  .intro { background: var(--white); border-radius: 16px; padding: 32px 36px; margin-bottom: 44px; border: 1px solid var(--purple-border); }
+  .intro h2 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+  .intro p { color: var(--ink-mid); font-size: 14px; line-height: 1.75; margin-bottom: 10px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--ink); }
+
+  /* Section header */
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding: 16px 22px; border-radius: 14px; background: var(--purple-light); border: 1px solid var(--purple-border); }
+  .sec-icon { font-size: 24px; }
+  .sec-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--ink); }
+  .sec-desc { font-size: 12px; color: var(--ink-muted); margin-top: 1px; }
+  .sec-count { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--purple); background: var(--purple-mid); padding: 3px 11px; border-radius: 20px; white-space: nowrap; }
+
+  /* Grid */
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 44px; }
+  @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+
+  /* Formula card */
+  .fcard { background: var(--white); border: 1.5px solid var(--purple-border); border-radius: 18px; padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 14px; }
+  .fcard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .fcard-num { font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--purple-light); padding: 3px 9px; border-radius: 12px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .fcard-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 900; color: var(--ink); line-height: 1.2; }
+
+  /* The template block */
+  .template-block { background: linear-gradient(135deg, #F0ECFF, #E8E0FF); border: 1.5px solid var(--purple-border); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; font-family: 'Fraunces', serif; font-weight: 400; font-style: italic; color: var(--ink); line-height: 1.6; }
+  .template-block .slot { color: var(--purple); font-weight: 700; font-style: normal; background: rgba(124,92,252,0.12); padding: 1px 5px; border-radius: 5px; }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .tag-purple { background: var(--purple-light); color: var(--purple); }
+  .tag-teal { background: var(--teal-light); color: var(--teal); }
+  .tag-amber { background: var(--amber-light); color: var(--amber); }
+  .tag-rose { background: var(--rose-light); color: var(--rose); }
+  .tag-sage { background: var(--sage-light); color: var(--sage); }
+
+  /* Examples */
+  .examples { display: flex; flex-direction: column; gap: 8px; }
+  .example { background: var(--ground); border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0; padding: 9px 12px; font-size: 12.5px; color: var(--ink-mid); line-height: 1.55; font-style: italic; }
+
+  /* Tip */
+  .tip { font-size: 11.5px; color: var(--ink-muted); padding-top: 8px; border-top: 1px solid var(--purple-border); line-height: 1.55; }
+  .tip strong { color: var(--purple); }
+
+  /* Bonus */
+  .bonus { background: linear-gradient(135deg, #0F0A1E, #1C1A2E); border-radius: 20px; padding: 44px 40px; margin-bottom: 48px; }
+  .bonus h2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 8px; }
+  .bonus-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+  .mistakes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (max-width: 600px) { .mistakes-grid { grid-template-columns: 1fr; } }
+  .mistake-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 18px; }
+  .mistake-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #F87171; margin-bottom: 5px; }
+  .mistake-text { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85); margin-bottom: 6px; text-decoration: line-through; text-decoration-color: rgba(248,113,113,0.5); }
+  .mistake-why { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.55; margin-bottom: 6px; }
+  .mistake-fix { font-size: 12px; font-weight: 600; color: #86EFAC; }
+  .mistake-fix::before { content: 'Fix: '; opacity: 0.6; font-weight: 400; }
+
+  /* CTA */
+  .guide-footer { text-align: center; padding: 40px 24px; background: var(--white); border-radius: 20px; border: 1px solid var(--purple-border); }
+  .guide-footer h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: var(--ink); margin-bottom: 10px; }
+  .guide-footer p { color: var(--ink-muted); font-size: 14px; margin-bottom: 20px; }
+  .guide-footer a { display: inline-block; background: linear-gradient(135deg, #5B3FD4, #7C5CFC); color: #fff; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 12px; text-decoration: none; }
+  .guide-footer a:hover { opacity: 0.88; }
+  .guide-footer .brand { font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; color: var(--purple); margin-top: 20px; display: block; opacity: 0.6; }
+
+  @media print {
+    .print-bar { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .page { max-width: 100%; padding-bottom: 0; }
+    .cover { border-radius: 0; margin: 0 0 32px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .fcard, .section-header { page-break-inside: avoid; }
+    .bonus { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+
+<div class="print-bar">
+  <div><strong>20 LinkedIn Headline Formulas</strong> <span>by Eclatale</span></div>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<div class="page">
+  <!-- COVER -->
+  <div class="cover">
+    <span class="cover-label">Free Guide · Eclatale</span>
+    <h1>20 LinkedIn Headline<br><em>Formulas That Work</em></h1>
+    <p class="cover-sub">Fill-in-the-blank templates for every role, goal, and seniority level. Write a headline that attracts the right people in under 10 minutes.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">🧩 20 proven templates</div>
+      <div class="cover-meta-item">✍️ Fill-in-the-blank format</div>
+      <div class="cover-meta-item">🚫 8 mistakes to avoid</div>
+    </div>
+    <span class="cover-logo">Eclatale</span>
+  </div>
+
+  <!-- INTRO -->
+  <div class="intro">
+    <h2>Your headline is the one line working 24 hours a day without you</h2>
+    <p>Your LinkedIn headline appears in search results, comment sections, connection requests, and DMs, often before anyone has read a single word of your profile. It is the line that answers "should I click this person?" in under two seconds. And most people waste it on a job title.</p>
+    <p>In one audit of 400 LinkedIn profiles across B2B industries, 71% used only their current role and company name as their headline. That is the equivalent of a name badge at a conference that says only your name. <strong>A headline should tell someone what you do, who you do it for, and what changes because of it</strong>, all in 220 characters or fewer.</p>
+    <p>These 20 formulas are organised by goal: positioning yourself, demonstrating authority, naming your audience, and telling a story. Pick the one that fits your situation, fill in the brackets, and test it for two weeks. The right headline doesn't just describe you. It attracts the right people to you before you've said a word.</p>
+  </div>
+
+  <div id="guide-content"></div>
+</div>
+
+<script>
+const TAG_CLASSES = {
+  'Job seekers': 'tag-teal',
+  'Founders': 'tag-purple',
+  'Consultants': 'tag-amber',
+  'Creators': 'tag-rose',
+  'Executives': 'tag-sage',
+  'Freelancers': 'tag-amber',
+  'Career changers': 'tag-teal',
+  'Coaches': 'tag-rose',
+  'Sales pros': 'tag-sage',
+  'All roles': 'tag-purple',
+};
+
+function tagClass(label) {
+  return TAG_CLASSES[label] || 'tag-purple';
+}
+
+function renderTemplate(t) {
+  return t.replace(/\[([^\]]+)\]/g, '<span class="slot">[$1]</span>');
+}
+
+const SECTIONS = [
+  {
+    icon: '🎯',
+    title: 'Positioning',
+    desc: 'Tell them exactly what you do and who you do it for',
+    formulas: [
+      {
+        name: 'The Role + Result',
+        template: '[Job title] helping [target audience] [achieve specific outcome]',
+        tags: ['All roles', 'Job seekers'],
+        examples: [
+          '"Marketing Director helping B2B SaaS startups generate pipeline without paid ads"',
+          '"UX Designer helping fintech teams ship interfaces users actually trust"',
+        ],
+        tip: 'The strongest version names a specific, desirable outcome, not a vague activity. "Achieve growth" is weak. "Hit $1M ARR in year one" is specific.'
+      },
+      {
+        name: 'The Expertise + Audience',
+        template: '[Specific expertise] for [specific audience] who [are in this situation]',
+        tags: ['Consultants', 'Freelancers'],
+        examples: [
+          '"Financial modeling for pre-seed founders who haven\'t hired a CFO yet"',
+          '"Copywriting for DTC health brands who are tired of sounding like everyone else"',
+        ],
+        tip: 'The "who [are in this situation]" clause is optional. When it fits, though, it pre-qualifies your audience and makes them feel seen before they click.'
+      },
+      {
+        name: 'The Clear Value Statement',
+        template: 'I help [audience] go from [before state] to [after state]',
+        tags: ['Coaches', 'Consultants', 'Creators'],
+        examples: [
+          '"I help mid-career professionals go from overlooked to promoted in 90 days"',
+          '"I help solo founders go from ideas that stall to products that ship"',
+        ],
+        tip: 'The before state should sting a little. It should describe a pain the reader recognises. The after state should feel genuinely attainable, not aspirational to the point of fantasy.'
+      },
+      {
+        name: 'The Problem-Solver',
+        template: '[Audience]\'s go-to person for [specific, named problem]',
+        tags: ['Consultants', 'Executives', 'Freelancers'],
+        examples: [
+          '"Founders\' go-to person for turning a messy pitch into a fundable one"',
+          '"HR leaders\' go-to person for reducing regrettable turnover in year one"',
+        ],
+        tip: 'The power is in the specificity of the problem. "Leadership challenges" is not a problem. "First-time managers who freeze under pressure" is a problem.'
+      },
+      {
+        name: 'The Outcome Triple',
+        template: 'I help [audience] [verb result] | [verb result] | [verb result]',
+        tags: ['Coaches', 'Founders', 'All roles'],
+        examples: [
+          '"I help coaches get clients, build systems, and scale without the burnout"',
+          '"I help engineers write clearly, lead confidently, and get promoted faster"',
+        ],
+        tip: 'Three outcomes cover the full range without bloat. Keep each clause to 3 or 4 words. If any clause is vague, cut it to two.'
+      },
+    ]
+  },
+  {
+    icon: '🏆',
+    title: 'Authority',
+    desc: 'Lead with credibility that earns the click before they read further',
+    formulas: [
+      {
+        name: 'The Credibility Pivot',
+        template: 'Ex-[impressive role or company], now [what you do for whom]',
+        tags: ['Career changers', 'Founders', 'Consultants'],
+        examples: [
+          '"Ex-Google PM, now helping B2B startups build products people actually pay for"',
+          '"Ex-McKinsey, now helping family businesses scale without a board they can\'t trust"',
+        ],
+        tip: 'The word "now" carries this formula. It frames the move as a deliberate choice rather than a layoff, so keep it in. Only borrow a credential your target audience actually recognises.'
+      },
+      {
+        name: 'The Numbers Stack',
+        template: '[Number] [impressive thing] | [Number] [impressive thing] | [Role]',
+        tags: ['Executives', 'Founders', 'Sales pros'],
+        examples: [
+          '"$40M in exits | 3 companies built | Now advising seed-stage B2B founders"',
+          '"200+ hires made | 0 regrettable in year one | Talent partner for fast-scaling teams"',
+        ],
+        tip: 'Numbers must be real and verifiable, or at the very least verifiable-feeling. Round numbers ("$40M") read as estimates. Oddly specific numbers ("$38.4M") read as proof.'
+      },
+      {
+        name: 'The Social Proof Opener',
+        template: '[Credential or recognition] | [What you do now and for whom]',
+        tags: ['Executives', 'Creators', 'Consultants'],
+        examples: [
+          '"Forbes 30 Under 30 | Helping founders build companies that outlast their funding"',
+          '"Named Top 50 CMO | Now building the demand gen playbook for Series A companies"',
+        ],
+        tip: 'Put the credential first. It buys the attention that gets the rest of the line read. But if the credential is not self-explanatory to your audience, spell out why it matters.'
+      },
+      {
+        name: 'The Niche Authority',
+        template: 'The [honest adjective] [title] for [very specific niche]',
+        tags: ['Freelancers', 'Consultants', 'Creators'],
+        examples: [
+          '"The no-fluff copywriter for B2B SaaS teams who are tired of sounding generic"',
+          '"The blunt CFO advisor for founders who need real numbers, not comfortable projections"',
+        ],
+        tip: 'The adjective must feel honest and specific to you, never aspirational. "World-class" is a red flag. "Blunt," "systematic," "methodical" are real differentiators.'
+      },
+      {
+        name: 'The Contrarian Signal',
+        template: '[Role] who [does something most in your field don\'t]',
+        tags: ['Consultants', 'Creators', 'Coaches'],
+        examples: [
+          '"Sales coach who teaches you to talk less and close more"',
+          '"Brand strategist who refuses to start with your logo"',
+        ],
+        tip: 'The contrast must be true. If you don\'t actually do things differently, this formula backfires. It works best when the contrarian position is your actual professional belief.'
+      },
+    ]
+  },
+  {
+    icon: '🎯',
+    title: 'Audience-First',
+    desc: 'Put the reader\'s world before yours so they feel seen immediately',
+    formulas: [
+      {
+        name: 'The Verb-First Action',
+        template: '[Active verb]-ing [specific thing] for [specific audience]',
+        tags: ['All roles', 'Freelancers', 'Consultants'],
+        examples: [
+          '"Turning overlooked LinkedIn profiles into inbound-lead machines for consultants"',
+          '"Building the revenue infrastructure that makes Series B look inevitable"',
+        ],
+        tip: 'A verb at the front creates immediate motion. The reader\'s brain is already watching you work before they have finished the sentence. Choose a verb specific to your craft, not a generic one.'
+      },
+      {
+        name: 'The If-Then Invitation',
+        template: 'If you [have this problem], I [solve it this specific way]',
+        tags: ['Coaches', 'Consultants', 'Freelancers'],
+        examples: [
+          '"If your content isn\'t converting, I\'ll show you what\'s getting in the way in one call"',
+          '"If your team is growing faster than your systems, I build the ops layer that keeps up"',
+        ],
+        tip: 'The "if" clause must describe a real, specific frustration the reader already has, not one you invented. Interview clients. Use their language, not yours.'
+      },
+      {
+        name: 'The Outcome Focus',
+        template: '[What I do] so that [specific audience] can [desirable outcome they care about]',
+        tags: ['Coaches', 'Consultants', 'Founders'],
+        examples: [
+          '"I take ops off your plate so you can spend your time on the work only you can do"',
+          '"I write the content so you can focus on the conversations that close the deal"',
+        ],
+        tip: 'The "so that" construction forces you to name the actual value: not the task, but the freedom it creates. That shift in framing changes how people read your worth.'
+      },
+      {
+        name: 'The Dual Identity',
+        template: '[Role or identity 1] + [Role or identity 2] | [What the combination uniquely enables]',
+        tags: ['Creators', 'Founders', 'Career changers'],
+        examples: [
+          '"Engineer + writer | I translate technical products into stories that investors fund"',
+          '"Therapist + executive coach | I help leaders whose inner life is costing them their outer results"',
+        ],
+        tip: 'The combination must create something neither identity delivers alone. If the two halves could describe different people without the combination mattering, they\'re just two job titles.'
+      },
+      {
+        name: 'The Before-You-Scroll Hook',
+        template: '[Intriguing, specific claim that earns the click on its own]',
+        tags: ['Creators', 'Consultants', 'All roles'],
+        examples: [
+          '"I\'ve reviewed 2,000 LinkedIn profiles. Most fail for the same 3 reasons."',
+          '"I\'ve helped 40 founders raise their seed round. Here\'s what the funded ones had in common."',
+        ],
+        tip: 'This works because it opens a loop the reader needs to close. The number must be real. The claim must be specific. And the implication must be that clicking will pay off.'
+      },
+    ]
+  },
+  {
+    icon: '📖',
+    title: 'Story & Identity',
+    desc: 'Use your arc, your mission, or your distinct point of view as the hook',
+    formulas: [
+      {
+        name: 'The Journey',
+        template: 'From [past state or identity] to [present state]. [What you now do for others]',
+        tags: ['Career changers', 'Coaches', 'Founders'],
+        examples: [
+          '"From burned-out lawyer to solopreneur. Now I help professionals build income outside their 9-5"',
+          '"From 0 to 100k followers in 18 months. Now I help B2B founders do it in 12"',
+        ],
+        tip: 'The journey is most compelling when the gap between before and after is real, visible, and something your target audience wants to cross themselves. You are proof of possibility.'
+      },
+      {
+        name: 'The Mission Statement',
+        template: 'On a mission to [specific, bold goal] | [how you pursue it]',
+        tags: ['Founders', 'Creators', 'Executives'],
+        examples: [
+          '"On a mission to make personal finance feel like a conversation, not a test | CFP & creator"',
+          '"On a mission to fix how companies hire engineers | Building Hirable"',
+        ],
+        tip: 'The mission must be specific enough to have a finish line, or a clear direction. "Make the world better" is not a mission. "Make onboarding not suck for enterprise SaaS teams" is.'
+      },
+      {
+        name: 'The Simple Stack',
+        template: '[Current role] at [Company] | [Specific focus area or superpower]',
+        tags: ['Executives', 'Job seekers', 'Sales pros'],
+        examples: [
+          '"Head of Growth at Notion | Turning product data into acquisition strategy"',
+          '"Account Executive at Salesforce | Enterprise deals in manufacturing and logistics"',
+        ],
+        tip: 'This is the formula for people who don\'t want to get clever. They just want to be clear. The second segment should say what makes you specifically valuable in that role, not repeat the title.'
+      },
+      {
+        name: 'The Ask Me About',
+        template: 'Ask me about [specific, searchable topic] | [role or context]',
+        tags: ['Consultants', 'Creators', 'All roles'],
+        examples: [
+          '"Ask me about LinkedIn SEO | Content strategist helping B2B brands get found organically"',
+          '"Ask me about zero-to-one product builds | PM who\'s shipped 6 from scratch"',
+        ],
+        tip: 'This formula converts your headline into a conversation starter. It works especially well when your traffic comes from people who already know your name. They click to start a conversation, not to learn what you do.'
+      },
+      {
+        name: 'The Honest Specialist',
+        template: '[Role] | [Specialisation 1] | [Specialisation 2] | [Proof point or context]',
+        tags: ['Job seekers', 'Executives', 'Sales pros'],
+        examples: [
+          '"Product Designer | SaaS | Mobile-first | Previously Figma and Intercom"',
+          '"Senior Engineer | Backend | Distributed systems | Open to staff-level roles"',
+        ],
+        tip: 'This is the recruiter-optimised formula. Each segment is a keyword. The proof point at the end adds credibility without extra words. Keep each segment under 4 words for scannability.'
+      },
+    ]
+  }
+];
+
+const MISTAKES = [
+  { text: 'Just your job title', why: 'Your title tells people what you are called, not what you deliver. 10,000 other people have the same title.', fix: 'Add who you help and what outcome they get.' },
+  { text: '"Passionate about [industry]"', why: 'Passion is baseline. Everyone on LinkedIn claims it. It is invisible to both humans and search.', fix: 'Show what your passion has produced: a number, a result, a hard lesson.' },
+  { text: 'Five job titles in one line', why: 'A claim on every identity signals you haven\'t committed to one. It reads as confusion, not range.', fix: 'Pick the identity most relevant to the people you want to attract. Own one thing deeply.' },
+  { text: '"Results-driven professional"', why: 'This describes the minimum requirement for employment. It distinguishes you from no one.', fix: 'Name the specific results. "Grew ARR from $2M to $8M" is results-driven.' },
+  { text: '"Guru / Ninja / Rockstar"', why: 'These titles were cringe in 2015. In 2026 they signal that you are not paying attention.', fix: 'Use your real title. Let your actual work carry the weight.' },
+  { text: 'Using | for everything', why: 'Three pipe-separated phrases with no connecting logic reads as a list, not a headline. It says nothing about what makes you distinct.', fix: 'Use one formula consistently. The pipes should separate ideas that build on each other.' },
+  { text: 'Vague superlatives', why: '"Top-tier," "world-class," "award-winning" (without naming the award) are self-applied labels with no credibility signal attached.', fix: 'Name the specific award, the specific number, the specific company. Specifics are the credibility.' },
+  { text: 'Writing for yourself, not your reader', why: 'A list of your credentials and interests tells the reader about you. A good headline tells the reader about themselves: what they gain by knowing you.', fix: 'Ask what your ideal reader wants to be true six months from now. Lead with that.' },
+];
+
+const container = document.getElementById('guide-content');
+let html = '';
+let count = 0;
+
+SECTIONS.forEach(section => {
+  html += `
+    <div class="section-header">
+      <span class="sec-icon">${section.icon}</span>
+      <div>
+        <div class="sec-title">${section.title}</div>
+        <div class="sec-desc">${section.desc}</div>
+      </div>
+      <span class="sec-count">5 formulas</span>
+    </div>
+    <div class="cards">
+  `;
+
+  section.formulas.forEach(f => {
+    count++;
+    const numStr = String(count).padStart(2, '0');
+    html += `
+      <div class="fcard">
+        <div class="fcard-head">
+          <div class="fcard-name">${f.name}</div>
+          <span class="fcard-num">F${numStr}</span>
+        </div>
+        <div class="template-block">${renderTemplate(f.template)}</div>
+        <div class="tags">
+          <span style="font-size:11px;font-weight:600;color:var(--ink-muted);margin-right:2px;">Best for:</span>
+          ${f.tags.map(t => `<span class="tag ${tagClass(t)}">${t}</span>`).join('')}
+        </div>
+        <div class="examples">
+          ${f.examples.map(e => `<div class="example">${e}</div>`).join('')}
+        </div>
+        <p class="tip"><strong>Power tip:</strong> ${f.tip}</p>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+});
+
+html += `
+  <div class="bonus">
+    <h2>🚫 8 Headline Mistakes Killing Your Profile</h2>
+    <p class="bonus-sub">These patterns appear on millions of LinkedIn profiles. They are worse than ineffective. They actively signal the wrong things to the people you are trying to attract.</p>
+    <div class="mistakes-grid">
+      ${MISTAKES.map(m => `
+        <div class="mistake-card">
+          <div class="mistake-label">❌ Avoid</div>
+          <div class="mistake-text">${m.text}</div>
+          <p class="mistake-why">${m.why}</p>
+          <p class="mistake-fix">${m.fix}</p>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <h3>Your headline is written. Now build the brand behind it.</h3>
+    <p>Eclatale gives you AI-powered post ideas, a brand score, and voice matching, so the content you publish backs up the headline you just wrote.</p>
+    <a href="https://eclatale.com/signup">Start free, no credit card</a>
+    <span class="brand">eclatale.com</span>
+  </div>
+`;
+
+container.innerHTML = html;
+</script>

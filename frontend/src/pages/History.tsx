@@ -220,7 +220,7 @@ export default function History() {
   const isLimited = tier === 'free' && visiblePosts.length > HISTORY_LIMIT;
 
   // Individual-tier history is unbounded, so render in batches rather than
-  // mounting every post card at once — avoids hundreds of DOM nodes (with
+  // mounting every post card at once. Avoids hundreds of DOM nodes (with
   // their own analysis fetches/badges) for long-time users.
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -348,7 +348,7 @@ export default function History() {
                       )}
                       {post.schedule_status === 'scheduled' && post.scheduled_for && (
                         <span className="badge bg-[rgba(17,138,178,0.08)] text-brand-blue text-[11px]">
-                          <Calendar size={11} /> Scheduled — posts {formatCountdown(post.scheduled_for)}
+                          <Calendar size={11} /> Scheduled: posts {formatCountdown(post.scheduled_for)}
                         </span>
                       )}
                       {post.schedule_status === 'failed' && (

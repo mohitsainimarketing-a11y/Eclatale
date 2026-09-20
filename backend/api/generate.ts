@@ -77,11 +77,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const writingStyle = angle?.styleId ? getWritingStyle(angle.styleId) : undefined;
     const hookFragment = angle?.hook
-      ? `\nOpen with or closely riff on this exact hook — keep its energy and specificity, minor wording changes are fine: "${angle.hook}"\n`
+      ? `\nOpen with or closely riff on this exact hook. Keep its energy and specificity, minor wording changes are fine: "${angle.hook}"\n`
       : '';
     const insightFragment = angle?.insight ? `\nWhy this angle resonates with this reader: ${angle.insight}\n` : '';
     const sparkFragment = spark
-      ? `\nWhat sparked this post — ground the content in this, don't ignore it:\n${spark.slice(0, 4000)}\n`
+      ? `\nWhat sparked this post. Ground the content in this, don't ignore it:\n${spark.slice(0, 4000)}\n`
       : '';
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);

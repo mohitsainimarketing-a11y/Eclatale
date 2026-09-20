@@ -49,7 +49,7 @@ export default function Onboarding() {
     if (data.user) {
       await supabase.from('profiles').upsert({ id: data.user.id, first_name: firstName.trim(), last_name: lastName.trim(), role, domain: industry, goals });
     }
-    // If they came from the homepage demo, land them in the create flow —
+    // If they came from the homepage demo, land them in the create flow,
     // CreatePost picks up the pending topic and writes the post immediately.
     window.location.href = hasPendingDemo() ? '/create' : '/dashboard';
   };
@@ -211,7 +211,7 @@ export default function Onboarding() {
                   // Fallback host is the vercel.app alias, not api.eclatale.com:
                   // that domain is registered on the Vercel project but has no
                   // DNS record, so it would send LinkedIn OAuth to NXDOMAIN.
-                  // Inert today (REACT_APP_API_URL is set) — a trap otherwise.
+                  // Inert today (REACT_APP_API_URL is set), a trap otherwise.
                   href={`${process.env.REACT_APP_API_URL || 'https://backend-xi-olive-8eewk5s8qv.vercel.app'}/api/auth/linkedin/callback?userId=${encodeURIComponent(userId)}`}
                   className="btn-primary w-full justify-center gap-2.5"
                 >

@@ -1,5 +1,5 @@
 // Thin wrapper around the existing Eclatale backend. The extension calls
-// the same /api/intelligence multiplexer the web app uses — no separate
+// the same /api/intelligence multiplexer the web app uses. No separate
 // extension-only API surface, so there's nothing new to keep in sync.
 
 const ECLATALE_API = 'https://api.eclatale.com';

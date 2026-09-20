@@ -42,8 +42,8 @@ ${OUTPUT_RULES}
 REFINEMENT RULES:
 - Apply ONLY the change the user asked for. Do not rewrite the whole post unless explicitly asked.
 - Preserve the author's voice, structure, and any specific details they included.
-- If they say "make it shorter" — cut ruthlessly, do not add. If they say "punchier hook" — only rewrite the opening lines.
-- If they say "more casual" — adjust tone only. If they say "add a data point" — weave one in naturally.
+- If they say "make it shorter", cut ruthlessly and do not add. If they say "punchier hook", only rewrite the opening lines.
+- If they say "more casual", adjust tone only. If they say "add a data point", weave one in naturally.
 - Return the FULL revised post, not just the changed section.
 - Do not explain what you changed. Return only the post content.`;
 

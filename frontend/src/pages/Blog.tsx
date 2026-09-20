@@ -18,7 +18,7 @@ export default function Blog() {
   return (
     <div className="min-h-screen gradient-bg-page">
       <Seo
-        title="Blog — LinkedIn growth, without the fluff"
+        title="Blog: LinkedIn growth, without the fluff"
         description="Practical guides on personal branding, AI content, and building a LinkedIn presence that actually drives outcomes."
         path="/blog"
         jsonLd={{
@@ -80,7 +80,7 @@ export default function Blog() {
 
       <main className="max-w-5xl mx-auto px-5 md:px-8 pb-24">
         {filtered.length === 0 ? (
-          <p className="text-center text-sm text-brand-muted py-16">No articles match your search yet — try a different term or category.</p>
+          <p className="text-center text-sm text-brand-muted py-16">No articles match your search yet. Try a different term or category.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
             {filtered.map(post => (

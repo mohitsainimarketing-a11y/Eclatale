@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 /**
- * Merge Tailwind classes with conflict resolution — the helper every shadcn/ui
+ * Merge Tailwind classes with conflict resolution. The helper every shadcn/ui
  * component expects to import from `@/lib/utils`.
  *
  * clsx flattens conditionals; twMerge then resolves collisions so the last

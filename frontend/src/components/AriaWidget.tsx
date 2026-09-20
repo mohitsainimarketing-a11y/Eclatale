@@ -59,7 +59,7 @@ export default function AriaWidget() {
     });
   }, []);
 
-  // Global "open Aria" hook — used by /create's Ctrl+K shortcut.
+  // Global "open Aria" hook, used by /create's Ctrl+K shortcut.
   useEffect(() => {
     const openHandler = () => { setOpen(true); setHasInteracted(true); };
     window.addEventListener('aria:open', openHandler);
@@ -105,7 +105,7 @@ export default function AriaWidget() {
       if (isNewAccount && (!posts || posts.length === 0)) {
         setProactiveMsg(`Hi ${name}! I'm Aria, your personal brand assistant. Want me to help you generate your first post? 🚀`);
       } else if (daysSinceLastPost >= 3 && daysSinceLastPost !== Infinity) {
-        setProactiveMsg(`Hey ${name}, it's been a few days since your last post — want me to help you generate something in 30 seconds?`);
+        setProactiveMsg(`Hey ${name}, it's been a few days since your last post. Want me to help you generate something in 30 seconds?`);
       } else if (profile?.subscription_tier === 'free' && actualPostsThisWeek >= 3) {
         setProactiveMsg(`You've hit your free limit this week. Want me to show you what's included in the Individual plan?`);
       }
@@ -122,7 +122,7 @@ export default function AriaWidget() {
       navigate(action.url);
     } else if (action.action === 'prefill' && action.page) {
       // /create already supports a ?topic= query param that pre-fills the
-      // write flow (see CreatePost.tsx init effect) — reuse it directly
+      // write flow (see CreatePost.tsx init effect), reuse it directly
       // rather than inventing a second prefill channel.
       const topic = (action.data as any)?.topic;
       const url = topic ? `${action.page}?topic=${encodeURIComponent(String(topic))}` : action.page;
@@ -146,7 +146,7 @@ export default function AriaWidget() {
         applyAction(d.action);
       }
     } catch {
-      setMessages(m => [...m, { role: 'assistant', content: "Sorry, I couldn't reach the server just now — try again in a moment." }]);
+      setMessages(m => [...m, { role: 'assistant', content: "Sorry, I couldn't reach the server just now. Try again in a moment." }]);
     }
     setSending(false);
   };
@@ -154,7 +154,7 @@ export default function AriaWidget() {
   if (!showWidget) return null;
 
   const chips = quickActionsFor(location.pathname);
-  // /create shows a fixed 56px+ bottom nav on mobile (<768px) — Aria's floating
+  // /create shows a fixed 56px+ bottom nav on mobile (<768px), so Aria's floating
   // trigger/bubble/panel need to clear it there, but not on desktop/tablet.
   const isCreatePage = location.pathname === '/create';
 

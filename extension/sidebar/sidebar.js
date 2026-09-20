@@ -27,7 +27,7 @@ async function render(page, url) {
     try {
       const ideas = await fetchPostIdeas();
       const ideasEl = document.getElementById('ideas');
-      if (!ideas.length) { ideasEl.innerHTML = '<p class="muted">No ideas available right now — check back after your voice profile has a bit more data.</p>'; return; }
+      if (!ideas.length) { ideasEl.innerHTML = '<p class="muted">No ideas available right now. Check back after your voice profile has a bit more data.</p>'; return; }
       ideasEl.innerHTML = ideas.slice(0, 3).map(idea => `
         <div class="card">
           <p>${esc(idea.topic)}</p>
@@ -42,7 +42,7 @@ async function render(page, url) {
   if (page === 'post') {
     contentEl.innerHTML = `
       <p class="lead">Want to repurpose what you're reading?</p>
-      <p class="muted">Eclatale never reads LinkedIn post content automatically — click below and you'll be able to paste the text in yourself on the next screen.</p>
+      <p class="muted">Eclatale never reads LinkedIn post content automatically. Click below and you'll be able to paste the text in yourself on the next screen.</p>
       <div class="card">
         <p>${esc(url)}</p>
         <a class="action" href="https://eclatale.com/create/resource?url=${encodeURIComponent(url)}" target="_blank" rel="noopener">Repurpose this post →</a>
@@ -65,7 +65,7 @@ async function render(page, url) {
   if (page === 'company') {
     contentEl.innerHTML = `
       <p class="lead">Want to post about this company?</p>
-      <p class="muted">Generate a post with an angle about this company — you'll fill in the specifics on the next screen.</p>
+      <p class="muted">Generate a post with an angle about this company. You'll fill in the specifics on the next screen.</p>
       <a class="btn-primary" href="https://eclatale.com/create/talk?topic=${encodeURIComponent('a company I follow on LinkedIn')}" target="_blank" rel="noopener">Generate this post →</a>`;
     return;
   }

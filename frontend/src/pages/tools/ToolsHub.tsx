@@ -8,7 +8,7 @@ export default function ToolsHub() {
     <div className="min-h-screen gradient-bg-page">
       <Seo
         title="Free LinkedIn Tools | Eclatale"
-        description="9 free AI-powered LinkedIn tools — hook generator, post generator, headline analyzer, viral score checker, and more. No signup required, instant results."
+        description="9 free AI-powered LinkedIn tools: hook generator, post generator, headline analyzer, viral score checker, and more. No signup required, instant results."
         path="/tools"
         jsonLd={[
           {

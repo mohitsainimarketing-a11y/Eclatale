@@ -8,9 +8,9 @@ const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim(
 function tipFor(criterionLabel: string): string {
   const l = criterionLabel.toLowerCase();
   if (l.includes('linkedin')) return 'Connect LinkedIn to start counting toward this stage.';
-  if (l.includes('voice profile')) return 'Finish your voice profile — it only takes a couple minutes.';
+  if (l.includes('voice profile')) return 'Finish your voice profile. It only takes a couple minutes.';
   if (l.includes('streak')) return 'Post on consecutive days to build your streak faster.';
-  return 'Keep publishing consistently — that\'s what moves this the most.';
+  return 'Keep publishing consistently. That\'s what moves this the most.';
 }
 
 interface Phase3Props {
@@ -65,15 +65,15 @@ export default function Phase3Publish({
         {/* Stats grid */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="text-center bg-white rounded-[14px] py-4" style={{ border: '1.5px solid #EDE8FF' }}>
-            <p className="text-xl font-extrabold" style={{ color: '#1A1A2E' }}>{loading ? '—' : `${journey?.metrics.currentStreak ?? 0} 🔥`}</p>
+            <p className="text-xl font-extrabold" style={{ color: '#1A1A2E' }}>{loading ? '...' : `${journey?.metrics.currentStreak ?? 0} 🔥`}</p>
             <p className="text-[10px] font-semibold mt-1" style={{ color: '#9CA3AF' }}>Day streak</p>
           </div>
           <div className="text-center bg-white rounded-[14px] py-4" style={{ border: '1.5px solid #EDE8FF' }}>
-            <p className="text-xl font-extrabold" style={{ color: '#1A1A2E' }}>{loading ? '—' : stageMeta.emoji}</p>
+            <p className="text-xl font-extrabold" style={{ color: '#1A1A2E' }}>{loading ? '...' : stageMeta.emoji}</p>
             <p className="text-[10px] font-semibold mt-1" style={{ color: '#9CA3AF' }}>{stageMeta.label}</p>
           </div>
           <div className="text-center bg-white rounded-[14px] py-4" style={{ border: '1.5px solid #EDE8FF' }}>
-            <p className="text-xl font-extrabold" style={{ color: '#1A1A2E' }}>{loading ? '—' : journey?.metrics.postsPublished ?? 0}</p>
+            <p className="text-xl font-extrabold" style={{ color: '#1A1A2E' }}>{loading ? '...' : journey?.metrics.postsPublished ?? 0}</p>
             <p className="text-[10px] font-semibold mt-1" style={{ color: '#9CA3AF' }}>Total posts</p>
           </div>
         </div>
@@ -105,7 +105,7 @@ export default function Phase3Publish({
         )}
         {!loading && journey && !nextStageMeta && (
           <div className="rounded-[14px] p-4 mb-4 text-center" style={{ background: 'rgba(16,185,129,0.06)' }}>
-            <p className="text-[12px] font-bold" style={{ color: '#10B981' }}>You've reached the top stage — Icon 👑</p>
+            <p className="text-[12px] font-bold" style={{ color: '#10B981' }}>You've reached the top stage: Icon 👑</p>
           </div>
         )}
 
@@ -128,7 +128,7 @@ export default function Phase3Publish({
         {tomorrowAngle && (
           <div className="bg-white rounded-[14px] p-4" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
             <p className="text-[12px] font-bold flex items-center gap-1.5 mb-3" style={{ color: '#1A1A2E' }}>
-              <Sparkles size={14} style={{ color: '#7C5CFC' }} /> Tomorrow's angle — ready while you're in the flow
+              <Sparkles size={14} style={{ color: '#7C5CFC' }} /> Tomorrow's angle, ready while you're in the flow
             </p>
             <span
               className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-2"

@@ -26,7 +26,7 @@ export default function PrivacyPolicy() {
 
         <Section title="What we collect">
           <p>Account information (email, name), profile details you provide (role, industry, goals, bio), content you generate or save, and your LinkedIn profile data if you connect your account.</p>
-          <p>We also collect basic usage data — page views and feature interactions — to improve the product, and billing information (handled entirely by Stripe; we never see or store your card details).</p>
+          <p>We also collect basic usage data (page views and feature interactions) to improve the product, and billing information (handled entirely by Stripe; we never see or store your card details).</p>
         </Section>
 
         <Section title="How we use it">
@@ -35,7 +35,7 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="LinkedIn data handling">
-          <p>When you connect LinkedIn, we access only what's required to publish posts on your behalf via LinkedIn's official API — your basic profile info and the ability to post as you. We never scrape your account, automate browser sessions, or access data outside LinkedIn's authorized API scopes.</p>
+          <p>When you connect LinkedIn, we access only what's required to publish posts on your behalf via LinkedIn's official API: your basic profile info and the ability to post as you. We never scrape your account, automate browser sessions, or access data outside LinkedIn's authorized API scopes.</p>
         </Section>
 
         <Section title="Data retention">

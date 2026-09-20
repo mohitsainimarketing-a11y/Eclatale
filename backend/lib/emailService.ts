@@ -226,8 +226,8 @@ export async function sendIndustryBriefing(
       </table>
     </td></tr>`).join('');
 
-  const streakDisplay = data.currentStreak > 0 ? `${data.currentStreak}d 🔥` : '—';
-  const streakLabel = data.currentStreak > 0 ? 'current streak' : 'streak reset — restart this week?';
+  const streakDisplay = data.currentStreak > 0 ? `${data.currentStreak}d 🔥` : '0d';
+  const streakLabel = data.currentStreak > 0 ? 'current streak' : 'streak reset, restart this week?';
 
   return send(userId, 'industry_briefing', email, `What's working in ${data.domain} this week, ${firstName}`, {
     domain: data.domain,
@@ -271,7 +271,7 @@ function escapeHtml(s: string): string {
   return String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 }
 
-// Standalone mailer for anonymous demo leads — no userId, no template system.
+// Standalone mailer for anonymous demo leads. No userId, no template system.
 export async function sendDemoLeadEmail(email: string, firstName: string, topic: string, postContent: string): Promise<void> {
   const host = process.env.GMAIL_SMTP_HOST || 'smtp.gmail.com';
   const port = Number(process.env.GMAIL_SMTP_PORT || 587);
@@ -282,7 +282,7 @@ export async function sendDemoLeadEmail(email: string, firstName: string, topic:
 
   const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : 'Hi there,';
   const postHtml = escapeHtml(postContent).replace(/\n/g, '<br>');
-  const subject = `Your LinkedIn post is ready — plus 3 free posts/week on Eclatale`;
+  const subject = `Your LinkedIn post is ready, plus 3 free posts/week on Eclatale`;
 
   const html = `<!DOCTYPE html>
 <html>
@@ -303,7 +303,7 @@ export async function sendDemoLeadEmail(email: string, firstName: string, topic:
           <div style="background:#f9f5ff;border-left:3px solid #7C5CFC;border-radius:0 12px 12px 0;padding:20px 20px 20px 24px;margin-bottom:28px;">
             <p style="margin:0;font-size:14px;color:#1A1A2E;line-height:1.7;white-space:pre-wrap;">${postHtml}</p>
           </div>
-          <p style="margin:0 0 8px;font-size:15px;color:#5a5280;line-height:1.6;">This is a generic demo post. On Eclatale, every post is generated in <em>your</em> authentic voice — learned from your own writing samples.</p>
+          <p style="margin:0 0 8px;font-size:15px;color:#5a5280;line-height:1.6;">This is a generic demo post. On Eclatale, every post is generated in <em>your</em> authentic voice, learned from your own writing samples.</p>
           <p style="margin:0 0 28px;font-size:15px;color:#5a5280;line-height:1.6;"><strong style="color:#1A1A2E;">Free plan: 3 AI posts per week. No credit card. Takes 3 minutes to set up.</strong></p>
           <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:50px;background:linear-gradient(135deg,#7C5CFC,#c084fc);">
             <a href="https://eclatale.com/signup" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:50px;">Start Free on Eclatale &rarr;</a>
@@ -323,6 +323,6 @@ export async function sendDemoLeadEmail(email: string, firstName: string, topic:
   try {
     await transport.sendMail({ from: `"Eclatale" <${FROM_HELLO}>`, to: email, subject, html });
   } catch {
-    // Fire-and-forget — do not throw
+    // Fire-and-forget, so do not throw
   }
 }

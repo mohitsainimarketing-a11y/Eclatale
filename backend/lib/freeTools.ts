@@ -5,8 +5,8 @@ import { getDateContext } from './dateContext';
 
 const BANNED_WORDS = 'delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative';
 // Anonymous ceiling for the public /tools pages. The homepage demo no longer
-// hits this endpoint at all (it is signup-gated), so this only governs /tools —
-// nine tools that exist to be sampled. At 1/hr a visitor who tried the hook
+// hits this endpoint at all (it is signup-gated), so this only governs /tools,
+// the nine tools that exist to be sampled. At 1/hr a visitor who tried the hook
 // generator was locked out of the other eight, which defeats the page. Five
 // leaves room to explore while still capping scripted abuse.
 const RATE_LIMIT_PER_HOUR = 5;
@@ -64,7 +64,7 @@ export async function generateHooks(anthropic: Anthropic, topic: string, style: 
 Each hook must:
 - Be under 210 characters (before the "see more" fold)
 - Use one of these proven 2026 formulas for at least 3 of the 5: Number Opener (lead with a stat/%), Dollar/Revenue ($X later...), Result Reveal (went from A to B in X days), Contrarian (everyone says X, the data says otherwise), Nobody Told Me (nobody told me this when I started...), Process Reveal (here's exactly how I...)
-- NEVER open with a question — question-first hooks lose −34% median likes
+- NEVER open with a question. Question-first hooks lose 34% median likes
 - NEVER use: ${BANNED_WORDS}
 - Feel like it was written by a specific human, not a machine
 
@@ -88,7 +88,7 @@ ${lengthInstruction(length)}
 
 ${UNIVERSAL_HUMAN_WRITING_RULES}
 
-This is a free demo on a public tools page — generate a high-quality example post that showcases what this style can do. Return just the post text, no explanation, no markdown formatting, no quotes around it.`;
+This is a free demo on a public tools page. Generate a high-quality example post that showcases what this style can do. Return just the post text, no explanation, no markdown formatting, no quotes around it.`;
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',

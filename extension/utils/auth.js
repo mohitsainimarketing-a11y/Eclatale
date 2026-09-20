@@ -1,4 +1,4 @@
-// Shared auth helpers — used by popup.js, sidebar.js, and background.js.
+// Shared auth helpers, used by popup.js, sidebar.js, and background.js.
 // The extension never touches LinkedIn's session; it only stores the
 // Eclatale Supabase access token, in extension-local storage (not synced,
 // not accessible to any web page).
@@ -20,7 +20,7 @@ async function clearAuth() {
 
 function openSignIn() {
   // Passing our own extension ID lets the web page message us back via
-  // chrome.runtime.sendMessage without hardcoding an ID anywhere — works
+  // chrome.runtime.sendMessage without hardcoding an ID anywhere. Works
   // the same whether this is an unpacked dev build (random ID each load)
   // or the published Chrome Web Store version (fixed ID).
   chrome.tabs.create({ url: `${ECLATALE_ORIGIN}/extension-auth?extId=${chrome.runtime.id}` });

@@ -57,7 +57,7 @@ export default function ToolPage() {
   return (
     <>
       <Seo
-        title={`${tool.name} — Free LinkedIn ${tool.name.replace('LinkedIn ', '')} | Eclatale`}
+        title={`${tool.name}: Free LinkedIn ${tool.name.replace('LinkedIn ', '')} | Eclatale`}
         description={tool.seoDescription}
         path={`/tools/${tool.slug}`}
         jsonLd={jsonLd}

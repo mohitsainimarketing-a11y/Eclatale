@@ -1,4 +1,4 @@
-// content-insights.js — Eclatale LinkedIn Insights Scraper
+// content-insights.js: Eclatale LinkedIn Insights Scraper
 // Runs on linkedin.com pages. Reads ONLY the authenticated user's own
 // data (follower count, profile views, post analytics) from the DOM.
 // Never reads other people's data. Sends to Eclatale backend for storage.
@@ -132,7 +132,7 @@
     // Unique visitors
     data.uniqueVisitors = findNumberNear('unique visitors?', bodyText);
 
-    // Engagement rate — look for percentage
+    // Engagement rate: look for percentage
     const engMatch = bodyText.match(/([0-9]+\.?[0-9]*)\s*%\s*engagement/i);
     data.engagementRate = engMatch ? parseFloat(engMatch[1]) : null;
 
@@ -196,7 +196,7 @@
       const repostEl = el.querySelector('[aria-label*="repost"], [aria-label*="share"]');
       post.reposts = repostEl ? parseCount(repostEl.innerText) : null;
 
-      // Impressions — LinkedIn shows these inline for own posts
+      // Impressions: LinkedIn shows these inline for own posts
       const analyticsEl = el.querySelector('.feed-shared-update-v2__analytics, [aria-label*="impression"]');
       if (analyticsEl) {
         const impMatch = analyticsEl.innerText?.match(/([0-9,]+[KkMm]?)\s*impression/i);

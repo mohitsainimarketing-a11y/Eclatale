@@ -34,7 +34,7 @@ function recencyScore(publishedDate: string | null): number {
 export function computeTrustScore(domain: string, publishedDate: string | null): number {
   const authority = domainAuthorityScore(domain);
   const recency = recencyScore(publishedDate);
-  // Authority weighted higher than recency — a stale HBR piece still beats a fresh unknown blog.
+  // Authority weighted higher than recency. A stale HBR piece still beats a fresh unknown blog.
   return Math.round(authority * 0.65 + recency * 0.35);
 }
 

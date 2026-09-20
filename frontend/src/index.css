@@ -9,8 +9,8 @@
 
    Deliberately NOT included, because adoption is incremental and the existing
    app must keep rendering exactly as it does today:
-     * { @apply border-border }        — would repaint every border in the app
-     body { @apply bg-background ... } — would flatten the gradient page
+     * { @apply border-border }        : would repaint every border in the app
+     body { @apply bg-background ... } : would flatten the gradient page
                                          backgrounds set below
    Add those only if/when the whole app moves onto shadcn tokens.
 
@@ -102,7 +102,7 @@ button, a, [role="button"] {
   height: 100dvh;
 }
 
-/* iOS Safari auto-zooms any focused form control smaller than 16px — keep a
+/* iOS Safari auto-zooms any focused form control smaller than 16px, so keep a
    16px floor on mobile regardless of Tailwind text-size utilities applied to it. */
 @media (max-width: 767px) {
   input, textarea, select {
@@ -142,12 +142,12 @@ button, a, [role="button"] {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   @layer components — everything from here to the end of the Inputs block.
+   @layer components, everything from here to the end of the Inputs block.
 
    Why this wrapper exists: these classes are routinely combined with Tailwind
    utilities (`card border-2 border-brand-purple`, `input !pr-9`). Unlayered,
    they sit AFTER @tailwind utilities in source order at equal specificity, so
-   the component class quietly won and the utility did nothing — the Individual
+   the component class quietly won and the utility did nothing. The Individual
    pricing plan lost its purple border that way, invisibly, for months.
 
    Inside @layer components, Tailwind emits these into the components cascade
@@ -157,7 +157,7 @@ button, a, [role="button"] {
    Deliberately NOT layered: the typography block below (.h1/.h2/.body-text).
    18 call sites pair `body-text` with a text-size utility and currently render
    at .body-text's size; layering it would resize all of them at once. That is
-   a separate, intentional decision — not a side effect of this fix.
+   a separate, intentional decision, not a side effect of this fix.
    ───────────────────────────────────────────────────────────────────────── */
 @layer components {
 
@@ -166,7 +166,7 @@ button, a, [role="button"] {
    rather than as a grey smudge:
    1. A hairline `0 0 0 1px` ring defines the edge crisply at any zoom, so
       the blurred layers never have to do that job.
-   2. The tint is slate (60,66,87), not black — a neutral-cool cast sits
+   2. The tint is slate (60,66,87), not black. A neutral-cool cast sits
       naturally over off-white pages, where pure black reads muddy.
    3. Tight contact layer + wider ambient layer, each low-opacity, instead
       of one big blur.
@@ -174,7 +174,7 @@ button, a, [role="button"] {
    structural depth stays quiet and the brand colour still means something. */
 /* The edge is a real 1px border, not a `0 0 0 1px` shadow ring. Callers
    override the colour alone (`card !border-red-100`), and a Tailwind
-   border-{color} utility sets no width — so a ring-only edge would make
+   border-{color} utility sets no width, so a ring-only edge would make
    every one of those overrides silently render borderless. */
 .card {
   background: #FFFFFF;
@@ -195,7 +195,7 @@ button, a, [role="button"] {
 }
 
 /* ── Modals / dropdowns ── */
-/* Shadow only — components own their border-radius (e.g. bottom sheets that
+/* Shadow only. Components own their border-radius (e.g. bottom sheets that
    round only the top corners), so this class must not force border-radius. */
 .modal-shadow {
   box-shadow:

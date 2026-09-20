@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 interface SeoProps {
   title: string;
   description: string;
-  path: string; // e.g. "/pricing" — used to build the canonical + OG URL
+  path: string; // e.g. "/pricing", used to build the canonical + OG URL
   image?: string;
   type?: 'website' | 'article';
   jsonLd?: object | object[];
@@ -33,7 +33,7 @@ function setLink(rel: string, href: string) {
 // Sets per-page title/description/canonical/OG/Twitter tags and optional
 // JSON-LD structured data. Runs client-side (this is a CRA SPA, no SSR), so
 // it's read reliably by JS-executing crawlers (Googlebot, Bingbot) and by
-// the browser tab/history — but NOT by crawlers that only fetch raw HTML
+// the browser tab/history, but NOT by crawlers that only fetch raw HTML
 // (some AI/social-preview bots). That gap is a known limitation, not
 // something this component can fix without a prerendering/SSR step.
 export default function Seo({ title, description, path, image, type = 'website', jsonLd, noindex }: SeoProps) {

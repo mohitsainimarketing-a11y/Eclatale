@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 
 /**
- * Drop-in replacement for fetch() against our own backend — attaches the
+ * Drop-in replacement for fetch() against our own backend. Attaches the
  * current Supabase session's access token as an Authorization header so
  * the backend can verify the caller actually is the userId being sent in
  * the request body (see backend/lib/verifyAuth.ts). Falls back to a plain

@@ -74,7 +74,7 @@ export default function CreatePost() {
       const first = restored || (data.angles || [])[0] || null;
       setSelectedAngle(first);
     } catch (e: any) {
-      setAnglesError(e.message || "Couldn't load angles — try refreshing.");
+      setAnglesError(e.message || "Couldn't load angles. Try refreshing.");
     }
     setAnglesLoading(false);
   }, []);

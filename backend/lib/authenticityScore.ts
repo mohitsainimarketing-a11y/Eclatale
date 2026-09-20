@@ -33,7 +33,7 @@ export async function runFactualAccuracyCheck(anthropic: Anthropic, postContent:
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
     messages: [{
       role: 'user',
-      content: `Read this LinkedIn post. Identify ONLY hard factual claims — specific statistics, named studies, attributed quotes, regulatory facts, or specific dated events. DO NOT flag professional opinions, personal observations, industry perspectives, or general statements as factual claims requiring verification.\n\nPost:\n\n${postContent}\n\nFor each hard factual claim found, verify using web search and mark as:\n- Verified (include the source URL)\n- Unverifiable (opinion presented as fact — suggest rewording as personal perspective)\n- False (contradicted by credible sources)\n\nIf no hard factual claims exist (post is opinion/perspective-based), return { "overallAccuracyScore": 95, "claims": [], "summary": "Opinion-based post — no specific facts to verify", "isOpinionBased": true }.\n\nReturn ONLY a JSON object (after any research): { "overallAccuracyScore": 0-100, "claims": [{ "claim": "text", "status": "Verified|Unverifiable|False", "note": "one sentence", "sourceUrl": "URL if Verified, omit otherwise" }], "summary": "one sentence plain English summary", "isOpinionBased": boolean }`,
+      content: `Read this LinkedIn post. Identify ONLY hard factual claims: specific statistics, named studies, attributed quotes, regulatory facts, or specific dated events. DO NOT flag professional opinions, personal observations, industry perspectives, or general statements as factual claims requiring verification.\n\nPost:\n\n${postContent}\n\nFor each hard factual claim found, verify using web search and mark as:\n- Verified (include the source URL)\n- Unverifiable (opinion presented as fact, so suggest rewording as personal perspective)\n- False (contradicted by credible sources)\n\nIf no hard factual claims exist (post is opinion/perspective-based), return { "overallAccuracyScore": 95, "claims": [], "summary": "Opinion-based post with no specific facts to verify", "isOpinionBased": true }.\n\nReturn ONLY a JSON object (after any research): { "overallAccuracyScore": 0-100, "claims": [{ "claim": "text", "status": "Verified|Unverifiable|False", "note": "one sentence", "sourceUrl": "URL if Verified, omit otherwise" }], "summary": "one sentence plain English summary", "isOpinionBased": boolean }`,
     }],
   });
 
@@ -90,9 +90,9 @@ export interface VoiceResult {
 }
 
 const CONTENT_LENGTH_VOICE_NOTE: Record<string, string> = {
-  micro: 'This post was deliberately written at "Micro" length (100-300 characters) — a single, tight idea by design. Do not mark it down for brevity, for lacking multiple beats, or for not fully elaborating — judge only whether the words actually used sound like this person.',
-  short: 'This post was deliberately written at "Short" length (300-800 characters) — punchy and scannable by design. Do not mark it down for brevity or for covering fewer points than a longer post would.',
-  longform: 'This post was deliberately written at "Long-form" length (1500-3000 characters) — full thought leadership by design. Do not mark it down purely for length or depth; judge voice match the same way you would a shorter post.',
+  micro: 'This post was deliberately written at "Micro" length (100-300 characters). A single, tight idea by design. Do not mark it down for brevity, for lacking multiple beats, or for not fully elaborating. Judge only whether the words actually used sound like this person.',
+  short: 'This post was deliberately written at "Short" length (300-800 characters). Punchy and scannable by design. Do not mark it down for brevity or for covering fewer points than a longer post would.',
+  longform: 'This post was deliberately written at "Long-form" length (1500-3000 characters). Full thought leadership by design. Do not mark it down purely for length or depth; judge voice match the same way you would a shorter post.',
 };
 
 export async function runVoiceAuthenticityCheck(
@@ -105,7 +105,7 @@ export async function runVoiceAuthenticityCheck(
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `Here is writing pattern data for this user:\n\n${personaContext || 'No established voice profile yet — assess generically for authentic, natural human writing.'}\n\nHere is their generated post:\n\n${postContent}\n\n${lengthNote ? lengthNote + '\n\n' : ''}Assess how authentically this post matches their established voice. Consider: sentence length patterns, vocabulary level, use of personal pronouns, hook style, emotional register, topic relevance to their expertise.\n\nReturn ONLY a JSON object: { "voiceScore": 0-100, "matchLevel": "Excellent" | "Good" | "Moderate" | "Low", "specificMatches": ["2 things that sound like them"], "specificMismatches": ["1-2 things that feel off, empty array if none"], "suggestion": "one specific adjustment to make it sound more like them if score below 75, empty string otherwise" }`,
+      content: `Here is writing pattern data for this user:\n\n${personaContext || 'No established voice profile yet, so assess generically for authentic, natural human writing.'}\n\nHere is their generated post:\n\n${postContent}\n\n${lengthNote ? lengthNote + '\n\n' : ''}Assess how authentically this post matches their established voice. Consider: sentence length patterns, vocabulary level, use of personal pronouns, hook style, emotional register, topic relevance to their expertise.\n\nReturn ONLY a JSON object: { "voiceScore": 0-100, "matchLevel": "Excellent" | "Good" | "Moderate" | "Low", "specificMatches": ["2 things that sound like them"], "specificMismatches": ["1-2 things that feel off, empty array if none"], "suggestion": "one specific adjustment to make it sound more like them if score below 75, empty string otherwise" }`,
     }],
   });
 
@@ -233,7 +233,7 @@ function buildContentSignal(
     for (const claim of bad.slice(0, 2)) {
       issues.push({
         type: 'unverified_claim',
-        message: `"${claim.claim.length > 60 ? claim.claim.slice(0, 60) + '…' : claim.claim}" — ${claim.note}`,
+        message: `"${claim.claim.length > 60 ? claim.claim.slice(0, 60) + '…' : claim.claim}": ${claim.note}`,
         suggestion: claim.status === 'False'
           ? 'Remove or correct this claim before posting'
           : 'Rephrase as your perspective, or add a citation',
@@ -264,7 +264,7 @@ function pickTopSuggestion(accuracy: AccuracyResult, freshness: FreshnessResult,
   const candidates: { score: number; suggestion: string }[] = [];
   if (!accuracy.isOpinionBased && accuracy.score < 70) {
     const flagged = accuracy.claims.find(c => c.status === 'Unverifiable' || c.status === 'False');
-    candidates.push({ score: accuracy.score, suggestion: flagged ? `The claim "${flagged.claim}" ${flagged.note ? `— ${flagged.note}` : 'could not be verified'}. Consider adding a source or rewording as your opinion.` : accuracy.summary });
+    candidates.push({ score: accuracy.score, suggestion: flagged ? `The claim "${flagged.claim}"${flagged.note ? `: ${flagged.note}` : ' could not be verified'}. Consider adding a source or rewording as your opinion.` : accuracy.summary });
   }
   if (freshness.score < 70 && freshness.suggestion) candidates.push({ score: freshness.score, suggestion: freshness.suggestion });
   if (voice.score < 75 && voice.suggestion) candidates.push({ score: voice.score, suggestion: voice.suggestion });

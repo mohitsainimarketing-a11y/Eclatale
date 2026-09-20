@@ -595,7 +595,7 @@ export default function Settings() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-brand-dark uppercase tracking-wide mb-2 block">Bio / Tagline</label>
-                      <input type="text" value={bio} onChange={e => setBio(e.target.value)} className="input" placeholder="1–2 sentence professional summary" maxLength={200} />
+                      <input type="text" value={bio} onChange={e => setBio(e.target.value)} className="input" placeholder="1 to 2 sentence professional summary" maxLength={200} />
                       <p className="text-[11px] text-brand-muted mt-1">{bio.length}/200</p>
                     </div>
                     <div>
@@ -994,7 +994,7 @@ export default function Settings() {
                       )}
 
                       {trialEndsAt && subStatus === 'trialing' && (
-                        <p className="text-xs text-brand-muted mb-2">Trial ends {formatDate(trialEndsAt)} — your card will be charged automatically.</p>
+                        <p className="text-xs text-brand-muted mb-2">Trial ends {formatDate(trialEndsAt)}. Your card will be charged automatically.</p>
                       )}
                       {cancelAtPeriodEnd && cancelsAt && (
                         <p className="text-xs text-brand-orange mb-2">Your plan is set to cancel. You'll keep access until {formatDate(cancelsAt)}.</p>
@@ -1172,7 +1172,7 @@ export default function Settings() {
                 </p>
 
                 <div className="p-4 rounded-2xl bg-[rgba(124,92,252,0.05)] border border-[rgba(124,92,252,0.1)] mb-5">
-                  <p className="text-sm font-semibold text-brand-dark mb-1">Before you go — stay for $9.50/mo</p>
+                  <p className="text-sm font-semibold text-brand-dark mb-1">Before you go, stay for $9.50/mo</p>
                   <p className="text-xs text-brand-muted mb-3">Apply LAUNCH50 for 50% off your next 3 months instead of cancelling.</p>
                   <a href="mailto:info@eclatale.com?subject=Apply%20LAUNCH50%20to%20my%20subscription" className="text-xs text-brand-purple font-semibold hover:underline">
                     Email us to apply the discount →

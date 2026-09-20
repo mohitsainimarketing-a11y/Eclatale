@@ -40,7 +40,7 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
   const nonceRef = useRef<string | undefined>(undefined);
 
   // Runs after Google returns an ID token directly to this page (no redirect
-  // through Supabase's domain) — hands it to Supabase to create the session,
+  // through Supabase's domain). Hands it to Supabase to create the session,
   // then mirrors AuthCallback.tsx's new-vs-returning-user routing.
   const handleGoogleCredential = useCallback(async (response: { credential: string }) => {
     setGoogleLoading(true);
@@ -103,7 +103,7 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
   }, [view, handleGoogleCredential]);
 
   // Fallback used only when GOOGLE_CLIENT_ID isn't configured yet, or GIS
-  // failed to load — same Supabase-hosted redirect flow as before.
+  // failed to load. Same Supabase-hosted redirect flow as before.
   const handleGoogleLoginFallback = async () => {
     setGoogleLoading(true);
     setMessage('');
@@ -121,7 +121,7 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
       setMessage(error.message);
       setGoogleLoading(false);
     }
-    // On success, Supabase redirects the browser to Google immediately —
+    // On success, Supabase redirects the browser to Google immediately,
     // no further state change happens on this page.
   };
 
@@ -203,7 +203,7 @@ export default function Auth({ defaultIsLogin = false }: { defaultIsLogin?: bool
         <div className="card p-7 md:p-8 overflow-hidden">
           {view === 'auth' && (
             <div className="animate-fadeIn">
-              {/* Real Google-rendered button (shown once GIS has initialized) —
+              {/* Real Google-rendered button (shown once GIS has initialized).
                   runs the sign-in entirely from this page, so Google's account
                   chooser shows eclatale.com instead of the Supabase project domain. */}
               <div

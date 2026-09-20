@@ -1,6 +1,6 @@
 // Proven closing lines a user can drop into the editor. Static reference
-// content — not model-generated, so it's instant and free. (The opening-line
-// counterpart, HOOK_TEMPLATES, was replaced by the real Hook Library panel —
+// content, not model-generated, so it's instant and free. (The opening-line
+// counterpart, HOOK_TEMPLATES, was replaced by the real Hook Library panel,
 // see HookLibraryPanel.tsx / backend/lib/hookLibrary.ts.)
 
 export const CTA_TEMPLATES: string[] = [

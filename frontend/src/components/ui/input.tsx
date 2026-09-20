@@ -8,7 +8,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
       type={type}
       ref={ref}
       className={cn(
-        // text-base on mobile, text-sm from sm: upward — matching the .input
+        // text-base on mobile, text-sm from sm: upward, matching the .input
         // rule in index.css. Anything under 16px makes iOS Safari zoom the
         // viewport on focus, which yanks the layout mid-form.
         'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base shadow-sm transition-colors',

@@ -9,10 +9,10 @@ function parseJsonObject(text: string): any {
 }
 
 const CONTENT_LENGTH_READABILITY_NOTE: Record<string, string> = {
-  micro: 'This post was deliberately written as "Micro" length (100-300 characters) — one single idea, hit hard and stop. Do NOT penalize readabilityScore for brevity, lack of multiple paragraphs, or having only one beat. A tight, complete micro post should score just as high as a well-structured standard post.',
-  short: 'This post was deliberately written as "Short" length (300-800 characters) — punchy and scannable with 2-3 points max. Do NOT penalize readabilityScore for being brief or having fewer paragraphs than a standard post.',
+  micro: 'This post was deliberately written as "Micro" length (100-300 characters). One single idea, hit hard and stop. Do NOT penalize readabilityScore for brevity, lack of multiple paragraphs, or having only one beat. A tight, complete micro post should score just as high as a well-structured standard post.',
+  short: 'This post was deliberately written as "Short" length (300-800 characters). Punchy and scannable with 2-3 points max. Do NOT penalize readabilityScore for being brief or having fewer paragraphs than a standard post.',
   standard: '',
-  longform: 'This post was deliberately written as "Long-form" length (1500-3000 characters) — full thought leadership with multiple insights and a personal story element. Do NOT penalize readabilityScore purely for length or paragraph count; judge scannability (white space, sentence length, structure) on its own terms, the same way you would a shorter post.',
+  longform: 'This post was deliberately written as "Long-form" length (1500-3000 characters). Full thought leadership with multiple ideas and a personal story element. Do NOT penalize readabilityScore purely for length or paragraph count; judge scannability (white space, sentence length, structure) on its own terms, the same way you would a shorter post.',
 };
 
 function buildAnalyzePostPrompt(contentLength?: string): string {
@@ -25,7 +25,7 @@ ${lengthNote ? `\n${lengthNote}\n` : ''}
   toneDetected: one of: 'professional' | 'casual' | 'inspirational' | 'data_driven',
   toneConfidence: score 1-10,
   sentimentProfile: { positive: 0-100, neutral: 0-100, negative: 0-100 },
-  readabilityScore: score 1-100 (higher = more LinkedIn-optimized: short sentences, white space, scannable — judge this relative to the post's intended length, not against a fixed ideal length),
+  readabilityScore: score 1-100 (higher = more LinkedIn-optimized: short sentences, white space, scannable. Judge this relative to the post's intended length, not against a fixed ideal length),
   avgSentenceLength: number of words,
   paragraphCount: number,
   usesPersonalPronouns: boolean,

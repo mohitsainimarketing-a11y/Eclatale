@@ -44,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 ${SYSTEM_PROMPT_BASE}
 
-${personaFragment ? personaFragment + '\n' : ''}You are adapting existing content to a new format. Your job is to preserve the core insight, specific facts, and the author's authentic voice — while restructuring completely for the target platform's conventions.
+${personaFragment ? personaFragment + '\n' : ''}You are adapting existing content to a new format. Your job is to preserve the core insight, specific facts, and the author's authentic voice, while restructuring completely for the target platform's conventions.
 
 ${OUTPUT_RULES}
 
@@ -54,7 +54,7 @@ ADAPTATION RULES:
 - Preserve the main argument, specific numbers, examples, and story beats from the original.
 - Keep the author's voice and distinctive phrasing where it fits the new format.
 - Restructure aggressively to match the new format (length, hook style, pacing, structure).
-- Do NOT water down or genericize — the specificity is the value.
+- Do NOT water down or genericize. The specificity is the value.
 - Return only the adapted content. No preamble, no explanation, no "Here's the adapted version:".`;
 
     const userMessage = `Adapt this content into a ${targetLabel}:

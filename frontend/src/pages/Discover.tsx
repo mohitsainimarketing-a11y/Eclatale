@@ -256,7 +256,7 @@ export default function Discover() {
       setActiveCategory('All');
     } catch (e: any) {
       if (e.name === 'AbortError') {
-        setError('Search timed out — please try again.');
+        setError('Search timed out. Please try again.');
       } else {
         setError(e.message || 'Failed to load content');
       }
@@ -308,7 +308,7 @@ export default function Discover() {
             <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Content Discovery</h1>
             <p className="text-sm text-brand-muted mt-1">
               {data && !activeQuery
-                ? <>Live content for <span className="font-semibold text-brand-dark">{data.role}s in {data.industry}</span> — click any article to write about it or repurpose it.</>
+                ? <>Live content for <span className="font-semibold text-brand-dark">{data.role}s in {data.industry}</span>. Click any article to write about it or repurpose it.</>
                 : activeQuery
                 ? <>Showing results for "<span className="font-semibold text-brand-dark">{activeQuery}</span>"</>
                 : 'Discovering content from across the web…'}
@@ -323,7 +323,7 @@ export default function Discover() {
                 type="text"
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
-                placeholder="Search any topic — AI, leadership, marketing, SaaS…"
+                placeholder="Search any topic: AI, leadership, marketing, SaaS…"
                 className="input w-full pl-9 text-sm"
               />
             </div>
@@ -371,7 +371,7 @@ export default function Discover() {
             <div>
               {loadingSlow && (
                 <p className="text-center text-[13px] text-brand-muted mb-4 animate-pulse">
-                  Searching the web for the latest articles — usually takes 20–30 seconds…
+                  Searching the web for the latest articles. Usually takes 20 to 30 seconds…
                 </p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

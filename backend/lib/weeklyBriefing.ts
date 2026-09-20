@@ -26,7 +26,7 @@ async function gatherPersonalStats(supabase: SupabaseClient, userId: string) {
 }
 
 // One short, specific recommendation grounded in the user's own hook-type
-// history (real data when available) — never a fabricated engagement number,
+// history (real data when available). Never a fabricated engagement number,
 // since Eclatale doesn't track real LinkedIn engagement metrics.
 async function generateOpportunity(
   anthropic: Anthropic, role: string, domain: string, personalBest: { hookType: string; avgHookStrength: number }[]
@@ -45,14 +45,14 @@ async function generateOpportunity(
 
 Suggest ONE writing style they haven't leaned on enough, from exactly these 6 (lowercase, use this exact spelling): contrarian, storyteller, analyst, teacher, insider, motivator.
 
-Write 1-2 sentences recommending they try it this week. Be specific and grounded in what you know about their history — do not invent a fake percentage or engagement number. Never use markdown formatting (no ** for bold, no * for italic, no # for headers) — this is plain text for an email. Return ONLY valid JSON: { "text": string, "styleSlug": "one of the 6 style ids above" }`,
+Write 1-2 sentences recommending they try it this week. Be specific and grounded in what you know about their history. Do not invent a fake percentage or engagement number. Never use markdown formatting (no ** for bold, no * for italic, no # for headers). This is plain text for an email. Return ONLY valid JSON: { "text": string, "styleSlug": "one of the 6 style ids above" }`,
     }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
   const parsed = parseJsonObject(text);
   const styleSlug = getWritingStyle(parsed.styleSlug) ? parsed.styleSlug : 'storyteller';
   return {
-    text: parsed.text || `Try a ${styleSlug} post this week — it's a style you haven't used much recently.`,
+    text: parsed.text || `Try a ${styleSlug} post this week. It's a style you haven't used much recently.`,
     styleSlug,
   };
 }
@@ -119,7 +119,7 @@ export async function sendBriefingToUser(anthropic: Anthropic, supabase: Supabas
 }
 
 // Weekly cron. Hobby plan only permits daily/weekly crons (not hourly), so we
-// cannot fire at each user's local 8am precisely — mirrors the same
+// cannot fire at each user's local 8am precisely. This mirrors the same
 // day-granularity timezone approach as weeklyDigestCron.
 export async function weeklyIndustryBriefingCron(anthropic: Anthropic, supabase: SupabaseClient) {
   const { data: profiles } = await supabase.from('profiles').select('id, timezone, notif_industry_briefing');

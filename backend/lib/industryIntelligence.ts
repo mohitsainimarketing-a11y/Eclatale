@@ -72,7 +72,7 @@ export async function getIndustryIntelligence(
   let result: IndustryIntelligenceResult;
 
   if (real.totalPosts >= MIN_POSTS_FOR_REAL_DATA) {
-    // Real Eclatale usage data is dense enough to report directly — no
+    // Real Eclatale usage data is dense enough to report directly, with no
     // fabricated numbers, this is a genuine distribution + performance proxy
     // (avg hook_strength, the only performance signal we actually store).
     const total = real.byType.reduce((s, t) => s + t.count, 0);
@@ -82,7 +82,7 @@ export async function getIndustryIntelligence(
       relativePerformance: `avg hook strength ${t.avgStrength}/100`,
     }));
 
-    // Length/times/trending still need Claude+web search — real usage data
+    // Length/times/trending still need Claude+web search. Real usage data
     // doesn't cover those dimensions with any volume yet.
     const supplement = await generateSupplement(anthropic, role, domain);
     result = {

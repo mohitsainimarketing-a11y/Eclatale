@@ -5,7 +5,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 // ── Brand Health Score ──────────────────────────────────────────────────────
 // Deterministic (not LLM-based) so it's fast, stable, and diffable week over
-// week for the trend arrow — an LLM call can't give a meaningful delta.
+// week for the trend arrow, since an LLM call can't give a meaningful delta.
 
 export interface BrandHealthBreakdown {
   score: number;
@@ -276,7 +276,7 @@ export async function getContentTable(supabase: SupabaseClient, userId: string, 
 }
 
 // ── AI recommendations ──────────────────────────────────────────────────────
-// Grounded strictly in the user's real post_analytics rows — the prompt
+// Grounded strictly in the user's real post_analytics rows. The prompt
 // includes the actual per-tone averages computed above, and instructs the
 // model to only cite numbers present in that data (not invent engagement
 // stats we don't have, like impressions).
@@ -296,7 +296,7 @@ export async function generateRecommendations(
   if (totalAnalyzed < 2) {
     return [{
       priority: 'HIGH',
-      recommendation: 'Publish a few more posts to unlock personalized recommendations — we need at least 2 analyzed posts to spot real patterns in your writing.',
+      recommendation: 'Publish a few more posts to get personalized recommendations. We need at least 2 analyzed posts to spot real patterns in your writing.',
       dataPoint: `${totalAnalyzed} post${totalAnalyzed === 1 ? '' : 's'} analyzed so far`,
       actionUrl: '/create',
       actionLabel: 'Create a post',
@@ -309,7 +309,7 @@ export async function generateRecommendations(
     max_tokens: 700,
     messages: [{
       role: 'user',
-      content: `Here is this user's real LinkedIn content analytics, grouped by tone:\n\n${summary}\n\nBased ONLY on this real data, generate up to 3 specific, actionable recommendations. Each must cite an actual number from the data above — never invent metrics that aren't listed (no impressions, no engagement rate, no follower counts, since we don't have that data). If the data doesn't support a strong recommendation, return fewer than 3.\n\nReturn ONLY a JSON array: [{ "priority": "HIGH"|"MEDIUM", "recommendation": "specific sentence referencing the real data", "dataPoint": "the specific stat this is based on", "actionUrl": "/create/talk", "actionLabel": "short button label" }]`,
+      content: `Here is this user's real LinkedIn content analytics, grouped by tone:\n\n${summary}\n\nBased ONLY on this real data, generate up to 3 specific, actionable recommendations. Each must cite an actual number from the data above. Never invent metrics that aren't listed (no impressions, no engagement rate, no follower counts, since we don't have that data). If the data doesn't support a strong recommendation, return fewer than 3.\n\nReturn ONLY a JSON array: [{ "priority": "HIGH"|"MEDIUM", "recommendation": "specific sentence referencing the real data", "dataPoint": "the specific stat this is based on", "actionUrl": "/create/talk", "actionLabel": "short button label" }]`,
     }],
   });
 

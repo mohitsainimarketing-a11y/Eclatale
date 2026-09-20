@@ -5,7 +5,7 @@ import { useSidebar } from '../contexts/SidebarContext';
 // Wraps every authenticated "app" page (Dashboard, Create, Schedule, Content
 // Library, Analytics, Voice Profile, Settings, ...) with the persistent
 // sidebar. Handles the content offset itself so pages never need to think
-// about sidebar width — they just render their content as normal.
+// about sidebar width. They just render their content as normal.
 export default function AppShell({ children, mobileTitle }: { children: React.ReactNode; mobileTitle?: string }) {
   const { sidebarWidth, breakpoint } = useSidebar();
 

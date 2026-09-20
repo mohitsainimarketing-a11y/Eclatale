@@ -1,0 +1,1059 @@
+<title>Top 50 Corporate Jargons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --purple: #7C5CFC;
+    --purple-dark: #5B3FD4;
+    --purple-light: #F0ECFF;
+    --purple-mid: #E3DAFF;
+    --purple-border: #D4C8FF;
+    --ink: #0F0A1E;
+    --ink-mid: #3D3557;
+    --ink-muted: #7A6E94;
+    --ground: #F8F7FC;
+    --white: #FFFFFF;
+    --gold: #F5A623;
+    --green: #27B469;
+    --red: #E5434B;
+    --cat1: #EDE8FF;
+    --cat2: #E8F4FF;
+    --cat3: #E8FFF4;
+    --cat4: #FFF5E8;
+    --cat5: #FFE8EE;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --purple: #9B7FFF;
+      --purple-dark: #7C5CFC;
+      --purple-light: #1E1633;
+      --purple-mid: #2A2048;
+      --purple-border: #3D3066;
+      --ink: #F0ECFF;
+      --ink-mid: #C4BAE8;
+      --ink-muted: #8B80AA;
+      --ground: #0F0A1E;
+      --white: #1A1430;
+      --cat1: #1E1A33;
+      --cat2: #141E2E;
+      --cat3: #0E1E19;
+      --cat4: #201A0E;
+      --cat5: #200E14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --purple: #9B7FFF;
+    --purple-dark: #7C5CFC;
+    --purple-light: #1E1633;
+    --purple-mid: #2A2048;
+    --purple-border: #3D3066;
+    --ink: #F0ECFF;
+    --ink-mid: #C4BAE8;
+    --ink-muted: #8B80AA;
+    --ground: #0F0A1E;
+    --white: #1A1430;
+    --cat1: #1E1A33;
+    --cat2: #141E2E;
+    --cat3: #0E1E19;
+    --cat4: #201A0E;
+    --cat5: #200E14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+
+  /* ── PRINT BUTTON ───────────────────────────── */
+  .print-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--purple);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 12px;
+  }
+  .print-bar span { opacity: 0.85; font-weight: 400; }
+  .print-btn {
+    background: #fff;
+    color: var(--purple);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: opacity 0.15s;
+  }
+  .print-btn:hover { opacity: 0.85; }
+
+  /* ── PAGE WRAPPER ───────────────────────────── */
+  .page { max-width: 880px; margin: 0 auto; padding-bottom: 80px; }
+
+  /* ── COVER ──────────────────────────────────── */
+  .cover {
+    background: linear-gradient(135deg, #5B3FD4 0%, #7C5CFC 55%, #A882FF 100%);
+    border-radius: 20px;
+    padding: 64px 48px 56px;
+    margin: 28px 0 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -40px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .cover-label {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(36px, 6vw, 60px);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.08;
+    text-wrap: balance;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .cover h1 em {
+    font-style: italic;
+    font-weight: 300;
+    opacity: 0.9;
+  }
+  .cover-sub {
+    color: rgba(255,255,255,0.82);
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 520px;
+    margin-bottom: 36px;
+    position: relative;
+    z-index: 1;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .cover-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,0.75);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .cover-logo {
+    position: absolute;
+    bottom: 28px;
+    right: 40px;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: rgba(255,255,255,0.5);
+    z-index: 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── INTRO ──────────────────────────────────── */
+  .intro {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 36px 40px;
+    margin-bottom: 48px;
+    border: 1px solid var(--purple-border);
+  }
+  .intro h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .intro p {
+    color: var(--ink-mid);
+    font-size: 14.5px;
+    line-height: 1.75;
+    margin-bottom: 12px;
+  }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--ink); }
+
+  /* ── CATEGORY HEADER ────────────────────────── */
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding: 18px 24px;
+    border-radius: 14px;
+    border: 1px solid var(--purple-border);
+  }
+  .cat-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+  .cat-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .cat-desc {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+  }
+  .cat-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--purple);
+    background: var(--purple-light);
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── CARD GRID ──────────────────────────────── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  @media (max-width: 580px) { .cards { grid-template-columns: 1fr; } }
+
+  /* ── JARGON CARD ────────────────────────────── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--purple-border);
+    border-radius: 16px;
+    padding: 22px 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .card-term {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 900;
+    color: var(--purple);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .card-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    background: var(--purple-light);
+    padding: 3px 9px;
+    border-radius: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .card-def {
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.65;
+  }
+  .card-use-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .card-use {
+    font-size: 11.5px;
+    line-height: 1.55;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+  .card-use.good {
+    background: #EDFBF3;
+    color: #0E6630;
+    border: 1px solid #B5EAC9;
+  }
+  .card-use.bad {
+    background: #FFF0F1;
+    color: #8B1A1E;
+    border: 1px solid #FFCDD0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .card-use.good {
+      background: #0E2518; color: #5DD68A; border-color: #1A4A2C;
+    }
+    :root:not([data-theme="light"]) .card-use.bad {
+      background: #25100E; color: #F08585; border-color: #4A1A1A;
+    }
+  }
+  :root[data-theme="dark"] .card-use.good {
+    background: #0E2518; color: #5DD68A; border-color: #1A4A2C;
+  }
+  :root[data-theme="dark"] .card-use.bad {
+    background: #25100E; color: #F08585; border-color: #4A1A1A;
+  }
+  .card-use-label {
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .card-example {
+    background: var(--purple-light);
+    border-left: 3px solid var(--purple);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    font-style: italic;
+    color: var(--ink-mid);
+    line-height: 1.6;
+  }
+  .card-tip {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    padding-top: 6px;
+    border-top: 1px solid var(--purple-border);
+    line-height: 1.55;
+  }
+  .card-tip strong { color: var(--purple); }
+
+  /* ── BONUS SECTION ──────────────────────────── */
+  .bonus {
+    background: linear-gradient(135deg, #0F0A1E 0%, #1C1433 100%);
+    border-radius: 20px;
+    padding: 48px 40px;
+    margin-bottom: 48px;
+    color: #fff;
+  }
+  .bonus h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 900;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+  .bonus-sub {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+  .avoid-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 580px) { .avoid-grid { grid-template-columns: 1fr; } }
+  .avoid-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .avoid-term {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #F5A623;
+    margin-bottom: 5px;
+    text-decoration: line-through;
+    text-decoration-color: rgba(245,166,35,0.4);
+  }
+  .avoid-why {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.55;
+    margin-bottom: 6px;
+  }
+  .avoid-instead {
+    font-size: 12px;
+    font-weight: 600;
+    color: #72E6A4;
+  }
+  .avoid-instead::before { content: 'Instead: '; opacity: 0.6; font-weight: 400; }
+
+  /* ── FOOTER / CTA ───────────────────────────── */
+  .guide-footer {
+    text-align: center;
+    padding: 40px 24px;
+    background: var(--white);
+    border-radius: 20px;
+    border: 1px solid var(--purple-border);
+  }
+  .guide-footer h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .guide-footer p {
+    color: var(--ink-muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .guide-footer a {
+    display: inline-block;
+    background: linear-gradient(135deg, #5B3FD4, #7C5CFC);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 28px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .guide-footer a:hover { opacity: 0.88; }
+  .guide-footer .brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--purple);
+    margin-top: 20px;
+    display: block;
+    opacity: 0.7;
+  }
+
+  /* ── PRINT ──────────────────────────────────── */
+  @media print {
+    .print-bar { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .page { max-width: 100%; padding-bottom: 0; }
+    .cover { border-radius: 0; margin: 0 0 32px; page-break-after: avoid; }
+    .cards { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; border-color: #ddd; }
+    .bonus { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .category-header { page-break-after: avoid; }
+  }
+</style>
+
+<div class="print-bar">
+  <div>
+    <strong>Top 50 Corporate Jargons</strong>
+    <span>by Eclatale</span>
+  </div>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <!-- COVER -->
+  <div class="cover">
+    <span class="cover-label">Free Guide · Eclatale</span>
+    <h1>Top 50 Corporate Jargons <em>with use cases</em></h1>
+    <p class="cover-sub">
+      Every term explained in plain English, with real LinkedIn post examples,
+      when to use each phrase, and when it sounds hollow.
+      Stop guessing. Start communicating with authority.
+    </p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">📄 50 jargons defined</div>
+      <div class="cover-meta-item">💡 Real LinkedIn examples</div>
+      <div class="cover-meta-item">🚫 10 buzzwords to avoid</div>
+    </div>
+    <span class="cover-logo">Eclatale</span>
+  </div>
+
+  <!-- INTRO -->
+  <div class="intro">
+    <h2>How to use this guide</h2>
+    <p>
+      Corporate jargon is a double-edged sword. Used well, it signals that you understand the
+      game. It says you can communicate efficiently with decision-makers, speak the language of
+      business, and earn credibility in rooms that matter. Used badly, it signals the opposite:
+      that you're hiding behind buzzwords, padding thin ideas, or trying too hard to sound important.
+    </p>
+    <p>
+      This guide gives you <strong>50 of the most common terms</strong> you'll encounter in corporate
+      environments, on LinkedIn, and in professional conversations. For each one: a plain-English
+      definition, the context where it lands well, the context where it falls flat, a real LinkedIn
+      post example, and a power tip for using it without sounding like everyone else.
+    </p>
+    <p>
+      At the end: <strong>10 phrases to strike from your vocabulary entirely</strong>. These are words that
+      have been drained of meaning through overuse and now signal laziness more than competence.
+    </p>
+  </div>
+
+  <!-- RENDER TARGET -->
+  <div id="guide-content"></div>
+
+</div>
+
+<script>
+const CATEGORIES = [
+  {
+    icon: '♟️',
+    title: 'Strategy & Execution',
+    desc: 'The language of planning, resource allocation, and big-picture thinking',
+    color: 'var(--cat1)',
+    jargons: [
+      {
+        term: 'Leverage',
+        def: 'To use existing strengths, assets, or advantages to achieve a larger outcome than you could without them.',
+        good: 'When describing how you applied existing resources to generate new results.',
+        bad: "When used as filler. 'We leveraged synergies' says absolutely nothing.",
+        example: '"3 years ago I had zero following. I leveraged 8 years of sales call notes to write content my ICP actually searched for. 2,400 followers later, the archive was the asset the whole time."',
+        tip: 'Pair it with the specific thing being leveraged. "Leverage our network" is vague. "Leverage our 40,000-subscriber newsletter" is compelling.'
+      },
+      {
+        term: 'Synergy',
+        def: 'A combined output that exceeds what each element would produce separately. 1 + 1 = 3 in practice.',
+        good: 'When describing a specific partnership, merger, or cross-team collaboration with measurable joint results.',
+        bad: 'In press releases and acquisition announcements where it substitutes for actual rationale.',
+        example: '"The real synergy between content and sales: our marketing team writes the objection-handling articles, sales links them in follow-ups. Response rate up 34%. Alignment creates leverage."',
+        tip: "If you can't quantify or name the synergy, don't use the word. Show the output instead."
+      },
+      {
+        term: 'Deep Dive',
+        def: 'A thorough, detailed analysis of a topic, problem, or dataset, going beyond surface-level observation.',
+        good: 'When signaling that your content or analysis goes beyond hot takes into substantive research.',
+        bad: "When the post is only 3 bullet points. 'Quick deep dive' is almost always a contradiction.",
+        example: '"I spent 3 weeks doing a deep dive on why most LinkedIn content fails in the first 2 lines. Analysed 200 top-performing posts. The pattern surprised me. Thread ↓"',
+        tip: 'Reserve it for content that actually earned the label. If you did the work, the phrase validates the effort. If you didn\'t, it damages trust.'
+      },
+      {
+        term: 'Bandwidth',
+        def: "A person's or team's available capacity to take on additional work, attention, or responsibility.",
+        good: 'When honestly communicating workload constraints or scoping conversations about resource allocation.',
+        bad: "As a vague excuse. 'I don't have bandwidth' without context reads as passive avoidance.",
+        example: '"Before saying yes to another initiative this quarter: map your team\'s actual bandwidth. Not the aspirational version. The real one. Overcommitting isn\'t ambition. It\'s a debt you pay in quality."',
+        tip: 'Useful in planning conversations, not as a substitute for direct communication about priorities.'
+      },
+      {
+        term: 'Move the Needle',
+        def: 'To make a meaningful, measurable improvement in a key metric, usually implying the improvement is not trivial.',
+        good: 'When discussing what actions actually drove measurable results versus what felt busy.',
+        bad: "When everything 'moves the needle'. The phrase loses all signal value when overused.",
+        example: '"We ran 11 campaigns last quarter. Only 2 actually moved the needle on pipeline. The other 9 were activity, not outcomes. Here\'s how we learned to tell the difference before we spend the budget."',
+        tip: "The implied question is always 'which needle?' Specify the metric and you'll sound much sharper."
+      },
+      {
+        term: 'Low-Hanging Fruit',
+        def: 'The easiest, most accessible opportunities that can be captured quickly with minimal effort or risk.',
+        good: 'When prioritising initiatives and explaining why quick wins matter for momentum.',
+        bad: "When it sounds like you're only going after easy problems. Leaders aren't hired to pick low-hanging fruit. They're hired to grow the tree.",
+        example: '"Every new role has low-hanging fruit: fixes obvious to an outsider but invisible to those too close. The mistake is stopping there. The real job starts after the quick wins run out."',
+        tip: "Name the fruit. 'Unoptimised email sequences' is low-hanging fruit. 'Low-hanging fruit' alone tells your audience nothing."
+      },
+      {
+        term: 'North Star',
+        def: 'The single most important guiding metric or goal that, if achieved, indicates everything else is on track.',
+        good: 'When describing the primary metric a team or product is optimising for above all others.',
+        bad: "When it becomes a wallpaper phrase. If your team has 6 'North Star' metrics, you have zero.",
+        example: '"Our North Star for year one was simple: get 100 users to come back at least 3 times. Not revenue. Not growth. Retention first. Everything else was noise until we cracked that."',
+        tip: 'The point of a North Star is that it is singular. Using the phrase implies you have chosen and committed. Make sure you have.'
+      },
+      {
+        term: 'Runway',
+        def: 'The amount of time a company, team, or project can operate before running out of resources, usually money.',
+        good: "In startup, funding, or resource-planning contexts where the stakes of that timeline are concrete.",
+        bad: "When used to sound startup-y in an enterprise context where 'budget remaining' is the clearer phrase.",
+        example: '"18 months of runway felt like forever. Until it didn\'t. Month 14 we finally found product-market fit. The lesson: runway is only valuable if you\'re learning fast enough to change course before it ends."',
+        tip: "In investor or board conversations, naming the number always lands harder than the word: '14 months' beats 'decent runway'."
+      },
+      {
+        term: 'Boil the Ocean',
+        def: 'Attempting to solve a problem so large or all-encompassing that the project becomes unmanageable (usually a critique of scope).',
+        good: "When pushing back on over-engineering or scope creep in a professional, familiar-sounding way.",
+        bad: "Don't use it to dismiss ambitious thinking. Sometimes the ocean needs to be boiled.",
+        example: '"The brief was to \'fix customer experience\'. Classic boil-the-ocean brief. We reframed: what is the one moment that determines whether a customer churns in month one? Start there. Scope saves projects."',
+        tip: 'Almost always used as a caution or critique, not a goal. If you\'re the one proposing the project, no one ever says they\'re trying to boil the ocean.'
+      },
+      {
+        term: 'Strategic Pivot',
+        def: 'A deliberate, real change in business direction, product focus, or go-to-market approach (informed by learning, not failure).',
+        good: "When describing a planned shift backed by data or new evidence, not a retreat or crisis response.",
+        bad: "Calling every failed plan a 'pivot'. The word carries a precision that 'we changed our minds' does not.",
+        example: '"Year 2: we pivoted from B2C to B2B. Not because B2C failed. Because B2B customers paid 10x faster, stayed 3x longer, and referred actively. Data drove it. We stopped calling it a pivot. We called it learning."',
+        tip: "A pivot implies you kept your core hypothesis and changed the approach. If you changed the hypothesis too, that's a restart."
+      }
+    ]
+  },
+  {
+    icon: '💬',
+    title: 'Meetings & Communication',
+    desc: 'The vocabulary of internal alignment, decision-making, and professional dialogue',
+    color: 'var(--cat2)',
+    jargons: [
+      {
+        term: 'Circle Back',
+        def: 'To return to a topic, question, or conversation at a later point after gathering more information or context.',
+        good: "When you genuinely need time to investigate before responding. It signals care over speed.",
+        bad: "As a polite way of never answering. 'Let me circle back' with no follow-up is a trust eraser.",
+        example: '"Great leaders circle back. When someone raises a concern in a meeting and you say you\'ll circle back. Actually do it. The loop you close earns more credibility than the answer you gave on the spot."',
+        tip: "Always attach a time when you say it: 'Let me circle back by Thursday' is a commitment. 'Let me circle back' is an escape."
+      },
+      {
+        term: 'Take This Offline',
+        def: 'A request to continue a detailed, sensitive, or tangential conversation outside the current meeting rather than consuming shared time.',
+        good: "When a topic is genuinely better served in a smaller, more focused conversation.",
+        bad: "When used to silence a valid challenge in public. Audiences notice the difference.",
+        example: '"The most underrated meeting skill: knowing when to \'take it offline\'. Not to avoid discomfort, but because a 15-person call isn\'t the right room to untangle a complex disagreement. Protect the room\'s time."',
+        tip: "When you say it, name the follow-up: 'Let's take this offline. I'll send a calendar invite.' Without the follow-up, it reads as dismissal."
+      },
+      {
+        term: 'Loop In',
+        def: "To include someone in a conversation, email thread, or decision-making process who wasn't previously involved.",
+        good: "When being intentional about inclusion, signalling that someone's input or awareness matters.",
+        bad: "Looping in 12 people 'for visibility' when only 2 need to act. It dilutes attention and signals poor judgment.",
+        example: '"One thing I always do when joining a new role: within 30 days, map who should be looped in on what. Most communication breakdowns aren\'t malicious. They\'re mapping failures."',
+        tip: "Before you loop someone in, ask: are they here to act, decide, or just know? Each requires a different approach."
+      },
+      {
+        term: 'Alignment',
+        def: 'The state of shared understanding, agreement on direction, and coordinated effort across individuals or teams.',
+        good: "When describing genuine consensus-building that prevents rework and conflict down the line.",
+        bad: "When used to mean 'everyone agreed with me'. Alignment is mutual, not submission.",
+        example: '"Misalignment is expensive. A 30-minute alignment conversation before a project can save 3 weeks of rework after it. I\'ve seen both. I now always invest in the 30 minutes."',
+        tip: "Test for real alignment by asking others to articulate the decision in their own words. If the summaries differ, you\'re not aligned. You\'re politely confused together."
+      },
+      {
+        term: 'Cascade',
+        def: "To systematically communicate information or decisions from senior levels down through an organisation's layers.",
+        good: "In change management, org announcements, or strategy rollouts where structured communication is critical.",
+        bad: "When used to describe one-way information flow with no feedback mechanism. Good cascades are dialogues.",
+        example: '"After every board meeting, I cascade 3 things to my team: what was decided, what\'s still open, and what changed. Most people only cascade decisions. The open questions matter just as much for trust."',
+        tip: "A cascade without a feedback loop is a broadcast. Build in the return path."
+      },
+      {
+        term: 'Touch Base',
+        def: 'A brief check-in or informal update between two people to maintain connection, share status, or keep communication open.',
+        good: "For scheduling short, low-stakes syncs: catch-ups that don't need a full agenda.",
+        bad: "As a euphemism for 'I need to check up on you'. The phrase loses trust when it masks surveillance.",
+        example: '"The best managers touch base consistently without making it feel like surveillance. The difference: they ask questions, they don\'t audit. People share more when check-ins feel safe."',
+        tip: "Short and regular beats long and occasional. A 10-minute weekly touch base compounds better than a 90-minute quarterly review."
+      },
+      {
+        term: 'Table It',
+        def: 'Warning: this phrase means opposite things depending on geography. In North America: to postpone. In the UK: to bring forward for immediate discussion.',
+        good: "Only once you\'re certain of your audience\'s geography, and when you mean the same thing they do.",
+        bad: "In cross-border meetings where interpretation will diverge. Use 'defer' or 'bring forward' instead.",
+        example: '"I once watched a US-UK team spend 40 minutes arguing over a decision that had already been made. The American said \'let\'s table it\'. The Brit thought that meant \'let\'s decide now\'. Context is everything."',
+        tip: "Avoid this phrase in international settings. Replace with precision: 'Let\'s defer this to next week' or 'Let\'s address this now.'"
+      },
+      {
+        term: 'Unpack',
+        def: 'To break down a complex idea, decision, or situation into its component parts for clearer examination or communication.',
+        good: "When signalling that you\'re going to take something layered and make it accessible.",
+        bad: "When it precedes a three-word explanation of something genuinely complex. It raises an expectation you then don\'t meet.",
+        example: '"Let me unpack why 80% of LinkedIn posts fail before the second sentence. It comes down to one thing: the writer optimised for what they wanted to say, not what the reader wants to read."',
+        tip: "Works well as a content opener because it promises structure and depth. Make sure what follows delivers both."
+      },
+      {
+        term: 'Socialise an Idea',
+        def: "To informally share an idea with relevant stakeholders before a formal proposal, gathering feedback, buy-in, and anticipating objections.",
+        good: "Before any major initiative or proposal. Pre-socialising surfaces resistance early, when it\'s cheaper to address.",
+        bad: "When it becomes endless pre-consultation that prevents any decision from ever being made.",
+        example: '"Before I pitched the rebrand to the board, I socialised it with 5 key stakeholders over 3 weeks. By the meeting, it wasn\'t a surprise. It was a formality. That\'s what good political capital looks like."',
+        tip: "The goal of socialising is to learn what will kill the idea, and to neutralise it before the room."
+      },
+      {
+        term: 'Action Item',
+        def: 'A specific, assigned task with an owner and (ideally) a deadline, that emerged from a discussion or meeting.',
+        good: "In meeting documentation, project tracking, and accountability conversations.",
+        bad: "Without an owner or deadline attached. 'Action item: improve onboarding' is not an action item. It\'s a wish.",
+        example: '"The highest ROI meeting habit I ever developed: the last 5 minutes of every meeting recapping action items: who owns what, by when. Meetings that end without this produce follow-up meetings to figure out what was decided."',
+        tip: "Every action item needs three things: what, who, and when. Anything missing is not yet an action item."
+      }
+    ]
+  },
+  {
+    icon: '📊',
+    title: 'Performance & Metrics',
+    desc: 'The quantitative language of business results, targets, and measurement',
+    color: 'var(--cat3)',
+    jargons: [
+      {
+        term: 'KPI',
+        def: 'Key Performance Indicator. A measurable value that demonstrates how effectively a team or individual is achieving a key business objective.',
+        good: "When describing the specific metrics that define success for a role, project, or team.",
+        bad: "When teams have 20 KPIs. At that point they\'re metrics, not key indicators. The K means something.",
+        example: '"My KPIs for this role: 3 signed clients per quarter, 90% retention at 6 months, NPS above 50. Not revenue. Not calls made. The outcomes that prove the model works. Start with the end state."',
+        tip: "A KPI that can\'t tell you whether to celebrate or worry is a metric, not a KPI. Build in the threshold."
+      },
+      {
+        term: 'OKR',
+        def: 'Objectives and Key Results. A goal-setting framework: an ambitious qualitative objective paired with 2 to 5 measurable key results that define what achieving it looks like.',
+        good: "For setting ambitious, team-level goals with clarity on what success actually looks like.",
+        bad: "When OKRs become a bureaucratic exercise instead of a motivating alignment tool, which happens when leadership treats them as performance reviews.",
+        example: '"Our Q3 OKR: become the go-to resource for SaaS founders building their first sales team. KRs: 5,000 newsletter subscribers, 3 case studies published, 1 partnership with a top accelerator. Ambitious. Measurable. Shared."',
+        tip: "Good key results make it unambiguous whether you hit them. If there\'s debate over whether a KR was achieved, it wasn\'t written well."
+      },
+      {
+        term: 'ROI',
+        def: "Return on Investment. The net gain relative to cost, expressed as a percentage. Broadly used to mean any measure of whether an input produced a worthwhile output.",
+        good: "When justifying resource allocation, evaluating a decision, or communicating business value.",
+        bad: "When applied to things that don\'t have clean numerators. 'ROI of brand awareness' invites the scepticism it deserves.",
+        example: '"The ROI on consistent LinkedIn content took 9 months to materialise. Month 1 to 6: low engagement, slow growth. Month 7: inbound DM that became a $40k project. The calculation isn\'t monthly. It\'s compounding."',
+        tip: "When you cite ROI without a formula, people apply their own. Be explicit: 'We spent $12k and generated $68k in attributable pipeline' beats 'strong ROI'."
+      },
+      {
+        term: 'Stakeholder',
+        def: 'Any individual or group with an interest in, or affected by, the outcome of a project, decision, or organisation.',
+        good: "In project planning, change management, and communication strategy when identifying whose input or awareness is needed.",
+        bad: "As a generalised word for 'people'. 'Our stakeholders want X' says less than 'our enterprise clients in healthcare want X'.",
+        example: '"The projects I\'ve seen fail most often had one thing in common: they identified stakeholders too late. By the time resistance surfaced, the budget was spent. Map your stakeholders before you write the brief."',
+        tip: "Classify stakeholders by influence and interest, not just role. High influence + low interest needs different management than low influence + high interest."
+      },
+      {
+        term: 'Value Proposition',
+        def: "A clear statement of the benefit your product, service, or expertise delivers, the problem it solves, and why it\'s different from alternatives.",
+        good: "In positioning, sales, marketing, and personal branding, wherever you need to answer 'why you?'",
+        bad: "When it\'s three paragraphs long and still unclear. A value proposition that needs explanation isn\'t working.",
+        example: '"Most LinkedIn bios are job descriptions. A value proposition is different. It answers: what do I help people achieve that they couldn\'t easily achieve without me? Write that sentence. Lead with it."',
+        tip: "Test it against this: could your biggest competitor say the same thing? If yes, it\'s not differentiated. If no, it might be your best sentence."
+      },
+      {
+        term: 'Deliverable',
+        def: "A concrete, tangible output (a document, a report, a feature, a campaign) that is expected by a specific date as evidence of work completed.",
+        good: "In project scoping, contracts, and client management where accountability for outputs needs to be explicit.",
+        bad: "When deliverables become the goal instead of the outcomes they\'re supposed to produce. Submitted reports aren\'t results.",
+        example: '"I\'ve seen agencies lose clients not because the deliverables were late, but because no one connected the deliverables to business outcomes. Define the outcome first. The deliverable should prove you moved toward it."',
+        tip: "For every deliverable, ask: what decision will this enable? If no one can answer, reconsider whether the deliverable is worth building."
+      },
+      {
+        term: 'Benchmark',
+        def: "A standard point of reference against which performance is measured, either internal (past performance) or external (industry average, competitor data).",
+        good: "When establishing whether a result is strong or weak relative to context. Benchmarks make metrics meaningful.",
+        bad: "When benchmarks are used to excuse mediocre results ('above industry average' in a declining industry is still declining).",
+        example: '"Our open rate was 34%. The benchmark for our sector is 22%. That gap matters, not because benchmarks are the ceiling, but because they tell you whether you\'re solving the right problems."',
+        tip: "Always name your benchmark source. 'Industry average' from a study three years old in a different geography is not a benchmark. It\'s a fig leaf."
+      },
+      {
+        term: 'Cadence',
+        def: "The rhythm or regular schedule at which something recurs: meetings, reports, communications, or reviews.",
+        good: "When describing the predictable frequency that creates structure, expectation, and accountability in a process.",
+        bad: "When confused with frequency alone. Cadence implies consistency and intention. 'Posting when I remember' is not a cadence.",
+        example: '"The single biggest factor in my content growth was cadence, not quality. Consistent mediocre beats sporadic excellent. Your audience needs to know when to expect you before they decide to follow you."',
+        tip: "Match your cadence to what you can actually sustain, not what sounds impressive. A weekly post you keep beats a daily post you abandon in month two."
+      },
+      {
+        term: 'Velocity',
+        def: "Speed of progress toward a goal, often used in agile/product contexts to measure how much work a team completes per sprint, and more broadly to mean pace of output.",
+        good: "In product, engineering, and operations contexts where throughput speed is a meaningful variable.",
+        bad: "In creative or strategic work where speed signals should never be the primary framing.",
+        example: '"Shipping velocity slowed by 30% in Q2. We investigated. Two things: unclear requirements at sprint start and too many handoffs. Fixed both. Q3 velocity up 40%. Clarity is the fastest engineering tool."',
+        tip: "In non-engineering contexts, use 'pace' or 'momentum' instead. They carry the same meaning without the jargon overhead."
+      },
+      {
+        term: 'Scalable',
+        def: "A process, model, or system that maintains or improves its efficiency as it grows, one that can handle more volume without proportionally more input.",
+        good: "When evaluating whether a current approach can survive success. This matters most in early-stage and growth contexts.",
+        bad: "As a way to dismiss solutions that work at human scale. Not everything needs to scale to be valuable.",
+        example: '"Your first 100 clients should not come from a scalable system. They should come from you, personally, doing unscalable things. What you learn from that effort is what makes the scalable system worth building later."',
+        tip: "Ask: scalable to what size? A process that works for 10,000 users may break at 10 million. Define the scale you\'re building for."
+      }
+    ]
+  },
+  {
+    icon: '🚀',
+    title: 'Innovation & Disruption',
+    desc: 'The vocabulary of building new things, moving fast, and challenging the status quo',
+    color: 'var(--cat4)',
+    jargons: [
+      {
+        term: 'Disruptive',
+        def: "A product, model, or approach that fundamentally changes how an industry operates, usually by making something dramatically cheaper, faster, or more accessible.",
+        good: "When backed by evidence of actual industry displacement. Airbnb, not a better hotel booking form.",
+        bad: "As a compliment you give yourself. No one disrupts an industry and announces it in a press release at the start.",
+        example: '"Most \'disruptive\' startups aren\'t. They\'re improvements. That\'s fine. Improvements have value. The danger is when founders use disruption language for what is actually a better feature set. Know which one you\'re building."',
+        tip: "Disruption is an outcome, not a strategy. You can aim for it; you can\'t claim it before you\'ve earned it."
+      },
+      {
+        term: 'Agile',
+        def: "An iterative approach to project management and delivery that prioritises adaptability, rapid feedback, and incremental progress over rigid upfront planning.",
+        good: "In contexts where requirements genuinely evolve and speed of learning matters more than perfect upfront specification.",
+        bad: "As an excuse for chronic under-planning. 'We\'re agile' sometimes means 'we have no process'.",
+        example: '"The most expensive misreading of agile I\'ve seen: a team that sprinted for a year without a product vision. Fast is only valuable in a direction. Agile is about adapting the path, not abandoning the destination."',
+        tip: "Real agile requires discipline, not its absence. If your stand-ups run 45 minutes, you\'re doing something else."
+      },
+      {
+        term: 'Iterate',
+        def: "To improve something through repeated cycles of testing, learning, and refining, with each cycle building on the findings of the previous one.",
+        good: "When describing a disciplined feedback loop where each version is meaningfully informed by the last.",
+        bad: "When used to mean 'make random changes and hope'. Iteration without a hypothesis is just mutation.",
+        example: '"I\'ve iterated my LinkedIn hook strategy 6 times in 18 months. Each version was built on data from the last. Version 1: questions. Version 6: counterintuitive statements. The content didn\'t get better by accident."',
+        tip: "Define what you\'re testing before you iterate, not after. 'We\'ll see what works' is not a test design."
+      },
+      {
+        term: 'MVP',
+        def: "Minimum Viable Product. The version of a product with just enough features to validate core assumptions with real users, before investing in full development.",
+        good: "In product development and early-stage building where speed of learning is more valuable than feature completeness.",
+        bad: "When 'minimum' becomes 'broken'. An MVP that embarrasses you is not viable. It\'s just minimum.",
+        example: '"My MVP for the newsletter was a Google Doc shared with 8 friends. No design, no automation, no list. Just writing. 4 of them forwarded it. That signal told me more than 3 months of market research would have."',
+        tip: "The key word is viable. Viable means someone can use it and get genuine value. If they can\'t, it\'s a prototype, not an MVP."
+      },
+      {
+        term: 'Fail Fast',
+        def: "A principle of deliberately running quick, cheap experiments to identify flawed assumptions early, so you can course-correct before investing heavily in the wrong direction.",
+        good: "In testing-oriented cultures where the cost of experimentation is genuinely lower than the cost of prolonged analysis.",
+        bad: "As a cultural value that normalises recklessness. Failing fast is only valuable if you\'re learning fast too.",
+        example: '"Fail fast doesn\'t mean ship broken things. It means: don\'t spend 6 months building what a 3-week test could have validated. The goal is fast learning, not fast failure. The failure is a side effect, not the point."',
+        tip: "Pair it with 'learn fast\'. Failing fast without capturing the learning is just expensive iteration."
+      },
+      {
+        term: 'Blue-Sky Thinking',
+        def: "Unconstrained, creative ideation: imagining possibilities without being limited by current resources, constraints, or conventional thinking.",
+        good: "In early creative or strategy phases where constraint too early limits the range of possible solutions.",
+        bad: "In execution phases where it becomes an excuse to ignore real-world constraints that matter.",
+        example: '"The best blue-sky sessions I\'ve run had one rule: no \'but we can\'t because\' for the first 30 minutes. Then spend the second 30 minutes figuring out which ideas survive contact with reality. Both phases matter."',
+        tip: "Schedule the constraint conversation. Don\'t let it gate-crash the ideation. You need both, in sequence."
+      },
+      {
+        term: 'Ecosystem',
+        def: "The interconnected network of companies, partners, platforms, customers, and technologies that together create a market environment.",
+        good: "When mapping the interdependencies that affect your market position or product strategy.",
+        bad: "When used to describe a product with two integrations. Not every app has an ecosystem.",
+        example: '"We don\'t compete with the market. We plug into it. Understanding the ecosystem (who benefits when we succeed, who feels threatened) shaped our entire go-to-market in year one. Map the incentives before you map the players."',
+        tip: "Ecosystem thinking is about incentives and dependencies, not just features and competitors. Use it when you mean that depth."
+      },
+      {
+        term: 'Thought Leader',
+        def: "An individual widely recognised for their expertise, perspective, and original ideas in a specific domain, someone others turn to for guidance and direction.",
+        good: "When describing others whose influence has been earned and publicly recognised.",
+        bad: "When used to describe yourself in your own bio. The designation only holds value when granted by others.",
+        example: '"Thought leadership isn\'t posting frequently. It\'s being the person whose perspective changes how your audience thinks about a problem, and being right often enough that they come back to check your view."',
+        tip: "You don\'t build thought leadership by announcing it. You build it by having a consistent, specific, documented point of view. Let others apply the label."
+      },
+      {
+        term: 'Future-Proof',
+        def: "Designed or adapted to remain relevant, useful, and functional as circumstances, technology, or the market evolve (resistant to obsolescence).",
+        good: "In technology procurement, skills development, and strategic planning where durability is genuinely a selection criterion.",
+        bad: "As a sales term that sounds reassuring but means nothing without specifics about what changes are being anticipated.",
+        example: '"The most future-proof career investment I made: learning to write clearly. Every technology changes. The ability to communicate a complex idea in simple language never goes out of demand."',
+        tip: "Challenge anyone who calls something future-proof to name the specific futures it was designed for. If they can\'t, it\'s a marketing claim."
+      },
+      {
+        term: 'Bleeding Edge',
+        def: "The most advanced frontier of a technology or methodology, beyond the cutting edge, where the technology is still experimental and the risks are highest.",
+        good: "When accurately describing early-stage, high-risk technology where the payoffs are potentially substantial but far from guaranteed.",
+        bad: "As a synonym for 'new\'. Adopting a SaaS tool launched last year is not bleeding edge.",
+        example: '"Being bleeding edge in AI tooling in 2022 meant building on models that changed weekly, integrations that broke monthly, and use cases nobody had mapped. It was painful. It also put us 18 months ahead of competitors who waited for stability."',
+        tip: "The bleeding edge cuts both ways. Use the phrase only when you mean to acknowledge the risk, not just the novelty."
+      }
+    ]
+  },
+  {
+    icon: '🤝',
+    title: 'Culture & Mindset',
+    desc: 'The language of teamwork, ownership, and professional values',
+    color: 'var(--cat5)',
+    jargons: [
+      {
+        term: 'Break Down Silos',
+        def: "To dismantle the barriers (informational, cultural, or structural) that prevent teams or departments from sharing information and collaborating effectively.",
+        good: "In organisational change, cross-functional initiatives, and leadership contexts where real structural barriers exist.",
+        bad: "When it\'s stated as a value without the organisational changes to support it. Intent without structure is just aspiration.",
+        example: '"We didn\'t break down silos by mandating collaboration. We broke them down by changing who had visibility into what. Shared dashboards, cross-team retros, joint OKRs. Silos are structural problems that need structural solutions."',
+        tip: "Name the specific silo and the mechanism for dismantling it. 'We\'re breaking down silos\' as a vision statement changes nothing."
+      },
+      {
+        term: 'Buy-In',
+        def: "Genuine agreement, commitment, and willingness to support an initiative from the people who need to execute or be affected by it.",
+        good: "When describing the process of earning real commitment, not just compliance or passive acceptance.",
+        bad: "When buy-in is treated as a step to be completed rather than a signal to be earned. You can\'t manufacture it through process.",
+        example: '"I\'ve implemented strategy with stakeholder buy-in and without it. With: challenges surface early, get resolved, the initiative gains energy. Without: you hit the same objections at every stage, but now it\'s expensive to fix. The investment in buy-in pays itself back."',
+        tip: "Real buy-in is fragile. It can be lost after it\'s earned. Don\'t confuse initial agreement with sustained commitment."
+      },
+      {
+        term: 'Champion',
+        def: "(Verb) To actively advocate for an idea, person, initiative, or approach, using your credibility and influence to build support in rooms where the subject isn\'t present.",
+        good: "When describing active, specific advocacy: introducing someone for a role, defending a budget in a leadership meeting, sponsoring an initiative.",
+        bad: "As a title claimed in a job description. 'I champion diversity\' without verifiable actions means nothing.",
+        example: '"Sponsorship is championing. The difference between a mentor (who gives advice) and a sponsor (who champions you in rooms you\'re not in) is career-defining. Find one. Be one."',
+        tip: "The verb form is strong and specific. Use it when you can point to the room, the decision, or the outcome you advocated for."
+      },
+      {
+        term: 'Cross-Functional',
+        def: "Involving or requiring collaboration between multiple teams or departments with different specialisms, working toward a shared goal.",
+        good: "When describing the actual coordination required, where success genuinely depends on multiple disciplines operating together.",
+        bad: "As a way to make a project sound more complex than it is. Two teams meeting weekly is not a cross-functional initiative.",
+        example: '"The most effective cross-functional teams I\'ve been on had a single clear owner. Not shared ownership. Shared accountability without a clear decision-maker creates the exact dysfunction cross-functional is meant to solve."',
+        tip: "Who decides when cross-functional teams disagree? If that\'s unclear at the start, the word 'cross-functional\' is creating a governance problem, not solving one."
+      },
+      {
+        term: 'Empower',
+        def: "To give someone the authority, resources, autonomy, and confidence to act independently and make decisions within their domain.",
+        good: "When describing a leadership approach that distributes decision-making and builds individual agency.",
+        bad: "As a word used by leaders who micromanage. Empowerment requires actually transferring authority, not just using the word.",
+        example: '"I stop asking my team for permission slips. I give them a clear goal, clear constraints, and then get out of the way. Empowerment isn\'t a culture value. It\'s a management practice. It shows up in how you respond when someone makes a decision without asking you first."',
+        tip: "Test whether your empowerment is real: when someone makes a decision without asking you, what do you do? Your answer tells you more than your values statement."
+      },
+      {
+        term: 'Holistic',
+        def: "Considering all parts of something together, as an integrated whole, rather than isolating components for separate optimisation.",
+        good: "When the point is genuinely about system-level interdependence, where optimising one part at the expense of the whole is the risk.",
+        bad: "As a filler adjective. 'A holistic approach\' before a three-point list is almost always unnecessary.",
+        example: '"A holistic brand review isn\'t just visual. It\'s messaging, experience, perception, internal culture. Companies that only fix their logo are solving an aesthetic problem in front of a strategic one. The visual is the last thing to change."',
+        tip: "Only use it when you\'re about to demonstrate the system-level thinking. Otherwise, just describe the components."
+      },
+      {
+        term: 'Accountability',
+        def: "The acceptance of responsibility for one\'s actions, decisions, and outcomes, including the willingness to be transparent about failures and their causes.",
+        good: "In performance conversations, team culture, and leadership contexts where clarity about ownership is meaningful.",
+        bad: "As a word used to describe consequences without the system that enables accountability. You can\'t hold someone accountable if the expectations were never clear.",
+        example: '"Accountability without authority is theatre. Before we talk about whether someone is accountable for a result, I ask: did they have the authority to influence it? If not, we\'re measuring the wrong person."',
+        tip: "Accountability starts with clarity, not consequences. Define the expectation before you enforce it."
+      },
+      {
+        term: 'Ownership',
+        def: "Taking full, proactive responsibility for an outcome (not just the assigned tasks, but the result), including surfacing problems, removing blockers, and seeing things through.",
+        good: "In hiring, performance, and culture conversations where the distinction between doing the job and owning the outcome is real.",
+        bad: "When used to describe heroic overwork. Ownership doesn\'t mean 'no one else helps you\'.",
+        example: '"Ownership isn\'t about working more hours. It\'s about the questions you ask before the problems arise. The person who owns the outcome is already thinking three steps ahead about what could go wrong."',
+        tip: "The clearest signal of ownership is what someone does when things are off track. Do they raise it immediately, or wait to be asked?"
+      },
+      {
+        term: 'Pain Point',
+        def: "A specific, recurring problem or source of friction that a customer, user, or employee experiences, and that a product, service, or process is meant to solve.",
+        good: "In sales, marketing, and product contexts where you\'re describing a real, researched problem rather than an assumed one.",
+        bad: "When used generically without evidence. 'Our audience\'s pain point is time\' describes every living human.",
+        example: '"The best sales call I ever watched: the rep spent 20 minutes asking questions before naming a single pain point. By the time the pain point was on the table, the prospect had described it in their own words. The rep just reflected it back."',
+        tip: "Let the customer name their pain points in their own language. Your job is to reflect them accurately, not to project yours onto them."
+      },
+      {
+        term: 'Skin in the Game',
+        def: "Having a personal stake in the outcome of a decision (usually financial, reputational, or professional), which aligns incentives and ensures real commitment.",
+        good: "When discussing incentive alignment, investment decisions, or the credibility of advice from people who bear real consequences.",
+        bad: "When used to apply social pressure rather than describe genuine stakes. 'You need more skin in the game\' as management-speak is a credibility warning sign.",
+        example: '"The advice that changed how I evaluate expertise: always ask what the advisor has at stake in the outcome. Skin in the game doesn\'t guarantee good advice, but its absence removes accountability entirely."',
+        tip: "Nassim Taleb popularised this concept. If you cite it, know the original argument. It\'s more layered than most people\'s usage suggests."
+      }
+    ]
+  }
+];
+
+const AVOID = [
+  { term: 'Passionate about', why: 'The most overused opener on LinkedIn. Every profile is passionate about something. It adds no signal.', instead: 'Show the passion through a specific achievement or decision that proves it.' },
+  { term: 'Guru / Ninja / Rockstar', why: 'Informal titles that signal you couldn\'t think of a real differentiator. No hiring manager searches for a "marketing ninja".', instead: 'Your actual title + the specific result you deliver.' },
+  { term: 'Results-driven', why: 'This describes the baseline expectation of employment, not a distinguishing quality. Everyone claims it.', instead: 'Name the result. "Grew ARR from $2M to $8M in 18 months" is results-driven.' },
+  { term: 'Proactive', why: 'Another baseline expectation that signals nothing when self-applied. A proactive person shows it, they don\'t announce it.', instead: 'Describe a specific instance of anticipating a problem before it became one.' },
+  { term: 'Value-added', why: 'Circular by design. It claims value without describing any. What is the value? That\'s the sentence worth writing.', instead: 'Name the specific value: time saved, cost reduced, risk mitigated, revenue generated.' },
+  { term: 'Disrupting [industry]', why: 'The most inflated word in startup vocabulary. Used so loosely it now signals hype more than substance.', instead: 'Describe the specific change you\'re creating: "making [X] 10× cheaper for [audience]".' },
+  { term: 'Thought leadership', why: 'The label only has value when given by others. Self-applying it is the surest way to disqualify yourself from it.', instead: 'Just publish your specific point of view. The label will follow if it earns it.' },
+  { term: 'Hustle culture', why: 'Signals unsustainable expectations, toxic work norms, or (at best) a 2019 trend you haven\'t updated. None of those is the impression you want.', instead: 'Focus on results and learning. If you work hard, your output will show it.' },
+  { term: 'Move fast and break things', why: 'This phrase has aged into a cautionary tale. It now signals you haven\'t reflected on what that approach actually broke.', instead: '"Ship fast, learn fast" if you mean iteration. Name the specific thing you moved fast on and what you learned.' },
+  { term: 'Paradigm shift', why: 'Reserved for genuine once-in-a-generation changes. Using it for a software update or a new strategy deck is technically fraud.', instead: 'If the change is genuinely meaningful, name it precisely. If it is incremental, say so and explain why that still matters.' }
+];
+
+// ─── RENDER ─────────────────────────────────────
+const container = document.getElementById('guide-content');
+let html = '';
+
+CATEGORIES.forEach((cat, ci) => {
+  html += `
+    <div class="category-header" style="background:${cat.color}">
+      <span class="cat-icon">${cat.icon}</span>
+      <div>
+        <div class="cat-title">${cat.title}</div>
+        <div class="cat-desc">${cat.desc}</div>
+      </div>
+      <span class="cat-count">10 terms</span>
+    </div>
+    <div class="cards">
+  `;
+
+  cat.jargons.forEach((j, ji) => {
+    const num = ci * 10 + ji + 1;
+    const numStr = String(num).padStart(2, '0');
+    html += `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-term">${j.term}</div>
+          <span class="card-num">${numStr} / 50</span>
+        </div>
+        <p class="card-def">${j.def}</p>
+        <div class="card-use-row">
+          <div class="card-use good"><span class="card-use-label">✓ Use when</span>${j.good}</div>
+          <div class="card-use bad"><span class="card-use-label">✗ Avoid when</span>${j.bad}</div>
+        </div>
+        <div class="card-example">${j.example}</div>
+        <p class="card-tip"><strong>Power tip:</strong> ${j.tip}</p>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+});
+
+// Bonus
+html += `
+  <div class="bonus">
+    <h2>🚫 Bonus: 10 Words to Strike Immediately</h2>
+    <p class="bonus-sub">These phrases have been used so often, so broadly, and so thoughtlessly that they now carry negative signal. They make your content sound generated, your profile sound generic, and your thinking sound shallow. Strike them from your vocabulary.</p>
+    <div class="avoid-grid">
+`;
+
+AVOID.forEach(a => {
+  html += `
+    <div class="avoid-card">
+      <div class="avoid-term">${a.term}</div>
+      <p class="avoid-why">${a.why}</p>
+      <p class="avoid-instead">${a.instead}</p>
+    </div>
+  `;
+});
+
+html += `
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <h3>Build the brand that backs you up</h3>
+    <p>Eclatale is the AI personal brand OS for LinkedIn: post ideas, brand score, voice matching, and more.</p>
+    <a href="https://eclatale.com/signup">Start free, no credit card</a>
+    <span class="brand">eclatale.com</span>
+  </div>
+`;
+
+container.innerHTML = html;
+</script>

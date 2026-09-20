@@ -142,7 +142,7 @@ export default function Phase2Editor({
       }).select('id').single();
       if (inserted) setPostId(inserted.id);
     } catch (e: any) {
-      setGenError(e.message || "Couldn't generate a post — try again.");
+      setGenError(e.message || "Couldn't generate a post. Try again.");
     }
     setIsGenerating(false);
   }, [angle, customTopic, selectedLength, sparkInput, userId, presetStyleId]);
@@ -210,7 +210,7 @@ export default function Phase2Editor({
       checkedRef.current = false;
       if (postId) await supabase.from('posts').update({ content: data.content }).eq('id', postId);
     } catch (e: any) {
-      showToast('error', e.message || 'Refine failed — try again.');
+      showToast('error', e.message || 'Refine failed. Try again.');
     }
     setAriaRefining(false);
   };
@@ -230,9 +230,9 @@ export default function Phase2Editor({
       setContent(data.content);
       checkedRef.current = false;
       if (postId) await supabase.from('posts').update({ content: data.content }).eq('id', postId);
-      showToast('success', 'AI tells removed — post humanized.');
+      showToast('success', 'AI tells removed. Post humanized.');
     } catch (e: any) {
-      showToast('error', e.message || 'Humanize failed — try again.');
+      showToast('error', e.message || 'Humanize failed. Try again.');
     }
     setHumanizing(false);
   };
@@ -250,7 +250,7 @@ export default function Phase2Editor({
   };
 
   // Same as insertAtCursor, but if the inserted text has a [placeholder],
-  // selects it so the user can just start typing over it — a textarea has
+  // selects it so the user can just start typing over it, since a textarea has
   // no rich-text highlighting, so a text selection is the closest thing.
   const insertHookTemplate = (text: string) => {
     const el = textareaRef.current;
@@ -305,7 +305,7 @@ export default function Phase2Editor({
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(content);
-    showToast(ok ? 'success' : 'error', ok ? 'Copied to clipboard.' : 'Could not copy — select and copy manually.');
+    showToast(ok ? 'success' : 'error', ok ? 'Copied to clipboard.' : 'Could not copy. Select and copy manually.');
   };
 
   const handleSaveDraft = async () => {
@@ -386,7 +386,7 @@ export default function Phase2Editor({
       if (data.error) throw new Error(data.message || data.error);
       onPublished(id, data.linkedinPostUrn || '');
     } catch (e: any) {
-      showToast('error', e.message || 'Publish failed — try again.');
+      showToast('error', e.message || 'Publish failed. Try again.');
     }
     setPublishing(false);
   };
@@ -451,7 +451,7 @@ export default function Phase2Editor({
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-        {/* Left column — editor */}
+        {/* Left column: editor */}
         <div className="flex-1 min-w-0 bg-white flex flex-col md:border-r" style={{ borderColor: '#EDE8FF' }}>
           {/* Toolbar */}
           <div className="flex items-center gap-1 px-4 py-2 border-b flex-wrap" style={{ borderColor: '#EDE8FF' }}>
@@ -547,7 +547,7 @@ export default function Phase2Editor({
               <button
                 onClick={handleHumanize}
                 disabled={humanizing || !content.trim()}
-                title="Remove AI tells — banned words, staccato stacks, reveal bridges, and more"
+                title="Remove AI tells: banned words, staccato stacks, reveal bridges, and more"
                 className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full disabled:opacity-40 transition-opacity"
                 style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
               >
@@ -562,7 +562,7 @@ export default function Phase2Editor({
                 value={ariaInput}
                 onChange={e => setAriaInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAriaRefine(); }}
-                placeholder="Ask Aria to refine — make it shorter, add a stat, change the ending..."
+                placeholder="Ask Aria to refine: make it shorter, add a stat, change the ending..."
                 className="flex-1 min-w-0 text-[12px] bg-transparent outline-none"
                 style={{ color: '#1A1A2E' }}
               />
@@ -578,7 +578,7 @@ export default function Phase2Editor({
           </div>
         </div>
 
-        {/* Right column — intelligence panel */}
+        {/* Right column: intelligence panel */}
         <div className="w-full md:w-[240px] flex-shrink-0 p-4 flex flex-row md:flex-col gap-3 overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none" style={{ background: '#F8F5FF' }}>
           {/* LinkedIn preview */}
           <div className="bg-white rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>

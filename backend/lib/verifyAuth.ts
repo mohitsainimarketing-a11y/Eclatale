@@ -10,7 +10,7 @@ export interface AuthCheckResult {
 
 /**
  * Verifies the Authorization: Bearer <token> header against Supabase Auth,
- * if one was sent. Does NOT require a token to be present — callers decide
+ * if one was sent. Does NOT require a token to be present. Callers decide
  * what to do with the result, so existing clients that haven't been
  * updated to send one yet keep working during rollout. Once a token IS
  * sent, callers should treat verifiedUserId as the source of truth over

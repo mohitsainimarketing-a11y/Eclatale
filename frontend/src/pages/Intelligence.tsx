@@ -228,7 +228,7 @@ function ProfileOptimizerPanel({ userId }: { userId: string }) {
     <div>
       <div className="mb-6">
         <h2 className="text-lg font-bold text-brand-dark">Profile Optimizer</h2>
-        <p className="text-sm text-brand-muted mt-0.5">Paste your current LinkedIn headline and About section — we'll score them and rewrite both.</p>
+        <p className="text-sm text-brand-muted mt-0.5">Paste your current LinkedIn headline and About section. We'll score them and rewrite both.</p>
       </div>
 
       {/* Input form */}
@@ -243,7 +243,7 @@ function ProfileOptimizerPanel({ userId }: { userId: string }) {
             className="input w-full text-sm"
             maxLength={300}
           />
-          <p className="text-[11px] text-brand-muted mt-1">{headline.length}/220 chars — LinkedIn shows ~220</p>
+          <p className="text-[11px] text-brand-muted mt-1">{headline.length}/220 chars · LinkedIn shows ~220</p>
         </div>
         <div>
           <label className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-1.5 block">About Section</label>

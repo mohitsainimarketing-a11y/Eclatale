@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Zap, ChevronDown, ArrowLeft, Loader2, ShieldCheck, Clock, MessageCircle } from 'lucide-react';
+import { Check, Minus, Zap, ChevronDown, ArrowLeft, Loader2, ShieldCheck, Clock, MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { trackEvent } from '../lib/analytics';
 import { apiFetch } from '../lib/apiFetch';
@@ -51,14 +51,14 @@ const COMPARISON_ROWS: { label: string; free: string | boolean; individual: stri
 ];
 
 const FAQS = [
-  { q: 'Is there a free trial?', a: 'Yes — 7 days free on the Individual plan, cancel anytime before it ends and you will not be charged.' },
+  { q: 'Is there a free trial?', a: 'Yes. 7 days free on the Individual plan, cancel anytime before it ends and you will not be charged.' },
   { q: 'What happens after the trial?', a: 'Your card is automatically charged $19/mo unless you cancel before the trial ends.' },
   { q: 'Can I cancel anytime?', a: 'Yes, immediately from your account settings. You keep access until the end of your current billing period.' },
-  { q: 'Do you offer refunds?', a: 'Yes — a full refund, no questions asked, within 7 days of your first charge.' },
-  { q: 'How does LAUNCH50 work?', a: '50% off your first 3 months — that\'s $9.50/mo for 3 months, then the regular $19/mo (or $15.20/mo on annual) applies.' },
-  { q: 'Is my LinkedIn account safe?', a: 'Yes — we publish only through LinkedIn\'s official API. There is zero ban risk since we never automate browser actions or scrape your account.' },
-  { q: 'What makes Eclatale different?', a: 'Real voice learning from your own writing, an authenticity score that checks every post before it goes live, and publishing through LinkedIn\'s official API — all for $19/mo.' },
-  { q: 'Can I upgrade or downgrade anytime?', a: 'Yes — changes take effect immediately, and billing is prorated automatically by Stripe.' },
+  { q: 'Do you offer refunds?', a: 'Yes. A full refund, no questions asked, within 7 days of your first charge.' },
+  { q: 'How does LAUNCH50 work?', a: '50% off your first 3 months. That\'s $9.50/mo for 3 months, then the regular $19/mo (or $15.20/mo on annual) applies.' },
+  { q: 'Is my LinkedIn account safe?', a: 'Yes. We publish only through LinkedIn\'s official API. There is zero ban risk since we never automate browser actions or scrape your account.' },
+  { q: 'What makes Eclatale different?', a: 'Real voice learning from your own writing, an authenticity score that checks every post before it goes live, and publishing through LinkedIn\'s official API, all for $19/mo.' },
+  { q: 'Can I upgrade or downgrade anytime?', a: 'Yes. Changes take effect immediately, and billing is prorated automatically by Stripe.' },
 ];
 
 function CountdownBadge() {
@@ -129,8 +129,8 @@ export default function Pricing() {
   return (
     <div className="min-h-screen gradient-bg-page">
       <Seo
-        title="Pricing — Simple, transparent plans"
-        description="Start free with 3 AI-generated LinkedIn posts per week — no credit card required. Upgrade to Individual for unlimited posts, competitor intelligence, and voice-matched content generation."
+        title="Pricing: Simple, transparent plans"
+        description="Start free with 3 AI-generated LinkedIn posts per week. No credit card required. Upgrade to Individual for unlimited posts, competitor intelligence, and voice-matched content generation."
         path="/pricing"
         jsonLd={{
           '@context': 'https://schema.org',
@@ -155,7 +155,7 @@ export default function Pricing() {
 
       {/* Promo banner */}
       <div className="gradient-primary text-white text-center py-3 px-5 text-sm font-semibold">
-        🎉 Launch Special: 50% off your first 3 months with code <span className="font-extrabold">LAUNCH50</span> — <CountdownBadge />
+        🎉 Launch Special: 50% off your first 3 months with code <span className="font-extrabold">LAUNCH50</span> · <CountdownBadge />
       </div>
 
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-12 md:py-16">
@@ -277,10 +277,10 @@ export default function Pricing() {
                   <tr key={i} className="border-b border-[rgba(124,92,252,0.05)] last:border-0">
                     <td className="p-4 text-brand-dark">{row.label}</td>
                     <td className="p-4 text-center">
-                      {typeof row.free === 'boolean' ? (row.free ? <Check size={16} className="text-brand-teal mx-auto" /> : <span className="text-brand-muted">—</span>) : <span className="text-brand-muted">{row.free}</span>}
+                      {typeof row.free === 'boolean' ? (row.free ? <Check size={16} className="text-brand-teal mx-auto" /> : <Minus size={16} className="text-brand-muted mx-auto" />) : <span className="text-brand-muted">{row.free}</span>}
                     </td>
                     <td className="p-4 text-center">
-                      {typeof row.individual === 'boolean' ? (row.individual ? <Check size={16} className="text-brand-purple mx-auto" /> : <span className="text-brand-muted">—</span>) : <span className="font-semibold text-brand-purple">{row.individual}</span>}
+                      {typeof row.individual === 'boolean' ? (row.individual ? <Check size={16} className="text-brand-purple mx-auto" /> : <Minus size={16} className="text-brand-muted mx-auto" />) : <span className="font-semibold text-brand-purple">{row.individual}</span>}
                     </td>
                   </tr>
                 ))}
@@ -294,8 +294,8 @@ export default function Pricing() {
           <ShieldCheck size={28} className="text-brand-teal mx-auto mb-3" />
           <h3 className="text-lg font-extrabold text-brand-dark mb-3">Our promise</h3>
           <ul className="space-y-2 text-sm text-brand-muted">
-            <li>7-day money back guarantee — no questions asked</li>
-            <li>Cancel anytime — access continues until the end of your billing period</li>
+            <li>7-day money back guarantee, no questions asked</li>
+            <li>Cancel anytime. Access continues until the end of your billing period</li>
             <li>Disputes resolved within 48 hours</li>
           </ul>
           <a href="/refund-policy" className="text-sm text-brand-purple font-semibold hover:underline mt-4 inline-block">Read the full refund policy →</a>

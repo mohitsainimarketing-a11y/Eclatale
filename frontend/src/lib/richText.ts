@@ -1,4 +1,4 @@
-// Unicode "fake formatting" for LinkedIn — LinkedIn's post body is plain text
+// Unicode "fake formatting" for LinkedIn. LinkedIn's post body is plain text
 // with no real bold/italic, so creators fake it using the Mathematical
 // Alphanumeric Symbols block (and a few standalone letter-like symbols for
 // glyphs that were never assigned in that block). This mirrors that trick.

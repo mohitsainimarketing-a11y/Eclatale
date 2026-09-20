@@ -87,7 +87,7 @@ export interface IndustryIntelligenceResult {
 }
 
 // Loose mapping between industry-intelligence hook-type names and the
-// angle styles used in Phase 1 — the two vocabularies don't line up 1:1
+// angle styles used in Phase 1. The two vocabularies don't line up 1:1
 // (e.g. "Question" has no matching angle style), so filtering falls back
 // to "show all" when a mapped style has no matching angle.
 export const HOOK_TYPE_TO_ANGLE_STYLE: Record<string, AngleStyle> = {

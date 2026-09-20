@@ -307,8 +307,8 @@ export default function Dashboard() {
       return `Your ${overview.currentStreak}-day streak ends tonight. One post keeps it alive.`;
     }
     const postedToday = overview.postingActivity.points[overview.postingActivity.points.length - 1]?.posts > 0;
-    if (postedToday) return "Great work posting today — here's how you're growing.";
-    if (overview.currentStreak >= 2) return "You've been consistent this week — your brand is building momentum.";
+    if (postedToday) return "Great work posting today. Here's how you're growing.";
+    if (overview.currentStreak >= 2) return "You've been consistent this week. Your brand is building momentum.";
     return "Here's your brand growth, in real numbers.";
   })();
 
@@ -446,20 +446,20 @@ export default function Dashboard() {
                   {([
                     {
                       label: 'Consistency', val: overview.brandHealth.consistency,
-                      tip: overview.brandHealth.consistency >= 80 ? 'Excellent — keep the streak going'
-                        : overview.brandHealth.consistency >= 60 ? 'Good — try posting every week without a gap'
+                      tip: overview.brandHealth.consistency >= 80 ? 'Excellent. Keep the streak going'
+                        : overview.brandHealth.consistency >= 60 ? 'Good. Try posting every week without a gap'
                         : 'Post at least once a week for 4 consecutive weeks',
                     },
                     {
                       label: 'Quality', val: overview.brandHealth.quality,
-                      tip: overview.brandHealth.quality >= 80 ? 'High authenticity scores — strong voice'
-                        : overview.brandHealth.quality >= 60 ? 'Good — add specific numbers and named details to posts'
+                      tip: overview.brandHealth.quality >= 80 ? 'High authenticity scores. Strong voice'
+                        : overview.brandHealth.quality >= 60 ? 'Good. Add specific numbers and named details to posts'
                         : 'Publish more to build quality history, or review authenticity scores',
                     },
                     {
                       label: 'Voice', val: overview.brandHealth.voice,
-                      tip: overview.brandHealth.voice >= 80 ? 'Strong voice profile — Claude knows your style'
-                        : overview.brandHealth.voice >= 60 ? 'Good — add 2–3 more voice samples in Settings'
+                      tip: overview.brandHealth.voice >= 80 ? 'Strong voice profile. Claude knows your style'
+                        : overview.brandHealth.voice >= 60 ? 'Good. Add 2 to 3 more voice samples in Settings'
                         : 'Complete your voice profile in Settings to train your AI clone',
                     },
                   ] as { label: string; val: number; tip: string }[]).map(({ label, val, tip }) => (
@@ -526,7 +526,7 @@ export default function Dashboard() {
               <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">Content Quality</p>
               <p className="text-2xl font-extrabold" style={{ color: scoreColor(overview.brandHealth.quality) }}>{overview.brandHealth.quality}</p>
               <p className="text-[9px] text-brand-muted mt-1">
-                {overview.linkedinConnected ? 'Avg. authenticity — LinkedIn reach data requires Marketing API access' : 'Avg. authenticity score'}
+                {overview.linkedinConnected ? 'Avg. authenticity. LinkedIn reach data requires Marketing API access' : 'Avg. authenticity score'}
               </p>
               {!overview.linkedinConnected && <a href="/settings" className="text-[10px] text-brand-purple font-semibold hover:underline">Connect LinkedIn →</a>}
             </div>
@@ -657,7 +657,7 @@ export default function Dashboard() {
               <a href="/history" className="text-xs text-brand-purple font-semibold hover:underline">View all →</a>
             </div>
             {sortedRows.length === 0 ? (
-              <p className="text-sm text-brand-muted text-center py-8">No posts yet — generate your first post to see it here.</p>
+              <p className="text-sm text-brand-muted text-center py-8">No posts yet. Generate your first post to see it here.</p>
             ) : (
               <div className="overflow-x-auto -mx-6 px-6">
                 <table className="w-full text-xs min-w-[640px]">
@@ -676,9 +676,9 @@ export default function Dashboard() {
                       <tr key={row.id} className="group border-b border-[rgba(124,92,252,0.04)] last:border-0 hover:bg-[rgba(124,92,252,0.02)]">
                         <td className="py-2.5 pr-4 text-brand-muted whitespace-nowrap" title={new Date(row.date).toLocaleString()}>{timeAgo(row.date)}</td>
                         <td className="py-2.5 pr-4 text-brand-dark max-w-[220px] truncate">{row.preview}{row.preview.length >= 60 ? '…' : ''}</td>
-                        <td className="py-2.5 pr-4">{row.tone ? <span className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px] capitalize">{row.tone.replace(/_/g, ' ')}</span> : <span className="text-brand-muted">—</span>}</td>
+                        <td className="py-2.5 pr-4">{row.tone ? <span className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px] capitalize">{row.tone.replace(/_/g, ' ')}</span> : <span className="text-brand-muted">N/A</span>}</td>
                         <td className="py-2.5 pr-4 text-brand-muted">{row.wordCount}w</td>
-                        <td className="py-2.5 pr-4 font-bold" style={{ color: row.authScore != null ? scoreColor(row.authScore) : '#9CA3AF' }}>{row.authScore ?? '—'}</td>
+                        <td className="py-2.5 pr-4 font-bold" style={{ color: row.authScore != null ? scoreColor(row.authScore) : '#9CA3AF' }}>{row.authScore ?? 'N/A'}</td>
                         <td className="py-2.5 pr-4">
                           <span className={`badge text-[10px] ${row.status === 'published' ? 'bg-[rgba(6,214,160,0.1)] text-brand-teal' : row.status === 'scheduled' ? 'bg-[rgba(59,130,246,0.1)] text-blue-500' : 'bg-[rgba(107,114,128,0.08)] text-brand-muted'}`}>
                             {row.status === 'published' ? 'Published ✓' : row.status === 'scheduled' ? 'Scheduled 📅' : 'Draft 📝'}
@@ -754,7 +754,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-extrabold">Get unlimited posts, AI persona learning, competitor intelligence, and more</h3>
                 </div>
                 <span className="inline-block bg-white text-brand-purple font-bold text-sm px-5 py-2.5 rounded-full group-hover:scale-105 transition-transform whitespace-nowrap">
-                  Upgrade — $19/mo · LAUNCH50 for 50% off
+                  Upgrade for $19/mo · LAUNCH50 for 50% off
                 </span>
               </div>
               <div className="h-1.5 rounded-full bg-white/20 mt-4 overflow-hidden relative z-10">

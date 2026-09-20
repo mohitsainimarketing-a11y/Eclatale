@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Eclatale — LinkedIn Brand Assistant",
+  "name": "Eclatale: LinkedIn Brand Assistant",
   "version": "1.0.0",
   "description": "Your AI brand assistant on LinkedIn. Get post ideas, copy your profile to optimize it, and repurpose content from anywhere.",
   "permissions": ["activeTab", "storage", "contextMenus", "notifications"],

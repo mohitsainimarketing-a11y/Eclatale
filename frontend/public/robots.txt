@@ -23,7 +23,7 @@ Disallow: /auth/reset-password
 Disallow: /reset-password
 Disallow: /unsubscribe
 
-# Explicit allowances for AI/answer-engine crawlers (AEO) — same public
+# Explicit allowances for AI/answer-engine crawlers (AEO). Same public
 # pages as above are fair game, private/app routes stay off-limits.
 User-agent: GPTBot
 Allow: /

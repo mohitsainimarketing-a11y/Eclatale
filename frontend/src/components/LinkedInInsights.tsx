@@ -41,7 +41,7 @@ interface PostMetric {
 }
 
 function fmt(n: number | null): string {
-  if (n == null) return '—';
+  if (n == null) return 'N/A';
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return String(n);
@@ -157,7 +157,7 @@ export default function LinkedInInsights({ userId }: { userId: string }) {
           <div>
             <h3 className="text-sm font-bold text-brand-dark mb-1">LinkedIn Insights</h3>
             <p className="text-xs text-brand-muted mb-3 max-w-lg">
-              Get real follower count, profile views, search appearances, and per-post impressions — automatically synced in the background while you browse LinkedIn.
+              Get real follower count, profile views, search appearances, and per-post impressions, automatically synced in the background while you browse LinkedIn.
             </p>
             <div className="flex flex-wrap gap-2">
               <a
@@ -178,7 +178,7 @@ export default function LinkedInInsights({ userId }: { userId: string }) {
     );
   }
 
-  // Format chart data — deduplicate by day, take latest reading per day
+  // Format chart data: deduplicate by day, take latest reading per day
   const chartData = (() => {
     const byDay: Record<string, HistoryRow> = {};
     history.forEach(h => {

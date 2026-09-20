@@ -41,7 +41,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 // Base64-encoded PDF/DOCX uploads (resource-upload action) can exceed the
-// default 4.5mb body limit — raise it for this multiplexed function.
+// default 4.5mb body limit, so raise it for this multiplexed function.
 export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
 
 function parseJsonObject(text: string): any {
@@ -54,7 +54,7 @@ const HTML_ENTITIES: Record<string, string> = {
   '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&nbsp;': ' ',
 };
 
-// Lightweight readability extraction — no external deps: strips script/style/nav
+// Lightweight readability extraction with no external deps: strips script/style/nav
 // chrome, tags, and collapses whitespace. Good enough for article/blog-post
 // bodies; not a full Readability-algorithm port.
 function extractReadableText(html: string): string {
@@ -66,7 +66,7 @@ function extractReadableText(html: string): string {
     .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ');
   // Prefer <article>/<main> (or Wikipedia's content div) over the whole
-  // <body> when present — cuts most nav/sidebar chrome without a full
+  // <body> when present. This cuts most nav/sidebar chrome without a full
   // Readability-style content-scoring algorithm.
   const mainMatch =
     cleaned.match(/<article[\s\S]*?>([\s\S]*?)<\/article>/i) ||
@@ -501,7 +501,7 @@ async function reengagementCron() {
 
 /**
  * Meant to be hit hourly by an external cron (Vercel Hobby only allows daily
- * crons — see the CRON_SECRET convention on the other *-cron actions above).
+ * crons. See the CRON_SECRET convention on the other *-cron actions above).
  * Each invocation only actually notifies the slice of users for whom it is
  * currently ~6pm local time, so hourly external calls are what make this
  * work across timezones at all.
@@ -561,13 +561,13 @@ async function streakRiskCron() {
 // Self-call base for publishScheduledPosts below.
 //
 // This was hardcoded to https://api.eclatale.com, which is registered as a
-// domain on the Vercel project but has NO DNS record — NXDOMAIN on both
+// domain on the Vercel project but has NO DNS record. NXDOMAIN on both
 // 8.8.8.8 and 1.1.1.1. Every scheduled publish therefore failed at DNS, hit
 // the catch, and marked the post schedule_status:'failed'. The frontend was
 // unaffected because it calls the vercel.app host below via REACT_APP_API_URL.
 //
 // Once the DNS record exists, set PUBLIC_API_BASE_URL=https://api.eclatale.com
-// in the backend project env — no code change needed.
+// in the backend project env, with no code change needed.
 const API_BASE = (
   process.env.PUBLIC_API_BASE_URL || 'https://backend-xi-olive-8eewk5s8qv.vercel.app'
 ).replace(/\/+$/, '');
@@ -576,7 +576,7 @@ const API_BASE = (
  * Publishes every post whose scheduled_for time has passed. Designed to be
  * safe to call at any interval (Vercel Hobby cron only fires ~daily, so this
  * is also exposed for an external cron service to hit every few minutes for
- * real "publish near the scheduled time" behavior — see CRON_SECRET auth
+ * real "publish near the scheduled time" behavior. See CRON_SECRET auth
  * below). Reuses /api/linkedin/publish rather than duplicating its OAuth
  * token handling, rate limiting, and error-message logic.
  */
@@ -833,7 +833,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: post } = await supabase.from('posts').select('scheduled_for, schedule_status').eq('id', postId).eq('user_id', userId).maybeSingle();
       if (!post) return res.status(404).json({ error: 'Post not found' });
       if (post.schedule_status === 'scheduled' && post.scheduled_for && new Date(post.scheduled_for).getTime() - Date.now() < 5 * 60 * 1000) {
-        return res.status(400).json({ error: 'Too close to the scheduled time to cancel — it will publish shortly.' });
+        return res.status(400).json({ error: 'Too close to the scheduled time to cancel. It will publish shortly.' });
       }
       await supabase.from('posts').update({ schedule_status: 'cancelled', scheduled_for: null }).eq('id', postId);
       return res.json({ ok: true });
@@ -875,13 +875,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ ok: true });
     }
 
-    // Anonymous, public /tools pages — no auth, IP rate-limited (10/hr).
+    // Anonymous, public /tools pages. No auth, IP rate-limited (10/hr).
     if (action === 'tools-generate') {
       const tool = String(body.tool || '');
       const ip = extractClientIp(req.headers as any, req.socket?.remoteAddress || 'unknown');
       const allowed = await checkToolRateLimit(supabase, ip);
       if (!allowed) {
-        return res.status(429).json({ error: 'rate_limited', message: "You've hit the free tool limit for this hour — try again soon, or sign up for unlimited access." });
+        return res.status(429).json({ error: 'rate_limited', message: "You've hit the free tool limit for this hour. Try again soon, or sign up for unlimited access." });
       }
       await logToolUsage(supabase, ip, tool);
       try {
@@ -930,7 +930,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const host = parsed.hostname.replace(/^www\./, '');
       if (/(^|\.)linkedin\.com$/.test(host)) {
-        return res.status(422).json({ error: 'linkedin_private', message: 'LinkedIn content is private — paste the post text here instead.' });
+        return res.status(422).json({ error: 'linkedin_private', message: 'LinkedIn content is private. Paste the post text here instead.' });
       }
 
       try {
@@ -942,16 +942,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
         clearTimeout(timeout);
         if (!pageRes.ok) {
-          return res.status(422).json({ error: 'fetch_failed', message: "Couldn't fetch this URL — paste the text directly instead." });
+          return res.status(422).json({ error: 'fetch_failed', message: "Couldn't fetch this URL. Paste the text directly instead." });
         }
         const html = await pageRes.text();
         const text = extractReadableText(html);
         if (text.length < 200) {
-          return res.status(422).json({ error: 'fetch_failed', message: "Couldn't extract readable content from this URL — paste the text directly instead." });
+          return res.status(422).json({ error: 'fetch_failed', message: "Couldn't extract readable content from this URL. Paste the text directly instead." });
         }
         return res.json({ text: text.slice(0, 6000), domain: host });
       } catch {
-        return res.status(422).json({ error: 'fetch_failed', message: "Couldn't fetch this URL — paste the text directly instead." });
+        return res.status(422).json({ error: 'fetch_failed', message: "Couldn't fetch this URL. Paste the text directly instead." });
       }
     }
 
@@ -1171,7 +1171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? `\nRelevant current sources you may draw on (cite naturally, don't just list them):\n${sources.map(s => `- ${s.title} (${s.domain}): ${s.excerpt}`).join('\n')}\n`
           : '';
         const resourceFragment = resourceContext
-          ? `\nSource material the writer dropped in — ground the post in this, don't ignore it:\n${truncateForPrompt(resourceContext, 6000)}\n`
+          ? `\nSource material the writer dropped in. Ground the post in this, don't ignore it:\n${truncateForPrompt(resourceContext, 6000)}\n`
           : '';
 
         const systemPrompt = `${getDateContext()}
@@ -1213,8 +1213,8 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
         const searchInstruction = query
           ? `Today is ${today}. Search for the most recent high-quality articles published in the last 14 days about: "${query}". Prioritise articles from the last 7 days. Include diverse perspectives and source types. Aim for 8 articles.`
           : `Today is ${today}. You are discovering content for a ${role} in ${industry}. Do 2 targeted searches to find the most recent articles from the last 14 days:
-1. Search: "${industry} news ${today.slice(0, 7)}" — find 5 fresh industry headlines
-2. Search: "${role} leadership AI ${today.slice(0, 7)}" — find 5 leadership and tech insights
+1. Search: "${industry} news ${today.slice(0, 7)}" to find 5 fresh industry headlines
+2. Search: "${role} leadership AI ${today.slice(0, 7)}" to find 5 leadership and tech angles
 
 Only include articles published in the last 30 days. Prefer the last 7 days. Use reputable publications.`;
 
@@ -1283,7 +1283,7 @@ After searching, return ONLY a valid JSON array with no prose or markdown fences
         }
 
         const payload = { items: finalItems, role, industry, query: query || null };
-        // Don't cache empty results — forces fresh generation on next load
+        // Don't cache empty results, so this forces fresh generation on next load
         if (finalItems.length > 0) {
           await writeCache(supabase, userId, cacheKind, payload);
         }
@@ -1401,7 +1401,7 @@ Return ONLY valid JSON with this exact shape:
         return res.json({ angles, sources: [], generatedAt: new Date().toISOString() });
       }
       case 'industry-briefing-preview': {
-        // Read-only, user-scoped preview of their own weekly briefing data —
+        // Read-only, user-scoped preview of their own weekly briefing data,
         // for the in-app Dashboard card. Distinct from the admin-gated
         // 'weekly-industry-briefing' action, which actually sends the email.
         const cached = !forceRefresh ? await readCache(supabase, userId, 'weekly-briefing-preview', 12 * 60 * 60 * 1000) : null;
@@ -1482,14 +1482,14 @@ Return ONLY valid JSON with this exact shape:
         if (!message) return res.status(400).json({ error: 'Missing message' });
         const contextBlock = resourceTexts.map((t, i) => `--- Resource ${i + 1} ---\n${truncateForPrompt(t, 6000)}`).join('\n\n');
         // The UI's opening line is an assistant message shown before any user
-        // reply — Anthropic's Messages API requires the array to start with
+        // reply. Anthropic's Messages API requires the array to start with
         // "user", so drop any leading assistant turns before sending.
         const trimmedHistory = [...history];
         while (trimmedHistory.length && trimmedHistory[0].role !== 'user') trimmedHistory.shift();
         const reply = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 400,
-          system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful — never generic. Keep replies to 2-4 sentences, conversational tone.`,
+          system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful. Never generic. Keep replies to 2-4 sentences, conversational tone.`,
           messages: [...trimmedHistory.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user', content: message }],
         });
         const text = reply.content[0].type === 'text' ? reply.content[0].text : '';
@@ -1587,21 +1587,23 @@ Return ONLY valid JSON with this exact shape:
         const msg = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 2000,
-          system: `You are a post editor that removes every AI tell from LinkedIn posts. You apply four passes in your head before returning the result:
+          system: `You are a post editor that removes every AI tell from LinkedIn posts. You apply five passes in your head before returning the result:
 
-PASS 1 — BANNED WORDS: Replace every occurrence of these words with a plain human alternative: delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative.
+PASS 1 (PUNCTUATION, the most important pass): Remove every em dash ("—") and en dash ("–") from the post. There must be zero left. The em dash is the single biggest signal that text was written by AI, and one is enough to give the post away. For each one, rewrite the sentence using whichever fits best: a period (usually strongest, just split into two sentences), a colon if what follows defines or lists, a comma if the aside is short, or parentheses if the aside is optional. Never replace a dash with a bare hyphen. Also remove any arrow ("→"), bullet character ("•"), and "::" from the body text, and convert number ranges like "1,000–1,300" into "1,000 to 1,300". Replace semicolons with periods.
 
-PASS 2 — STRUCTURAL PATTERNS: Remove these AI-tell structures:
-- Staccato stacks ("No X. No Y. Just Z." → rewrite as one flowing sentence)
-- Reveal bridges ("The result?", "Here's the thing:", "It's not X, it's Y", "The truth?", "What happened next?" → delete or rewrite without the bridge)
-- Negative parallelism ("Not A. Not B. Not C." → rewrite as a positive statement)
-- -ing clause openers at sentence start ("Building trust takes time." → "Trust takes time to build.")
-- Announced candor ("I'll be honest", "Real talk:", "Let me be honest" → delete, just say the thing)
-- One-word paragraphs used for drama → merge with adjacent sentence
+PASS 2 (BANNED WORDS): Replace every occurrence of these words with a plain human alternative: delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative.
 
-PASS 3 — RHYTHM AND SPECIFICITY: Vary sentence lengths. If all sentences are similar length, break one long sentence into two or make one short sentence longer. If the post lacks a specific number or named entity, add one plausibly (e.g. a realistic percentage or a generic company type — never fabricate a fake named person or real company).
+PASS 3 (STRUCTURAL PATTERNS): Remove these AI-tell structures:
+- Staccato stacks ("No X. No Y. Just Z.") become one flowing sentence
+- Reveal bridges ("The result?", "Here's the thing:", "It's not X, it's Y", "The truth?", "What happened next?") get deleted, or the sentence is rewritten without the bridge
+- Negative parallelism ("Not A. Not B. Not C.") becomes a positive statement
+- -ing clause openers at sentence start ("Building trust takes time.") become "Trust takes time to build."
+- Announced candor ("I'll be honest", "Real talk:", "Let me be honest") gets deleted. Just say the thing.
+- One-word paragraphs used for drama get merged with the adjacent sentence
 
-PASS 4 — FINAL VERIFICATION: Ensure the post does NOT open with a question. If it does, restructure the opener as a statement.
+PASS 4 (RHYTHM AND SPECIFICITY): Vary sentence lengths. If all sentences are similar length, break one long sentence into two or make one short sentence longer. If the post lacks a specific number or named entity, add one plausibly (e.g. a realistic percentage or a generic company type, but never fabricate a fake named person or real company).
+
+PASS 5 (FINAL VERIFICATION): Ensure the post does NOT open with a question. If it does, restructure the opener as a statement. Then scan the finished text one last time character by character for "—" and "–". If you find even one, fix that sentence before returning.
 
 Return ONLY the cleaned post text. No explanation, no preamble, no quotes around it.`,
           messages: [{ role: 'user', content: raw }],

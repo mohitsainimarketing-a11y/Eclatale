@@ -14,7 +14,7 @@ export const STAGE_LABELS: Record<Stage, string> = {
   icon: 'Icon',
 };
 
-// Heuristic, real-data-driven thresholds — each stage requires everything the
+// Heuristic, real-data-driven thresholds. Each stage requires everything the
 // previous stage required, plus its own new criterion. Not an external
 // benchmark; just a legible progression built from what we can actually measure.
 interface StageCriterion { key: string; label: string; target: number | boolean; }
@@ -144,7 +144,7 @@ export async function calculateStage(supabase: SupabaseClient, userId: string): 
     await createNotification(
       supabase, userId, `growth_stage_${stage}`,
       `You've reached ${stage.charAt(0).toUpperCase() + stage.slice(1)}!`,
-      `Your consistency is paying off — you've reached the ${stage} stage of your brand journey.`,
+      `Your consistency is paying off. You've reached the ${stage} stage of your brand journey.`,
       { text: 'View my journey', url: 'https://eclatale.com/dashboard' }
     );
   }

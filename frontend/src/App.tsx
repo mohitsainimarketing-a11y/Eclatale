@@ -59,7 +59,7 @@ function App() {
 
     // Supabase's password-recovery link redirects to the Site URL root with
     // #access_token=...&type=recovery in the hash (or, if the link already
-    // expired/was used, #error=access_denied&error_code=otp_expired — with
+    // expired/was used, #error=access_denied&error_code=otp_expired, with
     // no `type`, since Supabase omits it on the error path). Nothing on the
     // landing page consumes either, so send both straight to the
     // reset-password screen, which renders the right state for each.

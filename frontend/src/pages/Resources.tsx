@@ -12,24 +12,52 @@ const RESOURCES = [
     highlights: [
       '50 must-know corporate terms defined in plain English',
       'Real LinkedIn post example for each jargon',
-      'When to use it — and when it sounds hollow',
+      'When to use it, and when it sounds hollow',
       'Bonus: 10 overused buzzwords to avoid in 2026',
     ],
-    pages: '28 pages',
+    pages: '27 pages',
+    itemCount: 50,
+    itemNoun: 'terms',
     format: 'PDF',
     downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/top-50-corporate-jargons-guide.pdf',
     preview: [
       { term: 'Leverage', meaning: 'Use existing strengths or assets to gain a larger advantage.', example: 'Example: "We are leveraging our content archive to build a 90-day thought leadership engine."' },
-      { term: 'Synergy', meaning: 'Combined output that exceeds what each part would achieve alone.', example: 'Example: "The partnership created real synergy — their distribution + our IP = 3x reach."' },
-      { term: 'Circle back', meaning: 'Return to a topic at a later point.', example: 'Example: "Great question — let me circle back once I have validated the numbers."' },
+      { term: 'Synergy', meaning: 'Combined output that exceeds what each part would achieve alone.', example: 'Example: "The partnership created real synergy: their distribution + our IP = 3x reach."' },
+      { term: 'Circle back', meaning: 'Return to a topic at a later point.', example: 'Example: "Great question. Let me circle back once I have validated the numbers."' },
       { term: 'Bandwidth', meaning: 'Available capacity to take on additional work or responsibilities.', example: 'Example: "Before adding scope, let us be honest about team bandwidth this sprint."' },
       { term: 'Deep dive', meaning: 'Thorough, detailed examination of a topic.', example: 'Example: "I did a deep dive on why most LinkedIn profiles fail in the first 3 seconds."' },
       { term: 'Move the needle', meaning: 'Make a measurable, meaningful improvement.', example: 'Example: "Only 2 of the 11 tactics we tested actually moved the needle on engagement."' },
     ],
   },
+  {
+    slug: 'linkedin-headline-formulas',
+    badge: 'Profile & Positioning',
+    emoji: '✍️',
+    title: '20 LinkedIn Headline Formulas That Work',
+    description: 'Your headline is the one line working for you 24 hours a day. Twenty fill-in-the-blank formulas, each with real examples and the reason it lands.',
+    highlights: [
+      '20 copy-and-adapt headline templates',
+      'Two real example headlines for every formula',
+      'A power tip explaining why each one converts',
+      'Bonus: 8 headline mistakes killing your profile',
+    ],
+    pages: '11 pages',
+    itemCount: 20,
+    itemNoun: 'formulas',
+    format: 'PDF',
+    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/linkedin-headline-formulas-guide.pdf',
+    preview: [
+      { term: 'The Role + Result', meaning: '[Job title] helping [target audience] [achieve specific outcome]', example: 'Example: "Marketing Director helping B2B SaaS startups generate pipeline without paid ads"' },
+      { term: 'The Problem-Solver', meaning: 'Name the exact problem you remove, then who you remove it for.', example: 'Example: "I fix the reason your demos book but never close"' },
+      { term: 'The Numbers Stack', meaning: 'Three hard numbers that prove the claim before anyone asks.', example: 'Example: "14 years in supply chain · 3 turnarounds · $40M in cost taken out"' },
+      { term: 'The Credibility Pivot', meaning: 'Ex-[recognizable role], now [what you do]. The word "now" carries the turn.', example: 'Example: "Ex-Google PM, now helping seed founders build their first product team"' },
+      { term: 'The Niche Authority', meaning: 'Claim a category narrow enough that you can credibly own it.', example: 'Example: "The pricing guy for vertical SaaS companies under $10M ARR"' },
+      { term: 'The Ask Me About', meaning: 'Invite the exact conversation you want to be having.', example: 'Example: "Ask me about cutting CAC without cutting spend"' },
+    ],
+  },
 ];
 
-function JargonPreviewCard({ term, meaning, example }: { term: string; meaning: string; example: string }) {
+function PreviewCard({ term, meaning, example }: { term: string; meaning: string; example: string }) {
   return (
     <div className="p-4 rounded-xl border border-[rgba(124,92,252,0.1)] bg-white/60">
       <p className="text-sm font-bold text-brand-dark mb-1">{term}</p>
@@ -44,7 +72,7 @@ export default function Resources() {
     <div className="min-h-screen gradient-bg-page">
       <Seo
         title="Free LinkedIn Resources | Eclatale"
-        description="Free downloadable guides for LinkedIn personal branding — corporate jargon glossaries, post frameworks, and growth playbooks."
+        description="Free downloadable guides for LinkedIn personal branding: corporate jargon glossaries, post frameworks, and growth playbooks."
         path="/resources"
         jsonLd={[
           {
@@ -81,7 +109,7 @@ export default function Resources() {
             key={resource.slug}
             className="card p-6 md:p-10 grid md:grid-cols-2 gap-8 md:gap-12 items-start"
           >
-            {/* Left — info */}
+            {/* Left: info */}
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center text-2xl shrink-0">
@@ -126,18 +154,18 @@ export default function Resources() {
               </a>
             </div>
 
-            {/* Right — preview */}
+            {/* Right: preview */}
             <div>
               <p className="text-xs font-semibold text-brand-muted uppercase tracking-widest mb-4">
-                Preview — 6 of 50
+                Preview · {resource.preview.length} of {resource.itemCount}
               </p>
               <div className="space-y-3">
                 {resource.preview.map(item => (
-                  <JargonPreviewCard key={item.term} {...item} />
+                  <PreviewCard key={item.term} {...item} />
                 ))}
               </div>
               <p className="text-xs text-brand-muted mt-4 text-center">
-                + 44 more terms in the full guide
+                + {resource.itemCount - resource.preview.length} more {resource.itemNoun} in the full guide
               </p>
             </div>
           </article>
@@ -150,7 +178,7 @@ export default function Resources() {
           </div>
           <h3 className="text-base font-bold text-brand-dark mb-2">More guides coming soon</h3>
           <p className="text-sm text-brand-muted max-w-sm mx-auto mb-6">
-            LinkedIn post frameworks, headline formulas, content repurposing playbooks — drop your email to get them first.
+            LinkedIn post frameworks, content repurposing playbooks, and profile teardowns. Drop your email to get them first.
           </p>
           <a href="/signup" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-purple hover:underline">
             Get early access <ArrowRight size={14} />

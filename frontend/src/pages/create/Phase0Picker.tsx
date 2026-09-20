@@ -64,7 +64,7 @@ export default function Phase0Picker({
       if (d.error) throw new Error(d.error);
       onGoRepurpose(d.text || url);
     } catch (e: any) {
-      setUrlError(e.message || "Couldn't fetch that URL — try another link.");
+      setUrlError(e.message || "Couldn't fetch that URL. Try another link.");
     }
     setUrlLoading(false);
   };
@@ -84,7 +84,7 @@ export default function Phase0Picker({
       if (d.error) throw new Error(d.error);
       onGoIdea(d.angles || [], d.sources || []);
     } catch (e: any) {
-      setIdeaError(e.message || "Couldn't process that idea — try again.");
+      setIdeaError(e.message || "Couldn't process that idea. Try again.");
     }
     setIdeaLoading(false);
   };
@@ -108,14 +108,14 @@ export default function Phase0Picker({
             Hey {displayName}, what are we creating today? ✨
           </h1>
           <p className="text-sm text-brand-muted">
-            Pick your starting point — takes 5 seconds.
+            Pick your starting point. Takes 5 seconds.
           </p>
         </div>
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-          {/* Card 1 — Give me ideas */}
+          {/* Card 1: Give me ideas */}
           <button
             onClick={onGoIdeas}
             className="relative rounded-2xl bg-white overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer"
@@ -141,7 +141,7 @@ export default function Phase0Picker({
             </div>
           </button>
 
-          {/* Card 2 — What's trending */}
+          {/* Card 2: What's trending */}
           <div className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5">
             <div className="h-2" style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }} />
             <div className="p-4">
@@ -189,7 +189,7 @@ export default function Phase0Picker({
             </div>
           </div>
 
-          {/* Card 3 — I have something */}
+          {/* Card 3: I have something */}
           <div className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5">
             <div className="h-2" style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }} />
             <div className="p-4">
@@ -238,7 +238,7 @@ export default function Phase0Picker({
             </div>
           </div>
 
-          {/* Card 4 — I have an idea */}
+          {/* Card 4: I have an idea */}
           <div className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5">
             <div className="h-2" style={{ background: 'linear-gradient(135deg, #3B82F6, #6366F1)' }} />
             <div className="p-4">
@@ -248,7 +248,7 @@ export default function Phase0Picker({
               </div>
               <p className="text-[15px] font-bold text-brand-dark mb-1">I have an idea</p>
               <p className="text-[13px] text-brand-muted leading-snug mb-3">
-                Type your spark — AI turns it into angles
+                Type your spark. AI turns it into angles
               </p>
               {expandedCard === 'idea' ? (
                 <div className="space-y-2" onClick={e => e.stopPropagation()}>

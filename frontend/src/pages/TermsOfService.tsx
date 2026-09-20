@@ -33,7 +33,7 @@ export default function TermsOfService() {
         </Section>
 
         <Section title="Refund policy">
-          <p>Full refund, no questions asked, within 7 days of your first charge. Requests between 8–30 days are reviewed manually. See our <a href="/refund-policy" className="text-brand-purple font-semibold hover:underline">full refund policy</a> for details.</p>
+          <p>Full refund, no questions asked, within 7 days of your first charge. Requests between 8 and 30 days are reviewed manually. See our <a href="/refund-policy" className="text-brand-purple font-semibold hover:underline">full refund policy</a> for details.</p>
         </Section>
 
         <Section title="Acceptable use">
@@ -41,7 +41,7 @@ export default function TermsOfService() {
         </Section>
 
         <Section title="LinkedIn compliance">
-          <p>Eclatale publishes exclusively through LinkedIn's official Marketing/Share API — never through browser automation, scraping, or credential-based login. This means there is no risk of LinkedIn account restriction from using our publishing feature as intended.</p>
+          <p>Eclatale publishes exclusively through LinkedIn's official Marketing/Share API, never through browser automation, scraping, or credential-based login. This means there is no risk of LinkedIn account restriction from using our publishing feature as intended.</p>
         </Section>
 
         <Section title="Limitation of liability">

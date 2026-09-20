@@ -34,7 +34,6 @@ function analyzeVoiceSamples(samples: string[]): string {
   const usesEmoji = /[\u{1F300}-\u{1FFFF}]/u.test(allText);
   const usesCaps = /[A-Z]{3,}/.test(allText);
   const usesEllipsis = allText.includes('...');
-  const usesDashes = allText.includes(' - ') || allText.includes(' -- ');
 
   const traits: string[] = [];
   if (avgSentenceLength < 10) traits.push('uses short, punchy sentences');
@@ -49,17 +48,16 @@ function analyzeVoiceSamples(samples: string[]): string {
   if (usesEmoji) traits.push('occasionally uses emoji');
   if (usesCaps) traits.push('uses ALL CAPS for emphasis');
   if (usesEllipsis) traits.push('uses ellipses for dramatic pauses');
-  if (usesDashes) traits.push('uses dashes to break up thoughts');
 
   return `Voice analysis from their writing samples: ${traits.join(', ')}. Average sentence length: ${avgSentenceLength} words.`;
 }
 
 function buildFormalityDescription(score: number): string {
-  if (score <= 20) return 'Very casual and conversational - writes like texting a friend';
-  if (score <= 40) return 'Casual but professional - relaxed tone with substance';
-  if (score <= 60) return 'Balanced professionalism - approachable yet credible';
-  if (score <= 80) return 'Polished and professional - authoritative without being stiff';
-  return 'Highly formal - executive-level gravitas and precision';
+  if (score <= 20) return 'Very casual and conversational. Writes like texting a friend';
+  if (score <= 40) return 'Casual but professional, with a relaxed tone that still carries substance';
+  if (score <= 60) return 'Balanced professionalism. Approachable yet credible';
+  if (score <= 80) return 'Polished and professional, authoritative without being stiff';
+  return 'Highly formal, with executive-level gravitas and precision';
 }
 
 export async function buildPersonaPrompt(
@@ -92,14 +90,14 @@ export async function buildPersonaPrompt(
     parts.push(`Communication style: ${persona.communication_styles.join(', ')}.`);
   }
 
-  parts.push(`Formality level: ${persona.formality_score}/100 - ${buildFormalityDescription(persona.formality_score)}.`);
+  parts.push(`Formality level: ${persona.formality_score}/100. ${buildFormalityDescription(persona.formality_score)}.`);
 
   if (persona.expertise_topic) {
     parts.push(`Core expertise: ${persona.expertise_topic}. Weave this authority naturally into content.`);
   }
 
   if (persona.contrarian_take) {
-    parts.push(`Distinctive perspective: "${persona.contrarian_take}". This viewpoint shapes how they see their industry - let it influence the angle when relevant, but don't force it into every post.`);
+    parts.push(`Distinctive perspective: "${persona.contrarian_take}". This viewpoint shapes how they see their industry. Let it influence the angle when relevant, but don't force it into every post.`);
   }
 
   if (persona.voice_samples.length > 0) {

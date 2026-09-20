@@ -2,9 +2,9 @@ import React, { useState, useMemo } from 'react';
 
 const ZONES = [
   { min: 0, max: 300, label: 'Too short for reach', color: '#EF4444' },
-  { min: 300, max: 600, label: 'Dead zone — avoid', color: '#F59E0B' },
+  { min: 300, max: 600, label: 'Dead zone, avoid', color: '#F59E0B' },
   { min: 600, max: 900, label: 'Acceptable', color: '#7C5CFC' },
-  { min: 900, max: 1300, label: 'Sweet spot 🔥 — 3.07× viral rate', color: '#10B981' },
+  { min: 900, max: 1300, label: 'Sweet spot 🔥 · 3.07× viral rate', color: '#10B981' },
   { min: 1300, max: 2000, label: 'Good for long-form', color: '#7C5CFC' },
   { min: 2000, max: Infinity, label: 'May feel long', color: '#F59E0B' },
 ];

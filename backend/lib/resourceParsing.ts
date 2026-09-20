@@ -2,7 +2,7 @@
 // the parse-time cost of loading these libraries.
 
 export async function extractPdfText(buffer: Buffer): Promise<{ text: string; pageCount: number }> {
-  // unpdf ships PDF.js compiled for serverless/Node runtimes — plain
+  // unpdf ships PDF.js compiled for serverless/Node runtimes. Plain
   // pdf-parse (and pdfjs-dist's browser build) reference DOMMatrix, which
   // doesn't exist outside a browser and throws "DOMMatrix is not defined"
   // on Vercel's Node functions.
@@ -27,7 +27,7 @@ export function extractCsvSummary(text: string): string {
   return `CSV with ${rowCount} rows. Columns: ${header}\n\nFirst rows:\n${preview}`;
 }
 
-// Truncates extracted text to a safe prompt-context size — long PDFs/CSVs
+// Truncates extracted text to a safe prompt-context size. Long PDFs/CSVs
 // shouldn't blow the model's context or dominate the conversation.
 export function truncateForPrompt(text: string, maxChars = 12000): string {
   if (text.length <= maxChars) return text;

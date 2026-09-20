@@ -1,5 +1,5 @@
 // Runs on all pages. Shows a small floating "Repurpose with Eclatale"
-// button near the user's text selection — a visible, discoverable
+// button near the user's text selection. A visible, discoverable
 // alternative to the right-click context menu item (background.js owns
 // that one). Only ever acts on text the user has explicitly selected;
 // never reads page content automatically.

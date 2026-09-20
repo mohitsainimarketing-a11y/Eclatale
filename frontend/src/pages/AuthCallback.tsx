@@ -21,7 +21,7 @@ export default function AuthCallback() {
         const params = new URLSearchParams(window.location.search);
 
         // Password-recovery links can land on /auth/callback (rather than the
-        // root) depending on how the link was generated — hand off to the
+        // root) depending on how the link was generated. Hand off to the
         // reset-password screen instead of treating this as account
         // confirmation, preserving the hash so it can parse the recovery session itself.
         if (hash.get('type') === 'recovery') {

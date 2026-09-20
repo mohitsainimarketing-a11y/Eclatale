@@ -217,7 +217,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }).eq('id', profile.id);
   await createNotification(
     supabase, profile.id, 'subscription_cancelled', 'Subscription cancelled',
-    "Your Individual plan has ended. Come back anytime — your data is still here.",
+    "Your Individual plan has ended. Come back anytime. Your data is still here.",
     { text: 'Reactivate for 50% off', url: 'https://eclatale.com/pricing' }
   );
 }

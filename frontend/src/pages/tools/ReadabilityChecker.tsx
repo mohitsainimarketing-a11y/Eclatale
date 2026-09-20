@@ -25,10 +25,10 @@ function analyze(text: string) {
   score = Math.max(0, Math.min(100, Math.round(score)));
 
   const issues: string[] = [];
-  if (longSentences > 0) issues.push(`${longSentences} sentence${longSentences > 1 ? 's' : ''} over 20 words — shorten these`);
-  if (longParagraphs > 0) issues.push(`${longParagraphs} paragraph${longParagraphs > 1 ? 's' : ''} over 3 lines — break these up`);
+  if (longSentences > 0) issues.push(`${longSentences} sentence${longSentences > 1 ? 's' : ''} over 20 words, shorten these`);
+  if (longParagraphs > 0) issues.push(`${longParagraphs} paragraph${longParagraphs > 1 ? 's' : ''} over 3 lines, break these up`);
   if (!whitespaceOk && wordCount > 30) issues.push('Missing line breaks between sections');
-  if (issues.length === 0 && wordCount > 0) issues.push('No major issues found — this reads cleanly.');
+  if (issues.length === 0 && wordCount > 0) issues.push('No major issues found. This reads cleanly.');
 
   return { wordCount, readingTimeSec, avgSentenceLen, longSentences, paragraphs: paragraphs.length, longParagraphs, lineBreaks, whitespaceOk, score, issues };
 }

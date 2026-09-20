@@ -6,7 +6,7 @@ interface SidebarContextValue {
   // Whether the sidebar is rendered in icon-only (collapsed) form right now.
   collapsed: boolean;
   toggleCollapsed: () => void;
-  // Mobile overlay open/close state (not persisted — always starts closed)
+  // Mobile overlay open/close state (not persisted, always starts closed)
   mobileOpen: boolean;
   openMobile: () => void;
   closeMobile: () => void;

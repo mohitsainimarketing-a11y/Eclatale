@@ -10,7 +10,7 @@
 
 const PENDING_DEMO_KEY = 'eclatale_demo_pending';
 
-// A topic picked days ago is not what the user came back for — silently
+// A topic picked days ago is not what the user came back for, so silently
 // generating it would be surprising, so a stale handoff is discarded.
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

@@ -7,7 +7,7 @@ import { apiFetch } from '../lib/apiFetch';
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 
 const WRITING_STYLES = [
-  { id: 'storyteller', emoji: '📖', label: 'Storyteller', desc: 'Personal story → insight → lesson' },
+  { id: 'storyteller', emoji: '📖', label: 'Storyteller', desc: 'Personal story, insight, lesson' },
   { id: 'contrarian', emoji: '🔥', label: 'Contrarian', desc: 'Challenges the status quo with data' },
   { id: 'teacher', emoji: '🎓', label: 'The Teacher', desc: 'Breaks complex ideas into simple steps' },
   { id: 'insider', emoji: '🕵️', label: 'The Insider', desc: "Shares what others in industry won't" },
@@ -135,7 +135,7 @@ export default function CreateTalk() {
       }
       setStep('compose');
     } catch (e: any) {
-      setError(e.message || 'Something went wrong finding sources — you can still continue.');
+      setError(e.message || 'Something went wrong finding sources. You can still continue.');
       setStep('compose');
     }
     setResearching(false);
@@ -151,9 +151,9 @@ export default function CreateTalk() {
         body: JSON.stringify({
           action: 'create-talk-generate', topic, style, length, clarifyingAnswer, sources, userId,
           resourceContext: repurposeContent
-            ? `Repurpose the key insights from this article into a LinkedIn post. Extract the most interesting ideas and express them in a fresh, original way:\n\n${repurposeContent.slice(0, 5000)}`
+            ? `Repurpose the key points from this article into a LinkedIn post. Extract the most interesting ideas and express them in a fresh, original way:\n\n${repurposeContent.slice(0, 5000)}`
             : templateContent
-            ? `Mimic the structure, pacing, and format of this reference post — but write entirely new content about the new topic:\n\n${templateContent}`
+            ? `Mimic the structure, pacing, and format of this reference post, but write entirely new content about the new topic:\n\n${templateContent}`
             : undefined,
         }),
       });
@@ -165,7 +165,7 @@ export default function CreateTalk() {
       if (insertErr || !inserted) throw new Error('Could not save the generated post.');
       window.location.href = `/create?postId=${inserted.id}`;
     } catch (e: any) {
-      setError(e.message || 'Generation failed — please try again.');
+      setError(e.message || 'Generation failed. Please try again.');
       setGenerating(false);
     }
   };
@@ -311,7 +311,7 @@ export default function CreateTalk() {
                     <button key={l.id} onClick={() => setLength(l.id)}
                       className={`text-left p-3 rounded-2xl border transition-all ${length === l.id ? 'border-brand-purple bg-[rgba(124,92,252,0.06)]' : 'border-[rgba(0,0,0,0.08)] hover:border-brand-purple/30'}`}>
                       <p className="text-[12px] font-bold text-brand-dark">{l.emoji} {l.label}</p>
-                      <p className="text-[10px] text-brand-muted">{l.words} — {l.desc}</p>
+                      <p className="text-[10px] text-brand-muted">{l.words} · {l.desc}</p>
                     </button>
                   ))}
                 </div>

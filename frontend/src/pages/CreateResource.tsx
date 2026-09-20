@@ -86,7 +86,7 @@ export default function CreateResource() {
       setUrlInput('');
     } catch (e: any) {
       setProcessing(null);
-      setError(e.message || "Couldn't fetch that URL — try pasting the text instead.");
+      setError(e.message || "Couldn't fetch that URL. Try pasting the text instead.");
     }
   };
 
@@ -144,7 +144,7 @@ export default function CreateResource() {
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
       if (!topic) setTopic(userMsg.slice(0, 140));
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I hit an error there — try again?" }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I hit an error there. Try again?" }]);
     }
     setChatBusy(false);
   };
@@ -247,7 +247,7 @@ export default function CreateResource() {
                 <div className="flex items-center gap-2">
                   <input type="text" value={urlInput} onChange={e => setUrlInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleUrl()}
-                    placeholder="Add another resource — paste a URL…" className="input !text-[12px] flex-1" />
+                    placeholder="Add another resource: paste a URL…" className="input !text-[12px] flex-1" />
                   <button onClick={handleUrl} disabled={!urlInput.trim() || !!processing} className="btn-secondary !py-2 !px-3 text-xs disabled:opacity-40">Add</button>
                   <button onClick={() => fileInputRef.current?.click()} className="btn-secondary !py-2 !px-3 text-xs">File</button>
                   <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.docx,.csv,.txt"

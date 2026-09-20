@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+import { NO_DASH_RULE } from './writingStyles';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -309,7 +310,7 @@ export async function generateRecommendations(
     max_tokens: 700,
     messages: [{
       role: 'user',
-      content: `Here is this user's real LinkedIn content analytics, grouped by tone:\n\n${summary}\n\nBased ONLY on this real data, generate up to 3 specific, actionable recommendations. Each must cite an actual number from the data above. Never invent metrics that aren't listed (no impressions, no engagement rate, no follower counts, since we don't have that data). If the data doesn't support a strong recommendation, return fewer than 3.\n\nReturn ONLY a JSON array: [{ "priority": "HIGH"|"MEDIUM", "recommendation": "specific sentence referencing the real data", "dataPoint": "the specific stat this is based on", "actionUrl": "/create/talk", "actionLabel": "short button label" }]`,
+      content: `Here is this user's real LinkedIn content analytics, grouped by tone:\n\n${summary}\n\nBased ONLY on this real data, generate up to 3 specific, actionable recommendations. Each must cite an actual number from the data above. Never invent metrics that aren't listed (no impressions, no engagement rate, no follower counts, since we don't have that data). If the data doesn't support a strong recommendation, return fewer than 3.\n\nReturn ONLY a JSON array: [{ "priority": "HIGH"|"MEDIUM", "recommendation": "specific sentence referencing the real data", "dataPoint": "the specific stat this is based on", "actionUrl": "/create/talk", "actionLabel": "short button label" }]\n\n${NO_DASH_RULE}`,
     }],
   });
 

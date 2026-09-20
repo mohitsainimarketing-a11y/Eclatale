@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { NO_DASH_RULE } from './writingStyles';
 
 export interface Source {
   title: string;
@@ -52,7 +53,7 @@ export async function searchSourcesForTopic(anthropic: Anthropic, topic: string)
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
     messages: [{
       role: 'user',
-      content: `Search for the 5 most relevant, recent (last 30 days preferred) articles about: ${topic}. After searching, respond with ONLY a JSON array (no prose, no markdown fences) of up to 5 objects: [{"title":"...","url":"...","excerpt":"one sentence summary","publishedDate":"YYYY-MM-DD or null"}]`,
+      content: `Search for the 5 most relevant, recent (last 30 days preferred) articles about: ${topic}. After searching, respond with ONLY a JSON array (no prose, no markdown fences) of up to 5 objects: [{"title":"...","url":"...","excerpt":"one sentence summary","publishedDate":"YYYY-MM-DD or null"}]\n\n${NO_DASH_RULE} (the "excerpt" field only; article titles are quoted from the source)`,
     }],
   });
 

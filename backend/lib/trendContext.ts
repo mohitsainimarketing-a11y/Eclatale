@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
+import { NO_DASH_RULE } from './writingStyles';
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
@@ -69,7 +70,7 @@ export async function getTrendContext(anthropic: Anthropic, supabase: SupabaseCl
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages: [{
         role: 'user',
-        content: `Search for: "${domain} trends ${monthName} ${year}" and separately "${role} LinkedIn trending topics ${year}". Based on the search results, extract 3 to 5 specific, currently trending angles or topics in ${domain} that a ${role} could write about right now. Each must be a concrete, specific angle (not a vague category), grounded in something actually happening this month.\n\nReturn ONLY a JSON object (after any research): { "trends": ["trend 1", "trend 2", "trend 3"] }`,
+        content: `Search for: "${domain} trends ${monthName} ${year}" and separately "${role} LinkedIn trending topics ${year}". Based on the search results, extract 3 to 5 specific, currently trending angles or topics in ${domain} that a ${role} could write about right now. Each must be a concrete, specific angle (not a vague category), grounded in something actually happening this month.\n\nReturn ONLY a JSON object (after any research): { "trends": ["trend 1", "trend 2", "trend 3"] }\n\n${NO_DASH_RULE}`,
       }],
     }, { signal: controller.signal });
 

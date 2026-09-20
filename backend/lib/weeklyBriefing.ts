@@ -5,7 +5,7 @@ import { createAngles } from './angles';
 import { getIndustryIntelligence } from './industryIntelligence';
 import { getPersonalBest } from './hookLibrary';
 import { calculateStage } from './growthJourney';
-import { getWritingStyle } from './writingStyles';
+import { getWritingStyle, NO_DASH_RULE } from './writingStyles';
 import { sendIndustryBriefing } from './emailService';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -45,7 +45,7 @@ async function generateOpportunity(
 
 Suggest ONE writing style they haven't leaned on enough, from exactly these 6 (lowercase, use this exact spelling): contrarian, storyteller, analyst, teacher, insider, motivator.
 
-Write 1-2 sentences recommending they try it this week. Be specific and grounded in what you know about their history. Do not invent a fake percentage or engagement number. Never use markdown formatting (no ** for bold, no * for italic, no # for headers). This is plain text for an email. Return ONLY valid JSON: { "text": string, "styleSlug": "one of the 6 style ids above" }`,
+Write 1-2 sentences recommending they try it this week. Be specific and grounded in what you know about their history. Do not invent a fake percentage or engagement number. Never use markdown formatting (no ** for bold, no * for italic, no # for headers). This is plain text for an email. Return ONLY valid JSON: { "text": string, "styleSlug": "one of the 6 style ids above" }\n\n${NO_DASH_RULE}`,
     }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';

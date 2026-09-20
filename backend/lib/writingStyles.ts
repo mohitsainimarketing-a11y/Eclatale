@@ -105,6 +105,17 @@ Scan your output character by character for "—" and "–". If you find even on
 sentence using a period, colon, comma, or parentheses. Do this before returning the text.`;
 
 
+// A short, universal instruction for EVERY Claude call that produces text a
+// user will read, not just full LinkedIn posts: chat replies, opening lines,
+// digest copy, suggestions, error/notification text, anything. The full
+// UNIVERSAL_HUMAN_WRITING_RULES block above is for actual post generation
+// only; it is too long and too post-specific to interpolate into a one-line
+// JSON field or a two-sentence chat reply. This constant is what closes that
+// gap. Append it to every prompt or system string that returns free text,
+// including inside a JSON field, even when the rest of the call has nothing
+// else to do with writing style.
+export const NO_DASH_RULE = `Never use an em dash (—) or en dash (–) anywhere in your response, including inside JSON string values. Use a period, colon, comma, or parentheses instead. This applies even to a single sentence.`;
+
 export function getWritingStyle(id: string): WritingStyle | undefined {
   return WRITING_STYLES.find(s => s.id === id);
 }

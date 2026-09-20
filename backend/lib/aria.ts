@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { readCache } from './intelligenceCache';
+import { NO_DASH_RULE } from './writingStyles';
 
 export interface AriaMessage {
   role: 'user' | 'assistant';
@@ -72,7 +73,9 @@ Useful navigate URLs: /create (write/repurpose a post), /create?action=ideas (op
 When the user names a topic to write about, use prefill instead of a bare navigate: end your reply with ONLY {"action":"prefill","page":"/create","data":{"topic":"AI in marketing"}}
 Only include an action line when it's genuinely useful. Most replies need no action at all. Never put an action line anywhere but the very last line, and never explain the JSON to the user.
 
-Keep responses concise: maximum 3-4 sentences unless the user explicitly asks for detail.`;
+Keep responses concise: maximum 3-4 sentences unless the user explicitly asks for detail.
+
+${NO_DASH_RULE}`;
 }
 
 /** Splits a trailing `{"action":...}` line off Aria's reply, if present. */

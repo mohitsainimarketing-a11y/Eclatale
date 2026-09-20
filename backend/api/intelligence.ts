@@ -26,7 +26,7 @@ import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { calculateVoiceMatchScore } from '../lib/voiceMatchScore';
 import { ariaChat, getAriaConversation, AriaMessage } from '../lib/aria';
 import { searchSourcesForTopic, computeTrustScore, extractDomain } from '../lib/webResearch';
-import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction } from '../lib/writingStyles';
+import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, NO_DASH_RULE, lengthInstruction } from '../lib/writingStyles';
 import { extractPdfText, extractDocxText, extractCsvSummary, truncateForPrompt } from '../lib/resourceParsing';
 import {
   extractClientIp, checkToolRateLimit, logToolUsage,
@@ -1151,7 +1151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const qMessage = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 200,
-          messages: [{ role: 'user', content: `Someone wants to write a LinkedIn post about: "${topic}". Ask them ONE short, genuinely useful clarifying question to sharpen the post (e.g. personal experience vs industry insight, who the reader is, what the goal is). Return ONLY the question, no preamble, no quotes.` }],
+          messages: [{ role: 'user', content: `Someone wants to write a LinkedIn post about: "${topic}". Ask them ONE short, genuinely useful clarifying question to sharpen the post (e.g. personal experience vs industry insight, who the reader is, what the goal is). Return ONLY the question, no preamble, no quotes.\n\n${NO_DASH_RULE}` }],
         });
         const clarifyingQuestion = qMessage.content[0].type === 'text' ? qMessage.content[0].text.trim() : '';
         return res.json({ sources, clarifyingQuestion });
@@ -1227,7 +1227,9 @@ Only include articles published in the last 30 days. Prefer the last 7 days. Use
             content: `${searchInstruction}
 
 After searching, return ONLY a valid JSON array with no prose or markdown fences:
-[{"title":"...","url":"...","domain":"example.com","excerpt":"one clear sentence summary of the key insight","publishedDate":"YYYY-MM-DD or null","category":"Industry News|Trends|Leadership|Technology|Research|Opinion|Marketing|Career|Innovation"}]`,
+[{"title":"...","url":"...","domain":"example.com","excerpt":"one clear sentence summary of the key insight","publishedDate":"YYYY-MM-DD or null","category":"Industry News|Trends|Leadership|Technology|Research|Opinion|Marketing|Career|Innovation"}]
+
+${NO_DASH_RULE} (this applies to the "excerpt" field you write; article titles are quoted from the source and left as-is)`,
           }],
         });
 
@@ -1261,7 +1263,7 @@ After searching, return ONLY a valid JSON array with no prose or markdown fences
             max_tokens: 2000,
             messages: [{
               role: 'user',
-              content: `You are a content curator for a ${role} in ${industry}. Generate 8 highly relevant article recommendations they should read this week. Use your knowledge of the industry to suggest specific, realistic articles with plausible publication details.\n\nReturn ONLY a valid JSON array (no prose):\n[{"title":"...","url":"https://example.com/article","domain":"example.com","excerpt":"one sentence key insight","publishedDate":"${today}","category":"Industry News|Trends|Leadership|Technology|Research|Opinion"}]`,
+              content: `You are a content curator for a ${role} in ${industry}. Generate 8 highly relevant article recommendations they should read this week. Use your knowledge of the industry to suggest specific, realistic articles with plausible publication details.\n\nReturn ONLY a valid JSON array (no prose):\n[{"title":"...","url":"https://example.com/article","domain":"example.com","excerpt":"one sentence key insight","publishedDate":"${today}","category":"Industry News|Trends|Leadership|Technology|Research|Opinion"}]\n\n${NO_DASH_RULE}`,
             }],
           });
           const fbText = fbMsg.content[0].type === 'text' ? fbMsg.content[0].text : '[]';
@@ -1329,7 +1331,9 @@ Return ONLY valid JSON with this exact shape:
   "optimizedHeadline": "<rewritten headline under 220 chars, omit if none provided>",
   "optimizedAbout": "<rewritten About section, preserve voice, max 2600 chars, omit if none provided>",
   "quickWins": ["<3 concrete one-sentence actions ranked by impact>"]
-}`;
+}
+
+${NO_DASH_RULE}`;
 
         const message = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
@@ -1376,7 +1380,7 @@ Return ONLY valid JSON with this exact shape:
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 2000,
           system: getDateContext(),
-          messages: [{ role: 'user', content: `Generate 5 distinct LinkedIn post angles based on this idea from a ${role} in ${industry}:\n\nIDEA: "${idea.slice(0, 500)}"\n\nFor each angle:\n- Write a compelling hook (2-3 sentences) that directly builds on their idea\n- Assign a style from exactly these options (use exact casing): ${styleNames}\n- Write one sentence explaining why this framing works\n- Add a realistic performance stat\n\nReturn ONLY valid JSON (no prose, no markdown):\n{"angles":[{"style":"Contrarian","hook":"...","insight":"...","performanceStat":"..."}]}` }],
+          messages: [{ role: 'user', content: `Generate 5 distinct LinkedIn post angles based on this idea from a ${role} in ${industry}:\n\nIDEA: "${idea.slice(0, 500)}"\n\nFor each angle:\n- Write a compelling hook (2-3 sentences) that directly builds on their idea\n- Assign a style from exactly these options (use exact casing): ${styleNames}\n- Write one sentence explaining why this framing works\n- Add a realistic performance stat\n\nReturn ONLY valid JSON (no prose, no markdown):\n{"angles":[{"style":"Contrarian","hook":"...","insight":"...","performanceStat":"..."}]}\n\n${NO_DASH_RULE}` }],
         });
         const ideaText = ideaMsg.content[0].type === 'text' ? ideaMsg.content[0].text : '{}';
         let ideaParsed: any = {};
@@ -1467,7 +1471,7 @@ Return ONLY valid JSON with this exact shape:
         const message = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 600,
-          messages: [{ role: 'user', content: `Analyze ${resourceLabel} below. Return ONLY JSON: {"keyThemes": ["3-5 short bullet themes"], "angles": ["2-4 specific LinkedIn post angle ideas grounded in this content"], "openingLine": "one sentence a brand assistant would say to open a conversation about this, referencing the single most interesting insight"}\n\nContent:\n${truncateForPrompt(resourceText)}` }],
+          messages: [{ role: 'user', content: `Analyze ${resourceLabel} below. Return ONLY JSON: {"keyThemes": ["3-5 short bullet themes"], "angles": ["2-4 specific LinkedIn post angle ideas grounded in this content"], "openingLine": "one sentence a brand assistant would say to open a conversation about this, referencing the single most interesting insight"}\n\n${NO_DASH_RULE}\n\nContent:\n${truncateForPrompt(resourceText)}` }],
         });
         const raw = message.content[0].type === 'text' ? message.content[0].text : '{}';
         const match = raw.match(/\{[\s\S]*\}/);
@@ -1489,7 +1493,7 @@ Return ONLY valid JSON with this exact shape:
         const reply = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 400,
-          system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful. Never generic. Keep replies to 2-4 sentences, conversational tone.`,
+          system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful. Never generic. Keep replies to 2-4 sentences, conversational tone.\n\n${NO_DASH_RULE}`,
           messages: [...trimmedHistory.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user', content: message }],
         });
         const text = reply.content[0].type === 'text' ? reply.content[0].text : '';

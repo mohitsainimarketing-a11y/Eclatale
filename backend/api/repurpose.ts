@@ -8,6 +8,7 @@ import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { requireFeature } from '../lib/featureGates';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
+import { NO_DASH_RULE } from '../lib/writingStyles';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -84,7 +85,7 @@ ${repurposeMode === 'reaction' ? `- The author has a specific personal reaction 
         max_tokens: 150,
         messages: [{
           role: 'user',
-          content: `Describe the structural pattern of this piece of content in one short line, arrow-separated, e.g. "Hook: bold statement → 3 numbered points → Question CTA". Be specific about the actual structure used, not generic.\n\nCONTENT:\n${sourceText.substring(0, 3000)}`,
+          content: `Describe the structural pattern of this piece of content in one short line, arrow-separated, e.g. "Hook: bold statement → 3 numbered points → Question CTA". Be specific about the actual structure used, not generic.\n\n${NO_DASH_RULE}\n\nCONTENT:\n${sourceText.substring(0, 3000)}`,
         }],
       });
       extractedPattern = patternMsg.content[0]?.type === 'text' ? patternMsg.content[0].text.trim() : '';

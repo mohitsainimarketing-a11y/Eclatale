@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
+import { NO_DASH_RULE } from './writingStyles';
 
 const TRENDING_CACHE_MS = 6 * 60 * 60 * 1000;
 const MIN_POSTS_FOR_PERSONAL_BEST = 3;
@@ -206,7 +207,7 @@ async function getTrendingHooks(anthropic: Anthropic, supabase: SupabaseClient, 
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `Search for what's trending in ${domain} this week. Based on that, write 3 LinkedIn hook lines (under 20 words each) that a ${role} could use right now to get traction. For each, explain in one short sentence why it would land given what's trending. Return ONLY valid JSON: [{"hook":string,"why":string}]`,
+      content: `Search for what's trending in ${domain} this week. Based on that, write 3 LinkedIn hook lines (under 20 words each) that a ${role} could use right now to get traction. For each, explain in one short sentence why it would land given what's trending. Return ONLY valid JSON: [{"hook":string,"why":string}]\n\n${NO_DASH_RULE}`,
     }],
   });
   const textBlock = (message.content || []).find((b: any) => b.type === 'text');

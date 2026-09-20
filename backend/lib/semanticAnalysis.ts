@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
+import { NO_DASH_RULE } from './writingStyles';
 
 function parseJsonObject(text: string): any {
   const match = text.match(/\{[\s\S]*\}/);
@@ -38,6 +39,9 @@ ${lengthNote ? `\n${lengthNote}\n` : ''}
   estimatedReadTime: seconds,
   uniqueAngle: one sentence describing what makes this post's perspective distinctive
 }
+
+${NO_DASH_RULE}
+
 Return ONLY valid JSON, no other text.`;
 }
 
@@ -262,6 +266,7 @@ ${postContent}
 
 Assess: does the writing actually match the intended tone? Return a JSON object:
 { "match": boolean, "matchScore": 1-100, "drift": "description of where tone differs if applicable, empty string if none", "suggestion": "one specific adjustment to bring it closer to the intended tone" }
+${NO_DASH_RULE}
 Return ONLY valid JSON, no other text.`;
 
   const message = await anthropic.messages.create({

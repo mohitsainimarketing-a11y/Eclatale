@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { getWritingStyle, WRITING_STYLES, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction, TALK_LENGTH_OPTIONS } from './writingStyles';
+import { getWritingStyle, WRITING_STYLES, UNIVERSAL_HUMAN_WRITING_RULES, NO_DASH_RULE, lengthInstruction, TALK_LENGTH_OPTIONS } from './writingStyles';
 import { getDateContext } from './dateContext';
 
 const BANNED_WORDS = 'delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative';
@@ -68,6 +68,8 @@ Each hook must:
 - NEVER use: ${BANNED_WORDS}
 - Feel like it was written by a specific human, not a machine
 
+${NO_DASH_RULE}
+
 Return ONLY a JSON array of 5 strings, no prose, no markdown fences.`,
     }],
   });
@@ -119,7 +121,7 @@ export async function analyzeHeadline(anthropic: Anthropic, headline: string): P
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `Analyze this LinkedIn headline: "${headline}". Score it 0-100 on: Clarity (0-25), Keywords (0-25), Specificity (0-25), Value proposition (0-25). List what's working and what to improve. Generate 3 improved alternatives. Return ONLY valid JSON, no prose: { "totalScore": number, "clarity": number, "keywords": number, "specificity": number, "valueProposition": number, "whatsWorking": string[], "improvements": string[], "alternatives": [string, string, string] }`,
+      content: `Analyze this LinkedIn headline: "${headline}". Score it 0-100 on: Clarity (0-25), Keywords (0-25), Specificity (0-25), Value proposition (0-25). List what's working and what to improve. Generate 3 improved alternatives. Return ONLY valid JSON, no prose: { "totalScore": number, "clarity": number, "keywords": number, "specificity": number, "valueProposition": number, "whatsWorking": string[], "improvements": string[], "alternatives": [string, string, string] }\n\n${NO_DASH_RULE}`,
     }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
@@ -156,7 +158,7 @@ export async function scoreViralPotential(anthropic: Anthropic, post: string): P
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `Analyze this LinkedIn post for viral potential:\n\n${post}\n\nScore 0-100 on: hook strength (does the first line stop scrolling?), readability (short sentences, white space, scannable?), engagement triggers (question, controversy, or relatable moment that drives comments?), length optimization (is it in the 900-1300 char sweet spot?). Return ONLY valid JSON: { "viralScore": number, "hookStrength": number, "readability": number, "engagementTriggers": number, "lengthOptimization": number, "label": "ready"|"needs_work"|"low_reach", "improvements": [string, string, string] }`,
+      content: `Analyze this LinkedIn post for viral potential:\n\n${post}\n\nScore 0-100 on: hook strength (does the first line stop scrolling?), readability (short sentences, white space, scannable?), engagement triggers (question, controversy, or relatable moment that drives comments?), length optimization (is it in the 900-1300 char sweet spot?). Return ONLY valid JSON: { "viralScore": number, "hookStrength": number, "readability": number, "engagementTriggers": number, "lengthOptimization": number, "label": "ready"|"needs_work"|"low_reach", "improvements": [string, string, string] }\n\n${NO_DASH_RULE}`,
     }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
@@ -187,7 +189,7 @@ export async function generateAboutSection(
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `Write a compelling LinkedIn About section for: Role: ${role}, Industry: ${industry}, Specialty: ${specialty}, Key achievement: ${achievement}, Tone: ${tone}. Make it first-person, specific, and compelling. Open with a strong hook, not "I am a...". Under 1500 characters. Include what they do, who they help, and a call to connect. Never use: ${BANNED_WORDS}. Return just the About text, no preamble, no markdown.`,
+      content: `Write a compelling LinkedIn About section for: Role: ${role}, Industry: ${industry}, Specialty: ${specialty}, Key achievement: ${achievement}, Tone: ${tone}. Make it first-person, specific, and compelling. Open with a strong hook, not "I am a...". Under 1500 characters. Include what they do, who they help, and a call to connect. Never use: ${BANNED_WORDS}. ${NO_DASH_RULE} Return just the About text, no preamble, no markdown.`,
     }],
   });
   return message.content[0].type === 'text' ? message.content[0].text.trim() : '';
@@ -202,7 +204,7 @@ export async function generateCTAs(anthropic: Anthropic, topic: string, goal: st
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `Generate 5 different LinkedIn post CTAs for a post about ${topic}. Goal: ${goal}. Each CTA must be 1-2 sentences, feel natural not pushy, and directly relate to the post topic. Vary the approach: question, soft ask, engagement bait, community invite, direct ask. Return ONLY a JSON array of 5 strings, no prose.`,
+      content: `Generate 5 different LinkedIn post CTAs for a post about ${topic}. Goal: ${goal}. Each CTA must be 1-2 sentences, feel natural not pushy, and directly relate to the post topic. Vary the approach: question, soft ask, engagement bait, community invite, direct ask. ${NO_DASH_RULE} Return ONLY a JSON array of 5 strings, no prose.`,
     }],
   });
   const text = message.content[0].type === 'text' ? message.content[0].text : '[]';

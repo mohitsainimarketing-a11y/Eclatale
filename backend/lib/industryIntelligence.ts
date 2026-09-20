@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
+import { NO_DASH_RULE } from './writingStyles';
 
 const MIN_POSTS_FOR_REAL_DATA = 50;
 const CACHE_MS = 24 * 60 * 60 * 1000;
@@ -112,7 +113,7 @@ async function generateSupplement(anthropic: Anthropic, role: string, domain: st
     system: getDateContext(),
     messages: [{
       role: 'user',
-      content: `For a ${role} in ${domain} posting on LinkedIn: 1) what content length range (in characters) tends to perform best and why, 2) two good posting day/time slots, 3) search for the 3 most discussed topics in ${domain} in the last 7 days, 4) one sentence on what post structure tends to drive the most comments. Return ONLY valid JSON: { "bestLength": {"min":number,"max":number,"insight":string}, "bestTimes":[{"day":string,"time":string}], "trendingTopics":[{"topic":string,"trendScore":number}], "topStructureInsight":string }`,
+      content: `For a ${role} in ${domain} posting on LinkedIn: 1) what content length range (in characters) tends to perform best and why, 2) two good posting day/time slots, 3) search for the 3 most discussed topics in ${domain} in the last 7 days, 4) one sentence on what post structure tends to drive the most comments. Return ONLY valid JSON: { "bestLength": {"min":number,"max":number,"insight":string}, "bestTimes":[{"day":string,"time":string}], "trendingTopics":[{"topic":string,"trendScore":number}], "topStructureInsight":string }\n\n${NO_DASH_RULE}`,
     }],
   });
   const textBlock = (message.content || []).find((b: any) => b.type === 'text');
@@ -140,7 +141,7 @@ async function generateFullEstimate(anthropic: Anthropic, role: string, domain: 
 4. Search the web for the 3 most discussed topics in ${domain} in the last 7 days
 5. One sentence on what post structure tends to drive the most comments for a ${role}
 
-Return ONLY valid JSON, no prose: { "topHookTypes": [{"type":string,"percentage":number}], "bestLength": {"min":number,"max":number,"insight":string}, "bestTimes":[{"day":string,"time":string}], "trendingTopics":[{"topic":string,"trendScore":number}], "topStructureInsight":string }`,
+Return ONLY valid JSON, no prose: { "topHookTypes": [{"type":string,"percentage":number}], "bestLength": {"min":number,"max":number,"insight":string}, "bestTimes":[{"day":string,"time":string}], "trendingTopics":[{"topic":string,"trendScore":number}], "topStructureInsight":string }\n\n${NO_DASH_RULE}`,
     }],
   });
   const textBlock = (message.content || []).find((b: any) => b.type === 'text');

@@ -190,10 +190,10 @@ All tools are free, require no account, and run in the browser.
 
 ---
 
-## Free Downloadable Guides (No Signup Required)
+## Free Downloadable Guides
 
-Eclatale publishes free PDF guides at https://eclatale.com/resources. No email or account is
-required and the download is immediate.
+Eclatale publishes free PDF guides at https://eclatale.com/resources. A quick email signup (no
+account, no credit card) unlocks instant download.
 
 1. **Top 50 Corporate Jargons with Use Cases** (27 pages, PDF). Defines the 50 corporate terms
    professionals encounter most, each in plain English with a real LinkedIn post example, guidance

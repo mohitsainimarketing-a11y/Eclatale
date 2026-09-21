@@ -848,8 +848,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (action === 'newsletter-subscribe') {
       const email = String(body.email || req.query.email || '').trim().toLowerCase();
+      const source = String(body.source || req.query.source || '').trim().slice(0, 80);
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Valid email required' });
-      const { error } = await supabase.from('newsletter_subscribers').upsert({ email }, { onConflict: 'email' });
+      const { error } = await supabase.from('newsletter_subscribers').upsert({ email, ...(source ? { source } : {}) }, { onConflict: 'email' });
       if (error) return res.status(500).json({ error: 'Subscribe failed' });
       return res.json({ ok: true });
     }

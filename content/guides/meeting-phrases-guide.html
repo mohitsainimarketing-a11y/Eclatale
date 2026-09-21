@@ -1,0 +1,600 @@
+<title>30 Meeting Phrases That Move Decisions Forward</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --purple: #7C5CFC;
+    --purple-dark: #5B3FD4;
+    --purple-light: #F0ECFF;
+    --purple-mid: #E3DAFF;
+    --purple-border: #D4C8FF;
+    --ink: #0F0A1E;
+    --ink-mid: #3D3557;
+    --ink-muted: #7A6E94;
+    --ground: #F8F7FC;
+    --white: #FFFFFF;
+    --gold: #F5A623;
+    --green: #27B469;
+    --red: #E5434B;
+    --cat1: #EDE8FF;
+    --cat2: #E8F4FF;
+    --cat3: #E8FFF4;
+    --cat4: #FFF5E8;
+    --cat5: #FFE8EE;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --purple: #9B7FFF;
+      --purple-dark: #7C5CFC;
+      --purple-light: #1E1633;
+      --purple-mid: #2A2048;
+      --purple-border: #3D3066;
+      --ink: #F0ECFF;
+      --ink-mid: #C4BAE8;
+      --ink-muted: #8B80AA;
+      --ground: #0F0A1E;
+      --white: #1A1430;
+      --cat1: #1E1A33;
+      --cat2: #141E2E;
+      --cat3: #0E1E19;
+      --cat4: #201A0E;
+      --cat5: #200E14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --purple: #9B7FFF;
+    --purple-dark: #7C5CFC;
+    --purple-light: #1E1633;
+    --purple-mid: #2A2048;
+    --purple-border: #3D3066;
+    --ink: #F0ECFF;
+    --ink-mid: #C4BAE8;
+    --ink-muted: #8B80AA;
+    --ground: #0F0A1E;
+    --white: #1A1430;
+    --cat1: #1E1A33;
+    --cat2: #141E2E;
+    --cat3: #0E1E19;
+    --cat4: #201A0E;
+    --cat5: #200E14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+
+  .print-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--purple); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; font-size: 13px; font-weight: 600; gap: 12px;
+  }
+  .print-bar span { opacity: 0.85; font-weight: 400; }
+  .print-btn {
+    background: #fff; color: var(--purple); border: none; border-radius: 8px;
+    padding: 7px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: opacity 0.15s;
+  }
+  .print-btn:hover { opacity: 0.85; }
+
+  .page { max-width: 880px; margin: 0 auto; padding-bottom: 80px; }
+
+  .cover {
+    background: linear-gradient(135deg, #5B3FD4 0%, #7C5CFC 55%, #A882FF 100%);
+    border-radius: 20px; padding: 64px 48px 56px; margin: 28px 0 48px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,0.07);
+  }
+  .cover::after {
+    content: ''; position: absolute; bottom: -60px; left: -40px;
+    width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.05);
+  }
+  .cover-label {
+    display: inline-block; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: 'Fraunces', Georgia, serif; font-size: clamp(36px, 6vw, 60px);
+    font-weight: 900; color: #fff; line-height: 1.08; text-wrap: balance;
+    margin-bottom: 20px; position: relative; z-index: 1;
+  }
+  .cover h1 em { font-style: italic; font-weight: 300; opacity: 0.9; }
+  .cover-sub {
+    color: rgba(255,255,255,0.82); font-size: 16px; line-height: 1.6;
+    max-width: 520px; margin-bottom: 36px; position: relative; z-index: 1;
+  }
+  .cover-meta { display: flex; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .cover-meta-item { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500; }
+  .cover-logo {
+    position: absolute; bottom: 28px; right: 40px; font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 22px; color: rgba(255,255,255,0.5); z-index: 1; letter-spacing: -0.02em;
+  }
+
+  .intro {
+    background: var(--white); border-radius: 16px; padding: 36px 40px;
+    margin-bottom: 48px; border: 1px solid var(--purple-border);
+  }
+  .intro h2 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+  .intro p { color: var(--ink-mid); font-size: 14.5px; line-height: 1.75; margin-bottom: 12px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--ink); }
+
+  .category-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    padding: 18px 24px; border-radius: 14px; border: 1px solid var(--purple-border);
+  }
+  .cat-icon { font-size: 28px; line-height: 1; }
+  .cat-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .cat-desc { font-size: 12.5px; color: var(--ink-muted); }
+  .cat-count {
+    margin-left: auto; font-size: 12px; font-weight: 700; color: var(--purple);
+    background: var(--purple-light); padding: 4px 12px; border-radius: 20px; white-space: nowrap;
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 48px; }
+  @media (max-width: 580px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--white); border: 1px solid var(--purple-border); border-radius: 16px;
+    padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-term {
+    font-family: 'Fraunces', serif; font-size: 19px; font-weight: 900; color: var(--purple);
+    line-height: 1.2; letter-spacing: -0.02em;
+  }
+  .card-num {
+    font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--purple-light);
+    padding: 3px 9px; border-radius: 12px; white-space: nowrap; flex-shrink: 0; margin-top: 3px;
+  }
+  .card-def { font-size: 13px; color: var(--ink-mid); line-height: 1.65; }
+  .card-use-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card-use { font-size: 11.5px; line-height: 1.55; padding: 8px 10px; border-radius: 8px; }
+  .card-use.good { background: #EDFBF3; color: #0E6630; border: 1px solid #B5EAC9; }
+  .card-use.bad { background: #FFF0F1; color: #8B1A1E; border: 1px solid #FFCDD0; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+    :root:not([data-theme="light"]) .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  }
+  :root[data-theme="dark"] .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+  :root[data-theme="dark"] .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  .card-use-label { font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+  .card-example {
+    background: var(--purple-light); border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0;
+    padding: 10px 12px; font-size: 12.5px; font-style: italic; color: var(--ink-mid); line-height: 1.6;
+  }
+  .card-tip { font-size: 11.5px; color: var(--ink-muted); padding-top: 6px; border-top: 1px solid var(--purple-border); line-height: 1.55; }
+  .card-tip strong { color: var(--purple); }
+
+  .bonus {
+    background: linear-gradient(135deg, #0F0A1E 0%, #1C1433 100%); border-radius: 20px;
+    padding: 48px 40px; margin-bottom: 48px; color: #fff;
+  }
+  .bonus h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 900; margin-bottom: 8px; color: #fff; }
+  .bonus-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; line-height: 1.6; }
+  .avoid-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 580px) { .avoid-grid { grid-template-columns: 1fr; } }
+  .avoid-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 18px; }
+  .avoid-term {
+    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: #F5A623;
+    margin-bottom: 5px; text-decoration: line-through; text-decoration-color: rgba(245,166,35,0.4);
+  }
+  .avoid-why { font-size: 12.5px; color: rgba(255,255,255,0.65); line-height: 1.55; margin-bottom: 6px; }
+  .avoid-instead { font-size: 12px; font-weight: 600; color: #72E6A4; }
+  .avoid-instead::before { content: 'Instead: '; opacity: 0.6; font-weight: 400; }
+
+  .guide-footer { text-align: center; padding: 40px 24px; background: var(--white); border-radius: 20px; border: 1px solid var(--purple-border); }
+  .guide-footer h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: var(--ink); margin-bottom: 10px; }
+  .guide-footer p { color: var(--ink-muted); font-size: 14px; margin-bottom: 20px; }
+  .guide-footer a {
+    display: inline-block; background: linear-gradient(135deg, #5B3FD4, #7C5CFC); color: #fff;
+    font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 12px; text-decoration: none; transition: opacity 0.15s;
+  }
+  .guide-footer a:hover { opacity: 0.88; }
+  .guide-footer .brand { font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; color: var(--purple); margin-top: 20px; display: block; opacity: 0.7; }
+
+  @media print {
+    .print-bar { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .page { max-width: 100%; padding-bottom: 0; }
+    .cover { border-radius: 0; margin: 0 0 32px; page-break-after: avoid; }
+    .cards { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; border-color: #ddd; }
+    .bonus { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .category-header { page-break-after: avoid; }
+  }
+</style>
+
+<div class="print-bar">
+  <div><strong>30 Meeting Phrases That Move Decisions Forward</strong><span>by Eclatale</span></div>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <div class="cover">
+    <span class="cover-label">Free Guide · Eclatale</span>
+    <h1>30 Meeting Phrases <em>that move decisions forward</em></h1>
+    <p class="cover-sub">The exact lines to redirect a drifting conversation, push back without conflict, and close with a named owner. Say the wrong things in a meeting and you get another meeting. Say these and you get a decision.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">📄 30 phrases explained</div>
+      <div class="cover-meta-item">💡 Real meeting scenarios</div>
+      <div class="cover-meta-item">🚫 8 habits that kill momentum</div>
+    </div>
+    <span class="cover-logo">Eclatale</span>
+  </div>
+
+  <div class="intro">
+    <h2>How to use this guide</h2>
+    <p>Most meetings do not fail because the wrong people are in the room. They fail because nobody says the sentence that actually moves the conversation forward, so an hour passes and three people leave with three different memories of what got decided.</p>
+    <p>This guide gives you <strong>30 specific phrases</strong>, grouped by what they do: redirect a meeting that is drifting off course, push back on an idea without creating conflict, and close with a name attached to every decision. Each one comes with the exact line to say, when it works, when it backfires, and a real scenario showing it in context.</p>
+    <p>At the end: <strong>8 habits that quietly kill meeting momentum</strong>, the small patterns that turn a decisive room into one that needs a follow-up meeting just to decide what the last meeting already decided.</p>
+  </div>
+
+  <div id="guide-content"></div>
+
+</div>
+
+<script>
+const GOOD_LABEL = 'Say it when';
+const BAD_LABEL = 'Skip it when';
+
+const CATEGORIES = [
+  {
+    icon: '🧭',
+    title: `Redirecting a Meeting That's Drifting`,
+    desc: `Bring a conversation back on track without shutting anyone down`,
+    color: 'var(--cat1)',
+    items: [
+      {
+        term: `The Parking Lot`,
+        def: `"Let's park that and come back to it if we have time." A way to defer a tangent without dismissing whoever raised it.`,
+        good: `A genuinely interesting point comes up that has nothing to do with today's decision.`,
+        bad: `You use it on a topic someone has raised three meetings in a row and never actually revisit.`,
+        example: `Fifteen minutes into a roadmap review, someone raises a pricing question. The facilitator says, "Let's park that. I'll add it to next week's agenda directly," and the room moves on without anyone feeling shut out.`,
+        tip: `Write the parked item down where everyone can see it. An unwritten parking lot is just a polite way of losing the point forever.`
+      },
+      {
+        term: `The One-Sentence Recap`,
+        def: `"So the decision we're making today is X, is that still right?" A quick check that realigns the room on the actual purpose of the meeting.`,
+        good: `The conversation has wandered for ten minutes and you sense people are no longer solving the same problem.`,
+        bad: `You use it in the first two minutes before anyone has had a chance to add context.`,
+        example: `A product sync starts drifting into a debate about naming conventions. The lead interrupts gently: "So the decision today is whether we ship this quarter or next, is that still right?" Everyone snaps back to the actual question.`,
+        tip: `Phrase it as a question, not a correction. "Is that still right?" invites agreement instead of implying the room went off track on its own.`
+      },
+      {
+        term: `The Time Check`,
+        def: `"We have 12 minutes left and two more decisions to make." A neutral fact that creates urgency without blaming anyone for the pace.`,
+        good: `You are past the midpoint of the meeting and the hardest topics are still ahead.`,
+        bad: `You announce it so often that it starts to sound like a countdown timer nobody trusts anymore.`,
+        example: `A budget review is running long on the first line item. The facilitator says, "We have 12 minutes left and two more decisions to make," and the group naturally tightens its discussion of the remaining items.`,
+        tip: `Pair the time check with what is still outstanding, not just the minutes remaining. A number alone doesn't tell anyone what to prioritize.`
+      },
+      {
+        term: `The Scope Fence`,
+        def: `"That's a great point, and it's a different meeting." A polite boundary that acknowledges the idea without letting it hijack the agenda.`,
+        good: `Someone raises a valid but unrelated issue that deserves its own conversation.`,
+        bad: `You use it to avoid a question you simply don't want to answer right now.`,
+        example: `During a hiring plan review, someone raises a concern about the performance review process. The lead responds, "That's a great point, and it's a different meeting. Let's get 20 minutes on the calendar for it this week."`,
+        tip: `Always attach a next step. A scope fence without a follow-up sounds like a brush-off, even when it isn't one.`
+      },
+      {
+        term: `The Named Owner Redirect`,
+        def: `"Who owns that thread outside this room?" A question that moves a tangent to the person actually responsible for it.`,
+        good: `A topic surfaces that belongs to a specific function or person who isn't the one currently talking about it.`,
+        bad: `You ask it about something that genuinely belongs to the whole group, which can feel like deflection.`,
+        example: `In a cross-functional planning meeting, a debate breaks out about a legal clause in a vendor contract. The facilitator asks, "Who owns that thread outside this room?" and the two people closest to it take it offline.`,
+        tip: `Ask the question, then stop talking. Naming the owner works best when the room decides together, not when you assign it unilaterally.`
+      },
+      {
+        term: `The Silent Majority Check`,
+        def: `"Before we move on, does anyone see it differently?" A direct invitation for disagreement before a decision gets locked in.`,
+        good: `Two or three vocal people have driven the conversation and the quieter members haven't spoken.`,
+        bad: `You ask it as a formality right after announcing the decision is already final.`,
+        example: `A leadership team is about to greenlight a new market entry. Before moving on, the CEO asks, "Does anyone see it differently?" A quiet operations lead raises a supply chain risk nobody else had considered.`,
+        tip: `Leave five real seconds of silence after asking. Most people need a beat before they'll voice a dissenting view out loud.`
+      },
+      {
+        term: `The Agenda Anchor`,
+        def: `"Let's come back to the agenda, item two was..." A neutral way to re-center the room without blaming whoever caused the drift.`,
+        good: `The conversation has branched into a side topic that feels productive but isn't what the meeting was called for.`,
+        bad: `You cut off a conversation that is actually more urgent than the printed agenda.`,
+        example: `A weekly sync veers into an unplanned debate about office policy. The facilitator says, "Let's come back to the agenda, item two was the client escalation," and the room refocuses without friction.`,
+        tip: `Send the agenda before the meeting starts. An agenda anchor only works as a redirect if everyone already agreed to it in advance.`
+      },
+      {
+        term: `The Two-Minute Warning`,
+        def: `"We're at the halfway mark and still on item one." A pacing flag that surfaces a scheduling problem before it becomes a crisis.`,
+        good: `You notice early that the group is spending disproportionate time on the first item of several.`,
+        bad: `You raise it so late that there's no real time left to adjust the plan.`,
+        example: `A quarterly planning session has five topics scheduled for an hour. At the 30-minute mark, still on topic one, the facilitator flags it: "We're at the halfway mark and still on item one. Let's decide how we want to use the rest of our time."`,
+        tip: `Offer the room a choice when you flag the pacing: cut the current topic short, drop a later item, or extend the meeting. A warning without options just adds pressure.`
+      },
+      {
+        term: `The Devil's Advocate Invite`,
+        def: `"I want someone to argue the other side for two minutes." A deliberate move to manufacture useful dissent before a decision hardens.`,
+        good: `The room is converging quickly on one option and nobody has pressure-tested it out loud.`,
+        bad: `You use it after the decision has already been implemented, when it can only demoralize the team.`,
+        example: `A team is about to commit to a redesign. Before finalizing it, the lead says, "I want someone to argue the other side for two minutes," and a junior designer surfaces a usability risk the group had missed.`,
+        tip: `Pick a specific person rather than asking the room in general. A named ask gets a real answer; an open one usually gets silence.`
+      },
+      {
+        term: `The Follow-Up Ticket`,
+        def: `"Let's write that down as a follow-up, not a debate." A way to convert a rabbit hole into a tracked action item instead of letting it consume the meeting.`,
+        good: `A tangent has real value but would take longer to resolve than the meeting has left.`,
+        bad: `You use it to avoid a disagreement that actually needs to be resolved in the room, not later.`,
+        example: `A retro surfaces an unresolved question about the deployment process. Instead of debating it live, the facilitator says, "Let's write that down as a follow-up, not a debate," and assigns it to next week's agenda with an owner attached.`,
+        tip: `Say who owns the follow-up before the meeting ends. An unassigned follow-up rarely gets revisited.`
+      }
+    ]
+  },
+  {
+    icon: '🛡️',
+    title: `Pushing Back Without Conflict`,
+    desc: `Challenge an idea or a plan without the conversation turning personal`,
+    color: 'var(--cat2)',
+    items: [
+      {
+        term: `The Curious Challenge`,
+        def: `"Help me understand the thinking behind that." A question that challenges a decision by asking for its reasoning, not by attacking it directly.`,
+        good: `You disagree with a proposal but don't yet know enough about the reasoning to argue against it well.`,
+        bad: `You already fully understand the reasoning and are using the question to stall rather than to learn.`,
+        example: `A colleague proposes cutting the onboarding email sequence from five steps to two. Instead of objecting outright, another team member asks, "Help me understand the thinking behind that," and learns the change is based on real drop-off data.`,
+        tip: `Ask it before you form your objection, not after. Used as a genuine question, it changes how the rest of the conversation goes.`
+      },
+      {
+        term: `The Risk Flag`,
+        def: `"I want to name a risk before we commit." A way to surface a concern as information for the group, not as personal opposition to the plan.`,
+        good: `You see a specific, concrete risk that hasn't been discussed yet.`,
+        bad: `You use it repeatedly on vague, unspecific worries that aren't grounded in anything concrete.`,
+        example: `Before signing off on a new vendor, someone says, "I want to name a risk before we commit: their last two clients churned within a year." The team pauses to ask the vendor about it directly.`,
+        tip: `Name exactly one risk, not a list. A single, specific risk gets taken seriously; a pile of worries gets dismissed as hesitation.`
+      },
+      {
+        term: `The Data Ask`,
+        def: `"What would change your mind on this?" A question that tests how firm a position actually is, without attacking the person holding it.`,
+        good: `Someone states a strong opinion and you want to know if it's based on evidence or instinct.`,
+        bad: `You ask it rhetorically, already certain the answer is "nothing," just to make a point.`,
+        example: `A manager insists the team should ship without more testing. A peer asks, "What would change your mind on this?" and the manager admits a single failed edge case would be enough, which reframes the whole conversation.`,
+        tip: `Listen for a real answer, then hold the person to it later. If nothing would change their mind, that's useful information too.`
+      },
+      {
+        term: `The Precommitment Check`,
+        def: `"If this doesn't work, what's our fallback?" A calm way to pressure-test a plan before the group locks it in.`,
+        good: `The group is enthusiastic about a plan and hasn't discussed what happens if it fails.`,
+        bad: `You raise it as a way to signal doubt about the plan without offering anything constructive.`,
+        example: `A team is excited about a new pricing model. Before finalizing it, someone asks, "If this doesn't work, what's our fallback?" The group realizes they haven't set a date to review the results.`,
+        tip: `Ask it early in the discussion, not right before the vote. Raised too late, it reads as an objection instead of a planning question.`
+      },
+      {
+        term: `The Reframe`,
+        def: `"I hear the urgency. I'm less sure about the approach." A line that separates agreement on the problem from disagreement on the solution.`,
+        good: `You agree something needs to happen but disagree with the specific plan on the table.`,
+        bad: `You use it as a soft way to say no to everything without proposing an alternative.`,
+        example: `A founder pushes to launch a feature in two weeks. A teammate responds, "I hear the urgency. I'm less sure about the approach," then proposes a scaled-down version that ships in one week instead.`,
+        tip: `Always follow the reframe with an alternative, even a rough one. Agreeing on the problem and stopping there just restates the disagreement.`
+      },
+      {
+        term: `The Third Option`,
+        def: `"What if neither of those is the real choice?" A question that breaks a false binary the group has settled into.`,
+        good: `The conversation has narrowed to two options and both have obvious downsides.`,
+        bad: `You raise it as a way to avoid committing to either real option on the table.`,
+        example: `A team is debating whether to build a feature in-house or buy an expensive tool. Someone asks, "What if neither of those is the real choice?" and proposes partnering with a smaller vendor for a fraction of the cost.`,
+        tip: `Have a genuine third option ready before you ask the question. Raised without one, it just adds confusion.`
+      },
+      {
+        term: `The Cost Naming`,
+        def: `"What are we giving up if we do this?" A question that makes an implicit tradeoff explicit before the group commits.`,
+        good: `The group is focused entirely on the upside of a decision and hasn't discussed what it costs.`,
+        bad: `You ask it about every decision regardless of size, which trains the room to tune it out.`,
+        example: `A team wants to prioritize a big new client request. Someone asks, "What are we giving up if we do this?" and the group realizes it means delaying a commitment already made to two other clients.`,
+        tip: `Name a specific tradeoff yourself if you have one in mind. It's a sharper question when it isn't fully open-ended.`
+      },
+      {
+        term: `The Delayed No`,
+        def: `"Let me sit with that and come back tomorrow." A way to buy time to disagree properly instead of pushing back under pressure in the room.`,
+        good: `You have a strong reaction but haven't had time to think it through clearly.`,
+        bad: `You use it as a permanent way to avoid ever giving a direct answer.`,
+        example: `A manager proposes a reorg that a team lead instinctively dislikes. Rather than object on the spot, the lead says, "Let me sit with that and come back tomorrow," then returns with three specific, well-reasoned concerns.`,
+        tip: `Set a firm time to come back, and keep it. An open-ended delay reads the same as a no you were too uncomfortable to say directly.`
+      },
+      {
+        term: `The Precedent Check`,
+        def: `"Have we tried something like this before, and what happened?" A question that grounds a new proposal in the team's own history.`,
+        good: `A proposal sounds appealing but resembles something the team has already tried and abandoned.`,
+        bad: `You use it to dismiss any new idea just because something similar didn't work in a different context.`,
+        example: `A team proposes a referral program. Someone asks, "Have we tried something like this before, and what happened?" and a colleague recalls a similar attempt two years earlier that failed due to a broken incentive structure, which the new plan can now avoid repeating.`,
+        tip: `Be specific about what was actually different last time. "We tried that and it failed" without detail shuts down good ideas that deserved a second attempt.`
+      },
+      {
+        term: `The Named Concern`,
+        def: `"My concern specifically is X, not the idea as a whole." A way to narrow pushback so it's actionable instead of a blanket objection.`,
+        good: `You support the general direction but have one specific issue with the details.`,
+        bad: `You bury the real objection inside a list of five smaller ones, which makes it hard for anyone to respond to.`,
+        example: `A colleague pitches a new onboarding flow. Instead of rejecting it broadly, a reviewer says, "My concern specifically is the third step, not the idea as a whole," which lets the group fix one thing instead of restarting from scratch.`,
+        tip: `Name the concern before you name the solution. Jumping straight to your fix can make people defensive about the part you skipped explaining.`
+      }
+    ]
+  },
+  {
+    icon: '✅',
+    title: `Closing With Clear Ownership`,
+    desc: `End a meeting with a decision that actually sticks, and a name attached to it`,
+    color: 'var(--cat3)',
+    items: [
+      {
+        term: `The Decision Statement`,
+        def: `"So the decision is X, and we're not revisiting it this quarter." A line that locks in an outcome out loud, in front of the whole room.`,
+        good: `The group has genuinely converged and you want to prevent the decision from quietly unraveling later.`,
+        bad: `You state it before real consensus has actually formed, which just creates resentment.`,
+        example: `After 40 minutes of debate, a product lead says, "So the decision is we launch with the simpler version, and we're not revisiting it this quarter." Two people who were leaning the other way nod, and the topic stays closed.`,
+        tip: `Say it, then pause and watch the room's reaction. If someone hesitates, that's the moment to address it, not after the meeting ends.`
+      },
+      {
+        term: `The Owner Assignment`,
+        def: `"Who is the one person accountable for this, not the team?" A question that forces a single name instead of a diffuse group commitment.`,
+        good: `A decision has been made but responsibility is still described as belonging to "the team" or "everyone."`,
+        bad: `You ask it about something genuinely collaborative where a single owner would misrepresent the work.`,
+        example: `A launch plan gets approved with five people nodding along. The facilitator asks, "Who is the one person accountable for this, not the team?" and the group names one lead, which changes how status updates get reported afterward.`,
+        tip: `Write the owner's name down where everyone can see it in real time. A verbal assignment is easy to forget by the next meeting.`
+      },
+      {
+        term: `The Deadline Anchor`,
+        def: `"What does done look like by Friday?" A question that converts a vague intention into a checkable outcome.`,
+        good: `A task has been agreed to but has no defined date or definition of completion.`,
+        bad: `You force an artificial deadline onto work that genuinely needs more time to scope properly.`,
+        example: `A team agrees to "improve the signup flow." Before ending the meeting, someone asks, "What does done look like by Friday?" and the group lands on a specific, testable version they can check against.`,
+        tip: `Ask for the definition of done before the date, not after. A deadline attached to a vague outcome just creates a vague deadline.`
+      },
+      {
+        term: `The Recap Ask`,
+        def: `"Can someone repeat back what we just decided?" A quick test of whether the room actually aligned, or only sounded like it did.`,
+        good: `The conversation felt agreeable but you're not fully confident everyone understood the same outcome.`,
+        bad: `You ask it after every single decision, which slows the meeting down and can feel patronizing.`,
+        example: `A cross-team planning session ends with apparent agreement. The facilitator asks, "Can someone repeat back what we just decided?" and two people give slightly different answers, catching a misalignment before it caused real problems.`,
+        tip: `Ask someone who was quiet during the discussion, not the person who drove the decision. Their recap tells you more about whether the room actually understood it.`
+      },
+      {
+        term: `The Written Record`,
+        def: `"I'll send the decision and the owner in writing after this." A commitment that makes the outcome durable beyond whoever remembers the meeting correctly.`,
+        good: `A meeting produced a real decision with real stakes attached to it.`,
+        bad: `You promise it and then don't follow through, which is worse than not saying it at all.`,
+        example: `After a difficult budget conversation, the finance lead says, "I'll send the decision and the owner in writing after this." The email that follows prevents three separate people from later claiming they remembered it differently.`,
+        tip: `Send it within the hour, while the memory is still fresh for everyone in the room. A recap sent two days later has already lost its authority.`
+      },
+      {
+        term: `The Escalation Path`,
+        def: `"If this stalls, who do we bring it to?" A question that defines what happens if the assigned owner hits a wall.`,
+        good: `A decision depends on cooperation from a team or person outside the room.`,
+        bad: `You raise it as a threat rather than as genuine planning, which can sour the tone of the meeting.`,
+        example: `A project depends on a legal sign-off from another department. The lead asks, "If this stalls, who do we bring it to?" and the group names a specific executive sponsor before problems arise, not after.`,
+        tip: `Name a person, not a title. "Bring it to leadership" is vague enough that nobody actually does it when the moment comes.`
+      },
+      {
+        term: `The Next Checkpoint`,
+        def: `"When do we check in on this again?" A question that prevents a decision from disappearing into silence after the meeting ends.`,
+        good: `A decision requires ongoing work rather than a single action that finishes immediately.`,
+        bad: `You schedule a checkpoint so far out that it stops functioning as accountability.`,
+        example: `A team commits to a six-week experiment. Before the meeting ends, someone asks, "When do we check in on this again?" and the group puts a 15-minute review on the calendar for week three, not just at the end.`,
+        tip: `Put the checkpoint on the calendar in the room, live. A checkpoint that exists only as an intention rarely survives the following week.`
+      },
+      {
+        term: `The Explicit Close`,
+        def: `"Are we aligned, or do we need another conversation?" A direct question that forces a real yes instead of an assumed one.`,
+        good: `You sense hesitation in the room but nobody has voiced it directly.`,
+        bad: `You ask it as a formality when the meeting has clearly run out of time to have that conversation properly.`,
+        example: `A leadership team debates a hiring freeze for 45 minutes. Before closing, the CEO asks, "Are we aligned, or do we need another conversation?" One person admits they're still unsure, and the team schedules 20 more minutes instead of pretending consensus exists.`,
+        tip: `Be genuinely willing to hear "we need another conversation." Asking the question only to override the answer teaches people to stop being honest with you.`
+      },
+      {
+        term: `The Single Thread Rule`,
+        def: `"Let's keep all updates on this in one place, not three." A rule that prevents a decision from fragmenting across email, chat, and separate calls.`,
+        good: `A decision involves multiple people who tend to communicate through different channels.`,
+        bad: `You enforce it on something small enough that a dedicated thread is unnecessary overhead.`,
+        example: `A launch decision starts generating updates across email, a group chat, and side conversations. The project lead says, "Let's keep all updates on this in one place, not three," and creates a single channel that becomes the source of truth.`,
+        tip: `Name the one place explicitly, don't just ask people to consolidate on their own. Left vague, everyone assumes their preferred channel is the one that counts.`
+      },
+      {
+        term: `The Named Blocker`,
+        def: `"What's the one thing that could stop this from happening?" A question that surfaces the real risk before it quietly becomes an excuse later.`,
+        good: `A plan has been agreed to and feels solid, but hasn't been pressure-tested for what could derail it.`,
+        bad: `You ask it to introduce doubt into a plan that's already been thoroughly vetted.`,
+        example: `A team finalizes a launch date. Before ending the meeting, the lead asks, "What's the one thing that could stop this from happening?" Someone flags a pending approval that hadn't been mentioned, and the team fast-tracks it that same day.`,
+        tip: `Ask for one blocker, not a full list. A single named risk gets addressed; a long list gets filed away and forgotten.`
+      }
+    ]
+  }
+];
+
+const BONUS_HEADING = `🚫 Bonus: 8 Meeting Habits That Quietly Kill Momentum`;
+const BONUS_SUB = `Small patterns that turn a decisive room into one that needs a follow-up meeting just to decide what the last meeting already decided.`;
+const AVOID = [
+  { term: `No stated decision owner`, why: `A decision with no clear owner gets revisited endlessly, because everyone assumes someone else is driving it forward.`, instead: `Name one owner out loud before the meeting ends, every time.` },
+  { term: `Re-litigating settled decisions`, why: `A decision reopened by one late objection quietly teaches the whole team that no decision is ever really final.`, instead: `Only reopen a decision when genuinely new information arrives, not when someone is simply uncomfortable with it.` },
+  { term: `No explicit close`, why: `Meetings that trail off in different directions leave people unsure what was actually decided, so they each walk away with a different version.`, instead: `End with a one-sentence recap of the decision and the name of the owner.` },
+  { term: `Inviting everyone to every decision`, why: `Large groups optimize for consensus over speed, and most decisions don't need ten people weighing in on them.`, instead: `Invite the people who own the outcome, then brief everyone else afterward.` },
+  { term: `Treating silence as agreement`, why: `Quiet in the room isn't the same thing as alignment. It often resurfaces later as quiet resistance instead.`, instead: `Ask directly: "Does anyone see it differently?" and wait for a real answer.` },
+  { term: `A recurring meeting with no changing agenda`, why: `A standing meeting without a distinct purpose each week slowly turns into a status update nobody bothers to read twice.`, instead: `Cancel the meeting for any week there's genuinely nothing new to decide.` },
+  { term: `Letting the loudest voice set the outcome`, why: `Volume isn't the same thing as being right, and the quieter, more accurate view in the room gets lost underneath it.`, instead: `Ask the quietest person in the room directly before you close the topic.` },
+  { term: `No follow-up in writing`, why: `A decision that lives only in memory gets reinterpreted differently by every single person who was in the room.`, instead: `Send a two-line written summary within the hour, while it's still fresh.` }
+];
+
+// ─── RENDER (data-driven, do not edit below this line) ─────────────────────
+const container = document.getElementById('guide-content');
+const TOTAL = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+let html = '';
+let runningIndex = 0;
+
+CATEGORIES.forEach(cat => {
+  html += `
+    <div class="category-header" style="background:${cat.color}">
+      <span class="cat-icon">${cat.icon}</span>
+      <div><div class="cat-title">${cat.title}</div><div class="cat-desc">${cat.desc}</div></div>
+      <span class="cat-count">${cat.items.length} items</span>
+    </div>
+    <div class="cards">
+  `;
+  cat.items.forEach(it => {
+    runningIndex++;
+    const numStr = String(runningIndex).padStart(2, '0');
+    html += `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-term">${it.term}</div>
+          <span class="card-num">${numStr} / ${TOTAL}</span>
+        </div>
+        <p class="card-def">${it.def}</p>
+        <div class="card-use-row">
+          <div class="card-use good"><span class="card-use-label">${GOOD_LABEL}</span>${it.good}</div>
+          <div class="card-use bad"><span class="card-use-label">${BAD_LABEL}</span>${it.bad}</div>
+        </div>
+        <div class="card-example">${it.example}</div>
+        <p class="card-tip"><strong>Power tip:</strong> ${it.tip}</p>
+      </div>
+    `;
+  });
+  html += '</div>';
+});
+
+html += `
+  <div class="bonus">
+    <h2>${BONUS_HEADING}</h2>
+    <p class="bonus-sub">${BONUS_SUB}</p>
+    <div class="avoid-grid">
+`;
+AVOID.forEach(a => {
+  html += `
+    <div class="avoid-card">
+      <div class="avoid-term">${a.term}</div>
+      <p class="avoid-why">${a.why}</p>
+      <p class="avoid-instead">${a.instead}</p>
+    </div>
+  `;
+});
+html += `
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <h3>Build the brand that backs you up</h3>
+    <p>Eclatale is the AI personal brand OS for LinkedIn: post ideas, brand score, voice matching, and more.</p>
+    <a href="https://eclatale.com/signup">Start free, no credit card</a>
+    <span class="brand">eclatale.com</span>
+  </div>
+`;
+
+container.innerHTML = html;
+</script>

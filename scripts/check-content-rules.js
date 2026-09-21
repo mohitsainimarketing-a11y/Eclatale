@@ -44,6 +44,7 @@ const VOCAB_ALLOW = [
 ];
 const VOCAB_ALLOW_FILES = [
   'content/guides/corporate-jargons-guide.html', // defines the jargon
+  'content/guides/salary-negotiation-scripts-guide.html', // "leverage" as a negotiation noun, legitimate here
   'backend/lib/writingStyles.ts',
   'backend/lib/freeTools.ts',
   'backend/api/intelligence.ts',

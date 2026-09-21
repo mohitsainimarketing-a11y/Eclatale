@@ -1,0 +1,519 @@
+<title>20 Performance Review Phrases That Get You Promoted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --purple: #7C5CFC;
+    --purple-dark: #5B3FD4;
+    --purple-light: #F0ECFF;
+    --purple-mid: #E3DAFF;
+    --purple-border: #D4C8FF;
+    --ink: #0F0A1E;
+    --ink-mid: #3D3557;
+    --ink-muted: #7A6E94;
+    --ground: #F8F7FC;
+    --white: #FFFFFF;
+    --gold: #F5A623;
+    --green: #27B469;
+    --red: #E5434B;
+    --cat1: #EDE8FF;
+    --cat2: #E8F4FF;
+    --cat3: #E8FFF4;
+    --cat4: #FFF5E8;
+    --cat5: #FFE8EE;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --purple: #9B7FFF;
+      --purple-dark: #7C5CFC;
+      --purple-light: #1E1633;
+      --purple-mid: #2A2048;
+      --purple-border: #3D3066;
+      --ink: #F0ECFF;
+      --ink-mid: #C4BAE8;
+      --ink-muted: #8B80AA;
+      --ground: #0F0A1E;
+      --white: #1A1430;
+      --cat1: #1E1A33;
+      --cat2: #141E2E;
+      --cat3: #0E1E19;
+      --cat4: #201A0E;
+      --cat5: #200E14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --purple: #9B7FFF;
+    --purple-dark: #7C5CFC;
+    --purple-light: #1E1633;
+    --purple-mid: #2A2048;
+    --purple-border: #3D3066;
+    --ink: #F0ECFF;
+    --ink-mid: #C4BAE8;
+    --ink-muted: #8B80AA;
+    --ground: #0F0A1E;
+    --white: #1A1430;
+    --cat1: #1E1A33;
+    --cat2: #141E2E;
+    --cat3: #0E1E19;
+    --cat4: #201A0E;
+    --cat5: #200E14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+
+  .print-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--purple); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; font-size: 13px; font-weight: 600; gap: 12px;
+  }
+  .print-bar span { opacity: 0.85; font-weight: 400; }
+  .print-btn {
+    background: #fff; color: var(--purple); border: none; border-radius: 8px;
+    padding: 7px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: opacity 0.15s;
+  }
+  .print-btn:hover { opacity: 0.85; }
+
+  .page { max-width: 880px; margin: 0 auto; padding-bottom: 80px; }
+
+  .cover {
+    background: linear-gradient(135deg, #5B3FD4 0%, #7C5CFC 55%, #A882FF 100%);
+    border-radius: 20px; padding: 64px 48px 56px; margin: 28px 0 48px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,0.07);
+  }
+  .cover::after {
+    content: ''; position: absolute; bottom: -60px; left: -40px;
+    width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.05);
+  }
+  .cover-label {
+    display: inline-block; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: 'Fraunces', Georgia, serif; font-size: clamp(36px, 6vw, 60px);
+    font-weight: 900; color: #fff; line-height: 1.08; text-wrap: balance;
+    margin-bottom: 20px; position: relative; z-index: 1;
+  }
+  .cover h1 em { font-style: italic; font-weight: 300; opacity: 0.9; }
+  .cover-sub {
+    color: rgba(255,255,255,0.82); font-size: 16px; line-height: 1.6;
+    max-width: 520px; margin-bottom: 36px; position: relative; z-index: 1;
+  }
+  .cover-meta { display: flex; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .cover-meta-item { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500; }
+  .cover-logo {
+    position: absolute; bottom: 28px; right: 40px; font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 22px; color: rgba(255,255,255,0.5); z-index: 1; letter-spacing: -0.02em;
+  }
+
+  .intro {
+    background: var(--white); border-radius: 16px; padding: 36px 40px;
+    margin-bottom: 48px; border: 1px solid var(--purple-border);
+  }
+  .intro h2 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+  .intro p { color: var(--ink-mid); font-size: 14.5px; line-height: 1.75; margin-bottom: 12px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--ink); }
+
+  .category-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    padding: 18px 24px; border-radius: 14px; border: 1px solid var(--purple-border);
+  }
+  .cat-icon { font-size: 28px; line-height: 1; }
+  .cat-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .cat-desc { font-size: 12.5px; color: var(--ink-muted); }
+  .cat-count {
+    margin-left: auto; font-size: 12px; font-weight: 700; color: var(--purple);
+    background: var(--purple-light); padding: 4px 12px; border-radius: 20px; white-space: nowrap;
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 48px; }
+  @media (max-width: 580px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--white); border: 1px solid var(--purple-border); border-radius: 16px;
+    padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-term {
+    font-family: 'Fraunces', serif; font-size: 19px; font-weight: 900; color: var(--purple);
+    line-height: 1.2; letter-spacing: -0.02em;
+  }
+  .card-num {
+    font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--purple-light);
+    padding: 3px 9px; border-radius: 12px; white-space: nowrap; flex-shrink: 0; margin-top: 3px;
+  }
+  .card-def { font-size: 13px; color: var(--ink-mid); line-height: 1.65; }
+  .card-use-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card-use { font-size: 11.5px; line-height: 1.55; padding: 8px 10px; border-radius: 8px; }
+  .card-use.good { background: #EDFBF3; color: #0E6630; border: 1px solid #B5EAC9; }
+  .card-use.bad { background: #FFF0F1; color: #8B1A1E; border: 1px solid #FFCDD0; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+    :root:not([data-theme="light"]) .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  }
+  :root[data-theme="dark"] .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+  :root[data-theme="dark"] .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  .card-use-label { font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+  .card-example {
+    background: var(--purple-light); border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0;
+    padding: 10px 12px; font-size: 12.5px; font-style: italic; color: var(--ink-mid); line-height: 1.6;
+  }
+  .card-tip { font-size: 11.5px; color: var(--ink-muted); padding-top: 6px; border-top: 1px solid var(--purple-border); line-height: 1.55; }
+  .card-tip strong { color: var(--purple); }
+
+  .bonus {
+    background: linear-gradient(135deg, #0F0A1E 0%, #1C1433 100%); border-radius: 20px;
+    padding: 48px 40px; margin-bottom: 48px; color: #fff;
+  }
+  .bonus h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 900; margin-bottom: 8px; color: #fff; }
+  .bonus-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; line-height: 1.6; }
+  .avoid-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 580px) { .avoid-grid { grid-template-columns: 1fr; } }
+  .avoid-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 18px; }
+  .avoid-term {
+    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: #F5A623;
+    margin-bottom: 5px; text-decoration: line-through; text-decoration-color: rgba(245,166,35,0.4);
+  }
+  .avoid-why { font-size: 12.5px; color: rgba(255,255,255,0.65); line-height: 1.55; margin-bottom: 6px; }
+  .avoid-instead { font-size: 12px; font-weight: 600; color: #72E6A4; }
+  .avoid-instead::before { content: 'Instead: '; opacity: 0.6; font-weight: 400; }
+
+  .guide-footer { text-align: center; padding: 40px 24px; background: var(--white); border-radius: 20px; border: 1px solid var(--purple-border); }
+  .guide-footer h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: var(--ink); margin-bottom: 10px; }
+  .guide-footer p { color: var(--ink-muted); font-size: 14px; margin-bottom: 20px; }
+  .guide-footer a {
+    display: inline-block; background: linear-gradient(135deg, #5B3FD4, #7C5CFC); color: #fff;
+    font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 12px; text-decoration: none; transition: opacity 0.15s;
+  }
+  .guide-footer a:hover { opacity: 0.88; }
+  .guide-footer .brand { font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; color: var(--purple); margin-top: 20px; display: block; opacity: 0.7; }
+
+  @media print {
+    .print-bar { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .page { max-width: 100%; padding-bottom: 0; }
+    .cover { border-radius: 0; margin: 0 0 32px; page-break-after: avoid; }
+    .cards { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; border-color: #ddd; }
+    .bonus { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .category-header { page-break-after: avoid; }
+  }
+</style>
+
+<div class="print-bar">
+  <div><strong>20 Performance Review Phrases That Get You Promoted</strong><span>by Eclatale</span></div>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <div class="cover">
+    <span class="cover-label">Free Guide · Eclatale</span>
+    <h1>20 Performance Review Phrases <em>that get you promoted</em></h1>
+    <p class="cover-sub">Most people lose their promotion case in the writing, not the work. Twenty exact phrases for turning a year of tasks into an undeniable case for the next level, each with a real, filled-in example and the reason it works.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">📄 20 phrases and templates</div>
+      <div class="cover-meta-item">💡 Real filled-in examples</div>
+      <div class="cover-meta-item">🚫 8 self-review phrases to cut</div>
+    </div>
+    <span class="cover-logo">Eclatale</span>
+  </div>
+
+  <div class="intro">
+    <h2>How to use this guide</h2>
+    <p>Most self-reviews fail for the same reason: they list what you did instead of proving what changed because you did it. A manager reading twenty task descriptions has no way to tell which of them actually mattered, so the safest read is the average one. That average read rarely results in a promotion.</p>
+    <p>This guide gives you <strong>20 exact phrases and templates</strong>, organized into three groups: framing your impact so it is undeniable, making the ask directly instead of hoping someone notices, and handling pushback without losing the thread. Each one comes with a real, filled-in example and the specific situation it fits.</p>
+    <p>At the end: <strong>8 phrases that quietly undersell you</strong>, the ones that feel safe to write but read as uncertain or reactive to the person deciding your case.</p>
+  </div>
+
+  <div id="guide-content"></div>
+
+</div>
+
+<script>
+const GOOD_LABEL = 'Use it when';
+const BAD_LABEL = 'Avoid when';
+
+const CATEGORIES = [
+  {
+    icon: '🎯',
+    title: `Framing Impact, Not Tasks`,
+    desc: `Turn what you did into evidence of what changed`,
+    color: 'var(--cat1)',
+    items: [
+      {
+        term: `The Before/After Frame`,
+        def: `State the situation before your work and the situation after it, so the change is undeniable.`,
+        good: `When you have a clear starting metric or condition and a clear ending one.`,
+        bad: `When the after state cannot be tied back to your specific actions.`,
+        example: `"When I joined the onboarding project, new hires took 34 days to reach full productivity. After I redesigned the first-week schedule, that dropped to 19 days."`,
+        tip: `Lead with the number, not the activity. The reader remembers "19 days," not "redesigned the schedule."`
+      },
+      {
+        term: `The Scope Comparison`,
+        def: `Show how much more responsibility you are carrying now compared to when you were last leveled or hired.`,
+        good: `When your role has genuinely expanded beyond your job description over the review period.`,
+        bad: `When the expansion was temporary coverage during a gap, not a lasting change.`,
+        example: `"A year ago I owned one product surface. Today I own three, and I'm the person two other teams come to before shipping changes that touch checkout."`,
+        tip: `Name the specific surfaces or accounts, not just "more responsibility." Specificity is what makes scope growth verifiable.`
+      },
+      {
+        term: `The Dollar Sign`,
+        def: `Translate your work into a number the business already tracks: revenue, cost, retention, or time.`,
+        good: `Any time your work has a plausible, defensible connection to a business metric.`,
+        bad: `When the number is a stretch and a skeptical manager could poke a hole in the math in one question.`,
+        example: `"The renewal process I built cut our average close time from 21 days to 9, which recovered roughly $180,000 in revenue that used to slip into the next quarter."`,
+        tip: `Show your math in one follow-up sentence so it survives scrutiny instead of sounding invented.`
+      },
+      {
+        term: `The Multiplier Frame`,
+        def: `Describe work that made other people more effective, not just work you did yourself.`,
+        good: `When you built a tool, process, or piece of documentation that other people now rely on.`,
+        bad: `When adoption is thin. One person using your template once is not a multiplier.`,
+        example: `"The support macro library I wrote is now used on 40% of tickets across the team, and cut average response time by six minutes per ticket."`,
+        tip: `Name how many people or teams benefit. A multiplier's value is in its reach, so make the reach explicit.`
+      },
+      {
+        term: `The Named Decision`,
+        def: `Point to one decision you made, not just work you executed, that shaped the outcome.`,
+        good: `When you genuinely had discretion over an approach and chose one path over another.`,
+        bad: `When you followed a decision someone else made. Claiming it invites correction from that person.`,
+        example: `"I chose to rebuild the pricing page around a single call to action instead of three. Conversion went up 11%. That decision was mine to make and mine to defend if it had failed."`,
+        tip: `Naming the decision, and that you owned the downside risk too, signals judgment, not just output.`
+      },
+      {
+        term: `The Peer Benchmark`,
+        def: `Frame your output relative to the typical scope for your level, carefully and without naming anyone.`,
+        good: `When your manager already benchmarks the team and would recognize the comparison as fair.`,
+        bad: `When it reads as competitive or dismissive of teammates. Keep the comparison about scope, never about people.`,
+        example: `"Most engineers at my level own one service. I've owned three since March, and kept the same on-call quality across all of them."`,
+        tip: `Anchor the comparison to scope or standards, never to a specific colleague's name or performance.`
+      },
+      {
+        term: `The Recognition Compiler`,
+        def: `Collect unsolicited praise from colleagues or stakeholders and present it as evidence, not opinion.`,
+        good: `When you have specific quotes from people your manager respects or works with directly.`,
+        bad: `When the praise is vague, like "great job," rather than specific about what you did well.`,
+        example: `"Our VP of Sales told our director directly that the new deal desk process cut his team's turnaround time in half. I didn't say that. He did."`,
+        tip: `Quote it directly and name who said it. Borrowed credibility is stronger than self-assessment.`
+      }
+    ]
+  },
+  {
+    icon: '🗣️',
+    title: `Making the Direct Ask`,
+    desc: `Say what you want instead of waiting to be noticed`,
+    color: 'var(--cat2)',
+    items: [
+      {
+        term: `The Direct Ask`,
+        def: `State plainly that you are ready for the next level and want to discuss it, without hedging.`,
+        good: `Once you already have two or three strong impact examples ready to back it up.`,
+        bad: `As an opener with no evidence behind it. The ask should follow the case, not replace it.`,
+        example: `"Based on the scope I've carried this year, I believe I'm ready for senior engineer, and I'd like to talk about what that path looks like."`,
+        tip: `Say the exact title you want. A vague ask for "more responsibility" gets a vague answer.`
+      },
+      {
+        term: `The Timeline Question`,
+        def: `Ask specifically what would need to be true for the promotion to happen, and by when.`,
+        good: `When your manager is receptive but noncommittal, and you need something concrete to work toward.`,
+        bad: `When you ask it too early, before you've made any case at all. It can sound like you're skipping steps.`,
+        example: `"What specifically would you need to see from me over the next two cycles to support this promotion?"`,
+        tip: `Write down the answer and follow up on it in writing. It turns a conversation into a plan with accountability.`
+      },
+      {
+        term: `The Peer Precedent`,
+        def: `Reference the last person promoted to that level and the scope they had, to establish a fair comparison point.`,
+        good: `When you can describe the precedent factually and your scope genuinely matches or exceeds it.`,
+        bad: `When you do not actually know the details and are guessing. Get it wrong and you lose credibility instantly.`,
+        example: `"When Priya was promoted to staff last year, she was leading two cross-team initiatives. I'm currently leading three."`,
+        tip: `Only use this if you have accurate information. A precedent you got wrong undermines the whole conversation.`
+      },
+      {
+        term: `The Written Case`,
+        def: `Send a short written summary of your case before the conversation, so your manager is not building the argument for you in real time.`,
+        good: `Before any formal review cycle or calibration meeting where your manager needs a case to advocate for you.`,
+        bad: `As a replacement for the conversation. It should prompt the discussion, not substitute for it.`,
+        example: `"I put together a one-page summary of this year's scope and impact ahead of our 1:1, so you have it before calibration starts."`,
+        tip: `Give your manager the words to use in the room where you're not present. That is the real purpose of the document.`
+      },
+      {
+        term: `The Readiness Check`,
+        def: `Ask your manager to name the gap between where you are and the next level, instead of guessing.`,
+        good: `When you've been told "not yet" and need something specific to act on rather than a vague no.`,
+        bad: `When you ask it defensively, right after being told no, without giving the feedback time to land.`,
+        example: `"What's the one thing that, if I closed it, would make this an easy yes next cycle?"`,
+        tip: `Ask for one thing, not a list. A single gap is something you can actually close in a quarter.`
+      },
+      {
+        term: `The Sponsor Ask`,
+        def: `Ask your manager directly whether they will advocate for you in the room where the decision actually gets made.`,
+        good: `Late in the process, once you've built the case and want to confirm real support, not just polite agreement.`,
+        bad: `Too early, before your manager has enough evidence to make that commitment honestly.`,
+        example: `"Will you be the one arguing for this in calibration, and is there anything you need from me to make that case stronger?"`,
+        tip: `Agreement in a 1:1 and advocacy in a closed-door calibration meeting are different things. Ask for the second one explicitly.`
+      }
+    ]
+  },
+  {
+    icon: '📈',
+    title: `Handling Pushback and Documenting Growth`,
+    desc: `What to say when the answer is not yet, and how to be ready for next time`,
+    color: 'var(--cat3)',
+    items: [
+      {
+        term: `The Specific Follow-Up`,
+        def: `When told "not this cycle," ask exactly what changed the decision and what would change it next time.`,
+        good: `Immediately after a no, while the reasoning is still fresh and specific in your manager's mind.`,
+        bad: `When you argue the no instead of asking about it. Arguing rarely reopens a closed decision.`,
+        example: `"I understand it's not this cycle. Can you help me understand the specific gap so I can close it before the next one?"`,
+        tip: `Take notes during this answer. It becomes your plan for the next two quarters.`
+      },
+      {
+        term: `The Reframe Request`,
+        def: `If the feedback feels vague, ask for a concrete example of the behavior in question.`,
+        good: `When feedback like "needs more strategic thinking" is offered without any specific instance attached.`,
+        bad: `When you push too hard and it reads as disputing the feedback rather than trying to understand it.`,
+        example: `"Can you walk me through a specific moment where I could have shown more strategic thinking, so I know what to do differently?"`,
+        tip: `Vague feedback is often a sign your manager hasn't fully articulated it either. This question helps both of you get precise.`
+      },
+      {
+        term: `The Written Confirmation`,
+        def: `After a hard conversation, summarize what you heard and send it back to confirm you understood correctly.`,
+        good: `Any time significant feedback or a decision gets discussed verbally, especially disappointing news.`,
+        bad: `When it reads as covering yourself rather than genuinely checking understanding. Keep the tone collaborative.`,
+        example: `"To make sure I captured this correctly: the gap is depth of stakeholder communication on the Q2 project. I'll plan to demonstrate that on the next initiative."`,
+        tip: `This creates a paper trail that protects you if the same feedback resurfaces without explanation months later.`
+      },
+      {
+        term: `The Quarter-by-Quarter Log`,
+        def: `Keep a running, dated list of impact as it happens, instead of trying to reconstruct a year from memory at review time.`,
+        good: `Continuously, starting today, regardless of where you are in the review cycle.`,
+        bad: `There is no real downside. The only mistake is not starting one.`,
+        example: `"March: reduced deploy time from 40 to 12 minutes. May: onboarded and trained two new hires. July: led the incident review that changed our on-call rotation."`,
+        tip: `Write the entry the week it happens. Memory compresses six months into a vague blur, but a log doesn't.`
+      },
+      {
+        term: `The Trend Line`,
+        def: `Show growth across multiple review cycles, not just the most recent one, to prove the trajectory is real.`,
+        good: `When you have at least two prior cycles of documented feedback or impact to compare against.`,
+        bad: `When only one strong cycle exists. One good quarter is a data point, not yet a trend.`,
+        example: `"Two cycles ago the feedback was to own bigger initiatives. Last cycle, I led one. This cycle, I led three and mentored the person who took over the first one."`,
+        tip: `A trend line answers the unspoken question behind every promotion decision: is this sustained, or a lucky quarter?`
+      },
+      {
+        term: `The Mentorship Credit`,
+        def: `Document time spent developing other people, since it demonstrates readiness for a level with more leadership expectation.`,
+        good: `When you've genuinely invested time in someone else's growth, not just answered their occasional question.`,
+        bad: `When you overstate informal help as structured mentorship. Managers can usually tell the difference.`,
+        example: `"I spent 30 minutes a week for four months pairing with our newest hire on the billing system. She now owns it independently."`,
+        tip: `Name the time investment and the outcome. Both matter: the effort and the fact that it actually worked.`
+      },
+      {
+        term: `The Calibration Preview`,
+        def: `Ask your manager what they plan to say about you in calibration, before the meeting happens.`,
+        good: `A week or two before formal calibration, when your manager still has time to adjust or gather more evidence.`,
+        bad: `The day of calibration. By then there's no time left to close any gap they mention.`,
+        example: `"Before calibration next week, can you share what you're planning to say about my case? I want to make sure nothing's missing."`,
+        tip: `This surfaces any weak point in your case while there's still time to shore it up.`
+      }
+    ]
+  }
+];
+
+const BONUS_HEADING = `🚫 Bonus: 8 Self-Review Phrases That Undersell You`;
+const BONUS_SUB = `These phrases feel modest and safe to write, but to the person deciding your case, they read as uncertain, reactive, or hard to verify. Cut them.`;
+const AVOID = [
+  { term: `I helped with...`, why: `Helped is vague enough to mean anything from leading the project to attending one meeting. It hides your actual contribution.`, instead: `Name your specific role: "I owned the data migration piece of..."` },
+  { term: `I was responsible for...`, why: `This describes a duty, not an outcome. It tells the reader what you were supposed to do, not what happened because you did it.`, instead: `"I was responsible for onboarding, and cut time-to-productivity from 34 to 19 days."` },
+  { term: `We improved...`, why: `We erases your individual contribution in a document specifically meant to evaluate you as an individual.`, instead: `Name your specific piece: "I redesigned the intake form, which was the main driver of the improvement."` },
+  { term: `I think I did well with...`, why: `Hedged self-assessment reads as uncertainty about your own impact, and invites the reader to doubt it too.`, instead: `State it plainly: "I closed the Q2 gap in onboarding by rebuilding the first-week schedule."` },
+  { term: `Various projects`, why: `Vagueness here almost always means the writer did not keep track, which is itself a signal worth avoiding.`, instead: `List the two or three that mattered most, by name, with a one-line outcome for each.` },
+  { term: `I tried to...`, why: `This frames effort as the achievement instead of the result. Reviewers evaluate outcomes, not attempts.`, instead: `Report what happened: "I rebuilt the deploy pipeline. Deploy time dropped from 40 to 12 minutes."` },
+  { term: `As requested, I...`, why: `This frames you as reactive, executing someone else's agenda, rather than someone who makes decisions.`, instead: `Where true, show the judgment behind it: "I identified the bottleneck and rebuilt the pipeline to fix it."` },
+  { term: `I'm hoping to grow into...`, why: `Future-tense hope does not document present readiness. A review should describe what you already are, not what you aspire to be.`, instead: `Show the evidence you already have at that level: "I've been operating at the senior scope since Q2, specifically..."` }
+];
+
+const container = document.getElementById('guide-content');
+const TOTAL = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+let html = '';
+let runningIndex = 0;
+
+CATEGORIES.forEach(cat => {
+  html += `
+    <div class="category-header" style="background:${cat.color}">
+      <span class="cat-icon">${cat.icon}</span>
+      <div><div class="cat-title">${cat.title}</div><div class="cat-desc">${cat.desc}</div></div>
+      <span class="cat-count">${cat.items.length} items</span>
+    </div>
+    <div class="cards">
+  `;
+  cat.items.forEach(it => {
+    runningIndex++;
+    const numStr = String(runningIndex).padStart(2, '0');
+    html += `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-term">${it.term}</div>
+          <span class="card-num">${numStr} / ${TOTAL}</span>
+        </div>
+        <p class="card-def">${it.def}</p>
+        <div class="card-use-row">
+          <div class="card-use good"><span class="card-use-label">${GOOD_LABEL}</span>${it.good}</div>
+          <div class="card-use bad"><span class="card-use-label">${BAD_LABEL}</span>${it.bad}</div>
+        </div>
+        <div class="card-example">${it.example}</div>
+        <p class="card-tip"><strong>Power tip:</strong> ${it.tip}</p>
+      </div>
+    `;
+  });
+  html += '</div>';
+});
+
+html += `
+  <div class="bonus">
+    <h2>${BONUS_HEADING}</h2>
+    <p class="bonus-sub">${BONUS_SUB}</p>
+    <div class="avoid-grid">
+`;
+AVOID.forEach(a => {
+  html += `
+    <div class="avoid-card">
+      <div class="avoid-term">${a.term}</div>
+      <p class="avoid-why">${a.why}</p>
+      <p class="avoid-instead">${a.instead}</p>
+    </div>
+  `;
+});
+html += `
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <h3>Build the brand that backs you up</h3>
+    <p>Eclatale is the AI personal brand OS for LinkedIn: post ideas, brand score, voice matching, and more.</p>
+    <a href="https://eclatale.com/signup">Start free, no credit card</a>
+    <span class="brand">eclatale.com</span>
+  </div>
+`;
+
+container.innerHTML = html;
+</script>

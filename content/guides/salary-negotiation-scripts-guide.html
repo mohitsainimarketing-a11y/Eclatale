@@ -1,0 +1,479 @@
+<title>15 Salary and Offer Negotiation Scripts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --purple: #7C5CFC;
+    --purple-dark: #5B3FD4;
+    --purple-light: #F0ECFF;
+    --purple-mid: #E3DAFF;
+    --purple-border: #D4C8FF;
+    --ink: #0F0A1E;
+    --ink-mid: #3D3557;
+    --ink-muted: #7A6E94;
+    --ground: #F8F7FC;
+    --white: #FFFFFF;
+    --gold: #F5A623;
+    --green: #27B469;
+    --red: #E5434B;
+    --cat1: #EDE8FF;
+    --cat2: #E8F4FF;
+    --cat3: #E8FFF4;
+    --cat4: #FFF5E8;
+    --cat5: #FFE8EE;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --purple: #9B7FFF;
+      --purple-dark: #7C5CFC;
+      --purple-light: #1E1633;
+      --purple-mid: #2A2048;
+      --purple-border: #3D3066;
+      --ink: #F0ECFF;
+      --ink-mid: #C4BAE8;
+      --ink-muted: #8B80AA;
+      --ground: #0F0A1E;
+      --white: #1A1430;
+      --cat1: #1E1A33;
+      --cat2: #141E2E;
+      --cat3: #0E1E19;
+      --cat4: #201A0E;
+      --cat5: #200E14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --purple: #9B7FFF;
+    --purple-dark: #7C5CFC;
+    --purple-light: #1E1633;
+    --purple-mid: #2A2048;
+    --purple-border: #3D3066;
+    --ink: #F0ECFF;
+    --ink-mid: #C4BAE8;
+    --ink-muted: #8B80AA;
+    --ground: #0F0A1E;
+    --white: #1A1430;
+    --cat1: #1E1A33;
+    --cat2: #141E2E;
+    --cat3: #0E1E19;
+    --cat4: #201A0E;
+    --cat5: #200E14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+
+  .print-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--purple); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; font-size: 13px; font-weight: 600; gap: 12px;
+  }
+  .print-bar span { opacity: 0.85; font-weight: 400; }
+  .print-btn {
+    background: #fff; color: var(--purple); border: none; border-radius: 8px;
+    padding: 7px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: opacity 0.15s;
+  }
+  .print-btn:hover { opacity: 0.85; }
+
+  .page { max-width: 880px; margin: 0 auto; padding-bottom: 80px; }
+
+  .cover {
+    background: linear-gradient(135deg, #5B3FD4 0%, #7C5CFC 55%, #A882FF 100%);
+    border-radius: 20px; padding: 64px 48px 56px; margin: 28px 0 48px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,0.07);
+  }
+  .cover::after {
+    content: ''; position: absolute; bottom: -60px; left: -40px;
+    width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.05);
+  }
+  .cover-label {
+    display: inline-block; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: 'Fraunces', Georgia, serif; font-size: clamp(36px, 6vw, 60px);
+    font-weight: 900; color: #fff; line-height: 1.08; text-wrap: balance;
+    margin-bottom: 20px; position: relative; z-index: 1;
+  }
+  .cover h1 em { font-style: italic; font-weight: 300; opacity: 0.9; }
+  .cover-sub {
+    color: rgba(255,255,255,0.82); font-size: 16px; line-height: 1.6;
+    max-width: 520px; margin-bottom: 36px; position: relative; z-index: 1;
+  }
+  .cover-meta { display: flex; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .cover-meta-item { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500; }
+  .cover-logo {
+    position: absolute; bottom: 28px; right: 40px; font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 22px; color: rgba(255,255,255,0.5); z-index: 1; letter-spacing: -0.02em;
+  }
+
+  .intro {
+    background: var(--white); border-radius: 16px; padding: 36px 40px;
+    margin-bottom: 48px; border: 1px solid var(--purple-border);
+  }
+  .intro h2 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+  .intro p { color: var(--ink-mid); font-size: 14.5px; line-height: 1.75; margin-bottom: 12px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--ink); }
+
+  .category-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    padding: 18px 24px; border-radius: 14px; border: 1px solid var(--purple-border);
+  }
+  .cat-icon { font-size: 28px; line-height: 1; }
+  .cat-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .cat-desc { font-size: 12.5px; color: var(--ink-muted); }
+  .cat-count {
+    margin-left: auto; font-size: 12px; font-weight: 700; color: var(--purple);
+    background: var(--purple-light); padding: 4px 12px; border-radius: 20px; white-space: nowrap;
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 48px; }
+  @media (max-width: 580px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--white); border: 1px solid var(--purple-border); border-radius: 16px;
+    padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-term {
+    font-family: 'Fraunces', serif; font-size: 19px; font-weight: 900; color: var(--purple);
+    line-height: 1.2; letter-spacing: -0.02em;
+  }
+  .card-num {
+    font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--purple-light);
+    padding: 3px 9px; border-radius: 12px; white-space: nowrap; flex-shrink: 0; margin-top: 3px;
+  }
+  .card-def { font-size: 13px; color: var(--ink-mid); line-height: 1.65; }
+  .card-use-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card-use { font-size: 11.5px; line-height: 1.55; padding: 8px 10px; border-radius: 8px; }
+  .card-use.good { background: #EDFBF3; color: #0E6630; border: 1px solid #B5EAC9; }
+  .card-use.bad { background: #FFF0F1; color: #8B1A1E; border: 1px solid #FFCDD0; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+    :root:not([data-theme="light"]) .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  }
+  :root[data-theme="dark"] .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+  :root[data-theme="dark"] .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  .card-use-label { font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+  .card-example {
+    background: var(--purple-light); border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0;
+    padding: 10px 12px; font-size: 12.5px; font-style: italic; color: var(--ink-mid); line-height: 1.6;
+  }
+  .card-tip { font-size: 11.5px; color: var(--ink-muted); padding-top: 6px; border-top: 1px solid var(--purple-border); line-height: 1.55; }
+  .card-tip strong { color: var(--purple); }
+
+  .bonus {
+    background: linear-gradient(135deg, #0F0A1E 0%, #1C1433 100%); border-radius: 20px;
+    padding: 48px 40px; margin-bottom: 48px; color: #fff;
+  }
+  .bonus h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 900; margin-bottom: 8px; color: #fff; }
+  .bonus-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; line-height: 1.6; }
+  .avoid-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 580px) { .avoid-grid { grid-template-columns: 1fr; } }
+  .avoid-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 18px; }
+  .avoid-term {
+    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: #F5A623;
+    margin-bottom: 5px; text-decoration: line-through; text-decoration-color: rgba(245,166,35,0.4);
+  }
+  .avoid-why { font-size: 12.5px; color: rgba(255,255,255,0.65); line-height: 1.55; margin-bottom: 6px; }
+  .avoid-instead { font-size: 12px; font-weight: 600; color: #72E6A4; }
+  .avoid-instead::before { content: 'Instead: '; opacity: 0.6; font-weight: 400; }
+
+  .guide-footer { text-align: center; padding: 40px 24px; background: var(--white); border-radius: 20px; border: 1px solid var(--purple-border); }
+  .guide-footer h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: var(--ink); margin-bottom: 10px; }
+  .guide-footer p { color: var(--ink-muted); font-size: 14px; margin-bottom: 20px; }
+  .guide-footer a {
+    display: inline-block; background: linear-gradient(135deg, #5B3FD4, #7C5CFC); color: #fff;
+    font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 12px; text-decoration: none; transition: opacity 0.15s;
+  }
+  .guide-footer a:hover { opacity: 0.88; }
+  .guide-footer .brand { font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; color: var(--purple); margin-top: 20px; display: block; opacity: 0.7; }
+
+  @media print {
+    .print-bar { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .page { max-width: 100%; padding-bottom: 0; }
+    .cover { border-radius: 0; margin: 0 0 32px; page-break-after: avoid; }
+    .cards { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; border-color: #ddd; }
+    .bonus { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .category-header { page-break-after: avoid; }
+  }
+</style>
+
+<div class="print-bar">
+  <div><strong>15 Salary and Offer Negotiation Scripts</strong><span>by Eclatale</span></div>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <div class="cover">
+    <span class="cover-label">Free Guide · Eclatale</span>
+    <h1>Salary and Offer Negotiation <em>scripts</em></h1>
+    <p class="cover-sub">Exact words for the 15 moments that decide how much you get paid. Not theory. The actual sentence to say, and the mistake to avoid saying instead.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">📄 15 scripts</div>
+      <div class="cover-meta-item">💡 Real scenarios</div>
+      <div class="cover-meta-item">🚫 8 costly mistakes</div>
+    </div>
+    <span class="cover-logo">Eclatale</span>
+  </div>
+
+  <div class="intro">
+    <h2>How to use this guide</h2>
+    <p>Most people do not lose a negotiation because they asked for too much. They lose it because, in the moment, they had no language ready and defaulted to whatever kept the conversation comfortable. A recruiter asks for your number and you give one. An offer lands and you say thank you. The silence gets awkward and you fill it by agreeing.</p>
+    <p>This guide gives you <strong>15 scripts</strong> for the specific moments that come up across a negotiation: opening the conversation, applying leverage you already have, and negotiating the parts of an offer beyond base salary that most people never touch. Each one includes the exact line to say, the mistake it prevents, and a short scenario showing it used.</p>
+    <p>At the end: <strong>8 mistakes that quietly cost people real money</strong>, the habits that feel polite or safe in the moment and cost thousands over a career.</p>
+  </div>
+
+  <div id="guide-content"></div>
+
+</div>
+
+<script>
+const GOOD_LABEL = 'Say this';
+const BAD_LABEL = 'Not this';
+
+const CATEGORIES = [
+  {
+    icon: '🚪',
+    title: `Opening the Negotiation`,
+    desc: `The first exchange sets the range for everything that follows`,
+    color: 'var(--cat1)',
+    items: [
+      {
+        term: `The Delayed Number`,
+        def: `A recruiter asks for your salary expectations before any offer has been made.`,
+        good: `"I want to make sure we're aligned on the scope of the role first. What range has been budgeted for this position?"`,
+        bad: `Giving a specific number early. It becomes the ceiling of every offer that follows, even if the role turns out to be bigger than described.`,
+        example: `A recruiter opens the first call with "so what are you looking for, salary-wise?" before describing the role in any detail. The candidate redirects to the range question instead of answering.`,
+        tip: `If they push for a number, give a wide, researched range and immediately hand the question back: "Based on my research, that's typically $X to $Y. What does your budget look like?"`
+      },
+      {
+        term: `The Silence Technique`,
+        def: `An offer number has just been said out loud, and the instinct is to fill the quiet with a reaction.`,
+        good: `Nothing, for three to five full seconds. Then: "Thank you, let me take a moment to think that through."`,
+        bad: `Reacting immediately, whether that's "wow, great" (signals you'll accept anything) or a visible wince (signals discomfort before you've made your case).`,
+        example: `A hiring manager states the offer on a call and waits. The candidate lets the pause sit instead of speaking first, and the hiring manager often adds context or a second number to fill it themselves.`,
+        tip: `The person who speaks first after a number is said usually gives something away. Let the silence be their problem to solve, not yours.`
+      },
+      {
+        term: `The Lowball Response`,
+        def: `The offer that arrives is meaningfully below your researched range or your current compensation.`,
+        good: `"I appreciate the offer. Based on the scope we discussed and the market range for this role, I was expecting something closer to $X. Can we look at that together?"`,
+        bad: `Accepting to avoid seeming difficult, or rejecting outright without inviting a second conversation.`,
+        example: `An offer lands 15% below the candidate's research. Instead of accepting or walking away, they name the gap directly and ask to revisit it.`,
+        tip: `Name a specific number, not a vague "higher." A specific ask is easier for the other side to act on than an open-ended one.`
+      },
+      {
+        term: `The Gratitude Bridge`,
+        def: `You need to negotiate without the conversation feeling adversarial.`,
+        good: `"I'm genuinely excited about this role, and I want to get the compensation right so I can commit fully. Can we talk through the number?"`,
+        bad: `Skipping the warmth and going straight to the ask, which can read as transactional when the relationship still matters.`,
+        example: `A candidate who is enthusiastic about the team leads with that enthusiasm before pivoting to the negotiation, keeping the tone collaborative rather than confrontational.`,
+        tip: `Enthusiasm and negotiation are not opposites. Stating genuine interest first makes the ask that follows land as reasonable, not greedy.`
+      },
+      {
+        term: `The Written Ask`,
+        def: `A verbal negotiation conversation has happened and now needs to be confirmed and made concrete.`,
+        good: `"Thanks for the conversation today. To confirm what we discussed: I'd like to move forward at $X base, with the other terms as outlined. Could you send an updated offer reflecting that?"`,
+        bad: `Leaving the agreement verbal only. Memories of a phone call differ, and only the written offer is the one that counts.`,
+        example: `After a call where a hiring manager verbally agrees to a higher number, the candidate follows up by email summarizing the specifics and asking for a revised written offer.`,
+        tip: `Send this within a day, while the conversation is fresh for both sides. A same-day follow-up reads as organized, not impatient.`
+      },
+    ]
+  },
+  {
+    icon: '⚖️',
+    title: `Using Leverage`,
+    desc: `Real advantages, stated in a way that strengthens rather than threatens the relationship`,
+    color: 'var(--cat2)',
+    items: [
+      {
+        term: `The Competing Offer Reveal`,
+        def: `You have another offer and want to use it without sounding like an ultimatum.`,
+        good: `"I want to be transparent: I have another offer in hand at $X. This role is my preference, so I wanted to give you the chance to see if there's flexibility before I respond to them."`,
+        bad: `Vague references to "other opportunities" with no specifics, which reads as a bluff and rarely moves a number.`,
+        example: `A candidate with a real competing offer names the actual figure and frames the disclosure as a courtesy rather than a threat, which keeps the tone collaborative.`,
+        tip: `Only use this with a genuine offer. If it surfaces later that there wasn't one, it damages trust in a way that outlasts the negotiation.`
+      },
+      {
+        term: `The Market Data Anchor`,
+        def: `You want to justify an ask with evidence rather than a feeling.`,
+        good: `"Based on data for this role and level in this market, the range is typically $X to $Y. I'd like to land toward the top of that given my background in Z."`,
+        bad: `Citing data without a source, or using data for a different role, level, or city than the one being negotiated.`,
+        example: `A candidate references a specific, named compensation report and ties the number to their exact title and years of experience, rather than a general sense of "market rate."`,
+        tip: `Cite the source by name. "According to Levels.fyi" or "the most recent survey from my professional association" carries more weight than an unattributed number.`
+      },
+      {
+        term: `The Internal Equity Question`,
+        def: `You suspect the offer is below what peers in similar roles are earning at the same company.`,
+        good: `"How does this offer compare to others at the same level on the team? I want to make sure it reflects the role fairly."`,
+        bad: `Naming a specific colleague's salary if you learned it informally, which puts the hiring manager in an awkward position and rarely helps your case.`,
+        example: `A candidate asks the general equity question rather than referencing a specific person's pay, and the hiring manager is able to answer without breaching anyone's confidentiality.`,
+        tip: `Frame this as a fairness question, not a challenge. Most hiring managers want internal equity too, since a mismatch becomes their problem later.`
+      },
+      {
+        term: `The Timeline Leverage`,
+        def: `You have a notice period, a competing process, or a deadline that creates real urgency for the other side.`,
+        good: `"I have another process wrapping up in the next week, so I wanted to see if we could finalize the details before then."`,
+        bad: `Fabricating urgency that doesn't exist. If a company asks for specifics and there's nothing behind the claim, the tactic collapses immediately.`,
+        example: `A candidate with a genuinely competing timeline mentions it plainly, which often accelerates the hiring manager's own internal approvals.`,
+        tip: `A real deadline works because it forces a decision, not because it applies pressure. Keep the tone informational, not tactical.`
+      },
+      {
+        term: `The Scope Expansion Note`,
+        def: `The role, as finally scoped, turned out to be bigger than what the original offer number was based on.`,
+        good: `"As we've talked through the responsibilities, this looks broader than the initial scope, managing the team and owning the budget. I'd like to revisit the number with that in mind."`,
+        bad: `Assuming the hiring manager will notice the scope creep and adjust on their own. They usually don't, since the number was often set before the role was fully defined.`,
+        example: `A candidate points out that the role now includes two direct reports and a budget that wasn't mentioned in the original job description, and asks for the offer to reflect that.`,
+        tip: `Be specific about what changed. "It's bigger now" is vague. "It now includes two direct reports" gives the other side something concrete to act on.`
+      },
+    ]
+  },
+  {
+    icon: '📦',
+    title: `Negotiating Beyond Base`,
+    desc: `The parts of an offer most people never think to touch`,
+    color: 'var(--cat3)',
+    items: [
+      {
+        term: `The Signing Bonus Ask`,
+        def: `There's a gap between the base salary offered and your target, and the company has said the base can't move further.`,
+        good: `"I understand the base may be fixed. Would a signing bonus be possible to help close the gap this year?"`,
+        bad: `Treating a fixed base as the end of the conversation, when a signing bonus often has a completely separate, more flexible budget.`,
+        example: `A hiring manager says the base is capped by a pay band. The candidate asks about a signing bonus instead, and it turns out to come from a different budget entirely.`,
+        tip: `Signing bonuses are frequently easier to approve than base salary increases, since they don't set a new baseline for future raises.`
+      },
+      {
+        term: `The Equity Question`,
+        def: `An offer includes equity or RSUs, but the details were mentioned only in passing.`,
+        good: `"Can you walk me through the equity in more detail: the vesting schedule, the current valuation basis, and whether there's a refresh policy after year one?"`,
+        bad: `Treating a headline equity number as fully understood without asking about vesting cliffs, strike price, or how refreshes are decided.`,
+        example: `An offer states "$40,000 in equity" with no further detail. The candidate asks for the vesting schedule and learns it vests over four years with a one-year cliff, which changes how the number should be weighed.`,
+        tip: `Equity is only worth what you can eventually realize. Ask what happens to unvested equity if you leave, and how refresh grants have historically been decided.`
+      },
+      {
+        term: `The Start Date Lever`,
+        def: `You want either more time before starting or a faster start, and either can be used as a point of flexibility.`,
+        good: `"I can start sooner than typical if that helps, though I'd want to revisit compensation given the shorter notice I'd be giving my current employer."`,
+        bad: `Treating start date as fixed and non-negotiable when it's often one of the easiest terms for a company to flex.`,
+        example: `A candidate offers a faster start date in exchange for a better signing bonus, since the company has an urgent need to fill the seat.`,
+        tip: `Start date matters more to some companies than base salary does. If they need someone urgently, that urgency is leverage you can use.`
+      },
+      {
+        term: `The Remote Flexibility Ask`,
+        def: `The offer's location or in-office expectations don't fully match what you need.`,
+        good: `"Is there flexibility on the in-office schedule? I'd like to understand what's fixed and what's negotiable before we finalize."`,
+        bad: `Assuming the policy as stated is rigid without asking, or raising it only after accepting the offer.`,
+        example: `A candidate asks directly about hybrid flexibility during the offer stage rather than the interview stage, when the company is more motivated to accommodate a request.`,
+        tip: `Raise flexibility questions once you have an offer, not earlier. Companies are more willing to bend policy for a candidate they've already decided to hire.`
+      },
+      {
+        term: `The Review Timeline Ask`,
+        def: `The gap between your ask and the final offer is real, but the company genuinely cannot move the number further right now.`,
+        good: `"If the number can't move further today, could we agree to a formal compensation review at six months instead of twelve, based on performance?"`,
+        bad: `Accepting a gap silently and hoping it gets addressed at the standard annual review, with nothing in writing.`,
+        example: `A candidate accepts an offer slightly below target but gets written agreement to an early six-month review tied to specific, named goals.`,
+        tip: `Get the review commitment in writing, with a date and the criteria attached. A verbal "we'll revisit it" rarely turns into an actual conversation later.`
+      },
+    ]
+  }
+];
+
+const BONUS_HEADING = `🚫 Bonus: 8 Negotiation Mistakes That Cost You Money`;
+const BONUS_SUB = `These habits feel polite, safe, or reasonable in the moment. Over a career, they add up to real money left on the table.`;
+const AVOID = [
+  { term: `Naming your number first`, why: `Whoever states a number first sets the anchor, and it's almost always lower than what the other side was prepared to offer.`, instead: `Ask for their budgeted range before stating your own expectation.` },
+  { term: `Accepting on the spot`, why: `Agreeing the moment an offer is said removes any room to negotiate and signals you'll take whatever's given.`, instead: `Say thank you, then ask for a day or two to review the full offer in writing.` },
+  { term: `Negotiating only base salary`, why: `Base is usually the most fixed part of an offer. Bonus, equity, and start terms often have far more room to move.`, instead: `Ask which parts of the offer have the most flexibility before deciding where to push.` },
+  { term: `Apologizing for asking`, why: `Opening with "sorry to bring this up" frames a normal business conversation as an imposition before it's even started.`, instead: `State the ask plainly and directly, without a preemptive apology attached.` },
+  { term: `Bluffing about a competing offer`, why: `A fabricated offer that gets questioned in detail falls apart quickly, and the damage to trust outlasts the negotiation itself.`, instead: `Only reference a competing offer that genuinely exists, with real numbers behind it.` },
+  { term: `Negotiating over text or email only`, why: `Written negotiation removes tone, makes pushback feel more confrontational, and gives the other side more time to say no by default.`, instead: `Ask for a short call to talk through the number, then follow up in writing to confirm.` },
+  { term: `Anchoring only to your current salary`, why: `Framing the ask as "X percent more than I make now" ties your new pay to an old number instead of what the new role is actually worth.`, instead: `Anchor to the market range and scope of the new role, not your prior compensation.` },
+  { term: `Skipping research before the call`, why: `Without a researched range, it's impossible to know whether an offer is fair, generous, or low, and that uncertainty shows in the conversation.`, instead: `Check at least two independent sources for the role, level, and location before any negotiation call.` },
+];
+
+const container = document.getElementById('guide-content');
+const TOTAL = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+let html = '';
+let runningIndex = 0;
+
+CATEGORIES.forEach(cat => {
+  html += `
+    <div class="category-header" style="background:${cat.color}">
+      <span class="cat-icon">${cat.icon}</span>
+      <div><div class="cat-title">${cat.title}</div><div class="cat-desc">${cat.desc}</div></div>
+      <span class="cat-count">${cat.items.length} items</span>
+    </div>
+    <div class="cards">
+  `;
+  cat.items.forEach(it => {
+    runningIndex++;
+    const numStr = String(runningIndex).padStart(2, '0');
+    html += `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-term">${it.term}</div>
+          <span class="card-num">${numStr} / ${TOTAL}</span>
+        </div>
+        <p class="card-def">${it.def}</p>
+        <div class="card-use-row">
+          <div class="card-use good"><span class="card-use-label">${GOOD_LABEL}</span>${it.good}</div>
+          <div class="card-use bad"><span class="card-use-label">${BAD_LABEL}</span>${it.bad}</div>
+        </div>
+        <div class="card-example">${it.example}</div>
+        <p class="card-tip"><strong>Power tip:</strong> ${it.tip}</p>
+      </div>
+    `;
+  });
+  html += '</div>';
+});
+
+html += `
+  <div class="bonus">
+    <h2>${BONUS_HEADING}</h2>
+    <p class="bonus-sub">${BONUS_SUB}</p>
+    <div class="avoid-grid">
+`;
+AVOID.forEach(a => {
+  html += `
+    <div class="avoid-card">
+      <div class="avoid-term">${a.term}</div>
+      <p class="avoid-why">${a.why}</p>
+      <p class="avoid-instead">${a.instead}</p>
+    </div>
+  `;
+});
+html += `
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <h3>Build the brand that backs you up</h3>
+    <p>Eclatale is the AI personal brand OS for LinkedIn: post ideas, brand score, voice matching, and more.</p>
+    <a href="https://eclatale.com/signup">Start free, no credit card</a>
+    <span class="brand">eclatale.com</span>
+  </div>
+`;
+
+container.innerHTML = html;
+</script>

@@ -1,32 +1,38 @@
-import React from 'react';
-import { Download, BookOpen, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, BookOpen, ChevronDown, ArrowRight } from 'lucide-react';
 import Seo from '../components/Seo';
 
-const RESOURCES = [
+interface PreviewItem { term: string; meaning: string; example?: string; }
+interface Resource {
+  slug: string;
+  badge: string;
+  emoji: string;
+  title: string;
+  description: string;
+  pages: string;
+  itemCount: number;
+  itemNoun: string;
+  format: string;
+  downloadUrl: string;
+  preview: PreviewItem[];
+}
+
+const RESOURCES: Resource[] = [
   {
     slug: 'top-50-corporate-jargons',
     badge: 'Career & Communication',
     emoji: '💼',
     title: 'Top 50 Corporate Jargons with Use Cases',
-    description: 'Master the language of business. Every term explained with real-world LinkedIn post examples so you sound credible, not clueless.',
-    highlights: [
-      '50 must-know corporate terms defined in plain English',
-      'Real LinkedIn post example for each jargon',
-      'When to use it, and when it sounds hollow',
-      'Bonus: 10 overused buzzwords to avoid in 2026',
-    ],
+    description: 'Every term explained in plain English with a real LinkedIn post example, so you sound credible, not clueless.',
     pages: '27 pages',
     itemCount: 50,
     itemNoun: 'terms',
     format: 'PDF',
     downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/top-50-corporate-jargons-guide.pdf',
     preview: [
-      { term: 'Leverage', meaning: 'Use existing strengths or assets to gain a larger advantage.', example: 'Example: "We are leveraging our content archive to build a 90-day thought leadership engine."' },
-      { term: 'Synergy', meaning: 'Combined output that exceeds what each part would achieve alone.', example: 'Example: "The partnership created real synergy: their distribution + our IP = 3x reach."' },
-      { term: 'Circle back', meaning: 'Return to a topic at a later point.', example: 'Example: "Great question. Let me circle back once I have validated the numbers."' },
-      { term: 'Bandwidth', meaning: 'Available capacity to take on additional work or responsibilities.', example: 'Example: "Before adding scope, let us be honest about team bandwidth this sprint."' },
-      { term: 'Deep dive', meaning: 'Thorough, detailed examination of a topic.', example: 'Example: "I did a deep dive on why most LinkedIn profiles fail in the first 3 seconds."' },
-      { term: 'Move the needle', meaning: 'Make a measurable, meaningful improvement.', example: 'Example: "Only 2 of the 11 tactics we tested actually moved the needle on engagement."' },
+      { term: 'Leverage', meaning: 'Use existing strengths or assets to gain a larger advantage.' },
+      { term: 'Circle back', meaning: 'Return to a topic at a later point.' },
+      { term: 'Move the needle', meaning: 'Make a measurable, meaningful improvement.' },
     ],
   },
   {
@@ -34,160 +40,245 @@ const RESOURCES = [
     badge: 'Profile & Positioning',
     emoji: '✍️',
     title: '20 LinkedIn Headline Formulas That Work',
-    description: 'Your headline is the one line working for you 24 hours a day. Twenty fill-in-the-blank formulas, each with real examples and the reason it lands.',
-    highlights: [
-      '20 copy-and-adapt headline templates',
-      'Two real example headlines for every formula',
-      'A power tip explaining why each one converts',
-      'Bonus: 8 headline mistakes killing your profile',
-    ],
+    description: 'Fill-in-the-blank headline templates, each with real examples and the reason it converts.',
     pages: '11 pages',
     itemCount: 20,
     itemNoun: 'formulas',
     format: 'PDF',
     downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/linkedin-headline-formulas-guide.pdf',
     preview: [
-      { term: 'The Role + Result', meaning: '[Job title] helping [target audience] [achieve specific outcome]', example: 'Example: "Marketing Director helping B2B SaaS startups generate pipeline without paid ads"' },
-      { term: 'The Problem-Solver', meaning: 'Name the exact problem you remove, then who you remove it for.', example: 'Example: "I fix the reason your demos book but never close"' },
-      { term: 'The Numbers Stack', meaning: 'Three hard numbers that prove the claim before anyone asks.', example: 'Example: "14 years in supply chain · 3 turnarounds · $40M in cost taken out"' },
-      { term: 'The Credibility Pivot', meaning: 'Ex-[recognizable role], now [what you do]. The word "now" carries the turn.', example: 'Example: "Ex-Google PM, now helping seed founders build their first product team"' },
-      { term: 'The Niche Authority', meaning: 'Claim a category narrow enough that you can credibly own it.', example: 'Example: "The pricing guy for vertical SaaS companies under $10M ARR"' },
-      { term: 'The Ask Me About', meaning: 'Invite the exact conversation you want to be having.', example: 'Example: "Ask me about cutting CAC without cutting spend"' },
+      { term: 'The Role + Result', meaning: '[Job title] helping [target audience] [achieve specific outcome].' },
+      { term: 'The Numbers Stack', meaning: 'Three hard numbers that prove the claim before anyone asks.' },
+      { term: 'The Niche Authority', meaning: 'Claim a category narrow enough that you can credibly own it.' },
+    ],
+  },
+  {
+    slug: 'data-storytelling-charts',
+    badge: 'Data & Analytics',
+    emoji: '📊',
+    title: '15 Data Storytelling Charts and When to Use Each',
+    description: 'Stop defaulting to bar and pie charts. The right chart for the data you are actually showing, with real use cases.',
+    pages: '10 pages',
+    itemCount: 15,
+    itemNoun: 'chart types',
+    format: 'PDF',
+    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/data-driven-charts-guide.pdf',
+    preview: [
+      { term: 'Bar Chart', meaning: 'Horizontal or vertical bars comparing a single metric across categories. The easiest chart for a reader to decode correctly.' },
+      { term: 'Line Chart', meaning: 'Points connected across a continuous axis, usually time, tracking how one or more metrics move.' },
+      { term: 'Scatter Plot', meaning: 'Individual points placed by two numeric values, revealing correlation, clusters, or outliers between them.' },
+    ],
+  },
+  {
+    slug: 'stakeholder-boardroom-idioms',
+    badge: 'Meetings & Stakeholders',
+    emoji: '🏛️',
+    title: '40 Stakeholder and Boardroom Idioms Decoded',
+    description: 'What executives actually mean when they say it diplomatically. Decode the gap between the words and the message.',
+    pages: '16 pages',
+    itemCount: 40,
+    itemNoun: 'idioms',
+    format: 'PDF',
+    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/stakeholder-boardroom-idioms-guide.pdf',
+    preview: [
+      { term: "I hear what you're saying", meaning: 'Sounds like agreement but is almost always the opening line of a rebuttal.' },
+      { term: "Let's derisk this before we commit", meaning: 'A request to reduce uncertainty before greenlighting, often signaling real doubt about the odds.' },
+      { term: "Let's revisit this next quarter", meaning: "A polite, calendar-based way of shelving a topic that isn't a current priority." },
+    ],
+  },
+  {
+    slug: 'meeting-phrases',
+    badge: 'Meetings & Stakeholders',
+    emoji: '🗣️',
+    title: '30 Meeting Phrases That Move Decisions Forward',
+    description: 'Exact lines to redirect, push back, and close meetings with a real decision instead of another meeting.',
+    pages: '16 pages',
+    itemCount: 30,
+    itemNoun: 'phrases',
+    format: 'PDF',
+    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/meeting-phrases-guide.pdf',
+    preview: [
+      { term: 'The Parking Lot', meaning: '"Let\'s park that and come back to it if we have time." Defers a tangent without dismissing who raised it.' },
+      { term: 'The Curious Challenge', meaning: '"Help me understand the thinking behind that." Challenges a decision by asking for its reasoning.' },
+      { term: 'The Decision Statement', meaning: '"So the decision is X, and we\'re not revisiting it this quarter." Locks in an outcome out loud.' },
+    ],
+  },
+  {
+    slug: 'performance-review-phrases',
+    badge: 'Career Growth',
+    emoji: '📈',
+    title: '20 Performance Review Phrases That Get You Promoted',
+    description: 'Turn your work into undeniable impact on paper: framing, direct asks, and how to handle pushback.',
+    pages: '10 pages',
+    itemCount: 20,
+    itemNoun: 'phrases',
+    format: 'PDF',
+    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/performance-review-phrases-guide.pdf',
+    preview: [
+      { term: 'The Before/After Frame', meaning: 'State the situation before your work and the situation after it, so the change is undeniable.' },
+      { term: 'The Direct Ask', meaning: 'State plainly that you are ready for the next level and want to discuss it, without hedging.' },
+      { term: 'The Specific Follow-Up', meaning: 'When told "not this cycle," ask exactly what changed the decision and what would change it next time.' },
+    ],
+  },
+  {
+    slug: 'salary-negotiation-scripts',
+    badge: 'Career Growth',
+    emoji: '💰',
+    title: '15 Salary and Offer Negotiation Scripts',
+    description: 'Exact scripts for the moments that come up: the first offer, the competing offer, the number you name first.',
+    pages: '11 pages',
+    itemCount: 15,
+    itemNoun: 'scripts',
+    format: 'PDF',
+    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/salary-negotiation-scripts-guide.pdf',
+    preview: [
+      { term: 'The Delayed Number', meaning: 'A recruiter asks for your salary expectations before any offer has been made.' },
+      { term: 'The Competing Offer Reveal', meaning: 'You have another offer and want to use it without sounding like an ultimatum.' },
+      { term: 'The Signing Bonus Ask', meaning: "There's a gap between the base offered and your target, and the base can't move further." },
     ],
   },
 ];
 
-function PreviewCard({ term, meaning, example }: { term: string; meaning: string; example: string }) {
+function ResourceCard({ resource }: { resource: Resource }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="p-4 rounded-xl border border-[rgba(124,92,252,0.1)] bg-white/60">
-      <p className="text-sm font-bold text-brand-dark mb-1">{term}</p>
-      <p className="text-xs text-brand-muted mb-2 leading-relaxed">{meaning}</p>
-      <p className="text-xs text-[#7C5CFC] italic leading-relaxed">{example}</p>
-    </div>
+    <article className="card p-5 flex flex-col">
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-lg shrink-0">
+          {resource.emoji}
+        </div>
+        <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-[10px] !py-1 !px-2 text-right">
+          {resource.badge}
+        </span>
+      </div>
+
+      <h2 className="text-[15px] font-extrabold text-brand-dark leading-snug mb-1.5">
+        {resource.title}
+      </h2>
+      <p className="text-xs text-brand-muted leading-relaxed mb-3 flex-1">
+        {resource.description}
+      </p>
+
+      <div className="flex items-center gap-3 mb-4 text-[11px] text-brand-muted font-medium">
+        <span className="flex items-center gap-1"><BookOpen size={11} /> {resource.pages}</span>
+        <span>{resource.itemCount} {resource.itemNoun}</span>
+        <span className="px-1.5 py-0.5 rounded-full border border-[rgba(124,92,252,0.15)]">{resource.format}</span>
+      </div>
+
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-between text-[11px] font-semibold text-brand-purple mb-2 w-full"
+      >
+        <span>{open ? 'Hide preview' : `Preview ${resource.preview.length} ${resource.itemNoun}`}</span>
+        <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="mb-3 rounded-xl bg-[rgba(124,92,252,0.04)] p-3 space-y-2.5 animate-fadeIn">
+          {resource.preview.map(item => (
+            <div key={item.term}>
+              <p className="text-[11.5px] font-bold text-brand-dark">{item.term}</p>
+              <p className="text-[11px] text-brand-muted leading-snug">{item.meaning}</p>
+            </div>
+          ))}
+          <p className="text-[10.5px] text-brand-muted pt-1 border-t border-[rgba(124,92,252,0.08)]">
+            + {resource.itemCount - resource.preview.length} more in the full guide
+          </p>
+        </div>
+      )}
+
+      <a
+        href={resource.downloadUrl}
+        download
+        className="btn-primary w-full inline-flex items-center justify-center gap-2 text-xs !py-2.5 mt-auto"
+      >
+        <Download size={13} /> Download Free
+      </a>
+    </article>
   );
 }
 
 export default function Resources() {
+  const categories = ['All', ...Array.from(new Set(RESOURCES.map(r => r.badge)))];
+  const [filter, setFilter] = useState('All');
+  const visible = filter === 'All' ? RESOURCES : RESOURCES.filter(r => r.badge === filter);
+
   return (
     <div className="min-h-screen gradient-bg-page">
       <Seo
-        title="Free LinkedIn Resources | Eclatale"
-        description="Free downloadable guides for LinkedIn personal branding: corporate jargon glossaries, post frameworks, and growth playbooks."
+        title="Free Career Guides | Eclatale"
+        description="Free downloadable guides on the language of work: corporate jargon, meeting phrases, negotiation scripts, data storytelling, and LinkedIn positioning."
         path="/resources"
         jsonLd={[
           {
             '@context': 'https://schema.org',
             '@type': 'CollectionPage',
-            name: 'Free LinkedIn Resources by Eclatale',
-            description: 'Downloadable guides and playbooks for LinkedIn personal branding',
+            name: 'Free Career Guides by Eclatale',
+            description: 'Downloadable guides on professional communication and LinkedIn growth',
             url: 'https://eclatale.com/resources',
           },
         ]}
       />
 
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(124,92,252,0.06)]">
-        <div className="max-w-5xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between">
           <a href="/" className="text-xl md:text-2xl font-extrabold gradient-text">Eclatale</a>
           <a href="/signup" className="btn-primary text-sm !py-2.5 !px-6">Start Free</a>
         </div>
       </nav>
 
-      <header className="pt-28 md:pt-36 pb-12 px-5 md:px-8 text-center">
+      <header className="pt-28 md:pt-36 pb-10 px-5 md:px-8 text-center">
         <div className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple mb-5 mx-auto">Free Resources</div>
         <h1 className="h1 text-brand-dark mb-4">
-          Guides to help you<br className="hidden md:block" /> <span className="gradient-text">grow on LinkedIn</span>
+          Guides for how work<br className="hidden md:block" /> <span className="gradient-text">actually talks</span>
         </h1>
         <p className="body-text max-w-xl mx-auto mb-2">
-          Practical, downloadable playbooks built for professionals who want to build authority without the noise.
+          Free, practical playbooks for the language of your job: meetings, negotiations, boardroom idioms, and your LinkedIn presence.
         </p>
         <p className="text-xs font-semibold text-brand-muted">Free · No email required · Instant PDF download</p>
       </header>
 
-      <main className="max-w-5xl mx-auto px-5 md:px-8 pb-24 space-y-12">
-        {RESOURCES.map(resource => (
-          <article
-            key={resource.slug}
-            className="card p-6 md:p-10 grid md:grid-cols-2 gap-8 md:gap-12 items-start"
-          >
-            {/* Left: info */}
-            <div>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center text-2xl shrink-0">
-                  {resource.emoji}
-                </div>
-                <span className="badge bg-[rgba(124,92,252,0.08)] text-brand-purple text-xs">{resource.badge}</span>
-              </div>
+      {categories.length > 2 && (
+        <div className="max-w-6xl mx-auto px-5 md:px-8 mb-6 flex flex-wrap justify-center gap-2">
+          {categories.map(c => (
+            <button
+              key={c}
+              onClick={() => setFilter(c)}
+              className={`text-xs font-semibold px-3.5 py-1.5 rounded-full border transition-colors ${
+                filter === c
+                  ? 'bg-brand-purple text-white border-brand-purple'
+                  : 'text-brand-muted border-[rgba(124,92,252,0.15)] hover:border-brand-purple/40'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
-              <h2 className="text-xl md:text-2xl font-extrabold text-brand-dark mb-3 leading-snug">
-                {resource.title}
-              </h2>
-              <p className="text-sm text-brand-muted leading-relaxed mb-6">{resource.description}</p>
+      <main className="max-w-6xl mx-auto px-5 md:px-8 pb-24">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+          {visible.map(resource => (
+            <ResourceCard key={resource.slug} resource={resource} />
+          ))}
 
-              <ul className="space-y-2 mb-8">
-                {resource.highlights.map(h => (
-                  <li key={h} className="flex items-start gap-2.5 text-sm text-brand-dark">
-                    <span className="mt-0.5 w-4 h-4 rounded-full gradient-primary flex items-center justify-center shrink-0">
-                      <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
-                        <path d="M1 3.5L3 5.5L7 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                    {h}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="flex items-center gap-4 mb-8">
-                <span className="flex items-center gap-1.5 text-xs text-brand-muted font-medium">
-                  <BookOpen size={13} /> {resource.pages}
-                </span>
-                <span className="text-xs text-brand-muted font-medium px-2 py-0.5 rounded-full border border-[rgba(124,92,252,0.15)]">
-                  {resource.format}
-                </span>
-              </div>
-
-              <a
-                href={resource.downloadUrl}
-                download
-                className="btn-primary inline-flex items-center gap-2 text-sm"
-              >
-                <Download size={15} /> Download Free Guide
-              </a>
+          {/* Coming soon */}
+          <div className="card p-5 text-center border-dashed border-2 border-[rgba(124,92,252,0.15)] bg-transparent flex flex-col items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-[rgba(124,92,252,0.08)] flex items-center justify-center text-lg mb-3">
+              📬
             </div>
-
-            {/* Right: preview */}
-            <div>
-              <p className="text-xs font-semibold text-brand-muted uppercase tracking-widest mb-4">
-                Preview · {resource.preview.length} of {resource.itemCount}
-              </p>
-              <div className="space-y-3">
-                {resource.preview.map(item => (
-                  <PreviewCard key={item.term} {...item} />
-                ))}
-              </div>
-              <p className="text-xs text-brand-muted mt-4 text-center">
-                + {resource.itemCount - resource.preview.length} more {resource.itemNoun} in the full guide
-              </p>
-            </div>
-          </article>
-        ))}
-
-        {/* Coming soon */}
-        <div className="card p-8 text-center border-dashed border-2 border-[rgba(124,92,252,0.15)] bg-transparent">
-          <div className="w-12 h-12 rounded-2xl bg-[rgba(124,92,252,0.08)] flex items-center justify-center text-2xl mx-auto mb-4">
-            📬
+            <h3 className="text-sm font-bold text-brand-dark mb-1.5">More guides coming soon</h3>
+            <p className="text-xs text-brand-muted mb-4">New playbooks added regularly. Drop your email to get them first.</p>
+            <a href="/signup" className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-purple hover:underline">
+              Get early access <ArrowRight size={12} />
+            </a>
           </div>
-          <h3 className="text-base font-bold text-brand-dark mb-2">More guides coming soon</h3>
-          <p className="text-sm text-brand-muted max-w-sm mx-auto mb-6">
-            LinkedIn post frameworks, content repurposing playbooks, and profile teardowns. Drop your email to get them first.
-          </p>
-          <a href="/signup" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-purple hover:underline">
-            Get early access <ArrowRight size={14} />
-          </a>
         </div>
       </main>
 
       <footer className="py-8 px-5 md:px-8 border-t border-[rgba(124,92,252,0.06)]">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <a href="/" className="text-lg font-extrabold gradient-text">Eclatale</a>
           <p className="text-sm text-brand-muted">&copy; {new Date().getFullYear()} Eclatale. All rights reserved.</p>
         </div>

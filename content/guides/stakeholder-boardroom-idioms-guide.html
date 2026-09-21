@@ -1,0 +1,687 @@
+<title>40 Stakeholder and Boardroom Idioms Decoded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --purple: #7C5CFC;
+    --purple-dark: #5B3FD4;
+    --purple-light: #F0ECFF;
+    --purple-mid: #E3DAFF;
+    --purple-border: #D4C8FF;
+    --ink: #0F0A1E;
+    --ink-mid: #3D3557;
+    --ink-muted: #7A6E94;
+    --ground: #F8F7FC;
+    --white: #FFFFFF;
+    --gold: #F5A623;
+    --green: #27B469;
+    --red: #E5434B;
+    --cat1: #EDE8FF;
+    --cat2: #E8F4FF;
+    --cat3: #E8FFF4;
+    --cat4: #FFF5E8;
+    --cat5: #FFE8EE;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --purple: #9B7FFF;
+      --purple-dark: #7C5CFC;
+      --purple-light: #1E1633;
+      --purple-mid: #2A2048;
+      --purple-border: #3D3066;
+      --ink: #F0ECFF;
+      --ink-mid: #C4BAE8;
+      --ink-muted: #8B80AA;
+      --ground: #0F0A1E;
+      --white: #1A1430;
+      --cat1: #1E1A33;
+      --cat2: #141E2E;
+      --cat3: #0E1E19;
+      --cat4: #201A0E;
+      --cat5: #200E14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --purple: #9B7FFF;
+    --purple-dark: #7C5CFC;
+    --purple-light: #1E1633;
+    --purple-mid: #2A2048;
+    --purple-border: #3D3066;
+    --ink: #F0ECFF;
+    --ink-mid: #C4BAE8;
+    --ink-muted: #8B80AA;
+    --ground: #0F0A1E;
+    --white: #1A1430;
+    --cat1: #1E1A33;
+    --cat2: #141E2E;
+    --cat3: #0E1E19;
+    --cat4: #201A0E;
+    --cat5: #200E14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+
+  .print-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--purple); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; font-size: 13px; font-weight: 600; gap: 12px;
+  }
+  .print-bar span { opacity: 0.85; font-weight: 400; }
+  .print-btn {
+    background: #fff; color: var(--purple); border: none; border-radius: 8px;
+    padding: 7px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: opacity 0.15s;
+  }
+  .print-btn:hover { opacity: 0.85; }
+
+  .page { max-width: 880px; margin: 0 auto; padding-bottom: 80px; }
+
+  .cover {
+    background: linear-gradient(135deg, #5B3FD4 0%, #7C5CFC 55%, #A882FF 100%);
+    border-radius: 20px; padding: 64px 48px 56px; margin: 28px 0 48px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,0.07);
+  }
+  .cover::after {
+    content: ''; position: absolute; bottom: -60px; left: -40px;
+    width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.05);
+  }
+  .cover-label {
+    display: inline-block; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: 'Fraunces', Georgia, serif; font-size: clamp(36px, 6vw, 60px);
+    font-weight: 900; color: #fff; line-height: 1.08; text-wrap: balance;
+    margin-bottom: 20px; position: relative; z-index: 1;
+  }
+  .cover h1 em { font-style: italic; font-weight: 300; opacity: 0.9; }
+  .cover-sub {
+    color: rgba(255,255,255,0.82); font-size: 16px; line-height: 1.6;
+    max-width: 520px; margin-bottom: 36px; position: relative; z-index: 1;
+  }
+  .cover-meta { display: flex; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .cover-meta-item { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500; }
+  .cover-logo {
+    position: absolute; bottom: 28px; right: 40px; font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 22px; color: rgba(255,255,255,0.5); z-index: 1; letter-spacing: -0.02em;
+  }
+
+  .intro {
+    background: var(--white); border-radius: 16px; padding: 36px 40px;
+    margin-bottom: 48px; border: 1px solid var(--purple-border);
+  }
+  .intro h2 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+  .intro p { color: var(--ink-mid); font-size: 14.5px; line-height: 1.75; margin-bottom: 12px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--ink); }
+
+  .category-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    padding: 18px 24px; border-radius: 14px; border: 1px solid var(--purple-border);
+  }
+  .cat-icon { font-size: 28px; line-height: 1; }
+  .cat-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .cat-desc { font-size: 12.5px; color: var(--ink-muted); }
+  .cat-count {
+    margin-left: auto; font-size: 12px; font-weight: 700; color: var(--purple);
+    background: var(--purple-light); padding: 4px 12px; border-radius: 20px; white-space: nowrap;
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 48px; }
+  @media (max-width: 580px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--white); border: 1px solid var(--purple-border); border-radius: 16px;
+    padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-term {
+    font-family: 'Fraunces', serif; font-size: 19px; font-weight: 900; color: var(--purple);
+    line-height: 1.2; letter-spacing: -0.02em;
+  }
+  .card-num {
+    font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--purple-light);
+    padding: 3px 9px; border-radius: 12px; white-space: nowrap; flex-shrink: 0; margin-top: 3px;
+  }
+  .card-def { font-size: 13px; color: var(--ink-mid); line-height: 1.65; }
+  .card-use-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card-use { font-size: 11.5px; line-height: 1.55; padding: 8px 10px; border-radius: 8px; }
+  .card-use.good { background: #EDFBF3; color: #0E6630; border: 1px solid #B5EAC9; }
+  .card-use.bad { background: #FFF0F1; color: #8B1A1E; border: 1px solid #FFCDD0; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+    :root:not([data-theme="light"]) .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  }
+  :root[data-theme="dark"] .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+  :root[data-theme="dark"] .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  .card-use-label { font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+  .card-example {
+    background: var(--purple-light); border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0;
+    padding: 10px 12px; font-size: 12.5px; font-style: italic; color: var(--ink-mid); line-height: 1.6;
+  }
+  .card-tip { font-size: 11.5px; color: var(--ink-muted); padding-top: 6px; border-top: 1px solid var(--purple-border); line-height: 1.55; }
+  .card-tip strong { color: var(--purple); }
+
+  .bonus {
+    background: linear-gradient(135deg, #0F0A1E 0%, #1C1433 100%); border-radius: 20px;
+    padding: 48px 40px; margin-bottom: 48px; color: #fff;
+  }
+  .bonus h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 900; margin-bottom: 8px; color: #fff; }
+  .bonus-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; line-height: 1.6; }
+  .avoid-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 580px) { .avoid-grid { grid-template-columns: 1fr; } }
+  .avoid-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 18px; }
+  .avoid-term {
+    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: #F5A623;
+    margin-bottom: 5px;
+  }
+  .avoid-why { font-size: 12.5px; color: rgba(255,255,255,0.65); line-height: 1.55; margin-bottom: 6px; }
+  .avoid-instead { font-size: 12px; font-weight: 600; color: #72E6A4; }
+  .avoid-instead::before { content: 'Reveals: '; opacity: 0.6; font-weight: 400; }
+
+  .guide-footer { text-align: center; padding: 40px 24px; background: var(--white); border-radius: 20px; border: 1px solid var(--purple-border); }
+  .guide-footer h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: var(--ink); margin-bottom: 10px; }
+  .guide-footer p { color: var(--ink-muted); font-size: 14px; margin-bottom: 20px; }
+  .guide-footer a {
+    display: inline-block; background: linear-gradient(135deg, #5B3FD4, #7C5CFC); color: #fff;
+    font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 12px; text-decoration: none; transition: opacity 0.15s;
+  }
+  .guide-footer a:hover { opacity: 0.88; }
+  .guide-footer .brand { font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; color: var(--purple); margin-top: 20px; display: block; opacity: 0.7; }
+
+  @media print {
+    .print-bar { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .page { max-width: 100%; padding-bottom: 0; }
+    .cover { border-radius: 0; margin: 0 0 32px; page-break-after: avoid; }
+    .cards { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; border-color: #ddd; }
+    .bonus { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .category-header { page-break-after: avoid; }
+  }
+</style>
+
+<div class="print-bar">
+  <div><strong>40 Stakeholder and Boardroom Idioms Decoded</strong><span>by Eclatale</span></div>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <div class="cover">
+    <span class="cover-label">Free Guide · Eclatale</span>
+    <h1>40 Boardroom Idioms <em>decoded</em></h1>
+    <p class="cover-sub">In high-stakes rooms, what gets said and what gets meant are rarely the same sentence. Forty phrases executives and stakeholders actually use, what each one really signals, and how to respond when you hear it.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">📄 40 idioms decoded</div>
+      <div class="cover-meta-item">💡 Real boardroom examples</div>
+      <div class="cover-meta-item">🚫 Bonus section</div>
+    </div>
+    <span class="cover-logo">Eclatale</span>
+  </div>
+
+  <div class="intro">
+    <h2>How to use this guide</h2>
+    <p>The higher the stakes, the less directly people speak. A board member rarely says "I don't trust this plan." They say "I'd want more data before we go all in," and the meeting moves on as if nothing was said, when in fact the entire trajectory just shifted. Missing that signal costs you the room without you ever knowing you lost it.</p>
+    <p>This guide gives you <strong>40 phrases</strong> you'll hear in boardrooms, investor updates, and executive reviews. For each one: what it actually means, when it's the right diplomatic move to use it yourself, when it reads as evasive, a realistic example, and a tip that's usually about how to respond the moment you hear it directed at you.</p>
+    <p>At the end: <strong>8 phrases that reveal more than the speaker intends</strong>, the tells that show up right before someone says something they've been holding back.</p>
+  </div>
+
+  <div id="guide-content"></div>
+
+</div>
+
+<script>
+const GOOD_LABEL = 'Use it when';
+const BAD_LABEL = 'Watch for it when';
+
+const CATEGORIES = [
+  {
+    icon: '🤝',
+    title: `Diplomatic Disagreement`,
+    desc: `Phrases that mean "no" or "I disagree" without ever saying either word`,
+    color: 'var(--cat1)',
+    items: [
+      {
+        term: `I hear what you're saying`,
+        def: `A phrase that sounds like agreement but is almost always the opening line of a rebuttal. It acknowledges the point exists, not that it's accepted.`,
+        good: `When you genuinely need a beat before disagreeing, and want the room to know you listened first.`,
+        bad: `When you actually agree. If you agree, say so directly. Using this phrase to mean yes just trains people to distrust your yes.`,
+        example: `"I hear what you're saying about speed to market, but I think we're underestimating what a rushed launch costs us in year two."`,
+        tip: `The moment you hear this, expect a "but" within one sentence. Prepare your counter before it lands, not after.`
+      },
+      {
+        term: `That's one way to look at it`,
+        def: `A polite way of ranking your idea below others without saying so. It concedes your view is valid while quietly signaling it isn't the preferred one.`,
+        good: `Rarely worth using yourself. If you find yourself reaching for it, you likely have a sharper objection you're avoiding.`,
+        bad: `When the person hearing it needs a real answer to act on. Vague dismissal wastes their time more than a direct no would.`,
+        example: `"That's one way to look at it. Let's also hear how the finance team is reading the same numbers."`,
+        tip: `If someone says this to your idea, ask directly: "What's the other way you're seeing it?" Force the real objection into the open.`
+      },
+      {
+        term: `Let's play devil's advocate`,
+        def: `A framing device that lets someone raise a real objection without owning it personally. The objection is real; the distancing is the tell.`,
+        good: `When you want to stress-test an idea without the discussion becoming personal or defensive.`,
+        bad: `When it's used repeatedly by the same person. At that point it's not an exercise, it's their actual position, just unclaimed.`,
+        example: `"Playing devil's advocate for a second: what happens to retention if we raise prices before the product improvements ship?"`,
+        tip: `Track who reaches for this phrase most. It usually maps directly to who has the deepest reservations in the room.`
+      },
+      {
+        term: `I'm not sure that's the hill we want to die on`,
+        def: `A signal that the speaker thinks the fight isn't worth the political cost, regardless of whether the underlying point is correct.`,
+        good: `When genuinely triaging battles, helping a colleague avoid burning capital on something that won't move the outcome.`,
+        bad: `As a way to shut down a legitimate concern just because raising it is uncomfortable for the speaker.`,
+        example: `"You might be right about the vendor contract, but with the board meeting tomorrow, that's not the hill we want to die on today."`,
+        tip: `If you hear this and you're certain you're right, ask for a specific time to revisit it. Don't let "not now" quietly become "never."`
+      },
+      {
+        term: `With respect...`,
+        def: `A verbal flag that disagreement, often sharp disagreement, is about to follow. The phrase buys social cover for what comes next.`,
+        good: `When you need to challenge someone more senior and want the room to register the challenge as respectful, not personal.`,
+        bad: `When overused. After the third "with respect" in a meeting, the phrase stops softening anything and starts sounding performative.`,
+        example: `"With respect, I don't think the timeline in this deck reflects what engineering told us last week."`,
+        tip: `Whoever says this next is about to name the real problem in the room. Listen closely to the sentence right after it.`
+      },
+      {
+        term: `I want to make sure we've considered all angles`,
+        def: `Often a polished stall before an objection, framed as diligence rather than resistance.`,
+        good: `When a decision genuinely hasn't been examined from every relevant stakeholder's perspective.`,
+        bad: `When it's used to delay a decision the speaker has already privately decided to oppose.`,
+        example: `"Before we lock the budget, I want to make sure we've considered all angles, especially the customer support load this creates."`,
+        tip: `Ask directly: "Which angle specifically are you worried we've missed?" It converts a vague stall into an actionable concern.`
+      },
+      {
+        term: `That's certainly one option`,
+        def: `A ranking disguised as neutrality. It confirms your proposal is on the table while implying it isn't the strongest one there.`,
+        good: `When genuinely comparing multiple viable paths and you haven't formed a preference yet.`,
+        bad: `When you've already decided against the option. Say so, and say why, rather than letting the person guess.`,
+        example: `"Acquiring the smaller competitor is certainly one option. Let's put it next to the two we've already modeled."`,
+        tip: `If your idea gets this response, ask what would need to be true for it to become the preferred option, not just a listed one.`
+      },
+      {
+        term: `I'd push back on that a little`,
+        def: `A softened but genuine disagreement. The word "little" is doing diplomatic work; the pushback itself is usually not little at all.`,
+        good: `When disagreeing with a peer or senior colleague and you want the tone to stay collaborative rather than confrontational.`,
+        bad: `When the disagreement is significant and the softening ends up burying the actual size of the concern.`,
+        example: `"I'd push back on that a little. The churn data from Q2 tells a different story than the one in this slide."`,
+        tip: `If the stakes are high, follow the soft opener with a specific, quantified reason. Don't let the diplomacy dilute the substance.`
+      },
+      {
+        term: `Help me understand...`,
+        def: `Often a request to justify a decision the speaker already doubts, framed as curiosity rather than challenge.`,
+        good: `When you're genuinely missing context and want to invite explanation without sounding accusatory.`,
+        bad: `When used as a trap: the speaker already has an answer in mind and is waiting for you to fail to give it.`,
+        example: `"Help me understand why we're prioritizing the enterprise segment when our last three deals came from mid-market."`,
+        tip: `Answer the literal question first, directly and with data, before addressing the skepticism underneath it.`
+      },
+      {
+        term: `I love the ambition, but...`,
+        def: `Praise offered specifically to soften the disagreement that follows. The compliment is genuine about intent, not about the plan itself.`,
+        good: `When you want to affirm someone's effort or vision while still redirecting the actual approach.`,
+        bad: `When the praise is so generic it reads as a formula, making the "but" land harder, not softer.`,
+        example: `"I love the ambition behind the global rollout, but I think we need a beachhead market before we spread this thin."`,
+        tip: `Whatever follows "but" is the entire message. Treat the praise as a courtesy, not the substance to respond to.`
+      }
+    ]
+  },
+  {
+    icon: '⚠️',
+    title: `Coded Caution`,
+    desc: `Phrases that signal risk or hesitation without naming the fear directly`,
+    color: 'var(--cat2)',
+    items: [
+      {
+        term: `Let's derisk this before we commit`,
+        def: `A request to reduce uncertainty before fully greenlighting a decision, often signaling real doubt about the plan's odds.`,
+        good: `When a large bet genuinely has an identifiable, addressable source of risk worth reducing first.`,
+        bad: `As an indefinite stall. "Derisking" without a defined end point can delay a decision forever.`,
+        example: `"Let's derisk this before we commit the full budget. A two-city pilot will tell us if the model works before we scale it."`,
+        tip: `Ask for the specific derisking step and its deadline. Without both, the request is a delay, not a plan.`
+      },
+      {
+        term: `I want to flag a concern`,
+        def: `A formal, procedural way of raising a risk on the record, often used when the speaker wants the concern documented regardless of the outcome.`,
+        good: `When you have a genuine risk to surface and want it acknowledged before a decision proceeds.`,
+        bad: `When used purely to protect yourself from blame later, without any intent to actually resolve the concern now.`,
+        example: `"I want to flag a concern about the vendor's uptime history before we sign a three-year contract."`,
+        tip: `When you hear this, ask what resolution would satisfy the concern. A flag without a resolution path just sits there.`
+      },
+      {
+        term: `We should pressure-test this`,
+        def: `An invitation to scrutinize a plan under harder conditions before approving it, implying the current version hasn't been challenged enough.`,
+        good: `Before a high-cost, hard-to-reverse decision where an untested assumption could be expensive.`,
+        bad: `When used repeatedly on the same plan to avoid ever reaching a decision.`,
+        example: `"Before we present this to the board, let's pressure-test the revenue assumptions against a slower adoption curve."`,
+        tip: `Name the specific assumption to pressure-test. A vague request to "pressure-test everything" produces no useful output.`
+      },
+      {
+        term: `That feels like a bet, not a plan`,
+        def: `A direct signal that the speaker sees too much uncertainty and not enough structure to support the level of confidence being shown.`,
+        good: `When a proposal genuinely rests more on hope than on evidence, and the room needs that distinction named.`,
+        bad: `As a way to dismiss any decision made under genuine, irreducible uncertainty. Some bets are the right call.`,
+        example: `"Launching in three new countries simultaneously feels like a bet, not a plan. What's the sequencing logic?"`,
+        tip: `If this lands on your proposal, respond with the specific evidence behind it, not just reassurance that it will work.`
+      },
+      {
+        term: `What's our downside if this doesn't work?`,
+        def: `A question that probes risk tolerance directly, asking the room to name the cost of failure before approving the upside case.`,
+        good: `Before committing significant budget or reputation to an initiative with real failure modes.`,
+        bad: `When asked reflexively on every proposal regardless of size, which trains teams to avoid any risk at all.`,
+        example: `"What's our downside if the new pricing model doesn't work? I want that number next to the upside projection."`,
+        tip: `Come prepared with a real downside number before you're asked. Not having one signals you haven't stress-tested your own plan.`
+      },
+      {
+        term: `I'd want more data before we go all in`,
+        def: `Hesitation framed as diligence. It's a real request, but it's also a way of avoiding commitment without directly opposing the idea.`,
+        good: `When the current evidence genuinely doesn't support the size of the decision being proposed.`,
+        bad: `As a permanent bar that can never be cleared, since more data can always theoretically exist.`,
+        example: `"I'd want more data before we go all in on the new channel. Can we run it at 10 percent of the budget for a month first?"`,
+        tip: `Ask exactly what data, and what threshold would satisfy it. Otherwise the request has no finish line.`
+      },
+      {
+        term: `Let's not boil the ocean here`,
+        def: `A caution against tackling a problem so broadly that the effort becomes unmanageable, often raised when scope is quietly expanding.`,
+        good: `When a project's scope has genuinely outgrown what the team or timeline can deliver.`,
+        bad: `To shut down ambitious thinking early, before anyone has actually tested whether the scope is realistic.`,
+        example: `"The brief was customer experience broadly. Let's not boil the ocean. What's the one moment that determines whether someone stays or leaves?"`,
+        tip: `If you hear this, propose the smaller scope yourself before someone else defines it for you.`
+      },
+      {
+        term: `This feels premature`,
+        def: `A timing objection, often used when the underlying idea isn't opposed but the sequencing or readiness is in question.`,
+        good: `When a decision genuinely depends on information, approvals, or milestones that haven't happened yet.`,
+        bad: `As an indirect way of opposing an idea entirely while avoiding the harder conversation about why.`,
+        example: `"Announcing the partnership before legal has signed off feels premature. Let's align the timing."`,
+        tip: `Ask what specifically needs to happen first. If the answer is vague, the objection may be about more than timing.`
+      },
+      {
+        term: `I'm cautiously optimistic`,
+        def: `A hedge that usually carries more caution than optimism. It commits to almost nothing while sounding constructive.`,
+        good: `When your actual confidence level genuinely sits in the middle, and false certainty in either direction would mislead the room.`,
+        bad: `As a default answer used regardless of your real view, which erodes the value of the phrase over time.`,
+        example: `"I'm cautiously optimistic about the renewal numbers, but I want to see one more billing cycle before we call it a trend."`,
+        tip: `Push past the phrase and ask for the specific number or event that would move the speaker to genuine optimism.`
+      },
+      {
+        term: `Let's keep our powder dry`,
+        def: `A recommendation to hold resources or commitments back for a better moment, often signaling risk aversion about current conditions.`,
+        good: `When market or internal conditions are genuinely volatile enough that flexibility has real value.`,
+        bad: `As a permanent posture that prevents any decisive action, regardless of how conditions change.`,
+        example: `"With the acquisition rumors still unconfirmed, let's keep our powder dry on the counteroffer until we know more."`,
+        tip: `Set a specific trigger for when the powder gets used. Otherwise caution quietly becomes indefinite inaction.`
+      }
+    ]
+  },
+  {
+    icon: '👔',
+    title: `Authority and Decision Signals`,
+    desc: `Phrases that reveal who actually holds the power to decide in the room`,
+    color: 'var(--cat3)',
+    items: [
+      {
+        term: `Let me take that back to my team`,
+        def: `Often means the speaker themselves needs more time or cover, not that a team meeting is actually required. It reasserts control over the timeline.`,
+        good: `When a decision genuinely requires input from people who aren't in the room.`,
+        bad: `As a stalling tactic when the speaker has full authority to decide on the spot but wants time regardless.`,
+        example: `"Let me take the revised terms back to my team and I'll follow up by Friday with a decision."`,
+        tip: `Ask directly: "Is this your decision, or does it need approval above you?" The answer changes how you follow up.`
+      },
+      {
+        term: `This needs to go through the right channels`,
+        def: `A gatekeeping phrase that reasserts process, often used to slow down or redirect a request that bypassed the expected hierarchy.`,
+        good: `When a genuine approval process exists and skipping it would create real organizational or legal risk.`,
+        bad: `As a way to protect turf or slow a proposal the speaker simply doesn't want to see succeed.`,
+        example: `"I appreciate you bringing this to me directly, but budget requests like this need to go through the right channels first."`,
+        tip: `Ask what the right channel actually is, by name. Vague process objections often can't survive a specific question.`
+      },
+      {
+        term: `I'll need to socialize this internally`,
+        def: `Signals that the decision isn't the speaker's to make alone, or is being used to buy time before committing to a position.`,
+        good: `Before a major initiative, when surfacing objections early is genuinely cheaper than after a formal proposal.`,
+        bad: `When it becomes a permanent holding pattern that never converts into an actual decision.`,
+        example: `"Before I commit to the partnership terms, I need to socialize this internally with two other executives."`,
+        tip: `Ask for a specific date when socializing will be complete. An open-ended version of this phrase rarely resolves itself.`
+      },
+      {
+        term: `Ultimately, this is [name]'s call`,
+        def: `Assigns decision ownership explicitly, sometimes accurately and sometimes as a way to deflect responsibility for an unpopular outcome.`,
+        good: `When genuinely clarifying who holds final authority, which prevents wasted effort persuading the wrong person.`,
+        bad: `When used to avoid taking a position the speaker actually holds but doesn't want attributed to them.`,
+        example: `"We can debate the pricing model all we want, but ultimately, this is the CFO's call."`,
+        tip: `If you hear this, redirect your energy immediately toward the named decision-maker rather than continuing to persuade the room.`
+      },
+      {
+        term: `Let's get alignment before we move`,
+        def: `Often means the speaker doesn't yet have the buy-in they need and won't act without it, regardless of their own private view.`,
+        good: `When a decision genuinely affects multiple teams whose cooperation is required to execute it well.`,
+        bad: `As an indefinite precondition that never gets satisfied because no one defines what alignment looks like.`,
+        example: `"Let's get alignment with sales and product before we announce the pricing change externally."`,
+        tip: `Name the specific people whose alignment is required and a date by which you'll have it. Otherwise it's a stall with a nicer name.`
+      },
+      {
+        term: `I don't want to get ahead of the board`,
+        def: `A direct signal that real decision-making power sits above the speaker, regardless of how senior they appear in the room.`,
+        good: `When accurately describing genuine governance limits on what can be committed to without board approval.`,
+        bad: `As a convenient excuse to avoid committing to something the speaker could actually approve independently.`,
+        example: `"I like the acquisition thesis, but I don't want to get ahead of the board before they've seen the full diligence."`,
+        tip: `Ask what specifically the board needs to see, and offer to help prepare it. It moves the timeline forward instead of just waiting.`
+      },
+      {
+        term: `That's above my pay grade`,
+        def: `An explicit, informal admission that the decision sits outside the speaker's authority, often used to close a conversation quickly.`,
+        good: `When honestly redirecting a request to someone with the actual authority to answer it.`,
+        bad: `As a deflection from a decision the speaker could reasonably weigh in on but doesn't want to own.`,
+        example: `"Whether we open a European office is above my pay grade. That's a conversation for the CEO and the board."`,
+        tip: `Take it literally and ask who the right person is. Don't let the phrase end the conversation; let it redirect it.`
+      },
+      {
+        term: `Let me loop in the right stakeholders`,
+        def: `Often signals that the speaker isn't the final decision-maker, even if the conversation has proceeded as though they were.`,
+        good: `When a decision genuinely has downstream effects on people who haven't yet been part of the conversation.`,
+        bad: `When it's used to quietly widen the group until no single person is accountable for the outcome.`,
+        example: `"Before we finalize the vendor, let me loop in the security team, since this touches customer data."`,
+        tip: `Ask who specifically, and confirm they're the last stakeholder needed. Open-ended looping-in can go on indefinitely.`
+      },
+      {
+        term: `We'll take it under advisement`,
+        def: `A formal, non-committal way of acknowledging a request without agreeing to act on it, often the final word in a conversation.`,
+        good: `When genuinely still deciding and unwilling to overpromise before a real decision is made.`,
+        bad: `As a polite way of saying no without the discomfort of saying no directly.`,
+        example: `"We'll take your proposal for the expanded budget under advisement and follow up after the planning cycle."`,
+        tip: `If you hear this and need a real answer, ask for a specific date by which advisement turns into a decision.`
+      },
+      {
+        term: `I want [name] to weigh in before we finalize`,
+        def: `Can genuinely widen good judgment, or can be used to share, and therefore dilute, accountability for a risky call.`,
+        good: `When the additional person has genuine expertise or context the decision needs.`,
+        bad: `When the person being added has no real relevance, and their presence is really about spreading blame if things go wrong.`,
+        example: `"Before we finalize the layoffs, I want legal to weigh in on the timeline and the notice requirements."`,
+        tip: `Ask what specific expertise the added person brings. If the answer is unclear, the real motive might be shared risk, not better judgment.`
+      }
+    ]
+  },
+  {
+    icon: '⏳',
+    title: `Deferral and Stalling`,
+    desc: `Phrases that buy time or avoid commitment while sounding entirely reasonable`,
+    color: 'var(--cat4)',
+    items: [
+      {
+        term: `Let's revisit this next quarter`,
+        def: `A polite, calendar-based way of shelving a topic, often used when the idea isn't rejected outright but also isn't a current priority.`,
+        good: `When the timing genuinely depends on information or resources that will exist by next quarter.`,
+        bad: `As a repeatable delay tactic that pushes the same conversation indefinitely, quarter after quarter.`,
+        example: `"The rebrand is a good idea, but let's revisit this next quarter once the product launch is behind us."`,
+        tip: `Put a specific date on the calendar before the meeting ends. "Next quarter" without a date rarely survives to next quarter.`
+      },
+      {
+        term: `Let's put a pin in that`,
+        def: `A softer, more casual version of tabling a topic, implying it will be picked back up, though often without a defined mechanism to ensure it is.`,
+        good: `In a fast-moving meeting where a tangent genuinely needs to be set aside to protect the main agenda.`,
+        bad: `When used to avoid a topic the speaker would rather not address at all.`,
+        example: `"Let's put a pin in the org structure question and get back to it after we've settled the budget."`,
+        tip: `Write down what was pinned and where, literally. Unwritten pins tend to disappear from the agenda entirely.`
+      },
+      {
+        term: `I want to give this the time it deserves`,
+        def: `Frames a delay as respect for the topic's importance, which can be genuine or can be a polished way of avoiding it now.`,
+        good: `When a topic genuinely can't get a fair hearing in the time remaining and rushing it would produce a worse decision.`,
+        bad: `When "the time it deserves" never actually arrives on a calendar.`,
+        example: `"The succession plan deserves more than the last ten minutes of this meeting. I want to give it the time it deserves next week."`,
+        tip: `Book the follow-up time in the same meeting where this is said. Good intentions rarely survive without a placeholder on the calendar.`
+      },
+      {
+        term: `We'll circle back once we have more clarity`,
+        def: `An open-ended deferral that sounds like a commitment but names no specific trigger for when clarity will actually arrive.`,
+        good: `When a decision genuinely depends on an external event, like a regulatory ruling or a competitor's move, that hasn't happened yet.`,
+        bad: `When "more clarity" is undefined and could describe almost any future moment, making the promise unfalsifiable.`,
+        example: `"We'll circle back on the office expansion once we have more clarity on next year's remote work policy."`,
+        tip: `Ask what specifically would count as clarity. A vague answer means the topic may not come back on its own.`
+      },
+      {
+        term: `Let's park that for the follow-up`,
+        def: `A meeting-management phrase that defers a topic to a future, often unscheduled, conversation to keep the current agenda on track.`,
+        good: `When a genuinely important but tangential topic threatens to derail the meeting's primary purpose.`,
+        bad: `When there is no actual follow-up meeting scheduled, making the parking permanent rather than temporary.`,
+        example: `"Great question about the international rollout. Let's park that for the follow-up so we can finish the Q3 review."`,
+        tip: `Before the meeting ends, confirm the follow-up exists on a calendar. If it doesn't, offer to schedule it yourself.`
+      },
+      {
+        term: `I don't want to rush this`,
+        def: `Frames delay as diligence and care, which is often true, but can also be a way to avoid a decision the speaker isn't ready to make.`,
+        good: `When the decision is genuinely high-stakes and hard to reverse, where speed would trade real quality for convenience.`,
+        bad: `On decisions that are low-risk and easily reversible, where the caution costs more than the mistake it's avoiding.`,
+        example: `"I don't want to rush this hire. Let's do one more round of interviews before we make an offer."`,
+        tip: `Ask what specifically would resolve the caution. If the answer is vague, the hesitation may be about something unstated.`
+      },
+      {
+        term: `We're still gathering input`,
+        def: `An open-ended data-collection phrase that can justify almost indefinite delay, since more input can always theoretically be gathered.`,
+        good: `Early in a genuinely complex decision where key perspectives haven't yet been heard.`,
+        bad: `When used well past the point where enough input already exists to decide.`,
+        example: `"On the remote work policy, we're still gathering input from department heads before finalizing anything."`,
+        tip: `Ask who specifically hasn't weighed in yet, and by when they will. It turns an open loop into a closing one.`
+      },
+      {
+        term: `Let's see how Q3 shakes out`,
+        def: `Defers a decision to a future data point, which can be sound strategy or can be a way to avoid committing under current uncertainty.`,
+        good: `When a genuinely relevant metric will resolve meaningful uncertainty by the time it arrives.`,
+        bad: `When used repeatedly across quarters, so the decision never actually gets made once the data exists.`,
+        example: `"Let's see how Q3 shakes out on renewal rates before we commit to the expanded customer success headcount."`,
+        tip: `Define in advance what result would trigger action. Otherwise Q3 becomes Q4, and the decision keeps sliding.`
+      },
+      {
+        term: `I want to sit with this a bit longer`,
+        def: `A personal request for reflection time that can delay a group decision, sometimes appropriately and sometimes as a stall.`,
+        good: `When a decision genuinely benefits from a moment of individual reflection before committing publicly.`,
+        bad: `When used repeatedly to avoid ever landing on a position, leaving the group waiting indefinitely.`,
+        example: `"That's a big shift in strategy. I want to sit with this a bit longer before I give you my full reaction."`,
+        tip: `Ask for a specific time when you'll hear back. Reflection without a deadline can extend far past what the topic requires.`
+      },
+      {
+        term: `Let's not get ahead of ourselves`,
+        def: `A caution against premature commitment, often used to slow enthusiasm before it converts into an actual decision.`,
+        good: `When genuine excitement in the room is outpacing the evidence needed to justify a commitment.`,
+        bad: `As a reflexive brake on any momentum, regardless of whether the underlying case is actually strong.`,
+        example: `"The pilot results look great, but let's not get ahead of ourselves before we've seen a full quarter of data."`,
+        tip: `Ask what specific milestone would justify moving forward. It converts caution into a concrete, trackable next step.`
+      }
+    ]
+  }
+];
+
+const BONUS_HEADING = `🚫 Bonus: 8 Phrases That Reveal More Than the Speaker Intends`;
+const BONUS_SUB = `Certain phrases function as verbal tells. The words right after them usually carry more honesty than anything said in the ten minutes before.`;
+const AVOID = [
+  { term: `No offense, but...`, why: `The disclaimer exists because the speaker already knows what follows will land as offensive.`, instead: `The sentence right after this phrase is usually the most candid thing said in the meeting.` },
+  { term: `I'm just thinking out loud here`, why: `Often a trial balloon: an idea the speaker wants to test the room's reaction to before formally committing to it.`, instead: `Treat it as a real proposal being quietly floated, not a throwaway comment.` },
+  { term: `To be fair...`, why: `Frequently precedes an uncomfortable truth the speaker feels obligated to soften before stating it plainly.`, instead: `What follows is usually the most balanced, and most honest, assessment in the conversation.` },
+  { term: `I could be wrong, but...`, why: `Often precedes a strongly held, well-reasoned view. The hedge is false humility, not real uncertainty.`, instead: `Give the point that follows real weight. The speaker is usually more confident than the framing suggests.` },
+  { term: `Not to be that person, but...`, why: `The speaker already knows the comment will land poorly and is naming that risk before taking it anyway.`, instead: `Whatever follows is a point they judged important enough to raise despite the social cost.` },
+  { term: `Just playing devil's advocate here`, why: `Sometimes a genuine exercise, but often reveals a real doubt the speaker isn't ready to claim as their own position.`, instead: `Notice if the same person reaches for this repeatedly. That pattern usually points to a real, unstated concern.` },
+  { term: `I don't mean to derail, but...`, why: `The speaker is often about to derail the conversation intentionally, because the tangent matters more to them than staying on track.`, instead: `Give the topic genuine attention rather than treating it as a minor interruption.` },
+  { term: `This might be a dumb question, but...`, why: `Frequently the sharpest, most useful question in the room, undercut in advance so the asker feels safer raising it.`, instead: `Answer it seriously. It's rarely as simple as the framing suggests.` }
+];
+
+const container = document.getElementById('guide-content');
+const TOTAL = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+let html = '';
+let runningIndex = 0;
+
+CATEGORIES.forEach(cat => {
+  html += `
+    <div class="category-header" style="background:${cat.color}">
+      <span class="cat-icon">${cat.icon}</span>
+      <div><div class="cat-title">${cat.title}</div><div class="cat-desc">${cat.desc}</div></div>
+      <span class="cat-count">${cat.items.length} items</span>
+    </div>
+    <div class="cards">
+  `;
+  cat.items.forEach(it => {
+    runningIndex++;
+    const numStr = String(runningIndex).padStart(2, '0');
+    html += `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-term">${it.term}</div>
+          <span class="card-num">${numStr} / ${TOTAL}</span>
+        </div>
+        <p class="card-def">${it.def}</p>
+        <div class="card-use-row">
+          <div class="card-use good"><span class="card-use-label">${GOOD_LABEL}</span>${it.good}</div>
+          <div class="card-use bad"><span class="card-use-label">${BAD_LABEL}</span>${it.bad}</div>
+        </div>
+        <div class="card-example">${it.example}</div>
+        <p class="card-tip"><strong>Power tip:</strong> ${it.tip}</p>
+      </div>
+    `;
+  });
+  html += '</div>';
+});
+
+html += `
+  <div class="bonus">
+    <h2>${BONUS_HEADING}</h2>
+    <p class="bonus-sub">${BONUS_SUB}</p>
+    <div class="avoid-grid">
+`;
+AVOID.forEach(a => {
+  html += `
+    <div class="avoid-card">
+      <div class="avoid-term">${a.term}</div>
+      <p class="avoid-why">${a.why}</p>
+      <p class="avoid-instead">${a.instead}</p>
+    </div>
+  `;
+});
+html += `
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <h3>Build the brand that backs you up</h3>
+    <p>Eclatale is the AI personal brand OS for LinkedIn: post ideas, brand score, voice matching, and more.</p>
+    <a href="https://eclatale.com/signup">Start free, no credit card</a>
+    <span class="brand">eclatale.com</span>
+  </div>
+`;
+
+container.innerHTML = html;
+</script>

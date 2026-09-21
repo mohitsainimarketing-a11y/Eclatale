@@ -1,0 +1,496 @@
+<title>15 Data Storytelling Chart Types</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --purple: #7C5CFC;
+    --purple-dark: #5B3FD4;
+    --purple-light: #F0ECFF;
+    --purple-mid: #E3DAFF;
+    --purple-border: #D4C8FF;
+    --ink: #0F0A1E;
+    --ink-mid: #3D3557;
+    --ink-muted: #7A6E94;
+    --ground: #F8F7FC;
+    --white: #FFFFFF;
+    --gold: #F5A623;
+    --green: #27B469;
+    --red: #E5434B;
+    --cat1: #EDE8FF;
+    --cat2: #E8F4FF;
+    --cat3: #E8FFF4;
+    --cat4: #FFF5E8;
+    --cat5: #FFE8EE;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --purple: #9B7FFF;
+      --purple-dark: #7C5CFC;
+      --purple-light: #1E1633;
+      --purple-mid: #2A2048;
+      --purple-border: #3D3066;
+      --ink: #F0ECFF;
+      --ink-mid: #C4BAE8;
+      --ink-muted: #8B80AA;
+      --ground: #0F0A1E;
+      --white: #1A1430;
+      --cat1: #1E1A33;
+      --cat2: #141E2E;
+      --cat3: #0E1E19;
+      --cat4: #201A0E;
+      --cat5: #200E14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --purple: #9B7FFF;
+    --purple-dark: #7C5CFC;
+    --purple-light: #1E1633;
+    --purple-mid: #2A2048;
+    --purple-border: #3D3066;
+    --ink: #F0ECFF;
+    --ink-mid: #C4BAE8;
+    --ink-muted: #8B80AA;
+    --ground: #0F0A1E;
+    --white: #1A1430;
+    --cat1: #1E1A33;
+    --cat2: #141E2E;
+    --cat3: #0E1E19;
+    --cat4: #201A0E;
+    --cat5: #200E14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+
+  .print-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--purple); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; font-size: 13px; font-weight: 600; gap: 12px;
+  }
+  .print-bar span { opacity: 0.85; font-weight: 400; }
+  .print-btn {
+    background: #fff; color: var(--purple); border: none; border-radius: 8px;
+    padding: 7px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: opacity 0.15s;
+  }
+  .print-btn:hover { opacity: 0.85; }
+
+  .page { max-width: 880px; margin: 0 auto; padding-bottom: 80px; }
+
+  .cover {
+    background: linear-gradient(135deg, #5B3FD4 0%, #7C5CFC 55%, #A882FF 100%);
+    border-radius: 20px; padding: 64px 48px 56px; margin: 28px 0 48px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,0.07);
+  }
+  .cover::after {
+    content: ''; position: absolute; bottom: -60px; left: -40px;
+    width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.05);
+  }
+  .cover-label {
+    display: inline-block; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: 'Fraunces', Georgia, serif; font-size: clamp(36px, 6vw, 60px);
+    font-weight: 900; color: #fff; line-height: 1.08; text-wrap: balance;
+    margin-bottom: 20px; position: relative; z-index: 1;
+  }
+  .cover h1 em { font-style: italic; font-weight: 300; opacity: 0.9; }
+  .cover-sub {
+    color: rgba(255,255,255,0.82); font-size: 16px; line-height: 1.6;
+    max-width: 520px; margin-bottom: 36px; position: relative; z-index: 1;
+  }
+  .cover-meta { display: flex; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .cover-meta-item { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500; }
+  .cover-logo {
+    position: absolute; bottom: 28px; right: 40px; font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 22px; color: rgba(255,255,255,0.5); z-index: 1; letter-spacing: -0.02em;
+  }
+
+  .intro {
+    background: var(--white); border-radius: 16px; padding: 36px 40px;
+    margin-bottom: 48px; border: 1px solid var(--purple-border);
+  }
+  .intro h2 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+  .intro p { color: var(--ink-mid); font-size: 14.5px; line-height: 1.75; margin-bottom: 12px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--ink); }
+
+  .category-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    padding: 18px 24px; border-radius: 14px; border: 1px solid var(--purple-border);
+  }
+  .cat-icon { font-size: 28px; line-height: 1; }
+  .cat-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .cat-desc { font-size: 12.5px; color: var(--ink-muted); }
+  .cat-count {
+    margin-left: auto; font-size: 12px; font-weight: 700; color: var(--purple);
+    background: var(--purple-light); padding: 4px 12px; border-radius: 20px; white-space: nowrap;
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 48px; }
+  @media (max-width: 580px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--white); border: 1px solid var(--purple-border); border-radius: 16px;
+    padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-term {
+    font-family: 'Fraunces', serif; font-size: 19px; font-weight: 900; color: var(--purple);
+    line-height: 1.2; letter-spacing: -0.02em;
+  }
+  .card-num {
+    font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--purple-light);
+    padding: 3px 9px; border-radius: 12px; white-space: nowrap; flex-shrink: 0; margin-top: 3px;
+  }
+  .card-def { font-size: 13px; color: var(--ink-mid); line-height: 1.65; }
+  .card-use-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card-use { font-size: 11.5px; line-height: 1.55; padding: 8px 10px; border-radius: 8px; }
+  .card-use.good { background: #EDFBF3; color: #0E6630; border: 1px solid #B5EAC9; }
+  .card-use.bad { background: #FFF0F1; color: #8B1A1E; border: 1px solid #FFCDD0; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+    :root:not([data-theme="light"]) .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  }
+  :root[data-theme="dark"] .card-use.good { background: #0E2518; color: #5DD68A; border-color: #1A4A2C; }
+  :root[data-theme="dark"] .card-use.bad { background: #25100E; color: #F08585; border-color: #4A1A1A; }
+  .card-use-label { font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+  .card-example {
+    background: var(--purple-light); border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0;
+    padding: 10px 12px; font-size: 12.5px; font-style: italic; color: var(--ink-mid); line-height: 1.6;
+  }
+  .card-tip { font-size: 11.5px; color: var(--ink-muted); padding-top: 6px; border-top: 1px solid var(--purple-border); line-height: 1.55; }
+  .card-tip strong { color: var(--purple); }
+
+  .bonus {
+    background: linear-gradient(135deg, #0F0A1E 0%, #1C1433 100%); border-radius: 20px;
+    padding: 48px 40px; margin-bottom: 48px; color: #fff;
+  }
+  .bonus h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 900; margin-bottom: 8px; color: #fff; }
+  .bonus-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; line-height: 1.6; }
+  .avoid-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 580px) { .avoid-grid { grid-template-columns: 1fr; } }
+  .avoid-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 18px; }
+  .avoid-term {
+    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: #F5A623;
+    margin-bottom: 5px; text-decoration: line-through; text-decoration-color: rgba(245,166,35,0.4);
+  }
+  .avoid-why { font-size: 12.5px; color: rgba(255,255,255,0.65); line-height: 1.55; margin-bottom: 6px; }
+  .avoid-instead { font-size: 12px; font-weight: 600; color: #72E6A4; }
+  .avoid-instead::before { content: 'Instead: '; opacity: 0.6; font-weight: 400; }
+
+  .guide-footer { text-align: center; padding: 40px 24px; background: var(--white); border-radius: 20px; border: 1px solid var(--purple-border); }
+  .guide-footer h3 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: var(--ink); margin-bottom: 10px; }
+  .guide-footer p { color: var(--ink-muted); font-size: 14px; margin-bottom: 20px; }
+  .guide-footer a {
+    display: inline-block; background: linear-gradient(135deg, #5B3FD4, #7C5CFC); color: #fff;
+    font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 12px; text-decoration: none; transition: opacity 0.15s;
+  }
+  .guide-footer a:hover { opacity: 0.88; }
+  .guide-footer .brand { font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; color: var(--purple); margin-top: 20px; display: block; opacity: 0.7; }
+
+  @media print {
+    .print-bar { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .page { max-width: 100%; padding-bottom: 0; }
+    .cover { border-radius: 0; margin: 0 0 32px; page-break-after: avoid; }
+    .cards { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; border-color: #ddd; }
+    .bonus { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .category-header { page-break-after: avoid; }
+  }
+</style>
+
+<div class="print-bar">
+  <div><strong>15 Data Storytelling Chart Types</strong><span>by Eclatale</span></div>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <div class="cover">
+    <span class="cover-label">Free Guide · Eclatale</span>
+    <h1>15 Chart Types <em>and when to use each</em></h1>
+    <p class="cover-sub">
+      Most decks default to the same bar chart for every claim. The right chart makes an argument
+      before anyone reads a word. The wrong one buries it. This guide pairs each chart type with
+      the exact data shape it fits and the moment it misleads.
+    </p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">📄 15 chart types defined</div>
+      <div class="cover-meta-item">💡 Real dataset examples</div>
+      <div class="cover-meta-item">🚫 8 mistakes to avoid</div>
+    </div>
+    <span class="cover-logo">Eclatale</span>
+  </div>
+
+  <div class="intro">
+    <h2>How to use this guide</h2>
+    <p>
+      A chart is an argument, not a decoration. It tells the reader what to compare, what changed,
+      and what matters most in a dataset before they process a single number. Pick the wrong chart
+      and the argument gets lost, or worse, it tells the wrong story entirely.
+    </p>
+    <p>
+      This guide covers <strong>15 chart types across three families</strong>: comparison charts (how
+      things stack up against each other), change charts (how something moved over time), and
+      relationship charts (how two or more variables interact). Each entry names the data shape
+      the chart needs, when it is the right pick, when it misleads, a concrete example, and one
+      tip for using it well.
+    </p>
+    <p>
+      The bonus section at the end covers <strong>8 chart mistakes</strong> that quietly make correct
+      data look wrong: the kind of thing that gets caught in a meeting, not before it.
+    </p>
+  </div>
+
+  <div id="guide-content"></div>
+
+</div>
+
+<script>
+const GOOD_LABEL = '✓ Best for';
+const BAD_LABEL = '✗ Avoid when';
+
+const CATEGORIES = [
+  {
+    icon: '📊',
+    title: `Comparison Charts`,
+    desc: `Showing how discrete categories stack up against each other`,
+    color: 'var(--cat1)',
+    items: [
+      {
+        term: `Bar Chart`,
+        def: `Horizontal or vertical bars comparing a single metric across categories. The default chart for a reason: it is the easiest one for a reader to decode correctly.`,
+        good: `Comparing 3 to 10 categories on one clear metric, like revenue by region.`,
+        bad: `More than about 12 categories, where bars become a wall of noise instead of a comparison.`,
+        example: `A bar chart showing Q3 revenue by region: North America at $4.2M, Europe at $2.8M, APAC at $1.1M.`,
+        tip: `Sort the bars by value, not alphabetically. A sorted bar chart reads its own conclusion; an alphabetical one makes the reader do the ranking themselves.`
+      },
+      {
+        term: `Grouped Bar Chart`,
+        def: `Clusters of bars, one cluster per category, comparing two or three sub-metrics side by side within each cluster.`,
+        good: `Comparing the same set of categories across two conditions, like this year versus last year.`,
+        bad: `More than three bars per cluster. At that point a small multiple or a table reads more clearly.`,
+        example: `A grouped bar chart comparing signups this quarter versus last quarter across four marketing channels.`,
+        tip: `Keep the color for each sub-metric consistent across every cluster. Reassigning color per cluster forces the reader to relearn the legend on every group.`
+      },
+      {
+        term: `Bullet Chart`,
+        def: `A single bar showing actual performance against a target marker and background bands for qualitative ranges (poor, fair, good).`,
+        good: `Reporting performance against a goal, like quota attainment or a KPI against target.`,
+        bad: `Showing a full distribution or trend. A bullet chart flattens history into one snapshot on purpose.`,
+        example: `A bullet chart showing this rep closed $340K against a $300K quota, with the band shaded to mark what counts as strong performance.`,
+        tip: `Label the target marker with its actual number. A tick mark with no label forces the reader to guess how close the bar came.`
+      },
+      {
+        term: `Diverging Bar Chart`,
+        def: `Bars extending left and right from a central zero line, separating positive and negative values at a glance.`,
+        good: `Showing net change, variance from a baseline, or sentiment that splits into positive and negative.`,
+        bad: `Data with no natural zero point or center, where the split reads as arbitrary rather than meaningful.`,
+        example: `A diverging bar chart showing which of nine product features scored above or below the customer satisfaction baseline.`,
+        tip: `Use two distinct colors, not shades of one color, so the positive and negative sides register instantly without reading the axis.`
+      },
+      {
+        term: `Dot Plot`,
+        def: `A single dot per category on a shared axis, replacing a bar's full length with just its endpoint.`,
+        good: `Comparing many categories, 15 or more, where full bars would create visual clutter.`,
+        bad: `Fewer than 5 categories, where a dot plot adds visual sparseness without a real benefit over a bar chart.`,
+        example: `A dot plot ranking 22 sales reps by average deal size, sorted highest to lowest.`,
+        tip: `Add a thin connecting line from the axis to each dot when the ranking itself is the point. It turns the plot into a readable leaderboard.`
+      }
+    ]
+  },
+  {
+    icon: '📈',
+    title: `Trend and Change Charts`,
+    desc: `Showing how a value moved across time or through a sequence`,
+    color: 'var(--cat2)',
+    items: [
+      {
+        term: `Line Chart`,
+        def: `Points connected across a continuous axis, usually time, tracking how one or more metrics move.`,
+        good: `Showing a trend over 10 or more time periods, especially when direction and rate of change both matter.`,
+        bad: `Fewer than 4 data points. A line implies continuity a handful of points cannot support.`,
+        example: `A line chart tracking weekly active users across the last 26 weeks, with a visible inflection point after a product launch.`,
+        tip: `Cap it at three lines per chart. A fourth line usually means the chart is trying to answer two questions at once and should split into two.`
+      },
+      {
+        term: `Area Chart`,
+        def: `A line chart with the space beneath it filled in, emphasizing volume and magnitude alongside the trend.`,
+        good: `Emphasizing the cumulative size of a metric over time, not just its direction.`,
+        bad: `Comparing more than two or three series. Stacked fills become nearly impossible to read past the bottom layer.`,
+        example: `A stacked area chart showing total content output by format (video, text, audio) accumulating over four quarters.`,
+        tip: `Use area charts for one or two series only. For more, switch to a stacked bar chart at fewer time intervals.`
+      },
+      {
+        term: `Slope Chart`,
+        def: `Two vertical axes connected by straight lines, showing how each category's rank or value changed between exactly two points in time.`,
+        good: `A clean before-and-after comparison across many categories at once, like rankings shifting year over year.`,
+        bad: `More than two time points. A slope chart is built for exactly two; add a third and it becomes a cluttered line chart.`,
+        example: `A slope chart showing how 12 competitors' market share ranking shifted from 2025 to 2026.`,
+        tip: `Label both endpoints directly on the lines rather than relying on a legend. The reader should never have to look away from the slope to identify it.`
+      },
+      {
+        term: `Waterfall Chart`,
+        def: `Floating bars that show how a starting value builds or erodes step by step to a final value, with each bar representing one contributing factor.`,
+        good: `Explaining how a total broke down into its components, like revenue bridging from last quarter to this one.`,
+        bad: `More than about 8 steps. Past that point the bridge becomes harder to follow than a simple table.`,
+        example: `A waterfall chart showing how Q3 revenue of $2.1M broke down from $1.8M starting revenue, plus $400K new business, plus $150K expansion, minus $250K churn.`,
+        tip: `Color the positive and negative bars differently, and keep the running total bars (the start and the end) in a third, neutral color so they read as anchors, not contributions.`
+      },
+      {
+        term: `Candlestick or Range Chart`,
+        def: `A bar showing the range between a high and low value for each period, often with a marker for the actual close or midpoint.`,
+        good: `Showing volatility or a range of outcomes per period, not just a single average, like weekly deal size range.`,
+        bad: `Audiences unfamiliar with financial charts. Outside of finance, a range chart needs a one-line explainer or it reads as noise.`,
+        example: `A range chart showing weekly deal size varying between $12K and $48K, with the median marked per week.`,
+        tip: `If your audience has never seen a candlestick chart, add a single annotated example in the corner explaining what the shape means before showing the full dataset.`
+      }
+    ]
+  },
+  {
+    icon: '🔗',
+    title: `Relationship and Distribution Charts`,
+    desc: `Showing how variables interact, or how a dataset is spread across a range`,
+    color: 'var(--cat3)',
+    items: [
+      {
+        term: `Scatter Plot`,
+        def: `Individual points placed by two numeric values, revealing correlation, clusters, or outliers between them.`,
+        good: `Testing whether two variables move together, like ad spend against pipeline generated.`,
+        bad: `Fewer than about 20 data points. With too few points, a pattern is more likely noise than signal.`,
+        example: `A scatter plot of 340 deals showing sales cycle length against deal size, revealing a cluster of fast, small deals in one corner.`,
+        tip: `Add a trend line only if the correlation is real and worth stating. An unnecessary trend line on a weak correlation overstates a relationship that is not there.`
+      },
+      {
+        term: `Bubble Chart`,
+        def: `A scatter plot with a third variable encoded as the size of each point, showing three dimensions at once.`,
+        good: `Comparing categories across two metrics where a third metric, like size or volume, adds real context.`,
+        bad: `More than about 15 bubbles, or when the size differences are subtle enough that the eye cannot reliably rank them.`,
+        example: `A bubble chart comparing 9 product lines by growth rate and profit margin, with bubble size representing total revenue.`,
+        tip: `Size bubbles by area, not radius. Sizing by radius alone makes value differences look far more dramatic than they actually are.`
+      },
+      {
+        term: `Heatmap`,
+        def: `A grid where color intensity represents a value at the intersection of two categories, letting a reader scan for hot and cold zones at once.`,
+        good: `Spotting patterns across a large matrix, like engagement by day of week and hour of day.`,
+        bad: `Fewer than roughly 15 cells. A small grid does not need color coding and a plain table communicates faster.`,
+        example: `A heatmap showing email open rates by send day and send hour, revealing Tuesday and Thursday mornings as the clear hot zone.`,
+        tip: `Use a single-color gradient, light to dark, rather than a rainbow scale. A rainbow scale implies categories where the data is actually continuous.`
+      },
+      {
+        term: `Funnel Chart`,
+        def: `Progressively narrowing bars showing how a population shrinks through sequential stages, like a sales or conversion pipeline.`,
+        good: `Showing drop-off through a defined sequence of steps where order matters, like a signup flow.`,
+        bad: `Stages that are not truly sequential, or that a user can skip or reorder. A funnel implies a strict path.`,
+        example: `A funnel chart showing 10,000 site visitors narrowing to 1,200 signups, 340 activated users, and 88 paying customers.`,
+        tip: `Label every stage with both the raw count and the conversion percentage from the previous stage. The count alone hides which step is actually leaking the most people.`
+      },
+      {
+        term: `Box Plot`,
+        def: `A summary of a distribution's median, quartiles, and outliers in one compact shape, without showing every individual point.`,
+        good: `Comparing the spread and consistency of a metric across groups, like deal size variance by sales rep.`,
+        bad: `Audiences unfamiliar with quartiles. Without a brief explainer, most non-technical readers will misread a box plot as a bar chart.`,
+        example: `A box plot comparing time-to-close across five sales reps, showing one rep with a tight, consistent range and another with wide variance.`,
+        tip: `Overlay the individual data points as faint dots behind the box when the audience is not fluent in reading quartiles. It grounds the abstract shape in real numbers.`
+      }
+    ]
+  }
+];
+
+const BONUS_HEADING = `🚫 Bonus: 8 Chart Mistakes That Make Your Data Look Worse`;
+const BONUS_SUB = `Each of these is common, easy to miss while building the chart, and immediately obvious to anyone who reads charts for a living.`;
+const AVOID = [
+  { term: `Dual Y-axes`, why: `Two different scales sharing one chart let you make almost any two lines appear correlated by adjusting the axis ranges.`, instead: `Use two separate small charts stacked vertically, sharing the same x-axis.` },
+  { term: `3D Effects`, why: `A 3D bar or pie distorts the actual proportions through perspective, making some values look larger or smaller than they are.`, instead: `Keep every chart flat. 3D adds visual flair and subtracts accuracy.` },
+  { term: `Truncated Y-Axis`, why: `Starting a bar chart's axis above zero exaggerates small differences into what looks like a dramatic gap.`, instead: `Start bar chart axes at zero. If the difference is genuinely small, let the chart show that honestly.` },
+  { term: `Pie Chart With 8+ Slices`, why: `Past about six slices, the human eye cannot reliably compare angles, and the smallest slices become unreadable.`, instead: `Switch to a sorted bar chart, or group the smallest slices into a single "other" category.` },
+  { term: `Rainbow Color Scales`, why: `Assigning a different hue to every category with no logical order forces the reader to memorize a legend instead of reading a pattern.`, instead: `Use one color family with varying intensity for a single metric, and reserve distinct hues for genuinely separate categories.` },
+  { term: `Chart Junk`, why: `Gridlines, shadows, gradients, and decorative icons compete with the actual data for the reader's attention.`, instead: `Remove every element that does not help someone read a specific number or comparison.` },
+  { term: `Misleading Sort Order`, why: `Leaving categories in the order they arrived from a database or spreadsheet, rather than sorting by the metric shown, hides the actual ranking.`, instead: `Sort by the value being measured unless the categories have a natural order, like months or a sequence.` },
+  { term: `Too Many Decimal Places`, why: `Labeling a bar 34.7182% when the underlying data only supports one decimal of confidence implies false precision.`, instead: `Round to the precision your data actually supports, usually one decimal place or none.` }
+];
+
+const container = document.getElementById('guide-content');
+const TOTAL = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+let html = '';
+let runningIndex = 0;
+
+CATEGORIES.forEach(cat => {
+  html += `
+    <div class="category-header" style="background:${cat.color}">
+      <span class="cat-icon">${cat.icon}</span>
+      <div><div class="cat-title">${cat.title}</div><div class="cat-desc">${cat.desc}</div></div>
+      <span class="cat-count">${cat.items.length} items</span>
+    </div>
+    <div class="cards">
+  `;
+  cat.items.forEach(it => {
+    runningIndex++;
+    const numStr = String(runningIndex).padStart(2, '0');
+    html += `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-term">${it.term}</div>
+          <span class="card-num">${numStr} / ${TOTAL}</span>
+        </div>
+        <p class="card-def">${it.def}</p>
+        <div class="card-use-row">
+          <div class="card-use good"><span class="card-use-label">${GOOD_LABEL}</span>${it.good}</div>
+          <div class="card-use bad"><span class="card-use-label">${BAD_LABEL}</span>${it.bad}</div>
+        </div>
+        <div class="card-example">${it.example}</div>
+        <p class="card-tip"><strong>Power tip:</strong> ${it.tip}</p>
+      </div>
+    `;
+  });
+  html += '</div>';
+});
+
+html += `
+  <div class="bonus">
+    <h2>${BONUS_HEADING}</h2>
+    <p class="bonus-sub">${BONUS_SUB}</p>
+    <div class="avoid-grid">
+`;
+AVOID.forEach(a => {
+  html += `
+    <div class="avoid-card">
+      <div class="avoid-term">${a.term}</div>
+      <p class="avoid-why">${a.why}</p>
+      <p class="avoid-instead">${a.instead}</p>
+    </div>
+  `;
+});
+html += `
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <h3>Build the brand that backs you up</h3>
+    <p>Eclatale is the AI personal brand OS for LinkedIn: post ideas, brand score, voice matching, and more.</p>
+    <a href="https://eclatale.com/signup">Start free, no credit card</a>
+    <span class="brand">eclatale.com</span>
+  </div>
+`;
+
+container.innerHTML = html;
+</script>

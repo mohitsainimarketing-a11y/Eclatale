@@ -1,158 +1,9 @@
 import React, { useState } from 'react';
-import { Download, BookOpen, X, Mail, Loader2, ArrowRight } from 'lucide-react';
+import { Download, BookOpen, ArrowRight } from 'lucide-react';
 import Seo from '../components/Seo';
-import { apiFetch } from '../lib/apiFetch';
-
-const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
-const EMAIL_STORAGE_KEY = 'eclatale_resource_email';
-
-interface PreviewItem { term: string; meaning: string; example?: string; }
-interface Resource {
-  slug: string;
-  badge: string;
-  emoji: string;
-  title: string;
-  description: string;
-  pages: string;
-  itemCount: number;
-  itemNoun: string;
-  format: string;
-  downloadUrl: string;
-  preview: PreviewItem[];
-}
-
-const RESOURCES: Resource[] = [
-  {
-    slug: 'top-50-corporate-jargons',
-    badge: 'Career & Communication',
-    emoji: '💼',
-    title: 'Top 50 Corporate Jargons with Use Cases',
-    description: 'Every term explained in plain English with a real LinkedIn post example, so you sound credible, not clueless.',
-    pages: '27 pages',
-    itemCount: 50,
-    itemNoun: 'terms',
-    format: 'PDF',
-    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/top-50-corporate-jargons-guide.pdf',
-    preview: [
-      { term: 'Leverage', meaning: 'Use existing strengths or assets to gain a larger advantage.' },
-      { term: 'Circle back', meaning: 'Return to a topic at a later point.' },
-      { term: 'Move the needle', meaning: 'Make a measurable, meaningful improvement.' },
-    ],
-  },
-  {
-    slug: 'linkedin-headline-formulas',
-    badge: 'Profile & Positioning',
-    emoji: '✍️',
-    title: '20 LinkedIn Headline Formulas That Work',
-    description: 'Fill-in-the-blank headline templates, each with real examples and the reason it converts.',
-    pages: '11 pages',
-    itemCount: 20,
-    itemNoun: 'formulas',
-    format: 'PDF',
-    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/linkedin-headline-formulas-guide.pdf',
-    preview: [
-      { term: 'The Role + Result', meaning: '[Job title] helping [target audience] [achieve specific outcome].' },
-      { term: 'The Numbers Stack', meaning: 'Three hard numbers that prove the claim before anyone asks.' },
-      { term: 'The Niche Authority', meaning: 'Claim a category narrow enough that you can credibly own it.' },
-    ],
-  },
-  {
-    slug: 'data-storytelling-charts',
-    badge: 'Data & Analytics',
-    emoji: '📊',
-    title: '15 Data Storytelling Charts and When to Use Each',
-    description: 'Stop defaulting to bar and pie charts. The right chart for the data you are actually showing, with real use cases.',
-    pages: '10 pages',
-    itemCount: 15,
-    itemNoun: 'chart types',
-    format: 'PDF',
-    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/data-driven-charts-guide.pdf',
-    preview: [
-      { term: 'Bar Chart', meaning: 'Horizontal or vertical bars comparing a single metric across categories. The easiest chart for a reader to decode correctly.' },
-      { term: 'Line Chart', meaning: 'Points connected across a continuous axis, usually time, tracking how one or more metrics move.' },
-      { term: 'Scatter Plot', meaning: 'Individual points placed by two numeric values, revealing correlation, clusters, or outliers between them.' },
-    ],
-  },
-  {
-    slug: 'stakeholder-boardroom-idioms',
-    badge: 'Meetings & Stakeholders',
-    emoji: '🏛️',
-    title: '40 Stakeholder and Boardroom Idioms Decoded',
-    description: 'What executives actually mean when they say it diplomatically. Decode the gap between the words and the message.',
-    pages: '16 pages',
-    itemCount: 40,
-    itemNoun: 'idioms',
-    format: 'PDF',
-    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/stakeholder-boardroom-idioms-guide.pdf',
-    preview: [
-      { term: "I hear what you're saying", meaning: 'Sounds like agreement but is almost always the opening line of a rebuttal.' },
-      { term: "Let's derisk this before we commit", meaning: 'A request to reduce uncertainty before greenlighting, often signaling real doubt about the odds.' },
-      { term: "Let's revisit this next quarter", meaning: "A polite, calendar-based way of shelving a topic that isn't a current priority." },
-    ],
-  },
-  {
-    slug: 'meeting-phrases',
-    badge: 'Meetings & Stakeholders',
-    emoji: '🗣️',
-    title: '30 Meeting Phrases That Move Decisions Forward',
-    description: 'Exact lines to redirect, push back, and close meetings with a real decision instead of another meeting.',
-    pages: '16 pages',
-    itemCount: 30,
-    itemNoun: 'phrases',
-    format: 'PDF',
-    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/meeting-phrases-guide.pdf',
-    preview: [
-      { term: 'The Parking Lot', meaning: '"Let\'s park that and come back to it if we have time." Defers a tangent without dismissing who raised it.' },
-      { term: 'The Curious Challenge', meaning: '"Help me understand the thinking behind that." Challenges a decision by asking for its reasoning.' },
-      { term: 'The Decision Statement', meaning: '"So the decision is X, and we\'re not revisiting it this quarter." Locks in an outcome out loud.' },
-    ],
-  },
-  {
-    slug: 'performance-review-phrases',
-    badge: 'Career Growth',
-    emoji: '📈',
-    title: '20 Performance Review Phrases That Get You Promoted',
-    description: 'Turn your work into undeniable impact on paper: framing, direct asks, and how to handle pushback.',
-    pages: '10 pages',
-    itemCount: 20,
-    itemNoun: 'phrases',
-    format: 'PDF',
-    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/performance-review-phrases-guide.pdf',
-    preview: [
-      { term: 'The Before/After Frame', meaning: 'State the situation before your work and the situation after it, so the change is undeniable.' },
-      { term: 'The Direct Ask', meaning: 'State plainly that you are ready for the next level and want to discuss it, without hedging.' },
-      { term: 'The Specific Follow-Up', meaning: 'When told "not this cycle," ask exactly what changed the decision and what would change it next time.' },
-    ],
-  },
-  {
-    slug: 'salary-negotiation-scripts',
-    badge: 'Career Growth',
-    emoji: '💰',
-    title: '15 Salary and Offer Negotiation Scripts',
-    description: 'Exact scripts for the moments that come up: the first offer, the competing offer, the number you name first.',
-    pages: '11 pages',
-    itemCount: 15,
-    itemNoun: 'scripts',
-    format: 'PDF',
-    downloadUrl: 'https://suacpplgbqhupktlmhrt.supabase.co/storage/v1/object/public/resources/salary-negotiation-scripts-guide.pdf',
-    preview: [
-      { term: 'The Delayed Number', meaning: 'A recruiter asks for your salary expectations before any offer has been made.' },
-      { term: 'The Competing Offer Reveal', meaning: 'You have another offer and want to use it without sounding like an ultimatum.' },
-      { term: 'The Signing Bonus Ask', meaning: "There's a gap between the base offered and your target, and the base can't move further." },
-    ],
-  },
-];
-
-function getRememberedEmail(): string {
-  try { return localStorage.getItem(EMAIL_STORAGE_KEY) || ''; } catch { return ''; }
-}
-function rememberEmail(email: string) {
-  try { localStorage.setItem(EMAIL_STORAGE_KEY, email); } catch { /* private browsing, ignore */ }
-}
-
-function startDownload(resource: Resource) {
-  window.open(resource.downloadUrl, '_blank');
-}
+import DownloadGateModal from '../components/DownloadGateModal';
+import { RESOURCES, type Resource } from '../data/resources';
+import { useResourceGate } from '../lib/useResourceGate';
 
 function ResourceCard({ resource, onDownload }: { resource: Resource; onDownload: (r: Resource) => void }) {
   const [pinnedOpen, setPinnedOpen] = useState(false);
@@ -223,82 +74,11 @@ function ResourceCard({ resource, onDownload }: { resource: Resource; onDownload
   );
 }
 
-function DownloadGateModal({ resource, onClose, onSuccess }: { resource: Resource; onClose: () => void; onSuccess: (email: string) => void }) {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setStatus('loading');
-    try {
-      const res = await apiFetch(`${API_URL}/api/email/newsletter-subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), source: `resource:${resource.slug}` }),
-      });
-      if (!res.ok) throw new Error('Signup failed');
-      onSuccess(email.trim());
-    } catch {
-      setStatus('error');
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-5 bg-[rgba(15,10,30,0.5)] backdrop-blur-sm" onClick={onClose}>
-      <div className="card w-full max-w-sm p-6 relative animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 text-brand-muted hover:text-brand-dark">
-          <X size={18} />
-        </button>
-        <div className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center text-xl mb-4">
-          {resource.emoji}
-        </div>
-        <h3 className="text-base font-extrabold text-brand-dark mb-1.5 leading-snug">Get "{resource.title}"</h3>
-        <p className="text-xs text-brand-muted mb-4 leading-relaxed">
-          One quick step. Enter your email and the download starts immediately.
-        </p>
-        <form onSubmit={submit}>
-          <div className="relative mb-3">
-            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" />
-            <input
-              type="email"
-              required
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              className="input !pl-9 !py-2.5 w-full text-sm"
-            />
-          </div>
-          <button type="submit" disabled={status === 'loading'} className="btn-primary w-full inline-flex items-center justify-center gap-2 text-sm !py-2.5 disabled:opacity-60">
-            {status === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {status === 'loading' ? 'Sending...' : 'Get My Free Guide'}
-          </button>
-          {status === 'error' && <p className="text-xs text-red-500 mt-2">Something went wrong. Please try again.</p>}
-        </form>
-        <p className="text-[10.5px] text-brand-muted mt-4 text-center">No spam. Unsubscribe anytime.</p>
-      </div>
-    </div>
-  );
-}
-
 export default function Resources() {
   const categories = ['All', ...Array.from(new Set(RESOURCES.map(r => r.badge)))];
   const [filter, setFilter] = useState('All');
   const visible = filter === 'All' ? RESOURCES : RESOURCES.filter(r => r.badge === filter);
-  const [gateResource, setGateResource] = useState<Resource | null>(null);
-
-  const handleDownload = (resource: Resource) => {
-    const remembered = getRememberedEmail();
-    if (remembered) { startDownload(resource); return; }
-    setGateResource(resource);
-  };
-
-  const handleGateSuccess = (email: string) => {
-    rememberEmail(email);
-    if (gateResource) startDownload(gateResource);
-    setGateResource(null);
-  };
+  const { gateResource, handleDownload, handleGateSuccess, closeGate } = useResourceGate();
 
   return (
     <div className="min-h-screen gradient-bg-page">
@@ -383,7 +163,7 @@ export default function Resources() {
       {gateResource && (
         <DownloadGateModal
           resource={gateResource}
-          onClose={() => setGateResource(null)}
+          onClose={closeGate}
           onSuccess={handleGateSuccess}
         />
       )}

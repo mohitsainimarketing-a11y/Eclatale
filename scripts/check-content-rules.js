@@ -48,7 +48,7 @@ const VOCAB_ALLOW_FILES = [
   'backend/lib/writingStyles.ts',
   'backend/lib/freeTools.ts',
   'backend/api/intelligence.ts',
-  'frontend/src/pages/Resources.tsx',            // jargon preview cards
+  'frontend/src/data/resources.ts',              // jargon preview cards
 ];
 
 function walk(dir, acc = []) {

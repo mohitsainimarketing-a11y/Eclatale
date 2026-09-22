@@ -15,12 +15,14 @@ export interface BlogPost {
   dateModified?: string; // set explicitly when a post's content is meaningfully edited; defaults to `date`
   readTime: string;
   keyword: string;
+  guideSlug?: string; // slug into RESOURCES (src/data/resources.ts) for the most relevant content-upgrade guide
   content: BlogBlock[];
 }
 
 export const blogPosts: BlogPost[] = [
   {
     slug: 'linkedin-content-strategy-founders-2026',
+    guideSlug: 'linkedin-headline-formulas',
     title: 'The LinkedIn Content Strategy Every Founder Needs in 2026',
     description: 'Why founders need a real LinkedIn presence, what content actually works, how often to post, and how to use AI without sounding generic.',
     category: 'LinkedIn Growth',
@@ -56,6 +58,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'ai-linkedin-post-generator-authentic-voice',
+    guideSlug: 'top-50-corporate-jargons',
     title: 'Why Most AI LinkedIn Post Generators Sound Generic (And How to Fix It)',
     description: 'The problem with generic AI content, what "voice learning" actually means, and how persona engines produce posts that sound like a real person wrote them.',
     category: 'AI & Content',
@@ -94,6 +97,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'linkedin-personal-brand-ceo-executives',
+    guideSlug: 'stakeholder-boardroom-idioms',
     title: 'How CEOs and Executives Are Building Personal Brands on LinkedIn in 2026',
     description: 'Why executive silence is a real career risk, what a real executive brand looks like, and the outcomes leaders are seeing from consistent LinkedIn presence.',
     category: 'Personal Branding',
@@ -126,6 +130,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'taplio-alternative-linkedin-safe',
+    guideSlug: 'top-50-corporate-jargons',
     title: "How to Choose the Right LinkedIn Content Tool (Taplio Alternative Guide)",
     description: "A practical framework for evaluating any LinkedIn content tool: publishing method, voice quality, and what actually protects your account, before you commit to one.",
     category: 'LinkedIn Growth',
@@ -157,6 +162,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'linkedin-post-ideas-professionals',
+    guideSlug: 'meeting-phrases',
     title: '50 LinkedIn Post Ideas for Professionals That Actually Get Engagement',
     description: 'Fifty concrete post angles across five categories, with real examples, to help you never stare at a blank LinkedIn compose box again.',
     category: 'LinkedIn Growth',
@@ -237,6 +243,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'linkedin-engagement-rate-2026',
+    guideSlug: 'data-storytelling-charts',
     title: 'What\'s a Good LinkedIn Engagement Rate in 2026? (Benchmarks + How to Beat Them)',
     description: 'The average LinkedIn post gets a 3.85% engagement rate in 2026. Here\'s how that number breaks down by content type, account size, and industry, plus a concrete plan to beat it.',
     category: 'LinkedIn Growth',
@@ -296,6 +303,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'personal-brand-roi-linkedin',
+    guideSlug: 'data-storytelling-charts',
     title: 'How to Measure the ROI of Your LinkedIn Personal Brand (With Real Metrics)',
     description: 'Impressions and likes don\'t pay your rent. Here\'s a practical framework for tracking what your LinkedIn presence actually generates (leads, job offers, deal flow) and putting a dollar figure on it.',
     category: 'Personal Branding',
@@ -365,6 +373,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'linkedin-post-examples-ceo',
+    guideSlug: 'stakeholder-boardroom-idioms',
     title: '20 LinkedIn Post Examples from Top CEOs That Actually Work (And Why)',
     description: 'A breakdown of 20 anonymized CEO post structures that consistently drive engagement, plus the psychological and algorithmic reasons each one works.',
     category: 'Personal Branding',
@@ -492,6 +501,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'ai-content-creation-authentic-voice',
+    guideSlug: 'linkedin-headline-formulas',
     title: 'How to Use AI for Content Creation Without Losing Your Authentic Voice',
     description: 'The real cost of generic AI content, how voice-learning tools differ architecturally from prompt-based generators, and a practical editing workflow that keeps your writing recognizably yours.',
     category: 'AI & Content',
@@ -538,6 +548,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'linkedin-algorithm-2026',
+    guideSlug: 'data-storytelling-charts',
     title: 'The LinkedIn Algorithm in 2026: What Changed and How to Work With It',
     description: 'LinkedIn\'s ranking system has quietly moved away from raw engagement counts toward dwell time and comment quality. Here\'s what actually works now.',
     category: 'LinkedIn Growth',
@@ -595,6 +606,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'how-to-write-linkedin-post',
+    guideSlug: 'linkedin-headline-formulas',
     title: 'How to Write a LinkedIn Post That Gets Real Engagement (7 Frameworks)',
     description: 'A step-by-step guide to writing LinkedIn posts that earn comments, shares, and profile visits, with 7 proven frameworks and examples for every content style.',
     category: 'LinkedIn Growth',
@@ -652,6 +664,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'linkedin-hook-examples-2026',
+    guideSlug: 'linkedin-headline-formulas',
     title: '47 LinkedIn Hook Examples That Stop the Scroll (With Formulas for Every Style)',
     description: '47 proven LinkedIn hook examples organized by style: Contrarian, Storyteller, Data-driven, Question, and more. Copy the formula, make it yours.',
     category: 'LinkedIn Growth',
@@ -739,6 +752,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'linkedin-for-sales-professionals',
+    guideSlug: 'salary-negotiation-scripts',
     title: 'LinkedIn for Sales: The Personal Brand Strategy That Generates Inbound Leads',
     description: 'How sales professionals use LinkedIn content to build authority, warm up cold outreach, and generate inbound pipeline, without spamming their network.',
     category: 'LinkedIn Growth',
@@ -776,6 +790,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'linkedin-for-saas-founders',
+    guideSlug: 'stakeholder-boardroom-idioms',
     title: 'LinkedIn for SaaS Founders: Turn Your Profile Into a Growth Channel',
     description: 'How SaaS founders use LinkedIn content to drive trial sign-ups, attract investors, recruit engineers, and close enterprise deals, with specific frameworks and examples.',
     category: 'LinkedIn Growth',
@@ -817,6 +832,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'linkedin-for-consultants',
+    guideSlug: 'meeting-phrases',
     title: 'LinkedIn for Consultants: The Content Strategy That Gets You Clients',
     description: 'How consultants and independent professionals use LinkedIn content to build authority, generate referrals, and attract inbound clients without cold outreach.',
     category: 'Personal Branding',
@@ -851,6 +867,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'linkedin-content-calendar-template',
+    guideSlug: 'top-50-corporate-jargons',
     title: 'The LinkedIn Content Calendar Template for Busy Executives (That Actually Works)',
     description: 'A practical LinkedIn content calendar system for executives who want to post consistently without spending hours planning, with a weekly template and 52 topic prompts.',
     category: 'LinkedIn Growth',
@@ -904,6 +921,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'linkedin-for-marketing-leaders',
+    guideSlug: 'performance-review-phrases',
     title: 'LinkedIn for Marketing Leaders: Building Authority When Everyone Is an Expert',
     description: 'How CMOs, VPs of Marketing, and marketing directors build real authority on LinkedIn, with content strategies that generate speaking invites, board roles, and executive peer trust.',
     category: 'Personal Branding',
@@ -939,6 +957,7 @@ export const blogPosts: BlogPost[] = [
 
   {
     slug: 'linkedin-ai-tools-comparison-2026',
+    guideSlug: 'top-50-corporate-jargons',
     title: 'Best LinkedIn AI Tools in 2026: Honest Comparison for Professionals',
     description: 'An honest comparison of the top LinkedIn AI content tools in 2026. What each does well, what each gets wrong, and how to choose based on your actual use case.',
     category: 'AI & Content',

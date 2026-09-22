@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, Clock, Link2, Check } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Clock, Link2, Check, Download, BookOpen } from 'lucide-react';
 import { getBlogPost, getRelatedPosts } from '../data/blogPosts';
+import { getResource } from '../data/resources';
+import { useResourceGate } from '../lib/useResourceGate';
 import NewsletterSignup from '../components/NewsletterSignup';
+import DownloadGateModal from '../components/DownloadGateModal';
 import Seo from '../components/Seo';
 
 const LinkedInIcon = () => (
@@ -54,9 +57,39 @@ function ShareButtons({ title, url }: { title: string; url: string }) {
   );
 }
 
+function GuideCTA({ guideSlug, onDownload }: { guideSlug: string; onDownload: (r: NonNullable<ReturnType<typeof getResource>>) => void }) {
+  const guide = getResource(guideSlug);
+  if (!guide) return null;
+
+  return (
+    <div className="mt-12 card p-6 md:p-8 border-2 border-dashed border-[rgba(124,92,252,0.2)] bg-[rgba(124,92,252,0.03)]">
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center text-xl shrink-0">
+          {guide.emoji}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-bold text-brand-purple uppercase tracking-wide mb-1.5">Free guide</p>
+          <h3 className="text-base md:text-lg font-bold text-brand-dark mb-1.5 leading-snug">{guide.title}</h3>
+          <p className="text-sm text-brand-muted mb-4 leading-relaxed">{guide.description}</p>
+          <button
+            onClick={() => onDownload(guide)}
+            className="btn-primary text-sm inline-flex items-center gap-2 !py-2.5"
+          >
+            <Download size={14} /> Download Free
+          </button>
+          <span className="ml-3 text-xs text-brand-muted inline-flex items-center gap-1">
+            <BookOpen size={11} /> {guide.pages}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? getBlogPost(slug) : undefined;
+  const { gateResource, handleDownload, handleGateSuccess, closeGate } = useResourceGate();
 
   if (!post) return <Navigate to="/blog" replace />;
 
@@ -179,6 +212,8 @@ export default function BlogPost() {
           })}
         </div>
 
+        {post.guideSlug && <GuideCTA guideSlug={post.guideSlug} onDownload={handleDownload} />}
+
         <div className="mt-10">
           <ShareButtons title={post.title} url={typeof window !== 'undefined' ? window.location.href : `https://eclatale.com/blog/${post.slug}`} />
         </div>
@@ -228,6 +263,14 @@ export default function BlogPost() {
           <p className="text-sm text-brand-muted">&copy; {new Date().getFullYear()} Eclatale. All rights reserved.</p>
         </div>
       </footer>
+
+      {gateResource && (
+        <DownloadGateModal
+          resource={gateResource}
+          onClose={closeGate}
+          onSuccess={handleGateSuccess}
+        />
+      )}
     </div>
   );
 }

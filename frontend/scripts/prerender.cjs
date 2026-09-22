@@ -1,50 +1,60 @@
-// react-snap bundles its own ancient Puppeteer (v1.x, pinned via its own
-// package.json), which downloads a 2019-era Chromium that cannot parse
-// modern JS syntax (optional chaining, etc.) used throughout this codebase,
-// so every prerendered page fails with "SyntaxError: Unexpected token '?'".
+// react-snap's CLI (run.js) only reads its `reactSnap` block from
+// package.json and calls index.js's exported `run()`. That leaves no way to
+// vary options by platform (Windows dev machine vs. Vercel's Linux build
+// container) through package.json alone, so this script calls `run()`
+// programmatically instead, replicating what run.js does plus a
+// platform-specific Chromium executable and launch args.
 //
-// react-snap's config has a `puppeteerExecutablePath` option, but it is a
-// dead stub: declared in its defaultOptions, never actually read anywhere
-// in its source. What DOES work: Puppeteer itself, even react-snap's old
-// v1.x copy, checks the PUPPETEER_EXECUTABLE_PATH environment variable at
-// launch time when no explicit executablePath is passed. So instead of
-// touching react-snap's resolution, we install a modern `puppeteer` as our
-// own top-level devDependency purely to get its (current) Chromium
-// downloaded during `npm install`, on Vercel exactly as it does locally,
-// and point the env var at it before invoking react-snap's old copy.
-//
-// npm nests react-snap's incompatible puppeteer@^1.8.0 under
-// react-snap/node_modules automatically since our own puppeteer devDependency
-// doesn't satisfy that range, so react-snap's require('puppeteer') is
-// unaffected by which version this file requires.
-// react-snap also has a known bug independent of the above: after it finishes
-// crawling and writing every page (confirmed correct via the sanity check
-// below), an internal stream-cleanup step throws ("Cannot write to stream
-// after nil", from its `highland` dependency) and the process exits 1. The
-// actual prerendered output is unaffected; only its own teardown crashes.
-// react-snap has no explicit process.exit calls, so this is Node surfacing
-// an uncaught rejection from an abandoned dependency, not a real failure.
-// Rather than trust its exit code, verify the real success criterion: did it
-// actually write the expected files.
-const { execSync } = require('child_process');
+// A regular Chromium download (from a plain `puppeteer` install) needs full
+// desktop shared libraries (libnspr4.so etc.) that Vercel's minimal Linux
+// build container does not have, and fails with "error while loading shared
+// libraries". @sparticuz/chromium ships a build made specifically for
+// constrained serverless/CI Linux containers (originally for AWS Lambda,
+// which Vercel's build containers are closely related to), plus a matching
+// set of required launch args (--single-process, disabled GPU, etc.) that a
+// full desktop Chromium doesn't need. Locally on Windows/Mac, fall back to a
+// plain puppeteer install's own downloaded Chromium instead, since
+// @sparticuz/chromium is Linux-only.
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
+const { run } = require('react-snap');
 
 const BUILD_DIR = path.join(__dirname, '..', 'build');
 const REQUIRED_ROUTES = ['index.html', 'pricing/index.html', 'blog/index.html', 'resources/index.html'];
 
-(async () => {
+async function resolveChromium() {
+  if (process.platform === 'linux') {
+    const chromium = require('@sparticuz/chromium');
+    return { executablePath: await chromium.executablePath(), args: chromium.args };
+  }
   const puppeteer = require('puppeteer');
-  const executablePath = await puppeteer.executablePath();
-  console.log(`[prerender] using modern Chromium at ${executablePath}`);
+  return { executablePath: await puppeteer.executablePath(), args: ['--no-sandbox', '--disable-setuid-sandbox'] };
+}
+
+(async () => {
+  const { executablePath, args } = await resolveChromium();
+  console.log(`[prerender] platform=${process.platform} chromium=${executablePath}`);
+
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  const publicUrl = process.env.PUBLIC_URL || pkg.homepage;
 
   try {
-    execSync('npx react-snap', {
-      stdio: 'inherit',
-      env: { ...process.env, PUPPETEER_EXECUTABLE_PATH: executablePath },
+    await run({
+      publicPath: publicUrl ? url.parse(publicUrl).pathname : '/',
+      ...pkg.reactSnap,
+      puppeteerExecutablePath: executablePath,
+      puppeteerArgs: args,
     });
   } catch (e) {
-    console.log(`[prerender] react-snap exited non-zero (${e.status}); verifying actual output before deciding whether to fail the build`);
+    // react-snap has a known bug independent of the above: after it finishes
+    // crawling and writing every page (confirmed correct via the sanity
+    // check below), an internal stream-cleanup step throws ("Cannot write
+    // to stream after nil", from its `highland` dependency). The actual
+    // prerendered output is unaffected; only its own teardown fails. Rather
+    // than trust that this rejection means the run failed, verify the real
+    // success criterion: did it actually write the expected files.
+    console.log(`[prerender] run() rejected (${e.message}); verifying actual output before deciding whether to fail the build`);
   }
 
   const missing = REQUIRED_ROUTES.filter(r => !fs.existsSync(path.join(BUILD_DIR, r)));

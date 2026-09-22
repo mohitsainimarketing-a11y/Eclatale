@@ -25,7 +25,10 @@ const REQUIRED_ROUTES = ['index.html', 'pricing/index.html', 'blog/index.html', 
 
 async function resolveChromium() {
   if (process.platform === 'linux') {
-    const chromium = require('@sparticuz/chromium');
+    // @sparticuz/chromium ships as an ESM module; required via CommonJS, the
+    // real object lands on .default, not on the required value directly.
+    const mod = require('@sparticuz/chromium');
+    const chromium = mod.default || mod;
     return { executablePath: await chromium.executablePath(), args: chromium.args };
   }
   const puppeteer = require('puppeteer');

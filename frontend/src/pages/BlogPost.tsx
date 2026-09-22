@@ -69,6 +69,7 @@ export default function BlogPost() {
         description={post.description}
         path={`/blog/${post.slug}`}
         type="article"
+        image={`https://eclatale.com/og/${post.slug}.jpg`}
         jsonLd={[
           {
             '@context': 'https://schema.org',
@@ -76,11 +77,11 @@ export default function BlogPost() {
             headline: post.title,
             description: post.description,
             datePublished: post.date,
-            dateModified: post.date,
+            dateModified: post.dateModified || post.date,
             author: { '@type': 'Organization', name: 'Eclatale', url: 'https://eclatale.com' },
             publisher: { '@type': 'Organization', name: 'Eclatale', logo: { '@type': 'ImageObject', url: 'https://eclatale.com/logo512.png' } },
             mainEntityOfPage: { '@type': 'WebPage', '@id': `https://eclatale.com/blog/${post.slug}` },
-            image: { '@type': 'ImageObject', url: 'https://eclatale.com/og-image.jpg', width: 1200, height: 630 },
+            image: { '@type': 'ImageObject', url: `https://eclatale.com/og/${post.slug}.jpg`, width: 1344, height: 768 },
           },
           {
             '@context': 'https://schema.org',

@@ -12,6 +12,7 @@ export interface BlogPost {
   description: string;
   category: string;
   date: string;
+  dateModified?: string; // set explicitly when a post's content is meaningfully edited; defaults to `date`
   readTime: string;
   keyword: string;
   content: BlogBlock[];

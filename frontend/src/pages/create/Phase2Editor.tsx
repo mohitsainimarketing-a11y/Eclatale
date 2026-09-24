@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ArrowLeft, Copy, Save, Calendar, Bold, Italic, Smile, Minus, List, ListOrdered,
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
-  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2,
+  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
@@ -24,6 +24,28 @@ const LOADING_MESSAGES = [
   'Matching your voice...',
   'Almost ready...',
 ];
+
+// Mirrors backend/lib/writingStyles.ts WRITING_STYLES ids. Used to build real
+// variants of the same topic/hook in genuinely different voices, not just
+// reworded copies of one draft.
+const VARIANT_STYLES: { id: string; emoji: string; label: string }[] = [
+  { id: 'storyteller', emoji: '📖', label: 'Storyteller' },
+  { id: 'contrarian', emoji: '🔥', label: 'Contrarian' },
+  { id: 'teacher', emoji: '🎓', label: 'The Teacher' },
+  { id: 'insider', emoji: '🕵️', label: 'The Insider' },
+  { id: 'motivator', emoji: '💪', label: 'Motivator' },
+  { id: 'analyst', emoji: '📊', label: 'The Analyst' },
+];
+const VARIANT_COUNT = 3;
+
+function pickVariantStyleIds(preferredId?: string): string[] {
+  const others = VARIANT_STYLES.map(s => s.id).filter(id => id !== preferredId);
+  const shuffled = [...others].sort(() => Math.random() - 0.5);
+  const rest = shuffled.slice(0, preferredId ? VARIANT_COUNT - 1 : VARIANT_COUNT);
+  return preferredId ? [preferredId, ...rest] : rest;
+}
+
+interface Variant { styleId: string; content: string; }
 
 function scoreColor(score: number): string {
   if (score >= 80) return '#10B981';
@@ -69,10 +91,17 @@ export default function Phase2Editor({
 
   const [content, setContent] = useState(initialContent);
   const [postId, setPostId] = useState<string | null>(initialPostId);
-  const [isGenerating, setIsGenerating] = useState(!editMode);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [genError, setGenError] = useState('');
   const [sparkInput, setSparkInput] = useState(preloadedSpark || '');
+
+  // A fresh post starts with 3 real variants (same topic/hook, genuinely
+  // different voices) to choose from, rather than one take with no comparison.
+  const [flowStage, setFlowStage] = useState<'variants' | 'editor'>(editMode ? 'editor' : 'variants');
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [variantsLoading, setVariantsLoading] = useState(!editMode);
+  const [variantsError, setVariantsError] = useState('');
 
   const [hooksOpen, setHooksOpen] = useState(false);
   const [ctasOpen, setCtasOpen] = useState(false);
@@ -102,53 +131,101 @@ export default function Phase2Editor({
 
   // ── Generation ────────────────────────────────────────────────────────────
 
+  const resolveSpark = useCallback(async (): Promise<string> => {
+    let spark = sparkInput.trim();
+    if (spark && looksLikeUrl(spark)) {
+      try {
+        const res = await apiFetch(`${API_URL}/api/intelligence`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({ action: 'fetch-url', url: spark }),
+        });
+        const data = await res.json();
+        if (!data.error && data.text) spark = data.text;
+      } catch { /* fall back to the raw URL as context */ }
+    }
+    return spark;
+  }, [sparkInput]);
+
+  const currentTopic = useCallback(
+    () => (angle?.hook ? angle.hook.slice(0, 150) : (customTopic.trim() || 'a timely update').slice(0, 150)),
+    [angle, customTopic]
+  );
+
+  // One generation call. `styleId`, when passed, overrides the angle's own
+  // style so the same hook/topic can be regenerated in a different voice
+  // (used to build variants); omit it to use the angle's own style as-is.
+  // `includeHook` false drops the original angle's exact hook text so an
+  // alternate-style variant can find its own opening instead of being
+  // instructed to reuse someone else's, which otherwise makes every variant
+  // start with a near-identical first line regardless of style.
+  const generateOne = useCallback(async (spark: string, styleId?: string, includeHook: boolean = true): Promise<string> => {
+    const res = await apiFetch(`${API_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        topic: currentTopic(), tone: 'professional', contentType: 'linkedin-post', contentLength: selectedLength,
+        angle: angle
+          ? { style: angle.style, styleId: styleId || angle.styleId, hook: includeHook ? angle.hook : undefined, insight: angle.insight }
+          : ((styleId || presetStyleId) ? { styleId: styleId || presetStyleId } : undefined),
+        spark: spark || undefined,
+        userId,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.message || data.error);
+    return data.content;
+  }, [angle, currentTopic, selectedLength, userId, presetStyleId]);
+
+  const savePost = useCallback(async (postContent: string) => {
+    const { data: inserted } = await supabase.from('posts').insert({
+      user_id: userId, content: postContent, topic: currentTopic(), tone: 'professional', content_type: 'linkedin-post', source: 'auto',
+    }).select('id').single();
+    if (inserted) setPostId(inserted.id);
+  }, [userId, currentTopic]);
+
+  // Single regenerate, used by the in-editor "Try again" retry after a
+  // variant has already been chosen and something goes wrong.
   const handleGenerate = useCallback(async () => {
     setIsGenerating(true);
     setGenError('');
     checkedRef.current = false;
     try {
-      let spark = sparkInput.trim();
-      if (spark && looksLikeUrl(spark)) {
-        try {
-          const res = await apiFetch(`${API_URL}/api/intelligence`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({ action: 'fetch-url', url: spark }),
-          });
-          const data = await res.json();
-          if (!data.error && data.text) spark = data.text;
-        } catch { /* fall back to the raw URL as context */ }
-      }
-
-      const topic = angle?.hook ? angle.hook.slice(0, 150) : (customTopic.trim() || 'a timely update').slice(0, 150);
-
-      const res = await apiFetch(`${API_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({
-          topic, tone: 'professional', contentType: 'linkedin-post', contentLength: selectedLength,
-          angle: angle
-            ? { style: angle.style, styleId: angle.styleId, hook: angle.hook, insight: angle.insight }
-            : (presetStyleId ? { styleId: presetStyleId } : undefined),
-          spark: spark || undefined,
-          userId,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.message || data.error);
-
-      setContent(data.content);
-      const { data: inserted } = await supabase.from('posts').insert({
-        user_id: userId, content: data.content, topic, tone: 'professional', content_type: 'linkedin-post', source: 'auto',
-      }).select('id').single();
-      if (inserted) setPostId(inserted.id);
+      const spark = await resolveSpark();
+      const result = await generateOne(spark);
+      setContent(result);
+      await savePost(result);
     } catch (e: any) {
       setGenError(e.message || "Couldn't generate a post. Try again.");
     }
     setIsGenerating(false);
-  }, [angle, customTopic, selectedLength, sparkInput, userId, presetStyleId]);
+  }, [resolveSpark, generateOne, savePost]);
+
+  const handleGenerateVariants = useCallback(async () => {
+    setVariantsLoading(true);
+    setVariantsError('');
+    try {
+      const spark = await resolveSpark();
+      const styleIds = pickVariantStyleIds(angle?.styleId);
+      // Only the variant matching the angle's own originally-picked style
+      // keeps that exact hook; the alternates write their own opening.
+      const results = await Promise.all(
+        styleIds.map((id, i) => generateOne(spark, id, i === 0 && id === angle?.styleId))
+      );
+      setVariants(styleIds.map((styleId, i) => ({ styleId, content: results[i] })));
+    } catch (e: any) {
+      setVariantsError(e.message || "Couldn't generate drafts. Try again.");
+    }
+    setVariantsLoading(false);
+  }, [resolveSpark, generateOne, angle]);
+
+  const chooseVariant = useCallback(async (variant: Variant) => {
+    setContent(variant.content);
+    await savePost(variant.content);
+    setFlowStage('editor');
+  }, [savePost]);
 
   useEffect(() => {
-    if (!editMode) handleGenerate();
+    if (!editMode) handleGenerateVariants();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -396,6 +473,85 @@ export default function Phase2Editor({
     const topic = content.split('\n').find(l => l.trim())?.slice(0, 120) || 'LinkedIn carousel';
     window.location.href = `/create-visual?format=carousel&topic=${encodeURIComponent(topic)}`;
   };
+
+  // ── Variant picker (shown once, before the editor, for a fresh post) ──────
+
+  if (flowStage === 'variants') {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="bg-white border-b px-5 md:px-8 py-6" style={{ borderColor: '#EDE8FF' }}>
+          <h1 className="text-2xl md:text-[28px] font-extrabold" style={{ color: '#1A1A2E' }}>
+            Three takes on the same idea
+          </h1>
+          <p className="text-[13px] mt-1.5" style={{ color: '#6B7280' }}>
+            Same topic, genuinely different voices. Pick the one that sounds most like you today.
+          </p>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 md:px-8 py-6">
+          {variantsError && !variantsLoading && (
+            <div className="max-w-3xl mx-auto mb-4 text-[13px] font-medium px-4 py-3 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
+              {variantsError}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            {variantsLoading
+              ? Array.from({ length: VARIANT_COUNT }).map((_, i) => (
+                  <div key={i} className="bg-white flex flex-col gap-2" style={{ borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', minHeight: 260 }}>
+                    <div className="skeleton h-5 w-24 rounded-full mb-2" />
+                    {[0, 1, 2, 3, 4].map(j => <div key={j} className="skeleton h-3 rounded" style={{ width: `${92 - j * 10}%` }} />)}
+                  </div>
+                ))
+              : variants.map((v, i) => {
+                  const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
+                  return (
+                    <div
+                      key={i}
+                      className="bg-white flex flex-col"
+                      style={{ borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}
+                    >
+                      <span
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 self-start"
+                        style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
+                      >
+                        <span>{meta?.emoji}</span>{meta?.label || v.styleId}
+                      </span>
+                      <p
+                        className="text-[12.5px] flex-1 overflow-y-auto mb-3"
+                        style={{ color: '#1A1A2E', lineHeight: 1.7, maxHeight: 260, whiteSpace: 'pre-wrap' }}
+                      >
+                        {v.content}
+                      </p>
+                      <button
+                        onClick={() => chooseVariant(v)}
+                        className="w-full text-[12px] font-bold text-white py-2.5 rounded-full"
+                        style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
+                      >
+                        Use this version
+                      </button>
+                    </div>
+                  );
+                })}
+          </div>
+        </div>
+
+        <div className="bg-white border-t px-5 md:px-8 py-4 flex items-center justify-between gap-4 flex-wrap" style={{ borderColor: '#EDE8FF' }}>
+          <button onClick={onBack} className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: '#6B7280' }}>
+            <ArrowLeft size={14} /> Back
+          </button>
+          <button
+            onClick={handleGenerateVariants}
+            disabled={variantsLoading}
+            className="flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-full transition-all disabled:opacity-50"
+            style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}
+          >
+            <RefreshCw size={14} className={variantsLoading ? 'animate-spin' : ''} />
+            {variantsLoading ? 'Writing...' : 'Generate 3 more'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── Render helpers ───────────────────────────────────────────────────────
 

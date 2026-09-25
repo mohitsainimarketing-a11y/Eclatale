@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Check, ArrowRight, ArrowLeft, Sparkles, Link2 } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { SearchableDropdown, ROLES, INDUSTRIES } from '../components/ProfileDropdowns';
-import { hasPendingDemo } from '../lib/pendingDemo';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL!,
@@ -20,6 +19,11 @@ const GROWTH_GOALS = [
   { id: 'speaker', label: 'Become a Speaker', emoji: '🎤', desc: 'Land speaking gigs' },
 ];
 
+function splitName(fullName: string): [string, string] {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length < 2) return [parts[0] || '', ''];
+  return [parts[0], parts.slice(1).join(' ')];
+}
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
@@ -28,10 +32,22 @@ export default function Onboarding() {
   const [role, setRole] = useState('');
   const [industry, setIndustry] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
-  const [userId, setUserId] = useState('');
 
   React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { if (data.user) setUserId(data.user.id); });
+    supabase.auth.getUser().then(({ data }) => {
+      const meta = data.user?.user_metadata;
+      if (!meta) return;
+      const given = (meta.given_name || '').trim();
+      const family = (meta.family_name || '').trim();
+      if (given || family) {
+        setFirstName(prev => prev || given);
+        setLastName(prev => prev || family);
+      } else if (meta.full_name || meta.name) {
+        const [fn, ln] = splitName(meta.full_name || meta.name);
+        setFirstName(prev => prev || fn);
+        setLastName(prev => prev || ln);
+      }
+    });
   }, []);
 
   const toggleGoal = (id: string) => {
@@ -39,19 +55,17 @@ export default function Onboarding() {
   };
 
   const canProceed =
-    (step === 1 && firstName.trim() && lastName.trim() && role) ||
-    (step === 2 && industry) ||
-    (step === 3 && goals.length > 0) ||
-    step === 4;
+    (step === 1 && firstName.trim() && lastName.trim() && role && industry) ||
+    step === 2;
 
   const handleFinish = async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
       await supabase.from('profiles').upsert({ id: data.user.id, first_name: firstName.trim(), last_name: lastName.trim(), role, domain: industry, goals });
     }
-    // If they came from the homepage demo, land them in the create flow,
-    // CreatePost picks up the pending topic and writes the post immediately.
-    window.location.href = hasPendingDemo() ? '/create' : '/dashboard';
+    // Straight into the create flow while motivation is highest, never a
+    // detour through the dashboard on the very first post.
+    window.location.href = '/create';
   };
 
   return (
@@ -59,13 +73,13 @@ export default function Onboarding() {
       {/* Header */}
       <div className="px-5 md:px-8 h-14 md:h-16 flex items-center justify-between flex-shrink-0">
         <a href="/dashboard" className="text-lg md:text-xl font-extrabold gradient-text">Eclatale</a>
-        <span className="text-xs font-semibold text-brand-muted">Step {step}/4</span>
+        <span className="text-xs font-semibold text-brand-muted">Step {step}/2</span>
       </div>
 
       {/* Progress */}
       <div className="px-5 md:px-8 mb-6 md:mb-8">
         <div className="max-w-2xl mx-auto flex gap-2">
-          {[1, 2, 3, 4].map(s => (
+          {[1, 2].map(s => (
             <div key={s} className="flex-1 h-1.5 rounded-full bg-[rgba(124,92,252,0.08)] overflow-hidden">
               <div
                 className="h-full rounded-full gradient-primary transition-all duration-500"
@@ -116,9 +130,13 @@ export default function Onboarding() {
                   <label className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-1.5 block">Your Role</label>
                   <SearchableDropdown options={ROLES} value={role} onChange={setRole} placeholder="Search your role..." />
                 </div>
-                {role && (
+                <div>
+                  <label className="text-xs font-semibold text-brand-muted uppercase tracking-wide mb-1.5 block">Your Industry</label>
+                  <SearchableDropdown options={INDUSTRIES} value={industry} onChange={setIndustry} placeholder="Search your industry..." />
+                </div>
+                {role && industry && (
                   <div className="flex items-center gap-2 text-sm font-medium text-brand-purple animate-checkmark">
-                    <Check size={16} className="text-brand-teal" /> {role}
+                    <Check size={16} className="text-brand-teal" /> {role} · {industry}
                   </div>
                 )}
               </div>
@@ -128,31 +146,11 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="animate-fadeIn">
               <div className="text-center mb-6 md:mb-8">
-                <div className="badge bg-[rgba(247,37,133,0.08)] text-brand-pink mb-4">
-                  <Sparkles size={13} /> AI-Powered
-                </div>
-                <h2 className="h2 text-brand-dark mb-2">What's your <span className="gradient-text">industry</span>?</h2>
-                <p className="body-text text-sm">We'll tailor content for your audience.</p>
-              </div>
-              <div className="card p-6 md:p-6">
-                <SearchableDropdown options={INDUSTRIES} value={industry} onChange={setIndustry} placeholder="Search your industry..." />
-                {industry && (
-                  <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brand-pink animate-checkmark">
-                    <Check size={16} className="text-brand-teal" /> {industry}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="animate-fadeIn">
-              <div className="text-center mb-6 md:mb-8">
                 <div className="badge bg-[rgba(255,107,53,0.08)] text-brand-orange mb-4">
-                  <Sparkles size={13} /> Select Multiple
+                  <Sparkles size={13} /> Optional
                 </div>
                 <h2 className="h2 text-brand-dark mb-2">Your <span className="gradient-text">growth goals</span></h2>
-                <p className="body-text text-sm">Pick all that apply. We'll build your roadmap.</p>
+                <p className="body-text text-sm">Pick any that apply. We'll build your roadmap. You can skip this.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {GROWTH_GOALS.map(goal => {
@@ -185,46 +183,6 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 4 && (
-            <div className="animate-fadeIn">
-              <div className="text-center mb-6 md:mb-8">
-                <div className="badge bg-[rgba(10,102,194,0.08)] text-[#0A66C2] mb-4">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45Z"/></svg>
-                  Connect LinkedIn
-                </div>
-                <h2 className="h2 text-brand-dark mb-2">Connect your <span className="gradient-text">LinkedIn</span></h2>
-                <p className="body-text text-sm">Access your growth score, track followers, and publish posts directly.</p>
-              </div>
-              <div className="card p-6 md:p-7 flex flex-col items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-[rgba(10,102,194,0.08)] flex items-center justify-center">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45Z"/></svg>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-brand-dark mb-1">What you get:</p>
-                  <ul className="text-xs text-brand-muted space-y-1 mt-2">
-                    <li className="flex items-center gap-2"><Check size={12} className="text-brand-teal flex-shrink-0" /> Real follower count as your Growth Score</li>
-                    <li className="flex items-center gap-2"><Check size={12} className="text-brand-teal flex-shrink-0" /> One-click post publishing to LinkedIn</li>
-                    <li className="flex items-center gap-2"><Check size={12} className="text-brand-teal flex-shrink-0" /> AI trained on your voice & style</li>
-                  </ul>
-                </div>
-                <a
-                  // Fallback host is the vercel.app alias, not api.eclatale.com:
-                  // that domain is registered on the Vercel project but has no
-                  // DNS record, so it would send LinkedIn OAuth to NXDOMAIN.
-                  // Inert today (REACT_APP_API_URL is set), a trap otherwise.
-                  href={`${process.env.REACT_APP_API_URL || 'https://backend-xi-olive-8eewk5s8qv.vercel.app'}/api/auth/linkedin/callback?userId=${encodeURIComponent(userId)}`}
-                  className="btn-primary w-full justify-center gap-2.5"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45Z"/></svg>
-                  Connect LinkedIn
-                </a>
-                <button onClick={handleFinish} className="text-xs text-brand-muted hover:text-brand-purple transition-colors underline underline-offset-2">
-                  Skip for now
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Nav */}
           <div className="flex justify-between mt-6 md:mt-8">
             {step > 1 ? (
@@ -232,14 +190,24 @@ export default function Onboarding() {
                 <ArrowLeft size={16} /> Back
               </button>
             ) : <div />}
-            {step < 4 && (
+            {step === 1 && (
               <button
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed}
                 className="btn-primary text-sm"
               >
-                {step === 3 ? 'Continue' : 'Continue'} <ArrowRight size={16} />
+                Continue <ArrowRight size={16} />
               </button>
+            )}
+            {step === 2 && (
+              <div className="flex items-center gap-4">
+                <button onClick={handleFinish} className="text-xs text-brand-muted hover:text-brand-purple transition-colors underline underline-offset-2">
+                  Skip for now
+                </button>
+                <button onClick={handleFinish} className="btn-primary text-sm">
+                  Start writing <ArrowRight size={16} />
+                </button>
+              </div>
             )}
           </div>
         </div>

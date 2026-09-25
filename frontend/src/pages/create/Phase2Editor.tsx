@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  ArrowLeft, Copy, Save, Calendar, Bold, Italic, Smile, Minus, List, ListOrdered,
+  ArrowLeft, Copy, Save, Calendar, Bold, Italic, Minus, List, ListOrdered, MoreHorizontal,
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
   ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw,
 } from 'lucide-react';
@@ -105,7 +105,8 @@ export default function Phase2Editor({
 
   const [hooksOpen, setHooksOpen] = useState(false);
   const [ctasOpen, setCtasOpen] = useState(false);
-  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [formatMoreOpen, setFormatMoreOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
 
   const [ariaInput, setAriaInput] = useState('');
   const [ariaRefining, setAriaRefining] = useState(false);
@@ -614,19 +615,26 @@ export default function Phase2Editor({
             <ToolBtn icon={Bold} onClick={() => transformSelection(BOLD)} label="Bold" />
             <ToolBtn icon={Italic} onClick={() => transformSelection(ITALIC)} label="Italic" />
             <div className="relative">
-              <ToolBtn icon={Smile} onClick={() => setEmojiOpen(o => !o)} label="Emoji" />
-              {emojiOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 flex gap-1 z-20 modal-shadow flex-wrap w-48">
-                  {['😀', '🔥', '💡', '✅', '📈', '🎯', '🚀', '👏', '💬', '⚡', '🙌', '✨'].map(e => (
-                    <button key={e} onClick={() => { insertAtCursor(e); setEmojiOpen(false); }} className="text-lg p-1 hover:bg-[rgba(124,92,252,0.06)] rounded-lg">{e}</button>
-                  ))}
+              <ToolBtn icon={MoreHorizontal} onClick={() => setFormatMoreOpen(o => !o)} label="More formatting" />
+              {formatMoreOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-48">
+                  <div className="flex gap-1 flex-wrap mb-2 pb-2 border-b" style={{ borderColor: '#EDE8FF' }}>
+                    {['😀', '🔥', '💡', '✅', '📈', '🎯', '🚀', '👏', '💬', '⚡', '🙌', '✨'].map(e => (
+                      <button key={e} onClick={() => { insertAtCursor(e); setFormatMoreOpen(false); }} className="text-lg p-1 hover:bg-[rgba(124,92,252,0.06)] rounded-lg">{e}</button>
+                    ))}
+                  </div>
+                  <button onClick={() => { insertAtCursor('\n───\n'); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[12px] font-medium px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
+                    <Minus size={13} /> Divider
+                  </button>
+                  <button onClick={() => { prefixLines(() => '• '); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[12px] font-medium px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
+                    <List size={13} /> Bullets
+                  </button>
+                  <button onClick={() => { prefixLines(i => `${i + 1}. `); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[12px] font-medium px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
+                    <ListOrdered size={13} /> Numbers
+                  </button>
                 </div>
               )}
             </div>
-            <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
-            <ToolBtn icon={Minus} onClick={() => insertAtCursor('\n───\n')} label="Divider" />
-            <ToolBtn icon={List} onClick={() => prefixLines(() => '• ')} label="Bullets" />
-            <ToolBtn icon={ListOrdered} onClick={() => prefixLines(i => `${i + 1}. `)} label="Numbers" />
             <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
 
             <div className="relative">
@@ -763,6 +771,19 @@ export default function Phase2Editor({
             </div>
           </div>
 
+          {!insightsOpen ? (
+            <button
+              onClick={() => setInsightsOpen(true)}
+              className="text-left rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start"
+              style={{ background: 'white', border: '1.5px dashed #D4CEFF' }}
+            >
+              <p className="text-[11px] font-bold flex items-center gap-1" style={{ color: '#7C5CFC' }}>
+                Show more tools <ChevronDown size={12} />
+              </p>
+              <p className="text-[10px] mt-1" style={{ color: '#9CA3AF' }}>Content score, best time to post, carousel</p>
+            </button>
+          ) : (
+          <>
           {/* Content Signal */}
           <div className="bg-white rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
             <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Content Signal</p>
@@ -870,6 +891,15 @@ export default function Phase2Editor({
               </button>
             )}
           </div>
+          <button
+            onClick={() => setInsightsOpen(false)}
+            className="text-[11px] font-semibold flex-shrink-0 w-[200px] md:w-auto snap-start"
+            style={{ color: '#9CA3AF' }}
+          >
+            Hide extra tools
+          </button>
+          </>
+          )}
         </div>
       </div>
 

@@ -495,6 +495,11 @@ export default function Phase2Editor({
               {variantsError}
             </div>
           )}
+          {variantsLoading && (
+            <div className="flex justify-center mb-6">
+              <GenerationTimer label="Writing three takes on your idea…" />
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
             {variantsLoading
               ? Array.from({ length: VARIANT_COUNT }).map((_, i) => (
@@ -680,11 +685,14 @@ export default function Phase2Editor({
           {/* Editor */}
           <div className="flex-1 min-h-[280px] p-4">
             {isGenerating ? (
-              <div className="h-full rounded-xl p-4 flex flex-col gap-3" style={{ background: '#FDFCFF', border: '1.5px solid #EDE8FF' }}>
-                {[0, 1, 2, 3].map(i => <div key={i} className="skeleton h-3.5 rounded" style={{ width: `${90 - i * 12}%` }} />)}
-                <p className="text-[12px] font-semibold mt-2 animate-fadeIn" style={{ color: '#7C5CFC' }} key={loadingMsgIdx}>
+              <div className="h-full rounded-xl p-4 flex flex-col items-center justify-center gap-4" style={{ background: '#FDFCFF', border: '1.5px solid #EDE8FF' }}>
+                <GenerationTimer />
+                <p className="text-[12px] font-semibold animate-fadeIn text-center" style={{ color: '#7C5CFC' }} key={loadingMsgIdx}>
                   {LOADING_MESSAGES[loadingMsgIdx]}
                 </p>
+                <div className="w-full max-w-sm flex flex-col gap-2">
+                  {[0, 1, 2, 3].map(i => <div key={i} className="skeleton h-3.5 rounded" style={{ width: `${90 - i * 12}%` }} />)}
+                </div>
               </div>
             ) : genError ? (
               <div className="h-full flex flex-col items-center justify-center text-center gap-3">
@@ -931,6 +939,41 @@ export default function Phase2Editor({
           {publishing ? 'Publishing...' : 'Post to LinkedIn →'}
         </button>
       </div>
+    </div>
+  );
+}
+
+// Indeterminate spinner + live elapsed-seconds readout for the generation
+// waits, which run anywhere from ~2s to ~15s depending on length/variant
+// count. No fake progress-to-100%, since we don't know the real duration.
+function GenerationTimer({ label }: { label?: string }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const t = setInterval(() => setElapsed((Date.now() - start) / 1000), 100);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="flex flex-col items-center justify-center gap-2.5">
+      <div className="relative" style={{ width: 56, height: 56 }}>
+        <svg width={56} height={56} className="animate-spin" style={{ animationDuration: '1.1s' }}>
+          <circle cx={28} cy={28} r={22} stroke="rgba(124,92,252,0.12)" strokeWidth={4} fill="none" />
+          <circle
+            cx={28} cy={28} r={22} stroke="url(#genTimerGradient)" strokeWidth={4} fill="none"
+            strokeDasharray={138} strokeDashoffset={95} strokeLinecap="round"
+          />
+          <defs>
+            <linearGradient id="genTimerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#7C5CFC" />
+              <stop offset="100%" stopColor="#F72585" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[11px] font-extrabold" style={{ color: '#7C5CFC' }}>{elapsed.toFixed(1)}s</span>
+        </div>
+      </div>
+      {label && <p className="text-[12px] font-semibold text-center" style={{ color: '#7C5CFC' }}>{label}</p>}
     </div>
   );
 }

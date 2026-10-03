@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Home, Sparkles, BarChart3, Compass, FolderOpen, Target, UserCog, Settings,
-  MessageCircle, ChevronLeft, ChevronRight, Menu, X,
+  MessageCircle, ChevronLeft, ChevronRight, Menu, X, CalendarDays,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useSidebar, EXPANDED_WIDTH, COLLAPSED_WIDTH } from '../contexts/SidebarContext';
@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <Compass size={18} />, label: 'Discover', href: '/discover' },
   { icon: <BarChart3 size={18} />, label: 'Intelligence', href: '/intelligence' },
   { icon: <FolderOpen size={18} />, label: 'Content Library', href: '/history' },
+  { icon: <CalendarDays size={18} />, label: 'Schedule', href: '/schedule' },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup' },
   { icon: <UserCog size={18} />, label: 'Profile Optimizer', href: '/intelligence' },
   { icon: <Settings size={18} />, label: 'Settings', href: '/settings' },

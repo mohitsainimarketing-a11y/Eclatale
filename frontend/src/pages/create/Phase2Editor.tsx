@@ -872,15 +872,6 @@ export default function Phase2Editor({
                 <button onClick={openSchedule} className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}>Schedule</button>
               </>
             )}
-            {scheduleOpen && (
-              <div className="absolute top-full right-0 mt-1 bg-white rounded-xl p-3 z-20 modal-shadow w-56">
-                <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-full text-[12px] px-2 py-1.5 rounded-lg mb-1.5" style={{ border: '1px solid #EDE8FF' }} />
-                <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full text-[12px] px-2 py-1.5 rounded-lg mb-2" style={{ border: '1px solid #EDE8FF' }} />
-                <button onClick={handleConfirmSchedule} disabled={scheduling} className="w-full text-[12px] font-bold text-white py-1.5 rounded-full disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
-                  {scheduling ? 'Scheduling...' : 'Confirm'}
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Carousel CTA */}
@@ -923,11 +914,9 @@ export default function Phase2Editor({
           <button onClick={handleSaveDraft} disabled={savingDraft} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full disabled:opacity-50" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
             <Save size={13} /> {savingDraft ? 'Saving...' : 'Save draft'}
           </button>
-          <div className="relative">
-            <button onClick={openSchedule} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
-              <Calendar size={13} /> Schedule
-            </button>
-          </div>
+          <button onClick={openSchedule} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
+            <Calendar size={13} /> Schedule
+          </button>
         </div>
         <div className="flex-1" />
         <button
@@ -939,6 +928,51 @@ export default function Phase2Editor({
           {publishing ? 'Publishing...' : 'Post to LinkedIn →'}
         </button>
       </div>
+
+      {/* Schedule modal: fixed overlay, triggered from both the bottom bar and Best Time panel */}
+      {scheduleOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-fadeIn" onClick={() => setScheduleOpen(false)}>
+          <div className="bg-white rounded-2xl p-5 w-full max-w-xs shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[14px] font-bold" style={{ color: '#1A1A2E' }}>Schedule this post</p>
+              <button onClick={() => setScheduleOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
+            </div>
+            {bestTime?.recommendedDays?.[0] && (
+              <div className="rounded-xl px-3 py-2 mb-3 text-[11px] font-semibold flex items-center gap-1.5" style={{ background: 'rgba(124,92,252,0.06)', color: '#7C5CFC' }}>
+                <Clock size={11} /> Best time: {bestTime.recommendedDays[0]} at {bestTime.recommendedTimes?.[0] || ''}
+              </div>
+            )}
+            <label className="block text-[11px] font-bold mb-1" style={{ color: '#6B7280' }}>Date</label>
+            <input
+              type="date"
+              value={scheduleDate}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={e => setScheduleDate(e.target.value)}
+              className="w-full text-[13px] px-3 py-2 rounded-xl mb-3"
+              style={{ border: '1.5px solid #EDE8FF' }}
+            />
+            <label className="block text-[11px] font-bold mb-1" style={{ color: '#6B7280' }}>Time</label>
+            <input
+              type="time"
+              value={scheduleTime}
+              onChange={e => setScheduleTime(e.target.value)}
+              className="w-full text-[13px] px-3 py-2 rounded-xl mb-4"
+              style={{ border: '1.5px solid #EDE8FF' }}
+            />
+            <button
+              onClick={handleConfirmSchedule}
+              disabled={scheduling || !scheduleDate || !scheduleTime}
+              className="w-full text-[13px] font-bold text-white py-2.5 rounded-full disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
+            >
+              {scheduling ? 'Scheduling...' : 'Confirm schedule'}
+            </button>
+            <p className="text-[10px] text-center mt-2" style={{ color: '#9CA3AF' }}>
+              Posts publish within the hour of your selected time.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

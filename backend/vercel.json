@@ -57,7 +57,7 @@
   "crons": [
     { "path": "/api/weekly-digest-cron", "schedule": "0 13 * * 1" },
     { "path": "/api/reengagement-cron", "schedule": "0 9 * * *" },
-    { "path": "/api/schedule/publish-due", "schedule": "0 12 * * *" },
+    { "path": "/api/schedule/publish-due", "schedule": "0 * * * *" },
     { "path": "/api/weekly-industry-briefing-cron", "schedule": "0 7 * * 1" }
   ]
 }

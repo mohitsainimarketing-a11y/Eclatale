@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Clock, ExternalLink, Sparkles, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock, ExternalLink, Sparkles, ArrowRight, CalendarDays } from 'lucide-react';
 import { apiFetch } from '../../lib/apiFetch';
 import { Angle, GrowthJourneyResult, STAGE_META } from './types';
 
@@ -28,6 +28,8 @@ export default function Phase3Publish({
 }: Phase3Props) {
   const [journey, setJourney] = useState<GrowthJourneyResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[] } | null>(null);
+  const [bestTimeLocked, setBestTimeLocked] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -38,6 +40,15 @@ export default function Phase3Publish({
       const data = await res.json();
       if (!data.error) setJourney(data);
     }).catch(() => {}).finally(() => setLoading(false));
+
+    apiFetch(`${API_URL}/api/intelligence`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ action: 'best-time', userId }),
+    }).then(async res => {
+      const data = await res.json();
+      if (data.error === 'feature_locked') setBestTimeLocked(true);
+      else if (!data.error) setBestTime(data);
+    }).catch(() => {});
   }, [userId]);
 
   const stageMeta = STAGE_META[journey?.stage || 'unknown'];
@@ -121,6 +132,39 @@ export default function Phase3Publish({
             <a href={linkedinUrl} target="_blank" rel="noreferrer" className="text-[12px] font-bold flex items-center gap-1" style={{ color: '#7C5CFC' }}>
               Open post on LinkedIn <ExternalLink size={12} />
             </a>
+          </div>
+        )}
+
+        {/* Best time to post next */}
+        {(bestTime?.recommendedDays?.[0] || bestTimeLocked) && (
+          <div className="rounded-[14px] p-4 mb-4" style={{ border: '1.5px solid #EDE8FF', background: 'rgba(124,92,252,0.03)' }}>
+            <p className="text-[12px] font-bold flex items-center gap-1.5 mb-1" style={{ color: '#7C5CFC' }}>
+              <CalendarDays size={14} /> Your best slot for the next post
+            </p>
+            {bestTimeLocked ? (
+              <p className="text-[12px] mb-2" style={{ color: '#6B7280', lineHeight: 1.5 }}>
+                Upgrade to Individual to access your personalised best posting times.
+              </p>
+            ) : (
+              <>
+                <p className="text-[22px] font-extrabold mb-0.5" style={{ color: '#1A1A2E' }}>
+                  {bestTime!.recommendedDays[0]} at {bestTime!.recommendedTimes?.[0] || ''}
+                </p>
+                <p className="text-[12px] mb-3" style={{ color: '#6B7280', lineHeight: 1.5 }}>
+                  Your audience is most active then. Get ahead and schedule your next post now.
+                </p>
+                <a
+                  href="/schedule"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full text-white"
+                  style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
+                >
+                  <CalendarDays size={13} /> Schedule next post
+                </a>
+              </>
+            )}
+            {bestTimeLocked && (
+              <a href="/pricing" className="text-[12px] font-bold" style={{ color: '#7C5CFC' }}>Upgrade to Individual</a>
+            )}
           </div>
         )}
 

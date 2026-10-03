@@ -33,6 +33,12 @@ export interface RichTextStyle {
   apply: (text: string) => string;
 }
 
+// Strikethrough via U+0336 COMBINING LONG STROKE OVERLAY applied per character.
+// Works on LinkedIn and survives copy-paste into the composer.
+export function applyStrikethrough(text: string): string {
+  return Array.from(text).map(ch => (ch === '\n' ? ch : ch + '̶')).join('');
+}
+
 export const RICH_TEXT_STYLES: RichTextStyle[] = [
   { id: 'normal', label: 'Normal', apply: t => t },
   { id: 'bold', label: 'Bold', apply: t => transform(t, { upperBase: 0x1D400, lowerBase: 0x1D41A, digitBase: 0x1D7CE }) },

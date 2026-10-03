@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  ArrowLeft, Copy, Save, Calendar, Bold, Italic, Minus, List, ListOrdered, MoreHorizontal,
+  ArrowLeft, Copy, Save, Calendar, Bold, Italic, Strikethrough, Minus, List, ListOrdered, MoreHorizontal,
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
   ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
 import { copyToClipboard } from '../../utils/clipboard';
-import { RICH_TEXT_STYLES } from '../../lib/richText';
+import { RICH_TEXT_STYLES, applyStrikethrough } from '../../lib/richText';
 import { useToast } from '../../contexts/ToastContext';
 import { Angle, Source, PostLength, LENGTH_OPTIONS, AuthenticityScoreResult } from './types';
 import { CTA_TEMPLATES } from './hookCtaTemplates';
@@ -16,6 +16,7 @@ import HookLibraryPanel from './HookLibraryPanel';
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 const BOLD = RICH_TEXT_STYLES.find(s => s.id === 'bold')!.apply;
 const ITALIC = RICH_TEXT_STYLES.find(s => s.id === 'italic')!.apply;
+const BOLD_ITALIC = RICH_TEXT_STYLES.find(s => s.id === 'bold-italic')!.apply;
 const looksLikeUrl = (s: string) => /^https?:\/\/\S+$/i.test(s.trim());
 
 const LOADING_MESSAGES = [
@@ -366,6 +367,15 @@ export default function Phase2Editor({
     setContent(next);
   };
 
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    if (e.key === 'b' && !e.shiftKey) { e.preventDefault(); transformSelection(BOLD); }
+    else if (e.key === 'i' && !e.shiftKey) { e.preventDefault(); transformSelection(ITALIC); }
+    else if (e.key === 'b' && e.shiftKey) { e.preventDefault(); transformSelection(BOLD_ITALIC); }
+    else if ((e.key === 'x' || e.key === 'X') && e.shiftKey) { e.preventDefault(); transformSelection(applyStrikethrough); }
+  };
+
   // ── Bottom bar actions ───────────────────────────────────────────────────
 
   const persistContent = async (): Promise<string | null> => {
@@ -617,8 +627,11 @@ export default function Phase2Editor({
         <div className="flex-1 min-w-0 bg-white flex flex-col md:border-r" style={{ borderColor: '#EDE8FF' }}>
           {/* Toolbar */}
           <div className="flex items-center gap-1 px-4 py-2 border-b flex-wrap" style={{ borderColor: '#EDE8FF' }}>
-            <ToolBtn icon={Bold} onClick={() => transformSelection(BOLD)} label="Bold" />
-            <ToolBtn icon={Italic} onClick={() => transformSelection(ITALIC)} label="Italic" />
+            <FormatBtn icon={Bold} onClick={() => transformSelection(BOLD)} label="Bold" shortcut="⌘B" preview="𝗕" />
+            <FormatBtn icon={Italic} onClick={() => transformSelection(ITALIC)} label="Italic" shortcut="⌘I" preview="𝘐" />
+            <FormatBtn icon={Bold} onClick={() => transformSelection(BOLD_ITALIC)} label="Bold Italic" shortcut="⌘⇧B" preview="𝗕𝘐" />
+            <FormatBtn icon={Strikethrough} onClick={() => transformSelection(applyStrikethrough)} label="Strikethrough" shortcut="⌘⇧X" preview="S̶" />
+            <div className="w-px h-5 mx-0.5" style={{ background: '#EDE8FF' }} />
             <div className="relative">
               <ToolBtn icon={MoreHorizontal} onClick={() => setFormatMoreOpen(o => !o)} label="More formatting" />
               {formatMoreOpen && (
@@ -704,6 +717,7 @@ export default function Phase2Editor({
                 ref={textareaRef}
                 value={content}
                 onChange={e => setContent(e.target.value)}
+                onKeyDown={handleEditorKeyDown}
                 className="w-full h-full min-h-[280px] outline-none resize-y"
                 style={{ border: '1.5px solid #EDE8FF', borderRadius: 12, padding: 16, fontSize: 13.5, lineHeight: 1.85, color: '#1A1A2E', background: '#FDFCFF' }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#7C5CFC'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(124,92,252,0.06)'; }}
@@ -1020,5 +1034,34 @@ function ToolBtn({ icon: Icon, onClick, label }: { icon: React.ComponentType<any
     >
       <Icon size={14} />
     </button>
+  );
+}
+
+// Format button: shows a styled-text preview and a keyboard shortcut tooltip.
+function FormatBtn({ icon: Icon, onClick, label, shortcut, preview }: {
+  icon: React.ComponentType<any>; onClick: () => void; label: string; shortcut: string; preview: string;
+}) {
+  const [hov, setHov] = React.useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={onClick}
+        aria-label={`${label} (${shortcut})`}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        className="h-7 px-2 rounded-lg flex items-center gap-1 transition-colors text-[13px] font-semibold"
+        style={{ color: '#6B7280' }}
+        onMouseDown={e => { e.currentTarget.style.background = 'rgba(124,92,252,0.10)'; }}
+        onMouseUp={e => { e.currentTarget.style.background = hov ? 'rgba(124,92,252,0.06)' : 'transparent'; e.currentTarget.style.color = '#7C5CFC'; }}
+      >
+        <span style={{ fontFamily: 'inherit' }}>{preview}</span>
+      </button>
+      {hov && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap pointer-events-none z-50"
+          style={{ background: '#1A1A2E', color: 'white' }}>
+          {label} <span style={{ opacity: 0.6 }}>{shortcut}</span>
+        </div>
+      )}
+    </div>
   );
 }

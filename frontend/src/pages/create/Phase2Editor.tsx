@@ -572,11 +572,6 @@ export default function Phase2Editor({
   // ── Render helpers ───────────────────────────────────────────────────────
 
   const CUTOFF = 210;
-  const cutoffIdx = content.length > CUTOFF
-    ? (content.slice(0, CUTOFF).lastIndexOf('\n') > 100 ? content.slice(0, CUTOFF).lastIndexOf('\n') : (content.indexOf(' ', CUTOFF) === -1 ? content.length : content.indexOf(' ', CUTOFF)))
-    : -1;
-  const visibleTop = cutoffIdx === -1 ? content : content.slice(0, cutoffIdx);
-  const visibleRest = cutoffIdx === -1 ? '' : content.slice(cutoffIdx);
 
   const topSources = sources.slice(0, 3);
 
@@ -767,31 +762,13 @@ export default function Phase2Editor({
         {/* Right column: intelligence panel */}
         <div className="w-full md:w-[240px] flex-shrink-0 p-4 flex flex-row md:flex-col gap-3 overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none" style={{ background: '#F8F5FF' }}>
           {/* LinkedIn preview */}
-          <div className="bg-white rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
-            <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>LinkedIn Preview</p>
-            <div className="flex items-center gap-2 mb-2">
-              {userAvatar ? <img src={userAvatar} alt={userName} className="w-7 h-7 rounded-full object-cover" /> : (
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>{userInitials}</div>
-              )}
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold truncate" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
-                <p className="text-[9px]" style={{ color: '#9CA3AF' }}>Just now</p>
-              </div>
-            </div>
-            <p className="text-[11px] whitespace-pre-wrap break-words" style={{ color: '#1A1A2E', lineHeight: 1.5 }}>{visibleTop || 'Your post will appear here...'}</p>
-            {visibleRest && (
-              <>
-                <div className="my-1.5 border-t border-dashed" style={{ borderColor: '#EDE8FF' }} />
-                <p className="text-[9px] mb-1" style={{ color: '#9CA3AF' }}>hook ends · {CUTOFF} chars</p>
-                <p className="text-[11px] whitespace-pre-wrap break-words" style={{ color: '#9CA3AF', lineHeight: 1.5 }}>{visibleRest}</p>
-              </>
-            )}
-            <div className="flex items-center gap-3 mt-2.5 pt-2 border-t" style={{ borderColor: '#F0EEF8' }}>
-              <ThumbsUp size={12} style={{ color: '#9CA3AF' }} />
-              <MessageCircle size={12} style={{ color: '#9CA3AF' }} />
-              <Repeat2 size={12} style={{ color: '#9CA3AF' }} />
-            </div>
-          </div>
+          <LinkedInPreviewCard
+            userName={userName}
+            userInitials={userInitials}
+            userAvatar={userAvatar}
+            content={content}
+            cutoff={CUTOFF}
+          />
 
           {!insightsOpen ? (
             <button
@@ -1034,6 +1011,97 @@ function ToolBtn({ icon: Icon, onClick, label }: { icon: React.ComponentType<any
     >
       <Icon size={14} />
     </button>
+  );
+}
+
+// Simulates a LinkedIn feed post card with the real "see more" expand/collapse
+// and a character count progress bar at the bottom.
+function LinkedInPreviewCard({
+  userName, userInitials, userAvatar, content, cutoff,
+}: { userName: string; userInitials: string; userAvatar: string; content: string; cutoff: number }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const LIMIT = 3000;
+  const pct = Math.min(100, (content.length / LIMIT) * 100);
+  const overLimit = content.length > LIMIT;
+  const needsSeeMore = content.length > cutoff;
+
+  const visibleText = (!needsSeeMore || expanded) ? content : content.slice(0, cutoff);
+
+  // Bar color: green up to 80%, amber 80-95%, red 95%+
+  const barColor = pct >= 95 ? '#F72585' : pct >= 80 ? '#F59E0B' : '#10B981';
+
+  return (
+    <div className="bg-white rounded-[14px] flex-shrink-0 w-[210px] md:w-auto snap-start overflow-hidden" style={{ boxShadow: '0 2px 12px rgba(124,92,252,0.10)', border: '1px solid #EDE8FF' }}>
+      {/* Card header */}
+      <div className="px-3 pt-3 pb-2">
+        <p className="text-[9px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Preview</p>
+        <div className="flex items-center gap-2 mb-2">
+          {userAvatar
+            ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+            : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>{userInitials || 'Y'}</div>
+          }
+          <div className="min-w-0">
+            <p className="text-[11.5px] font-bold truncate leading-tight" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
+            <p className="text-[9px] leading-tight" style={{ color: '#9CA3AF' }}>Just now · 🌐</p>
+          </div>
+        </div>
+
+        {/* Post text */}
+        {content.trim() ? (
+          <div>
+            <p className="text-[11px] whitespace-pre-wrap break-words leading-relaxed" style={{ color: '#1A1A2E' }}>
+              {visibleText}
+            </p>
+            {needsSeeMore && (
+              <button
+                onClick={() => setExpanded(e => !e)}
+                className="text-[11px] font-semibold mt-0.5"
+                style={{ color: '#0a66c2' }}
+              >
+                {expanded ? 'see less' : '...see more'}
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="text-[11px] italic" style={{ color: '#C4C4C4' }}>Your post will appear here as you type...</p>
+        )}
+      </div>
+
+      {/* Engagement strip */}
+      <div className="px-3 pb-2.5">
+        <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: '#F0EEF8' }}>
+          <span className="flex items-center gap-1 text-[10px]" style={{ color: '#9CA3AF' }}>
+            <ThumbsUp size={11} /> Like
+          </span>
+          <span className="flex items-center gap-1 text-[10px]" style={{ color: '#9CA3AF' }}>
+            <MessageCircle size={11} /> Comment
+          </span>
+          <span className="flex items-center gap-1 text-[10px]" style={{ color: '#9CA3AF' }}>
+            <Repeat2 size={11} /> Repost
+          </span>
+        </div>
+      </div>
+
+      {/* Character count bar */}
+      <div className="px-3 pb-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[9px] font-semibold" style={{ color: overLimit ? '#F72585' : '#9CA3AF' }}>
+            {overLimit ? `${content.length - LIMIT} over limit` : `${content.length} / ${LIMIT}`}
+          </span>
+          {needsSeeMore && !expanded && (
+            <span className="text-[9px] font-semibold" style={{ color: '#7C5CFC' }}>
+              Hook: {cutoff} chars
+            </span>
+          )}
+        </div>
+        <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: '#F0EEF8' }}>
+          <div
+            className="h-full rounded-full transition-all duration-150"
+            style={{ width: `${pct}%`, background: barColor }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 

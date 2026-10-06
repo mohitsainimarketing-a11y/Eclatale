@@ -210,3 +210,127 @@ export async function generateCTAs(anthropic: Anthropic, topic: string, goal: st
   const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
   return parseJsonArray(text).slice(0, 5).map(String);
 }
+
+// ── Tool 10: LinkedIn Post Analyzer ──────────────────────────────────────────
+
+export interface PostAnalysisResult {
+  overallScore: number;
+  verdict: 'strong' | 'decent' | 'needs_work' | 'weak';
+  hookScore: number;
+  hookType: string;
+  hookFeedback: string;
+  structureScore: number;
+  structureFeedback: string;
+  engagementScore: number;
+  engagementFeedback: string;
+  algorithmScore: number;
+  algorithmFeedback: string;
+  ctaScore: number;
+  ctaFeedback: string;
+  estimatedReachTier: 'viral' | 'high' | 'medium' | 'low';
+  strengths: string[];
+  improvements: string[];
+  charCount: number;
+  wordCount: number;
+}
+
+export async function analyzeLinkedInPost(anthropic: Anthropic, post: string): Promise<PostAnalysisResult> {
+  const charCount = post.length;
+  const wordCount = post.trim().split(/\s+/).length;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1200,
+    system: getDateContext(),
+    messages: [{
+      role: 'user',
+      content: `You are a LinkedIn content strategist. Analyze this LinkedIn post across 5 dimensions and return a detailed JSON report.
+
+POST TO ANALYZE:
+"""
+${post}
+"""
+
+CHAR COUNT: ${charCount} | WORD COUNT: ${wordCount}
+
+Score each dimension 0-100. Be honest, not generous.
+
+SCORING CRITERIA:
+1. hookScore: Does the first line stop scrolling? Does it create curiosity or promise value without clickbait? Is it under 210 chars? Does it avoid weak question openers?
+2. structureScore: Short paragraphs (1-3 lines each), white space for mobile, no walls of text, scannable flow?
+3. engagementScore: Does it have a relatable moment, opinion, controversy, or personal story that invites comments? Is there tension or a payoff?
+4. algorithmScore: 2026 LinkedIn algorithm fit: 900-1300 chars is the sweet spot, native content (no links in body), dwell time signals, saves potential?
+5. ctaScore: Does the post end with a clear, natural call to action? Does it invite specific replies, not just "thoughts?"
+
+HOOK TYPE: classify the opening line as one of: bold_statement, story, statistic, contrarian, list_preview, result_reveal, question, none
+
+REACH TIER: estimate reach potential as: viral, high, medium, low
+
+VERDICT: strong (80+), decent (60-79), needs_work (40-59), weak (0-39) based on overallScore
+
+STRENGTHS: 2-3 specific things this post does well (reference the actual content)
+IMPROVEMENTS: 3-5 specific, actionable fixes (reference the actual content, not generic advice)
+
+RULES FOR YOUR FEEDBACK TEXT:
+- Be specific, reference the actual post content
+- No em dashes, no en dashes
+- No banned words: ${BANNED_WORDS}
+- Keep each feedback string under 120 characters
+- Keep each strength/improvement under 100 characters
+
+Return ONLY valid JSON in this exact shape:
+{
+  "overallScore": number,
+  "verdict": "strong"|"decent"|"needs_work"|"weak",
+  "hookScore": number,
+  "hookType": string,
+  "hookFeedback": string,
+  "structureScore": number,
+  "structureFeedback": string,
+  "engagementScore": number,
+  "engagementFeedback": string,
+  "algorithmScore": number,
+  "algorithmFeedback": string,
+  "ctaScore": number,
+  "ctaFeedback": string,
+  "estimatedReachTier": "viral"|"high"|"medium"|"low",
+  "strengths": [string, string],
+  "improvements": [string, string, string]
+}`,
+    }],
+  });
+
+  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
+  const p = parseJsonObject(text);
+
+  const overallScore = clamp(p.overallScore, 0, 100);
+  const verdictOptions = ['strong', 'decent', 'needs_work', 'weak'] as const;
+  const verdict = verdictOptions.includes(p.verdict)
+    ? p.verdict as PostAnalysisResult['verdict']
+    : (overallScore >= 80 ? 'strong' : overallScore >= 60 ? 'decent' : overallScore >= 40 ? 'needs_work' : 'weak');
+  const reachOptions = ['viral', 'high', 'medium', 'low'] as const;
+  const estimatedReachTier = reachOptions.includes(p.estimatedReachTier)
+    ? p.estimatedReachTier as PostAnalysisResult['estimatedReachTier']
+    : 'medium';
+
+  return {
+    overallScore,
+    verdict,
+    hookScore: clamp(p.hookScore, 0, 100),
+    hookType: String(p.hookType || 'unknown'),
+    hookFeedback: String(p.hookFeedback || ''),
+    structureScore: clamp(p.structureScore, 0, 100),
+    structureFeedback: String(p.structureFeedback || ''),
+    engagementScore: clamp(p.engagementScore, 0, 100),
+    engagementFeedback: String(p.engagementFeedback || ''),
+    algorithmScore: clamp(p.algorithmScore, 0, 100),
+    algorithmFeedback: String(p.algorithmFeedback || ''),
+    ctaScore: clamp(p.ctaScore, 0, 100),
+    ctaFeedback: String(p.ctaFeedback || ''),
+    estimatedReachTier,
+    strengths: Array.isArray(p.strengths) ? p.strengths.slice(0, 3).map(String) : [],
+    improvements: Array.isArray(p.improvements) ? p.improvements.slice(0, 5).map(String) : [],
+    charCount,
+    wordCount,
+  };
+}

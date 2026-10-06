@@ -80,6 +80,14 @@ export const TOOLS: ToolConfig[] = [
     description: "LinkedIn's algorithm rewards posts in a specific length range. Paste your post to see exactly which zone it falls in, where the \"see more\" cutoff hits, and how far you are from the 900-1,300 character sweet spot.",
     seoDescription: "Free LinkedIn post length analyzer: check if your post is in the algorithm's sweet spot instantly.",
   },
+  {
+    slug: 'linkedin-post-analyzer',
+    name: 'LinkedIn Post Analyzer',
+    emoji: '🔬',
+    shortDesc: 'Full breakdown: hook, structure, engagement, algorithm fit, and CTA scored in seconds.',
+    description: 'Paste any LinkedIn post and get a complete 5-dimension analysis: hook strength, mobile structure, engagement potential, 2026 algorithm fit, and CTA quality. You also get your estimated reach tier, what the post does well, and 3-5 specific fixes ranked by impact. Useful for your own posts before publishing, or for studying what competitors do well.',
+    seoDescription: 'Free LinkedIn post analyzer: score hook, structure, engagement, algorithm fit, and CTA instantly. Get specific fixes, no signup required.',
+  },
 ];
 
 export function getTool(slug: string): ToolConfig | undefined {

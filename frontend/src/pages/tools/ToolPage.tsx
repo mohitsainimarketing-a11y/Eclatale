@@ -12,6 +12,7 @@ import ReadabilityChecker from './ReadabilityChecker';
 import AboutGenerator from './AboutGenerator';
 import CtaGenerator from './CtaGenerator';
 import PostLengthAnalyzer from './PostLengthAnalyzer';
+import LinkedInPostAnalyzer from './LinkedInPostAnalyzer';
 
 const COMPONENTS: Record<string, React.ComponentType> = {
   'hook-generator': HookGenerator,
@@ -23,6 +24,7 @@ const COMPONENTS: Record<string, React.ComponentType> = {
   'about-generator': AboutGenerator,
   'cta-generator': CtaGenerator,
   'post-length-analyzer': PostLengthAnalyzer,
+  'linkedin-post-analyzer': LinkedInPostAnalyzer,
 };
 
 export default function ToolPage() {

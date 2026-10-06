@@ -427,6 +427,23 @@ textarea, input[type="text"] { caret-color: #7C5CFC; }
 .animate-spin { animation: spin 1s linear infinite; }
 .animate-bellRing { animation: bellRing 0.5s ease; transform-origin: top center; }
 
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(100%) scale(0.94); }
+  to   { opacity: 1; transform: translateX(0)    scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0)    scale(1); }
+  to   { opacity: 0; transform: translateX(110%) scale(0.94); }
+}
+@keyframes fabPop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  70%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.animate-toastIn  { animation: toastIn  0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-toastOut { animation: toastOut 0.22s cubic-bezier(0.7,0,0.84,0) forwards; }
+.animate-fabPop   { animation: fabPop   0.4s  cubic-bezier(0.16,1,0.3,1) forwards; }
+
 .skeleton {
   background: linear-gradient(90deg, #F3F0FF 0%, #E8E3FF 50%, #F3F0FF 100%);
   background-size: 800px 100%;

@@ -4,6 +4,7 @@ import { Copy, Check, Trash2, Globe, FileText, MessageCircle, Image, Clock, Load
 import { copyToClipboard } from '../utils/clipboard';
 import { useFeatureGate } from '../hooks/useFeatureGate';
 import AppShell from '../components/AppShell';
+import EmptyState from '../components/EmptyState';
 import { useToast } from '../contexts/ToastContext';
 import { apiFetch } from '../lib/apiFetch';
 
@@ -264,14 +265,12 @@ export default function History() {
             {[1, 2, 3].map(i => <div key={i} className="skeleton h-32 w-full" />)}
           </div>
         ) : posts.length === 0 ? (
-          <div className="card p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center text-white mx-auto mb-5 opacity-60">
-              <FileText size={28} />
-            </div>
-            <h3 className="text-lg font-bold text-brand-dark mb-2">No content yet</h3>
-            <p className="text-sm text-brand-muted mb-6">Generate your first post and it will appear here.</p>
-            <a href="/create" className="btn-primary text-sm">Create Your First Post</a>
-          </div>
+          <EmptyState
+            icon={<FileText size={26} />}
+            heading="No content yet"
+            subtext="Generate your first post and it will appear here."
+            cta={{ label: 'Create your first post', href: '/create' }}
+          />
         ) : (
           <div className="space-y-4">
             {/* Search */}

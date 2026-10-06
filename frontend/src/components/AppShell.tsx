@@ -42,7 +42,10 @@ export default function AppShell({ children, mobileTitle }: { children: React.Re
         style={{ marginLeft: breakpoint === 'mobile' ? 0 : sidebarWidth }}
       >
         <MobileHeader title={mobileTitle} />
-        {children}
+        {/* pb-20 on mobile gives 80px clearance so the fixed FAB never covers page content */}
+        <div className="pb-20 md:pb-0">
+          {children}
+        </div>
       </div>
       <CreateFAB />
     </div>

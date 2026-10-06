@@ -84,6 +84,28 @@ export default defineConfig(({ mode }) => {
       outDir: 'build',
       assetsDir: 'static',
       sourcemap: false,
+      // Split vendor code into separately-cached chunks. When app code changes
+      // the vendor chunks stay byte-for-byte identical, so returning visitors
+      // only re-download the small app chunk. Recharts alone is ~400 KB; keeping
+      // it separate means it is cached independently of every other change.
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router') || id.includes('node_modules/scheduler')) {
+              return 'vendor-react';
+            }
+            if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-') || id.includes('node_modules/victory-') || id.includes('node_modules/d3')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('node_modules/@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (id.includes('node_modules/lucide-react')) {
+              return 'vendor-icons';
+            }
+          },
+        },
+      },
     },
   };
 });

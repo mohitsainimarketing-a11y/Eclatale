@@ -451,6 +451,36 @@ textarea, input[type="text"] { caret-color: #7C5CFC; }
   border-radius: 8px;
 }
 
+/* ── Rendering performance hints ── */
+
+/* Sidebar transitions GPU-composited: only transform and opacity change,
+   compositing never triggers layout or paint on surrounding content. */
+aside {
+  will-change: width, transform;
+}
+
+/* Toasts slide in/out on their own layer. */
+.animate-toastIn,
+.animate-toastOut {
+  will-change: transform, opacity;
+}
+
+/* Card hover uses transform only, so promote to its own layer during hover. */
+.card-hover {
+  will-change: transform;
+}
+
+/* Skeleton shimmer is a repeating gradient animation. GPU handles it. */
+.skeleton {
+  will-change: background-position;
+}
+
+/* `contain: content` lets the browser skip layout/paint of card internals
+   when nothing outside the card changes. Safe on leaf components. */
+.card {
+  contain: layout style;
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -568,4 +598,48 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50px;
   font-size: 13px;
   font-weight: 600;
+}
+
+/* ── Mobile layout guards ── */
+
+/* Prevent any page from causing horizontal body scroll. Every page should
+   handle its own overflow, but this is a hard floor. */
+body { overflow-x: hidden; }
+
+/* Minimum 44px touch target on interactive elements on touch devices.
+   Applied as a padding expansion so the visual size never changes. */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* On small screens the command palette should span most of the width. */
+@media (max-width: 480px) {
+  /* Command palette inner modal already uses max-w via inline style;
+     clamp it to full-width minus safe gutter so it never clips. */
+  .command-palette-modal {
+    width: calc(100vw - 32px) !important;
+  }
+}
+
+/* Charts: on mobile, Recharts ResponsiveContainer can collapse to 0 height
+   if the parent has no explicit height. Guard against invisible charts. */
+.recharts-responsive-container {
+  min-height: 100px;
+}
+
+/* Tables wider than the viewport: scroll horizontally within their container,
+   never push the page wider. */
+table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+/* Restore table layout when already inside an explicit overflow wrapper (table inside card). */
+.card table, [class*="overflow-x-auto"] table {
+  display: table;
+  overflow-x: visible;
 }

@@ -156,6 +156,13 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
             {user.tier === 'free' && (
               <a href="/pricing" className="text-[11px] font-semibold text-brand-purple hover:underline">Upgrade →</a>
             )}
+            <button
+              onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
+              className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-brand-muted hover:text-brand-purple transition-colors"
+            >
+              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: '#F3F0FF', color: '#7C5CFC', border: '1px solid rgba(124,92,252,0.2)' }}>⌘K</kbd>
+              Quick navigation
+            </button>
           </div>
         )}
       </div>

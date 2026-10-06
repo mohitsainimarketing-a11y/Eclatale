@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { initAnalytics, trackEvent } from './lib/analytics';
 import AriaWidget from './components/AriaWidget';
+import CommandPalette from './components/CommandPalette';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -78,6 +79,7 @@ function App() {
       <SidebarProvider>
       <PageViewTracker />
       <AriaWidget />
+      <CommandPalette />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Landing />} />

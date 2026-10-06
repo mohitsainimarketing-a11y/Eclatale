@@ -146,7 +146,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
       <div className="px-3 py-3 border-t border-[rgba(124,92,252,0.06)] space-y-0.5 flex-shrink-0">
         <button
           onClick={() => window.dispatchEvent(new Event('aria:open'))}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-muted hover:bg-[rgba(124,92,252,0.04)] hover:text-brand-dark transition-all ${collapsed ? 'justify-center' : ''}`}
+          className={`hidden md:flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-muted hover:bg-[rgba(124,92,252,0.04)] hover:text-brand-dark transition-all ${collapsed ? 'justify-center' : ''}`}
         >
           <MessageCircle size={18} />
           {!collapsed && <span>Talk to Aria</span>}

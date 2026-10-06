@@ -159,7 +159,7 @@ export default function AriaWidget() {
   const isCreatePage = location.pathname === '/create';
 
   return (
-    <>
+    <div className="hidden md:block">
       {/* Trigger button */}
       <button
         type="button"
@@ -274,6 +274,6 @@ export default function AriaWidget() {
           </form>
         </div>
       )}
-    </>
+    </div>
   );
 }

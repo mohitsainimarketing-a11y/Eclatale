@@ -121,16 +121,16 @@ export default function Phase1Angles({
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b px-5 md:px-8 py-6" style={{ borderColor: '#EDE8FF' }}>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+      <div className="bg-white border-b px-4 md:px-8 py-4 md:py-6" style={{ borderColor: '#EDE8FF' }}>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex-1">
             <span
-              className="inline-block text-[11px] font-bold px-3 py-1 rounded-full mb-3"
+              className="inline-block text-[11px] font-bold px-3 py-1 rounded-full mb-2 max-w-full truncate"
               style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.12) 0%, rgba(247,37,133,0.12) 100%)', color: '#7C5CFC' }}
             >
-              AI-curated for {userRole || 'you'} in {userDomain || 'your field'} · Updated {timeAgo(updatedAt)}
+              AI-curated for {userRole || 'you'} in {userDomain || 'your field'} · {timeAgo(updatedAt)}
             </span>
-            <h1 className="text-2xl md:text-[28px] font-extrabold" style={{ color: '#1A1A2E' }}>
+            <h1 className="text-xl md:text-[28px] font-extrabold" style={{ color: '#1A1A2E' }}>
               What will you post about{' '}
               <span style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                 today?
@@ -209,7 +209,7 @@ export default function Phase1Angles({
       </div>
 
       {/* Footer */}
-      <div className="bg-white border-t px-5 md:px-8 py-4 flex items-center justify-between gap-4 flex-wrap" style={{ borderColor: '#EDE8FF' }}>
+      <div className="bg-white border-t px-4 md:px-8 py-3 md:py-4 flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: '#EDE8FF' }}>
         <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: '#6B7280' }}>
           <span style={{ color: '#10B981' }}>●</span> In your voice · {voiceLabel}
           <a href="/persona-setup" className="font-semibold ml-1" style={{ color: '#7C5CFC' }}>Edit →</a>

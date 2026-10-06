@@ -62,7 +62,7 @@ export default function Phase3Publish({
     : '';
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-white flex justify-center px-5 py-10">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-white flex justify-center px-4 py-6 sm:py-10">
       <div className="w-full max-w-[520px]">
         {/* Celebration header */}
         <div className="flex flex-col items-center text-center mb-8">
@@ -74,7 +74,7 @@ export default function Phase3Publish({
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
           <div className="text-center bg-white rounded-[14px] py-4" style={{ border: '1.5px solid #EDE8FF' }}>
             <p className="text-xl font-extrabold" style={{ color: '#1A1A2E' }}>{loading ? '...' : `${journey?.metrics.currentStreak ?? 0} 🔥`}</p>
             <p className="text-[10px] font-semibold mt-1" style={{ color: '#9CA3AF' }}>Day streak</p>

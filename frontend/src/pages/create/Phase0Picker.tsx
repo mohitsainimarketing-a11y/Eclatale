@@ -96,7 +96,7 @@ export default function Phase0Picker({
       className="flex-1 flex flex-col overflow-y-auto"
       style={{ background: 'linear-gradient(160deg, #F4F0FF 0%, #FDF9FF 60%, #FFF0F8 100%)' }}
     >
-      <div className="max-w-2xl mx-auto w-full px-4 py-8 sm:py-12 flex flex-col gap-6">
+      <div className="max-w-2xl mx-auto w-full px-4 py-5 sm:py-12 flex flex-col gap-4 sm:gap-6">
 
         {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">

@@ -2,9 +2,9 @@ import React from 'react';
 import { Check } from 'lucide-react';
 
 const STEPS = [
-  { n: 1 as const, label: 'Find your angle' },
-  { n: 2 as const, label: 'Write your post' },
-  { n: 3 as const, label: 'Publish and grow' },
+  { n: 1 as const, label: 'Find your angle', short: 'Angle' },
+  { n: 2 as const, label: 'Write your post', short: 'Write' },
+  { n: 3 as const, label: 'Publish', short: 'Publish' },
 ];
 
 export default function PhaseNav({ currentPhase }: { currentPhase: 0 | 1 | 2 | 3 }) {
@@ -39,10 +39,11 @@ export default function PhaseNav({ currentPhase }: { currentPhase: 0 | 1 | 2 | 3
                   {state === 'done' ? <Check size={13} strokeWidth={3} /> : step.n}
                 </div>
                 <span
-                  className="text-[13px] font-semibold whitespace-nowrap hidden sm:inline transition-colors"
+                  className="font-semibold whitespace-nowrap transition-colors text-[11px] sm:text-[13px]"
                   style={{ color: state === 'active' ? '#7C5CFC' : state === 'done' ? '#10B981' : '#9CA3AF' }}
                 >
-                  {step.label}
+                  <span className="sm:hidden">{step.short}</span>
+                  <span className="hidden sm:inline">{step.label}</span>
                 </span>
               </div>
             </React.Fragment>

@@ -578,7 +578,7 @@ export default function Phase2Editor({
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Spark bar */}
-      <div className="bg-white border-b px-4 md:px-6 py-3 flex items-center gap-3 flex-wrap" style={{ borderColor: '#EDE8FF' }}>
+      <div className="bg-white border-b px-4 md:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center gap-2" style={{ borderColor: '#EDE8FF' }}>
         {angle ? (
           <span
             className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
@@ -597,11 +597,11 @@ export default function Phase2Editor({
           type="text"
           value={sparkInput}
           onChange={e => setSparkInput(e.target.value)}
-          placeholder="What sparked this? Paste a URL, quote, or describe what triggered it (optional but powerful)"
-          className="flex-1 min-w-[160px] text-[13px] bg-transparent outline-none px-2"
+          placeholder="What sparked this? A URL, quote, or what triggered it (optional)"
+          className="flex-1 min-w-0 text-[13px] bg-transparent outline-none px-2 py-0.5"
           style={{ color: '#1A1A2E' }}
         />
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0 self-start sm:self-auto">
           {LENGTH_OPTIONS.map(l => (
             <button
               key={l.id}
@@ -722,8 +722,8 @@ export default function Phase2Editor({
           </div>
 
           {/* Editor footer */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t flex-wrap" style={{ borderColor: '#EDE8FF' }}>
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 border-t" style={{ borderColor: '#EDE8FF' }}>
+            <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>{content.length} / 3,000</span>
               <button
                 onClick={handleHumanize}
@@ -736,7 +736,7 @@ export default function Phase2Editor({
                 {humanizing ? 'Humanizing…' : 'Humanize'}
               </button>
             </div>
-            <div className="flex items-center gap-2 flex-1 max-w-md">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <Sparkles size={14} style={{ color: '#7C5CFC', flexShrink: 0 }} />
               <input
                 type="text"

@@ -592,6 +592,7 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Features</a>
             <a href="/pricing" onClick={handleViewPricing} className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Pricing</a>
+            <a href="/tools" className="text-sm font-semibold text-brand-purple hover:opacity-80 transition-opacity">Free Tools</a>
             <a href="/blog" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Blog</a>
             <a href="/resources" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">Resources</a>
             <a href="#faq" className="text-sm font-medium text-brand-muted hover:text-brand-purple transition-colors">FAQ</a>
@@ -606,6 +607,7 @@ export default function Landing() {
           <div className="md:hidden bg-white border-t border-[rgba(124,92,252,0.06)] px-5 py-4 space-y-3 animate-fadeIn">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">Features</a>
             <a href="/pricing" onClick={() => { setMobileMenuOpen(false); handleViewPricing(); }} className="block py-3 text-sm font-medium text-brand-muted">Pricing</a>
+            <a href="/tools" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-semibold text-brand-purple">Free Tools</a>
             <a href="/blog" className="block py-3 text-sm font-medium text-brand-muted">Blog</a>
             <a href="/resources" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">Resources</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-sm font-medium text-brand-muted">FAQ</a>

@@ -39,7 +39,7 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
   const { role, industry } = await getRoleIndustry(supabase, userId);
 
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-sonnet-4-6',
     max_tokens: 4000,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
     system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
@@ -81,8 +81,8 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
   // retry without web_search so users always get something useful.
   if (rawAngles.length === 0) {
     const fallback = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 3000,
       system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
       messages: [{
         role: 'user',

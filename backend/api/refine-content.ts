@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
-import { SYSTEM_PROMPT_BASE, OUTPUT_RULES } from '../lib/contentPrompts';
+import { cachedSystem } from '../lib/promptCache';
 import { getDateContext } from '../lib/dateContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
@@ -31,13 +31,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);
 
-    const systemPrompt = `${getDateContext()}
-
-${SYSTEM_PROMPT_BASE}
+    const dynamicContent = `${getDateContext()}
 
 ${personaFragment ? personaFragment + '\n' : ''}You are helping the user refine their existing post. Your job is to apply ONE specific change while preserving everything that makes the post effective.
-
-${OUTPUT_RULES}
 
 REFINEMENT RULES:
 - Apply ONLY the change the user asked for. Do not rewrite the whole post unless explicitly asked.
@@ -45,7 +41,7 @@ REFINEMENT RULES:
 - If they say "make it shorter", cut ruthlessly and do not add. If they say "punchier hook", only rewrite the opening lines.
 - If they say "more casual", adjust tone only. If they say "add a data point", weave one in naturally.
 - Return the FULL revised post, not just the changed section.
-- Do not explain what you changed. Return only the post content.`;
+- Do not explain what you changed. Return only the post content.`.trim();
 
     const userMessage = `Here is my current draft:
 
@@ -59,7 +55,7 @@ Return the full revised post.`;
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: userMessage }],
-      system: systemPrompt,
+      system: cachedSystem(dynamicContent),
     });
 
     const content = message.content[0].type === 'text' ? message.content[0].text : '';

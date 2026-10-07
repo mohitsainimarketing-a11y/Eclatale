@@ -167,10 +167,13 @@ export default function NotificationBell({ userId }: { userId: string }) {
       </button>
 
       {open && (
-        <div
-          className="absolute right-0 mt-2 w-[380px] max-w-[90vw] bg-white rounded-2xl p-0 overflow-hidden z-50 animate-fadeIn"
-          style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
-        >
+        <>
+          {/* Mobile backdrop */}
+          <div className="md:hidden fixed inset-0 z-40 bg-black/20" onClick={() => setOpen(false)} />
+          <div
+            className="fixed md:absolute inset-x-2 top-[60px] md:inset-x-auto md:top-auto md:right-0 md:mt-2 md:w-[380px] bg-white rounded-2xl p-0 overflow-hidden z-50 animate-fadeIn"
+            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
+          >
           <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(124,92,252,0.08)]">
             <h3 className="text-base font-bold text-brand-dark">Notifications</h3>
             {unreadCount > 0 && (
@@ -231,7 +234,8 @@ export default function NotificationBell({ userId }: { userId: string }) {
               </button>
             </div>
           )}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

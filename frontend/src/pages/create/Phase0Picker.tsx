@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles, TrendingUp, FileText, Lightbulb, ArrowRight, Link } from 'lucide-react';
+import { Sparkles, TrendingUp, FileText, Lightbulb, ArrowRight } from 'lucide-react';
 import { apiFetch } from '../../lib/apiFetch';
 import { Angle, Source } from './types';
 
@@ -15,13 +15,6 @@ interface Phase0Props {
   onGoIdea: (angles: Angle[], sources: Source[]) => void;
 }
 
-const IDEA_STARTERS = [
-  'What I learned from failing at...',
-  'The uncomfortable truth about...',
-  'Why most people get X wrong...',
-  'After years in this industry...',
-];
-
 export default function Phase0Picker({
   userId, firstName, voiceLabel,
   onGoIdeas, onGoTrending, onGoRepurpose, onGoIdea,
@@ -29,13 +22,6 @@ export default function Phase0Picker({
   const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(true);
 
-  const [expandedCard, setExpandedCard] = useState<'repurpose' | 'idea' | null>(null);
-  const [urlInput, setUrlInput] = useState('');
-  const [urlLoading, setUrlLoading] = useState(false);
-  const [urlError, setUrlError] = useState('');
-  const [ideaInput, setIdeaInput] = useState('');
-  const [ideaLoading, setIdeaLoading] = useState(false);
-  const [ideaError, setIdeaError] = useState('');
 
   useEffect(() => {
     apiFetch(`${API_URL}/api/create/trending-preview`, {
@@ -48,46 +34,6 @@ export default function Phase0Picker({
       .catch(() => {})
       .finally(() => setTrendingLoading(false));
   }, [userId]);
-
-  const handleRepurpose = async () => {
-    const url = urlInput.trim();
-    if (!url) return;
-    setUrlLoading(true);
-    setUrlError('');
-    try {
-      const res = await apiFetch(`${API_URL}/api/intelligence`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ action: 'fetch-url', url }),
-      });
-      const d = await res.json();
-      if (d.error) throw new Error(d.error);
-      onGoRepurpose(d.text || url);
-    } catch (e: any) {
-      setUrlError(e.message || "Couldn't fetch that URL. Try another link.");
-    }
-    setUrlLoading(false);
-  };
-
-  const handleFromIdea = async (idea: string) => {
-    const text = idea.trim();
-    if (!text) return;
-    setIdeaLoading(true);
-    setIdeaError('');
-    try {
-      const res = await apiFetch(`${API_URL}/api/create/from-idea`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ userId, idea: text }),
-      });
-      const d = await res.json();
-      if (d.error) throw new Error(d.error);
-      onGoIdea(d.angles || [], d.sources || []);
-    } catch (e: any) {
-      setIdeaError(e.message || "Couldn't process that idea. Try again.");
-    }
-    setIdeaLoading(false);
-  };
 
   const displayName = firstName.split(' ')[0] || 'there';
 
@@ -142,7 +88,10 @@ export default function Phase0Picker({
           </button>
 
           {/* Card 2: What's trending */}
-          <div className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5">
+          <button
+            onClick={() => onGoTrending(trendingTopics[0] || '')}
+            className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] text-left cursor-pointer"
+          >
             <div className="h-2" style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }} />
             <div className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -169,28 +118,24 @@ export default function Phase0Picker({
               ) : trendingTopics.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {trendingTopics.map((t, i) => (
-                    <button
-                      key={i}
-                      onClick={() => onGoTrending(t)}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[rgba(15,23,42,0.06)] text-[#1E3A5F] hover:bg-[rgba(15,23,42,0.12)] transition-colors"
-                    >
+                    <span key={i} className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[rgba(15,23,42,0.06)] text-[#1E3A5F]">
                       {t}
-                    </button>
+                    </span>
                   ))}
                 </div>
               ) : (
-                <button
-                  onClick={() => onGoTrending('')}
-                  className="flex items-center gap-1 text-[12px] font-semibold text-[#1E3A5F]"
-                >
+                <span className="flex items-center gap-1 text-[12px] font-semibold text-[#1E3A5F]">
                   Browse trending topics <ArrowRight size={12} />
-                </button>
+                </span>
               )}
             </div>
-          </div>
+          </button>
 
           {/* Card 3: I have something */}
-          <div className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5">
+          <button
+            onClick={onGoIdeas}
+            className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] text-left cursor-pointer"
+          >
             <div className="h-2" style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }} />
             <div className="p-4">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3 text-white"
@@ -201,45 +146,17 @@ export default function Phase0Picker({
               <p className="text-[13px] text-brand-muted leading-snug mb-3">
                 Turn an article, link, or note into a post
               </p>
-              {expandedCard === 'repurpose' ? (
-                <div className="space-y-2" onClick={e => e.stopPropagation()}>
-                  <div className="flex gap-2">
-                    <div className="flex-1 flex items-center gap-2 rounded-xl border border-[rgba(124,92,252,0.15)] bg-[rgba(124,92,252,0.03)] px-3 py-2">
-                      <Link size={13} className="text-brand-muted flex-shrink-0" />
-                      <input
-                        autoFocus
-                        type="url"
-                        value={urlInput}
-                        onChange={e => setUrlInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleRepurpose(); }}
-                        placeholder="Paste a URL..."
-                        className="flex-1 bg-transparent text-[13px] text-brand-dark placeholder-brand-muted outline-none"
-                      />
-                    </div>
-                    <button
-                      onClick={handleRepurpose}
-                      disabled={!urlInput.trim() || urlLoading}
-                      className="px-3 py-2 rounded-xl text-white text-[13px] font-bold disabled:opacity-40 transition-opacity"
-                      style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }}
-                    >
-                      {urlLoading ? '…' : '→'}
-                    </button>
-                  </div>
-                  {urlError && <p className="text-[11px] text-red-500">{urlError}</p>}
-                </div>
-              ) : (
-                <button
-                  onClick={() => setExpandedCard('repurpose')}
-                  className="flex items-center gap-1 text-[12px] font-semibold text-[#F59E0B]"
-                >
-                  Paste a link <ArrowRight size={13} />
-                </button>
-              )}
+              <span className="flex items-center gap-1 text-[12px] font-semibold text-[#F59E0B]">
+                Paste a link <ArrowRight size={13} />
+              </span>
             </div>
-          </div>
+          </button>
 
           {/* Card 4: I have an idea */}
-          <div className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5">
+          <button
+            onClick={onGoIdeas}
+            className="rounded-2xl bg-white overflow-hidden border border-[rgba(124,92,252,0.1)] transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] text-left cursor-pointer"
+          >
             <div className="h-2" style={{ background: 'linear-gradient(135deg, #3B82F6, #6366F1)' }} />
             <div className="p-4">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3 text-white"
@@ -250,47 +167,11 @@ export default function Phase0Picker({
               <p className="text-[13px] text-brand-muted leading-snug mb-3">
                 Type your spark. AI turns it into angles
               </p>
-              {expandedCard === 'idea' ? (
-                <div className="space-y-2" onClick={e => e.stopPropagation()}>
-                  <textarea
-                    autoFocus
-                    value={ideaInput}
-                    onChange={e => setIdeaInput(e.target.value)}
-                    placeholder="What's on your mind? A lesson, a take, an experience..."
-                    rows={3}
-                    className="w-full rounded-xl border border-[rgba(124,92,252,0.15)] bg-[rgba(124,92,252,0.03)] px-3 py-2 text-[13px] text-brand-dark placeholder-brand-muted outline-none resize-none"
-                  />
-                  <div className="flex flex-wrap gap-1.5 pb-1">
-                    {IDEA_STARTERS.map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setIdeaInput(s)}
-                        className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[rgba(59,130,246,0.08)] text-[#3B82F6] hover:bg-[rgba(59,130,246,0.15)] transition-colors text-left"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                  {ideaError && <p className="text-[11px] text-red-500">{ideaError}</p>}
-                  <button
-                    onClick={() => handleFromIdea(ideaInput)}
-                    disabled={!ideaInput.trim() || ideaLoading}
-                    className="w-full py-2 rounded-xl text-white text-[13px] font-bold disabled:opacity-40 transition-opacity"
-                    style={{ background: 'linear-gradient(135deg, #3B82F6, #6366F1)' }}
-                  >
-                    {ideaLoading ? 'Building angles...' : 'Build my angles →'}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setExpandedCard('idea')}
-                  className="flex items-center gap-1 text-[12px] font-semibold text-[#3B82F6]"
-                >
-                  Tell me more <ArrowRight size={13} />
-                </button>
-              )}
+              <span className="flex items-center gap-1 text-[12px] font-semibold text-[#3B82F6]">
+                Tell me more <ArrowRight size={13} />
+              </span>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Bottom hint */}

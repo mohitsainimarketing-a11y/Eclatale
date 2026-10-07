@@ -3,7 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
 import { readCache, writeCache } from './intelligenceCache';
 import { computeTrustScore, extractDomain } from './webResearch';
-import { UNIVERSAL_HUMAN_WRITING_RULES } from './writingStyles';
+import { STATIC_CONTENT_BLOCK, dynamicBlock } from './promptCache';
 
 // Fixed visual metadata per angle style, kept server-side (not model-generated)
 // so every card renders with exact design-system colors instead of hoping
@@ -42,7 +42,7 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 2500,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
-    system: getDateContext(),
+    system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
     messages: [{
       role: 'user',
       content: `Generate 4 distinct LinkedIn post angles for a ${role} in ${industry}.
@@ -55,8 +55,6 @@ For each angle:
 - Assign a style from exactly these 6 (use this exact casing): Contrarian, Storyteller, Data-driven, Insider, Teacher, Motivator
 - Write one sentence explaining why this works for a ${role} in ${industry} (mention their specific role)
 - Add a realistic performance stat specific to the style type (e.g. "2.4x more comments")
-
-${UNIVERSAL_HUMAN_WRITING_RULES}
 
 After searching, respond with ONLY valid JSON (no prose, no markdown fences) matching this shape:
 {
@@ -85,7 +83,7 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
     const fallback = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 2000,
-      system: getDateContext(),
+      system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
       messages: [{
         role: 'user',
         content: `Generate 4 distinct LinkedIn post angles for a ${role} in ${industry}.
@@ -95,8 +93,6 @@ For each angle:
 - Assign a style from exactly these 6 (use exact casing): Contrarian, Storyteller, Data-driven, Insider, Teacher, Motivator
 - Write one sentence explaining why this works for a ${role} in ${industry}
 - Add a realistic performance stat (e.g. "2.4x more comments")
-
-${UNIVERSAL_HUMAN_WRITING_RULES}
 
 Return ONLY valid JSON (no prose, no markdown fences):
 {"angles":[{"style":"Contrarian","hook":"...","insight":"...","performanceStat":"..."}],"sources":[]}`,

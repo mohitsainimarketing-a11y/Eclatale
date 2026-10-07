@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
-import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
+import { CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
+import { cachedSystem } from '../lib/promptCache';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
@@ -50,9 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const trendResult = await getTrendContext(anthropic, supabase, industry, role);
     const trendFragment = buildTrendPromptFragment(trendResult, industry);
 
-    const systemPrompt = `${getDateContext()}
-
-${SYSTEM_PROMPT_BASE}
+    const dynamicContent = `${getDateContext()}
 
 ${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Role: ${role}
@@ -61,8 +60,6 @@ ${goalsText}
 
 ${trendFragment ? trendFragment + '\n' : ''}
 ${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}
-
-${OUTPUT_RULES}
 
 ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}
 
@@ -76,7 +73,7 @@ ${repurposeMode === 'voice' ? `- Extract the core insight, argument, or most val
 - Reframe it completely in the author's authentic voice. This is their commentary on it, not a repost.
 - Add a personal perspective frame. The reader should feel this is the author's genuine take, not borrowed content.` : ''}
 ${repurposeMode === 'pattern' ? `- Identify the STRUCTURAL pattern the source uses (its hook type, how it builds, how it closes) and reuse that exact structure/shape for a completely different, original point. The pattern is what's borrowed, never the content or opinion.` : ''}
-${repurposeMode === 'reaction' ? `- The author has a specific personal reaction to this source, provided below. Build the post around THEIR reaction/opinion, using the source only as the trigger or backdrop. The source's ideas are not the point, the author's take on them is.` : ''}`;
+${repurposeMode === 'reaction' ? `- The author has a specific personal reaction to this source, provided below. Build the post around THEIR reaction/opinion, using the source only as the trigger or backdrop. The source's ideas are not the point, the author's take on them is.` : ''}`.trim();
 
     let extractedPattern = '';
     if (repurposeMode === 'pattern') {
@@ -119,7 +116,7 @@ Extract the key insight, filter it through my perspective as a ${role} in ${indu
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: userMessage }],
-      system: systemPrompt,
+      system: cachedSystem(dynamicContent),
     });
 
     const content = message.content[0].type === 'text' ? message.content[0].text : '';

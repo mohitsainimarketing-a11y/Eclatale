@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
-import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, OUTPUT_RULES } from '../lib/contentPrompts';
+import { CONTENT_TYPE_INSTRUCTIONS } from '../lib/contentPrompts';
+import { cachedSystem } from '../lib/promptCache';
 import { getDateContext } from '../lib/dateContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
@@ -40,13 +41,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const targetLabel = FORMAT_LABELS[targetFormat] || targetFormat;
     const formatInstructions = CONTENT_TYPE_INSTRUCTIONS[targetFormat] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post'];
 
-    const systemPrompt = `${getDateContext()}
-
-${SYSTEM_PROMPT_BASE}
+    const dynamicContent = `${getDateContext()}
 
 ${personaFragment ? personaFragment + '\n' : ''}You are adapting existing content to a new format. Your job is to preserve the core insight, specific facts, and the author's authentic voice, while restructuring completely for the target platform's conventions.
-
-${OUTPUT_RULES}
 
 ${formatInstructions}
 
@@ -55,7 +52,7 @@ ADAPTATION RULES:
 - Keep the author's voice and distinctive phrasing where it fits the new format.
 - Restructure aggressively to match the new format (length, hook style, pacing, structure).
 - Do NOT water down or genericize. The specificity is the value.
-- Return only the adapted content. No preamble, no explanation, no "Here's the adapted version:".`;
+- Return only the adapted content. No preamble, no explanation, no "Here's the adapted version:".`.trim();
 
     const userMessage = `Adapt this content into a ${targetLabel}:
 
@@ -68,7 +65,7 @@ Return the full adapted ${targetLabel}.`;
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: userMessage }],
-      system: systemPrompt,
+      system: cachedSystem(dynamicContent),
     });
 
     const content = message.content[0].type === 'text' ? message.content[0].text : '';

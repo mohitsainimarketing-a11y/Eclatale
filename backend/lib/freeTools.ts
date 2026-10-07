@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { getWritingStyle, WRITING_STYLES, UNIVERSAL_HUMAN_WRITING_RULES, NO_DASH_RULE, lengthInstruction, TALK_LENGTH_OPTIONS } from './writingStyles';
+import { getWritingStyle, WRITING_STYLES, NO_DASH_RULE, lengthInstruction, TALK_LENGTH_OPTIONS } from './writingStyles';
+import { cachedSystem } from './promptCache';
 import { getDateContext } from './dateContext';
 
 const BANNED_WORDS = 'delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative';
@@ -82,20 +83,18 @@ Return ONLY a JSON array of 5 strings, no prose, no markdown fences.`,
 export async function generateDemoPost(anthropic: Anthropic, topic: string, styleId: string, lengthId: string): Promise<string> {
   const style = getWritingStyle(styleId) || WRITING_STYLES[0];
   const length = TALK_LENGTH_OPTIONS.some(o => o.id === lengthId) ? lengthId : 'standard';
-  const system = `${getDateContext()}
+  const dynamicContent = `${getDateContext()}
 
 ${style.prompt}
 
 ${lengthInstruction(length)}
-
-${UNIVERSAL_HUMAN_WRITING_RULES}
 
 This is a free demo on a public tools page. Generate a high-quality example post that showcases what this style can do. Return just the post text, no explanation, no markdown formatting, no quotes around it.`;
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1400,
-    system,
+    system: cachedSystem(dynamicContent),
     messages: [{ role: 'user', content: `Write the post about: ${topic}` }],
   });
   return message.content[0].type === 'text' ? message.content[0].text.trim() : '';

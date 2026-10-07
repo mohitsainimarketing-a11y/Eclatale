@@ -45,16 +45,16 @@ function AngleCard({ angle, selected, onClick }: { angle: Angle; selected: boole
         {selected && <Check size={13} color="white" strokeWidth={3} />}
       </div>
 
-      <div className="flex items-center justify-between mb-3 pr-7">
+      <div className="flex items-center gap-2 mb-3 pr-7 min-w-0">
         <span
-          className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full"
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
           style={{ background: angle.badgeColor, color: angle.badgeTextColor }}
         >
           <span>{angle.styleEmoji}</span>{angle.style}
         </span>
         {angle.performanceStat && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold" style={{ color: angle.performanceColor }}>
-            <PerfIcon size={12} />{angle.performanceStat}
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold min-w-0 truncate" style={{ color: angle.performanceColor }}>
+            <PerfIcon size={12} className="flex-shrink-0" /><span className="truncate">{angle.performanceStat}</span>
           </span>
         )}
       </div>
@@ -120,46 +120,40 @@ export default function Phase1Angles({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b px-4 md:px-8 py-4 md:py-6" style={{ borderColor: '#EDE8FF' }}>
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0 flex-1">
-            <span
-              className="inline-block text-[11px] font-bold px-3 py-1 rounded-full mb-2 max-w-full truncate"
-              style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.12) 0%, rgba(247,37,133,0.12) 100%)', color: '#7C5CFC' }}
-            >
-              AI-curated for {userRole || 'you'} in {userDomain || 'your field'} · {timeAgo(updatedAt)}
-            </span>
-            <h1 className="text-xl md:text-[28px] font-extrabold" style={{ color: '#1A1A2E' }}>
-              What will you post about{' '}
+      {/* Header — ultra compact on mobile */}
+      <div className="bg-white border-b px-4 md:px-8 py-2 md:py-5" style={{ borderColor: '#EDE8FF' }}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-[15px] md:text-[26px] font-extrabold leading-tight" style={{ color: '#1A1A2E' }}>
+              What will you post{' '}
               <span style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                 today?
               </span>
             </h1>
-            <p className="text-[13px] mt-1.5" style={{ color: '#6B7280' }}>
-              Pick an angle that resonates. Each one shows why it works for your audience.
+            <p className="text-[10px] mt-0.5 truncate" style={{ color: '#9CA3AF' }}>
+              AI-curated for {userRole || 'you'} in {userDomain || 'your field'} · {timeAgo(updatedAt)}
             </p>
           </div>
           <button
             onClick={handleRefresh}
             disabled={loading || refreshing}
-            className="flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-full transition-all disabled:opacity-50"
+            className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 flex-shrink-0"
             style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}
           >
-            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-            New angles
+            <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Cards */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 md:px-8 py-6">
+      {/* Cards — scrollable middle */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-3 md:py-6">
         {error && !loading && (
-          <div className="mb-4 text-[13px] font-medium px-4 py-3 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
+          <div className="mb-3 text-[12px] font-medium px-3 py-2 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
             {error}
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl mx-auto">
           {loading
             ? Array.from({ length: 4 }).map((_, i) => <AngleCardSkeleton key={i} />)
             : filteredAngles.map(angle => (
@@ -167,36 +161,17 @@ export default function Phase1Angles({
               ))}
         </div>
         {!loading && !error && angles.length === 0 && (
-          <div className="max-w-3xl mx-auto mb-4 px-4 py-5 rounded-2xl text-center" style={{ background: 'rgba(124,92,252,0.04)', border: '1.5px dashed rgba(124,92,252,0.2)' }}>
+          <div className="max-w-3xl mx-auto mb-3 px-4 py-4 rounded-2xl text-center" style={{ background: 'rgba(124,92,252,0.04)', border: '1.5px dashed rgba(124,92,252,0.2)' }}>
             <p className="text-[13px] font-semibold text-brand-dark mb-1">Couldn't load AI angles right now</p>
             <p className="text-[12px] text-brand-muted mb-3">Type your own topic below, or try refreshing.</p>
             <button onClick={onRefresh} className="text-[12px] font-bold text-brand-purple hover:underline">↻ Refresh angles</button>
           </div>
         )}
         {!loading && styleFilter && filteredAngles === angles && (
-          <p className="text-center text-[11px] max-w-3xl mx-auto -mt-2 mb-2" style={{ color: '#9CA3AF' }}>
+          <p className="text-center text-[11px] max-w-3xl mx-auto -mt-1 mb-2" style={{ color: '#9CA3AF' }}>
             No {styleFilter} angles right now. Showing all styles instead.
           </p>
         )}
-
-        {/* Custom input */}
-        <div className="max-w-3xl mx-auto mt-4">
-          <div
-            className="flex items-center gap-3 px-4 py-3.5 transition-all"
-            style={{ border: '1.5px dashed #D4CEFF', borderRadius: 12, background: customInput ? '#FDFCFF' : 'transparent' }}
-          >
-            <PenLine size={16} style={{ color: '#9CA3AF', flexShrink: 0 }} />
-            <input
-              type="text"
-              value={customInput}
-              onChange={e => onCustomInputChange(e.target.value)}
-              placeholder="Or describe what's on your mind: a reaction, a question you keep getting asked, something that happened..."
-              className="flex-1 min-w-0 text-[13px] bg-transparent outline-none"
-              style={{ color: '#1A1A2E' }}
-            />
-            <span className="text-[11px] font-medium whitespace-nowrap hidden sm:inline" style={{ color: '#9CA3AF' }}>or paste a URL</span>
-          </div>
-        </div>
 
         <IndustryIntelligencePanel
           userId={userId}
@@ -208,20 +183,41 @@ export default function Phase1Angles({
         />
       </div>
 
-      {/* Footer */}
-      <div className="bg-white border-t px-4 md:px-8 py-3 md:py-4 flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: '#EDE8FF' }}>
-        <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: '#6B7280' }}>
-          <span style={{ color: '#10B981' }}>●</span> In your voice · {voiceLabel}
-          <a href="/persona-setup" className="font-semibold ml-1" style={{ color: '#7C5CFC' }}>Edit →</a>
+      {/* Footer — input + CTA together so keyboard never hides the button */}
+      <div className="bg-white border-t" style={{ borderColor: '#EDE8FF' }}>
+        {/* Custom input row */}
+        <div className="px-4 md:px-8 pt-2.5 pb-1">
+          <div
+            className="flex items-center gap-2 px-3 py-2.5 transition-all"
+            style={{ border: '1.5px dashed #D4CEFF', borderRadius: 10, background: customInput ? '#FDFCFF' : 'transparent' }}
+          >
+            <PenLine size={14} style={{ color: '#9CA3AF', flexShrink: 0 }} />
+            <input
+              type="text"
+              value={customInput}
+              onChange={e => onCustomInputChange(e.target.value)}
+              placeholder="Or type your own topic, idea, or paste a URL..."
+              className="flex-1 min-w-0 text-[13px] bg-transparent outline-none"
+              style={{ color: '#1A1A2E' }}
+            />
+          </div>
         </div>
-        <button
-          onClick={onContinue}
-          disabled={!canContinue}
-          className="text-[13px] font-bold text-white px-6 py-2.5 rounded-full transition-all disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 4px 16px rgba(124,92,252,0.25)' }}
-        >
-          Write this post →
-        </button>
+        {/* CTA row */}
+        <div className="px-4 md:px-8 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-1 text-[11px] font-medium min-w-0" style={{ color: '#6B7280' }}>
+            <span style={{ color: '#10B981' }}>●</span>
+            <span className="truncate">{voiceLabel}</span>
+            <a href="/persona-setup" className="font-semibold ml-1 flex-shrink-0" style={{ color: '#7C5CFC' }}>Edit →</a>
+          </div>
+          <button
+            onClick={onContinue}
+            disabled={!canContinue}
+            className="text-[13px] font-bold text-white px-5 py-2.5 rounded-full transition-all disabled:opacity-40 flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 4px 16px rgba(124,92,252,0.25)' }}
+          >
+            Write this post →
+          </button>
+        </div>
       </div>
     </div>
   );

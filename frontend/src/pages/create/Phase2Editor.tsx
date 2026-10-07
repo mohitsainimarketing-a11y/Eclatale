@@ -490,80 +490,118 @@ export default function Phase2Editor({
   if (flowStage === 'variants') {
     return (
       <div className="flex-1 min-h-0 flex flex-col">
-        <div className="bg-white border-b px-5 md:px-8 py-6" style={{ borderColor: '#EDE8FF' }}>
-          <h1 className="text-2xl md:text-[28px] font-extrabold" style={{ color: '#1A1A2E' }}>
-            Three takes on the same idea
-          </h1>
-          <p className="text-[13px] mt-1.5" style={{ color: '#6B7280' }}>
-            Same topic, genuinely different voices. Pick the one that sounds most like you today.
-          </p>
+        {/* Compact header */}
+        <div className="bg-white border-b px-4 md:px-8 py-2.5 md:py-5" style={{ borderColor: '#EDE8FF' }}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-[15px] md:text-[22px] font-extrabold" style={{ color: '#1A1A2E' }}>Pick your take</h1>
+              <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Same idea, three voices. Tap the one that feels like you.</p>
+            </div>
+            <button
+              onClick={handleGenerateVariants}
+              disabled={variantsLoading}
+              className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 flex-shrink-0"
+              style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}
+            >
+              <RefreshCw size={11} className={variantsLoading ? 'animate-spin' : ''} />
+              {variantsLoading ? 'Writing…' : 'New 3'}
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 md:px-8 py-6">
+        {/* Cards — horizontal scroll on mobile, grid on desktop */}
+        <div className="flex-1 min-h-0 overflow-y-auto md:overflow-y-auto">
           {variantsError && !variantsLoading && (
-            <div className="max-w-3xl mx-auto mb-4 text-[13px] font-medium px-4 py-3 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
+            <div className="mx-4 mt-4 text-[12px] font-medium px-3 py-2 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
               {variantsError}
             </div>
           )}
           {variantsLoading && (
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center py-8">
               <GenerationTimer label="Writing three takes on your idea…" />
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-            {variantsLoading
-              ? Array.from({ length: VARIANT_COUNT }).map((_, i) => (
-                  <div key={i} className="bg-white flex flex-col gap-2" style={{ borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', minHeight: 260 }}>
-                    <div className="skeleton h-5 w-24 rounded-full mb-2" />
-                    {[0, 1, 2, 3, 4].map(j => <div key={j} className="skeleton h-3 rounded" style={{ width: `${92 - j * 10}%` }} />)}
-                  </div>
-                ))
-              : variants.map((v, i) => {
+
+          {/* Mobile: horizontal scroll strip */}
+          {!variantsLoading && (
+            <>
+              <div className="md:hidden flex gap-3 px-4 py-4 overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+                {variants.map((v, i) => {
                   const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
                   return (
-                    <div
+                    <button
                       key={i}
-                      className="bg-white flex flex-col"
-                      style={{ borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}
+                      onClick={() => chooseVariant(v)}
+                      className="flex-shrink-0 snap-center bg-white text-left active:scale-[0.98] transition-transform"
+                      style={{ width: 'calc(85vw)', borderRadius: 16, border: '1.5px solid #EDE8FF', boxShadow: '0 4px 20px rgba(124,92,252,0.10)', padding: 16 }}
                     >
-                      <span
-                        className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 self-start"
-                        style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
-                      >
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2.5" style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}>
                         <span>{meta?.emoji}</span>{meta?.label || v.styleId}
                       </span>
-                      <p
-                        className="text-[12.5px] flex-1 overflow-y-auto mb-3"
-                        style={{ color: '#1A1A2E', lineHeight: 1.7, maxHeight: 260, whiteSpace: 'pre-wrap' }}
-                      >
+                      <p className="text-[13px] leading-relaxed line-clamp-6 mb-3" style={{ color: '#1A1A2E', whiteSpace: 'pre-wrap' }}>
                         {v.content}
                       </p>
-                      <button
-                        onClick={() => chooseVariant(v)}
-                        className="w-full text-[12px] font-bold text-white py-2.5 rounded-full"
-                        style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
-                      >
-                        Use this version
-                      </button>
-                    </div>
+                      <div className="flex items-center justify-between mt-auto">
+                        <span className="text-[11px] text-brand-muted">Tap to use</span>
+                        <span className="text-[11px] font-bold text-brand-purple">Use this →</span>
+                      </div>
+                    </button>
                   );
                 })}
-          </div>
+              </div>
+              {/* Scroll dots indicator */}
+              {variants.length > 1 && (
+                <div className="md:hidden flex justify-center gap-1.5 pb-2">
+                  {variants.map((_, i) => (
+                    <span key={i} className="w-1.5 h-1.5 rounded-full bg-brand-purple/20" />
+                  ))}
+                </div>
+              )}
+
+              {/* Desktop: 3-col grid */}
+              <div className="hidden md:grid md:grid-cols-3 gap-4 max-w-5xl mx-auto px-8 py-6">
+                {variants.map((v, i) => {
+                  const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => chooseVariant(v)}
+                      className="bg-white flex flex-col text-left hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                      style={{ borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}
+                    >
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 self-start" style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}>
+                        <span>{meta?.emoji}</span>{meta?.label || v.styleId}
+                      </span>
+                      <p className="text-[12.5px] flex-1 line-clamp-8 mb-3" style={{ color: '#1A1A2E', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                        {v.content}
+                      </p>
+                      <div className="w-full text-[12px] font-bold text-brand-purple text-center py-2 rounded-full" style={{ border: '1.5px solid #EDE8FF' }}>
+                        Use this version
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {variantsLoading && (
+            <div className="md:hidden flex gap-3 px-4 pb-4 overflow-x-auto">
+              {Array.from({ length: VARIANT_COUNT }).map((_, i) => (
+                <div key={i} className="flex-shrink-0 bg-white flex flex-col gap-2" style={{ width: 'calc(85vw)', borderRadius: 16, padding: 16, border: '1.5px solid #EDE8FF', minHeight: 220 }}>
+                  <div className="skeleton h-5 w-20 rounded-full mb-2" />
+                  {[0,1,2,3].map(j => <div key={j} className="skeleton h-3 rounded" style={{ width: `${88 - j * 10}%` }} />)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="bg-white border-t px-5 md:px-8 py-4 flex items-center justify-between gap-4 flex-wrap" style={{ borderColor: '#EDE8FF' }}>
+        <div className="bg-white border-t px-4 md:px-8 py-3 flex items-center justify-between" style={{ borderColor: '#EDE8FF' }}>
           <button onClick={onBack} className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: '#6B7280' }}>
             <ArrowLeft size={14} /> Back
           </button>
-          <button
-            onClick={handleGenerateVariants}
-            disabled={variantsLoading}
-            className="flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-full transition-all disabled:opacity-50"
-            style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}
-          >
-            <RefreshCw size={14} className={variantsLoading ? 'animate-spin' : ''} />
-            {variantsLoading ? 'Writing...' : 'Generate 3 more'}
-          </button>
+          <p className="text-[11px] text-brand-muted">Swipe to see all three</p>
         </div>
       </div>
     );
@@ -630,7 +668,7 @@ export default function Phase2Editor({
             <div className="relative">
               <ToolBtn icon={MoreHorizontal} onClick={() => setFormatMoreOpen(o => !o)} label="More formatting" />
               {formatMoreOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-48">
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-48 max-w-[calc(100vw-32px)]">
                   <div className="flex gap-1 flex-wrap mb-2 pb-2 border-b" style={{ borderColor: '#EDE8FF' }}>
                     {['😀', '🔥', '💡', '✅', '📈', '🎯', '🚀', '👏', '💬', '⚡', '🙌', '✨'].map(e => (
                       <button key={e} onClick={() => { insertAtCursor(e); setFormatMoreOpen(false); }} className="text-lg p-1 hover:bg-[rgba(124,92,252,0.06)] rounded-lg">{e}</button>
@@ -668,7 +706,7 @@ export default function Phase2Editor({
                 CTAs <ChevronDown size={12} />
               </button>
               {ctasOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-80 max-h-72 overflow-y-auto">
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-80 max-w-[calc(100vw-32px)] max-h-72 overflow-y-auto">
                   {CTA_TEMPLATES.map((c, i) => (
                     <button key={i} onClick={() => { insertAtCursor('\n\n' + c); setCtasOpen(false); }} className="block w-full text-left text-[12px] px-2.5 py-2 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
                       {c}

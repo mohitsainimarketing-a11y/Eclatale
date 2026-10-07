@@ -64,7 +64,7 @@ export default function HookLibraryPanel({ userId, userRole, userDomain, onInser
     : [];
 
   return (
-    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl z-20 modal-shadow w-[420px] max-h-[480px] overflow-y-auto p-3">
+    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl z-20 modal-shadow w-[420px] max-w-[calc(100vw-32px)] max-h-[480px] overflow-y-auto p-3">
       {loading && (
         <div className="space-y-2 p-2">
           <div className="skeleton h-3 w-full rounded" />

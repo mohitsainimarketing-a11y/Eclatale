@@ -1,19 +1,16 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
   ComposedChart, Bar, Line, LineChart,
 } from 'recharts';
 import {
-  Sparkles, LogOut, RefreshCw, Download, ChevronRight, Check, ChevronDown,
-  Copy, Trash2, Edit3, ArrowUpRight, ArrowDownRight, Flame,
+  Sparkles, LogOut, RefreshCw, ChevronDown,
+  ArrowUpRight, ArrowDownRight, Flame,
 } from 'lucide-react';
-import { copyToClipboard } from '../utils/clipboard';
 import NotificationBell from '../components/NotificationBell';
 import { maybePromptPush } from '../lib/pushNotifications';
 import AppShell from '../components/AppShell';
-import WeeklyBriefingCard from '../components/WeeklyBriefingCard';
-import LinkedInInsights from '../components/LinkedInInsights';
 import { useToast } from '../contexts/ToastContext';
 import { apiFetch } from '../lib/apiFetch';
 
@@ -32,9 +29,6 @@ function prefetchCreatePage() {
 }
 
 type Stage = 'unknown' | 'emerging' | 'rising' | 'notable' | 'authority' | 'icon';
-const STAGE_ORDER: Stage[] = ['unknown', 'emerging', 'rising', 'notable', 'authority', 'icon'];
-const STAGE_LABELS: Record<Stage, string> = { unknown: 'Unknown', emerging: 'Emerging', rising: 'Rising', notable: 'Notable', authority: 'Authority', icon: 'Icon' };
-const STAGE_EMOJI: Record<Stage, string> = { unknown: '🌱', emerging: '🔥', rising: '⚡', notable: '🎯', authority: '👑', icon: '🏆' };
 
 const DATE_RANGES = [
   { key: '1', label: 'Today' },
@@ -62,19 +56,6 @@ interface Overview {
   voiceMatch: number | null;
   updatedAt: string;
 }
-
-interface JourneyData {
-  stage: Stage; nextStage: Stage | null;
-  criteria: { label: string; done: boolean; current: number; target: number }[];
-  metrics: { linkedinConnected: boolean; personaComplete: boolean; postsPublished: number };
-}
-
-interface ContentRow {
-  id: string; date: string; preview: string; tone: string | null; hookType: string | null;
-  wordCount: number; authScore: number | null; status: string;
-}
-
-interface Recommendation { priority: 'HIGH' | 'MEDIUM'; recommendation: string; dataPoint: string; actionUrl: string; actionLabel: string; }
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -140,24 +121,29 @@ export default function Dashboard() {
   const [userName, setUserName] = useState('');
   const [dateRange, setDateRange] = useState('30');
   const [overview, setOverview] = useState<Overview | null>(null);
-  const [journey, setJourney] = useState<JourneyData | null>(null);
-  const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
-  const [bestTime, setBestTime] = useState<{ recommendedDays: string[]; recommendedTimes: string[] } | null>(null);
-  const [tableRows, setTableRows] = useState<ContentRow[]>([]);
-  const [tableTotal, setTableTotal] = useState(0);
-  const [tablePage, setTablePage] = useState(0);
-  const [sortKey, setSortKey] = useState<keyof ContentRow>('date');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [refreshing, setRefreshing] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [healthExpanded, setHealthExpanded] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { window.location.href = '/login'; return; }
-      setUser(data.user);
-      supabase.from('profiles').select('first_name, last_name').eq('id', data.user.id).single().then(({ data: p }) => {
-        setUserName([p?.first_name, p?.last_name].filter(Boolean).join(' ') || data.user!.email?.split('@')[0] || 'there');
+    // getSession() reads from localStorage — no network round-trip
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user;
+      if (!u) { window.location.href = '/login'; return; }
+      setUser(u);
+      // Show cached overview immediately so page renders in <100ms
+      try {
+        const cached = localStorage.getItem(`dash_overview_${u.id}`);
+        if (cached) setOverview(JSON.parse(cached));
+      } catch {}
+      // Show cached name immediately
+      try {
+        const cachedName = localStorage.getItem(`dash_name_${u.id}`);
+        if (cachedName) setUserName(cachedName);
+      } catch {}
+      supabase.from('profiles').select('first_name, last_name').eq('id', u.id).single().then(({ data: p }) => {
+        const name = [p?.first_name, p?.last_name].filter(Boolean).join(' ') || u.email?.split('@')[0] || 'there';
+        setUserName(name);
+        try { localStorage.setItem(`dash_name_${u.id}`, name); } catch {}
       });
     });
   }, []);
@@ -169,61 +155,16 @@ export default function Dashboard() {
         body: JSON.stringify({ action: 'dashboard-overview', userId, days: Number(days) }),
       });
       const data = await res.json();
-      if (!data.error) setOverview(data);
+      if (!data.error) {
+        setOverview(data);
+        try { localStorage.setItem(`dash_overview_${userId}`, JSON.stringify(data)); } catch {}
+      }
     } catch { showToast('error', 'Could not load dashboard data.'); }
   }, [showToast]);
-
-  const loadJourney = useCallback(async (userId: string) => {
-    try {
-      const res = await apiFetch(`${API_URL}/api/intelligence`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'growth-journey', userId }),
-      });
-      const data = await res.json();
-      if (!data.error) setJourney(data);
-    } catch {}
-  }, []);
-
-  const loadRecommendations = useCallback(async (userId: string) => {
-    try {
-      const res = await apiFetch(`${API_URL}/api/intelligence`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'dashboard-recommendations', userId }),
-      });
-      const data = await res.json();
-      if (!data.error) setRecommendations(data.recommendations || []);
-    } catch {}
-  }, []);
-
-  const loadBestTime = useCallback(async (userId: string) => {
-    try {
-      const res = await apiFetch(`${API_URL}/api/intelligence`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'best-time', userId }),
-      });
-      const data = await res.json();
-      if (!data.error) setBestTime(data);
-    } catch {}
-  }, []);
-
-  const loadTable = useCallback(async (userId: string, page: number) => {
-    try {
-      const res = await apiFetch(`${API_URL}/api/intelligence`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'dashboard-table', userId, page, pageSize: 10 }),
-      });
-      const data = await res.json();
-      if (!data.error) { setTableRows(data.rows || []); setTableTotal(data.total || 0); }
-    } catch {}
-  }, []);
 
   useEffect(() => {
     if (!user) return;
     loadOverview(user.id, dateRange);
-    loadJourney(user.id);
-    loadRecommendations(user.id);
-    loadBestTime(user.id);
-    loadTable(user.id, 0);
     supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', user.id).then(({ count }) => {
       if ((count || 0) > 0) maybePromptPush(user.id);
     });
@@ -236,63 +177,12 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange]);
 
-  useEffect(() => {
-    if (!user) return;
-    loadTable(user.id, tablePage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tablePage]);
-
   const handleRefresh = async () => {
     if (!user) return;
     setRefreshing(true);
-    await Promise.all([loadOverview(user.id, dateRange), loadJourney(user.id), loadTable(user.id, tablePage)]);
+    await loadOverview(user.id, dateRange);
     setRefreshing(false);
     showToast('success', 'Dashboard refreshed.');
-  };
-
-  const handleExport = () => {
-    if (!tableRows.length) { showToast('warning', 'No posts to export yet.'); return; }
-    const header = 'Date,Preview,Tone,Hook,Words,Auth Score,Status\n';
-    const csv = tableRows.map(r =>
-      [new Date(r.date).toLocaleDateString(), `"${r.preview.replace(/"/g, '""')}"`, r.tone || '', r.hookType || '', r.wordCount, r.authScore ?? '', r.status].join(',')
-    ).join('\n');
-    const blob = new Blob([header + csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `eclatale-posts-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('success', 'Report exported.');
-  };
-
-  const handleCopyRow = (row: ContentRow, fullContent?: string) => {
-    copyToClipboard(fullContent || row.preview);
-    setCopiedId(row.id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleDeleteRow = async (id: string) => {
-    const { error } = await supabase.from('posts').delete().eq('id', id);
-    if (error) { showToast('error', "Couldn't delete that post."); return; }
-    setTableRows(prev => prev.filter(r => r.id !== id));
-    showToast('success', 'Post deleted.');
-  };
-
-  const sortedRows = useMemo(() => {
-    const rows = [...tableRows];
-    rows.sort((a, b) => {
-      const av = a[sortKey], bv = b[sortKey];
-      if (av == null) return 1;
-      if (bv == null) return -1;
-      const cmp = typeof av === 'number' ? av - (bv as number) : String(av).localeCompare(String(bv));
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-    return rows;
-  }, [tableRows, sortKey, sortDir]);
-
-  const toggleSort = (key: keyof ContentRow) => {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('desc'); }
   };
 
   const greeting = (() => {
@@ -314,24 +204,8 @@ export default function Dashboard() {
 
   const weeklyGoal = overview?.subscriptionTier === 'individual' ? 5 : 3;
 
-  if (!user || !overview) {
-    return (
-      <AppShell mobileTitle="Eclatale">
-        <div className="min-w-0 pb-8">
-          <div className="max-w-[1280px] mx-auto px-5 md:px-8 py-6 md:py-8 space-y-6">
-            <div className="skeleton h-14 w-full rounded-2xl" />
-            <div className="skeleton h-32 w-full rounded-2xl" />
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {[1, 2, 3, 4, 5, 6].map(i => <KpiSkeleton key={i} />)}
-            </div>
-            <div className="skeleton h-80 w-full rounded-2xl" />
-          </div>
-        </div>
-      </AppShell>
-    );
-  }
-
-  const stageIdx = STAGE_ORDER.indexOf(overview.stage);
+  // Only block render if user session hasn't resolved yet (getSession is local — this is near-instant)
+  if (!user) return null;
 
   return (
     <AppShell mobileTitle="Eclatale">
@@ -358,9 +232,6 @@ export default function Dashboard() {
                 </select>
                 <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
               </div>
-              <button onClick={handleExport} className="btn-ghost !py-2 !px-3.5 text-xs">
-                <Download size={13} /> Export
-              </button>
               <button onClick={handleRefresh} disabled={refreshing} className="btn-ghost !py-2 !px-3.5 text-xs" aria-label="Refresh">
                 <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
               </button>
@@ -372,61 +243,18 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-brand-muted -mt-4 mb-6 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" /> Updated {timeAgo(overview.updatedAt)}
-          </p>
-
-          <WeeklyBriefingCard userId={user.id} />
-
-          <LinkedInInsights userId={user.id} />
-
-          {/* Growth Journey timeline */}
-          <div className="card p-6 mb-6">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-              <p className="text-xs font-bold text-brand-purple uppercase tracking-wide">Growth Journey</p>
-              {journey?.nextStage && (
-                <p className="text-xs text-brand-muted">
-                  {journey.criteria.filter(c => !c.done).length === 0
-                    ? `Ready to reach ${STAGE_LABELS[journey.nextStage]}`
-                    : `${journey.criteria.find(c => !c.done)?.current ?? 0} of ${journey.criteria.find(c => !c.done)?.target ?? 0} to ${STAGE_LABELS[journey.nextStage]}`}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center mb-1">
-              {STAGE_ORDER.map((s, i) => (
-                <React.Fragment key={s}>
-                  <div className="flex flex-col items-center flex-shrink-0" style={{ width: 64 }}>
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${i <= stageIdx ? 'gradient-primary text-white' : 'bg-[rgba(124,92,252,0.08)] text-brand-muted'}`}>
-                      {STAGE_EMOJI[s]}
-                    </div>
-                    <span className="text-[9px] font-semibold text-brand-muted mt-1">{STAGE_LABELS[s]}</span>
-                    {i === stageIdx && <span className="text-[8px] font-bold text-brand-purple mt-0.5">YOU ARE HERE</span>}
-                  </div>
-                  {i < STAGE_ORDER.length - 1 && <div className={`flex-1 h-1 mx-1 rounded-full ${i < stageIdx ? 'gradient-primary' : 'bg-[rgba(124,92,252,0.08)]'}`} />}
-                </React.Fragment>
-              ))}
-            </div>
-            {journey && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5">
-                {(journey.nextStage ? journey.criteria : []).map((c, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (c.done) return;
-                      const hrefs: Record<string, string> = { 'LinkedIn connected': '/settings', 'Voice profile complete': '/persona-setup' };
-                      window.location.href = hrefs[c.label] || '/create';
-                    }}
-                    className={`flex items-center gap-2 text-left p-3 rounded-xl border text-xs font-medium transition-colors ${c.done ? 'border-brand-teal/20 bg-[rgba(6,214,160,0.05)] text-brand-dark' : 'border-[rgba(124,92,252,0.1)] hover:border-brand-purple/25 text-brand-muted cursor-pointer'}`}
-                  >
-                    {c.done ? <Check size={14} className="text-brand-teal flex-shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border-[1.5px] border-brand-muted/40 flex-shrink-0" />}
-                    {c.label}{!c.done && ` (${Math.min(c.current, c.target)}/${c.target})`}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {overview && (
+            <p className="text-[10px] text-brand-muted -mt-4 mb-6 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" /> Updated {timeAgo(overview.updatedAt)}
+            </p>
+          )}
 
           {/* KPI row */}
+          {!overview ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+              {[1,2,3,4,5,6].map(i => <KpiSkeleton key={i} />)}
+            </div>
+          ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             {/* Brand Health */}
             <button onClick={() => setHealthExpanded(o => !o)} className="card p-4 text-left col-span-2 md:col-span-1 lg:col-span-1">
@@ -522,7 +350,7 @@ export default function Dashboard() {
             </div>
 
             {/* Content quality / LinkedIn */}
-            <div className="card p-4">
+            <div className="card p-4 col-span-2 md:col-span-1">
               <p className="text-[10px] font-semibold text-brand-muted uppercase tracking-wide mb-2">Content Quality</p>
               <p className="text-2xl font-extrabold" style={{ color: scoreColor(overview.brandHealth.quality) }}>{overview.brandHealth.quality}</p>
               <p className="text-[9px] text-brand-muted mt-1">
@@ -531,9 +359,10 @@ export default function Dashboard() {
               {!overview.linkedinConnected && <a href="/settings" className="text-[10px] text-brand-purple font-semibold hover:underline">Connect LinkedIn →</a>}
             </div>
           </div>
+          )}
 
           {/* Charts + Activity feed */}
-          <div className="grid grid-cols-1 lg:grid-cols-[65%_1fr] gap-6 mb-6">
+          {overview && <div className="grid grid-cols-1 lg:grid-cols-[65%_1fr] gap-6 mb-6">
             <div className="space-y-6 min-w-0">
               {/* Posting activity */}
               <div className="card p-6">
@@ -626,135 +455,52 @@ export default function Dashboard() {
             </div>
 
             {/* Activity feed */}
-            <div className="card p-5 h-fit lg:sticky lg:top-6">
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-sm font-bold text-brand-dark">Activity</h3>
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-teal animate-pulse" />
+            <div className="card p-3 h-fit lg:sticky lg:top-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-xs font-bold text-brand-dark">Activity</h3>
+                  <span className="w-1 h-1 rounded-full bg-brand-teal animate-pulse" />
+                </div>
+                {overview.activityFeed.length > 5 && (
+                  <a href="/history" className="text-[10px] font-semibold text-brand-purple">View all →</a>
+                )}
               </div>
               {overview.activityFeed.length === 0 ? (
-                <p className="text-xs text-brand-muted text-center py-6">No activity yet.</p>
+                <p className="text-[11px] text-brand-muted text-center py-3">No activity yet.</p>
               ) : (
                 <div className="space-y-0">
-                  {overview.activityFeed.map((item, i) => (
-                    <a
-                      key={i}
-                      href={item.url || '#'}
-                      className={`block py-2.5 border-b border-[rgba(124,92,252,0.05)] last:border-0 ${item.url ? 'hover:bg-[rgba(124,92,252,0.03)] -mx-2 px-2 rounded-lg' : ''}`}
-                    >
-                      <p className="text-xs text-brand-dark leading-snug line-clamp-1">{item.description}</p>
-                      <p className="text-[10px] text-brand-muted mt-0.5">{timeAgo(item.timestamp)}</p>
-                    </a>
-                  ))}
+                  {overview.activityFeed.slice(0, 6).map((item, i) => {
+                    const isPublished = item.type === 'published';
+                    return (
+                      <a
+                        key={i}
+                        href={item.url || '#'}
+                        className={`flex items-center gap-1.5 py-1 border-b border-[rgba(124,92,252,0.05)] last:border-0 ${item.url ? 'hover:bg-[rgba(124,92,252,0.03)] -mx-1 px-1 rounded' : ''}`}
+                      >
+                        <span className="text-[9px] flex-shrink-0 text-brand-muted">{isPublished ? '✓' : '✏'}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] text-brand-dark leading-tight line-clamp-1">{item.description}</p>
+                        </div>
+                        <span className="text-[9px] text-brand-muted flex-shrink-0">{timeAgo(item.timestamp)}</span>
+                      </a>
+                    );
+                  })}
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Content performance table */}
-          <div className="card p-6 mb-6 overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-brand-dark">Your posts</h3>
-              <a href="/history" className="text-xs text-brand-purple font-semibold hover:underline">View all →</a>
-            </div>
-            {sortedRows.length === 0 ? (
-              <p className="text-sm text-brand-muted text-center py-8">No posts yet. Generate your first post to see it here.</p>
-            ) : (
-              <div className="overflow-x-auto -mx-6 px-6">
-                <table className="w-full text-xs min-w-[640px]">
-                  <thead>
-                    <tr className="text-left text-brand-muted border-b border-[rgba(124,92,252,0.08)]">
-                      {([['date', 'Date'], ['preview', 'Preview'], ['tone', 'Tone'], ['wordCount', 'Length'], ['authScore', 'Auth Score'], ['status', 'Status']] as [keyof ContentRow, string][]).map(([key, label]) => (
-                        <th key={key} onClick={() => toggleSort(key)} className="py-2.5 pr-4 font-semibold cursor-pointer select-none hover:text-brand-purple">
-                          {label} {sortKey === key && (sortDir === 'asc' ? '↑' : '↓')}
-                        </th>
-                      ))}
-                      <th className="py-2.5">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedRows.map(row => (
-                      <tr key={row.id} className="group border-b border-[rgba(124,92,252,0.04)] last:border-0 hover:bg-[rgba(124,92,252,0.02)]">
-                        <td className="py-2.5 pr-4 text-brand-muted whitespace-nowrap" title={new Date(row.date).toLocaleString()}>{timeAgo(row.date)}</td>
-                        <td className="py-2.5 pr-4 text-brand-dark max-w-[220px] truncate">{row.preview}{row.preview.length >= 60 ? '…' : ''}</td>
-                        <td className="py-2.5 pr-4">{row.tone ? <span className="badge bg-[rgba(124,92,252,0.06)] text-brand-purple text-[10px] capitalize">{row.tone.replace(/_/g, ' ')}</span> : <span className="text-brand-muted">N/A</span>}</td>
-                        <td className="py-2.5 pr-4 text-brand-muted">{row.wordCount}w</td>
-                        <td className="py-2.5 pr-4 font-bold" style={{ color: row.authScore != null ? scoreColor(row.authScore) : '#9CA3AF' }}>{row.authScore ?? 'N/A'}</td>
-                        <td className="py-2.5 pr-4">
-                          <span className={`badge text-[10px] ${row.status === 'published' ? 'bg-[rgba(6,214,160,0.1)] text-brand-teal' : row.status === 'scheduled' ? 'bg-[rgba(59,130,246,0.1)] text-blue-500' : 'bg-[rgba(107,114,128,0.08)] text-brand-muted'}`}>
-                            {row.status === 'published' ? 'Published ✓' : row.status === 'scheduled' ? 'Scheduled 📅' : 'Draft 📝'}
-                          </span>
-                        </td>
-                        <td className="py-2.5">
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleCopyRow(row)} className="p-1.5 text-brand-muted hover:text-brand-purple" aria-label="Copy">
-                              {copiedId === row.id ? <Check size={13} className="text-brand-teal" /> : <Copy size={13} />}
-                            </button>
-                            <a href={`/create?postId=${row.id}`} className="p-1.5 text-brand-muted hover:text-brand-purple" aria-label="Edit"><Edit3 size={13} /></a>
-                            <button onClick={() => handleDeleteRow(row.id)} className="p-1.5 text-brand-muted hover:text-red-500" aria-label="Delete"><Trash2 size={13} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {tableTotal > 10 && (
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <button disabled={tablePage === 0} onClick={() => setTablePage(p => p - 1)} className="btn-ghost !py-1.5 !px-3 text-xs disabled:opacity-30">Previous</button>
-                <span className="text-xs text-brand-muted">Page {tablePage + 1} of {Math.ceil(tableTotal / 10)}</span>
-                <button disabled={(tablePage + 1) * 10 >= tableTotal} onClick={() => setTablePage(p => p + 1)} className="btn-ghost !py-1.5 !px-3 text-xs disabled:opacity-30">Next</button>
-              </div>
-            )}
-          </div>
-
-          {/* AI recommendations */}
-          <div className="card p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={16} className="text-brand-purple" />
-              <h3 className="text-sm font-bold text-brand-dark">What to do next</h3>
-            </div>
-            {!recommendations ? (
-              <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="skeleton h-16 w-full" />)}</div>
-            ) : recommendations.length === 0 ? (
-              <p className="text-sm text-brand-muted text-center py-4">Not enough data yet for personalized recommendations.</p>
-            ) : (
-              <div className="space-y-3">
-                {recommendations.map((r, i) => (
-                  <div key={i} className="p-4 rounded-xl border border-[rgba(124,92,252,0.08)]">
-                    <div className="flex items-start justify-between gap-3 mb-1.5">
-                      <span className={`badge text-[10px] font-bold ${r.priority === 'HIGH' ? 'bg-[rgba(239,68,68,0.1)] text-red-500' : 'bg-[rgba(245,158,11,0.1)] text-amber-500'}`}>{r.priority}</span>
-                    </div>
-                    <p className="text-sm text-brand-dark leading-relaxed mb-1.5">{r.recommendation}</p>
-                    <p className="text-[11px] text-brand-muted mb-2">{r.dataPoint}</p>
-                    <a href={r.actionUrl} className="text-xs text-brand-purple font-semibold hover:underline inline-flex items-center gap-1">
-                      {r.actionLabel} <ChevronRight size={12} />
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-[rgba(124,92,252,0.06)] text-xs text-brand-muted">
-              {bestTime && bestTime.recommendedDays.length > 0 && (
-                <span>Best time to post: <strong className="text-brand-dark">{bestTime.recommendedDays[0]} at {bestTime.recommendedTimes[0]}</strong></span>
-              )}
-              {journey?.nextStage && (
-                <span>Next milestone: <strong className="text-brand-dark">{journey.criteria.find(c => !c.done)?.target ?? 0} posts</strong> until {STAGE_LABELS[journey.nextStage]}</span>
-              )}
-            </div>
-          </div>
+          </div>}
 
           {/* Upgrade banner */}
-          {overview.subscriptionTier === 'free' && (
-            <a href="/pricing" className="block rounded-2xl p-6 text-white relative overflow-hidden group"
+          {overview?.subscriptionTier === 'free' && (
+            <a href="/pricing" className="block rounded-2xl p-5 md:p-6 text-white relative overflow-hidden group"
               style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
-              <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold mb-1">You've used {overview.postsThisWeek}/{weeklyGoal} free posts this week</p>
-                  <h3 className="text-lg font-extrabold">Get unlimited posts, AI persona learning, competitor intelligence, and more</h3>
+                  <p className="text-sm font-semibold mb-1 opacity-90">You've used {overview.postsThisWeek}/{weeklyGoal} free posts this week</p>
+                  <h3 className="text-base md:text-lg font-extrabold leading-snug">Get unlimited posts, AI persona learning, competitor intelligence, and more</h3>
                 </div>
-                <span className="inline-block bg-white text-brand-purple font-bold text-sm px-5 py-2.5 rounded-full group-hover:scale-105 transition-transform whitespace-nowrap">
-                  Upgrade for $19/mo · LAUNCH50 for 50% off
+                <span className="inline-block bg-white text-brand-purple font-bold text-sm px-5 py-2.5 rounded-full group-hover:scale-105 transition-transform whitespace-nowrap self-start md:self-auto flex-shrink-0">
+                  Upgrade $19/mo · LAUNCH50 50% off
                 </span>
               </div>
               <div className="h-1.5 rounded-full bg-white/20 mt-4 overflow-hidden relative z-10">

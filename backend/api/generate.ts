@@ -2,8 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
-import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
-import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, lengthInstruction, TALK_LENGTH_OPTIONS } from '../lib/writingStyles';
+import { CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
+import { getWritingStyle, lengthInstruction, TALK_LENGTH_OPTIONS } from '../lib/writingStyles';
+import { cachedSystem } from '../lib/promptCache';
 import { getDateContext } from '../lib/dateContext';
 import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
@@ -88,9 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const trendResult = await getTrendContext(anthropic, supabase, industry, role);
     const trendFragment = buildTrendPromptFragment(trendResult, industry);
 
-    const systemPrompt = `${getDateContext()}
-
-${SYSTEM_PROMPT_BASE}
+    const dynamicContent = `${getDateContext()}
 
 ${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:
 - Role: ${role}
@@ -102,17 +101,15 @@ ${writingStyle ? writingStyle.prompt : (TONE_INSTRUCTIONS[tone] || TONE_INSTRUCT
 
 ${styleNudge ? `Additional instruction based on this person's own writing patterns: ${styleNudge}\n` : ''}
 ${angleFragment}${structureFragment}${hookFragment}${insightFragment}${sparkFragment}
-${OUTPUT_RULES}
-${angle ? `\n${UNIVERSAL_HUMAN_WRITING_RULES}\n` : ''}
 ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}
 
-${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : '')}`;
+${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : '')}`.trim();
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: `Write a ${contentType.replace(/-/g, ' ')} about: ${topic}` }],
-      system: systemPrompt,
+      system: cachedSystem(dynamicContent),
     });
 
     const content = message.content[0].type === 'text' ? message.content[0].text : '';

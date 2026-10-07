@@ -105,18 +105,28 @@ ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-
 
 ${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : '')}`.trim();
 
-    const message = await anthropic.messages.create({
+    // Stream the response so text appears token-by-token in the editor
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: `Write a ${contentType.replace(/-/g, ' ')} about: ${topic}` }],
       system: cachedSystem(dynamicContent),
     });
 
-    const content = message.content[0].type === 'text' ? message.content[0].text : '';
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`);
+      }
+    }
+
     await incrementWeeklyPostCount(supabase, userId);
-    // No-ops unless this was exactly the 3rd post of the week on the free tier.
     handleSendFreeLimit(userId).catch(err => console.error('free-limit notify failed:', err));
-    res.json({ content, usage: message.usage });
+    res.write('data: [DONE]\n\n');
+    res.end();
   } catch (error: any) {
     if (isCreditsExhaustedError(error)) {
       console.error('Anthropic credits exhausted');

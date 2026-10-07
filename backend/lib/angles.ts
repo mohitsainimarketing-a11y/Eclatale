@@ -45,7 +45,7 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
     system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
     messages: [{
       role: 'user',
-      content: `Generate 4 distinct LinkedIn post angles for a ${role} in ${industry}.
+      content: `Generate 6 distinct LinkedIn post angles for a ${role} in ${industry}.
 
 Use web search to find 2-3 trending topics in ${industry} right now (last 7 days).
 
@@ -86,7 +86,7 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
       system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
       messages: [{
         role: 'user',
-        content: `Generate 4 distinct LinkedIn post angles for a ${role} in ${industry}.
+        content: `Generate 6 distinct LinkedIn post angles for a ${role} in ${industry}.
 
 For each angle:
 - Write a compelling hook (2-3 sentences). This is the actual opening of the post
@@ -106,7 +106,7 @@ Return ONLY valid JSON (no prose, no markdown fences):
     if (!Array.isArray(parsed.sources)) parsed.sources = fbParsed.sources || [];
   }
 
-  const angles = rawAngles.slice(0, 4).map((a: any, i: number) => {
+  const angles = rawAngles.slice(0, 6).map((a: any, i: number) => {
     const meta = ANGLE_STYLE_META[a.style] || ANGLE_STYLE_META.Storyteller;
     return {
       id: `angle-${Date.now()}-${i}`,

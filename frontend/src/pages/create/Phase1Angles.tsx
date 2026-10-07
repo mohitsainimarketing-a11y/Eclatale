@@ -147,40 +147,75 @@ export default function Phase1Angles({
       </div>
 
       {/* Cards — scrollable middle */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-3 md:py-6">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {error && !loading && (
-          <div className="mb-3 text-[12px] font-medium px-3 py-2 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
+          <div className="mx-4 mt-3 text-[12px] font-medium px-3 py-2 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
             {error}
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl mx-auto">
+
+        {/* Mobile: one card at a time, horizontal swipe */}
+        <div className="md:hidden flex gap-3 px-4 pt-4 pb-2 overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
           {loading
-            ? Array.from({ length: 4 }).map((_, i) => <AngleCardSkeleton key={i} />)
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex-shrink-0 snap-center bg-white" style={{ width: 'calc(88vw)', borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', minHeight: 180 }}>
+                  <AngleCardSkeleton />
+                </div>
+              ))
             : filteredAngles.map(angle => (
-                <AngleCard key={angle.id} angle={angle} selected={selectedAngleId === angle.id} onClick={() => onSelectAngle(angle)} />
-              ))}
+                <div key={angle.id} className="flex-shrink-0 snap-center" style={{ width: 'calc(88vw)' }}>
+                  <AngleCard angle={angle} selected={selectedAngleId === angle.id} onClick={() => onSelectAngle(angle)} />
+                </div>
+              ))
+          }
         </div>
+        {/* Swipe dots */}
+        {!loading && filteredAngles.length > 1 && (
+          <div className="md:hidden flex justify-center gap-1.5 pb-3">
+            {filteredAngles.map(a => (
+              <span
+                key={a.id}
+                className="rounded-full transition-all"
+                style={{ width: selectedAngleId === a.id ? 16 : 6, height: 6, background: selectedAngleId === a.id ? '#7C5CFC' : 'rgba(124,92,252,0.2)' }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Desktop: 2-col grid */}
+        <div className="hidden md:block px-8 py-6">
+          <div className="grid grid-cols-2 gap-3 max-w-3xl mx-auto">
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => <AngleCardSkeleton key={i} />)
+              : filteredAngles.map(angle => (
+                  <AngleCard key={angle.id} angle={angle} selected={selectedAngleId === angle.id} onClick={() => onSelectAngle(angle)} />
+                ))}
+          </div>
+        </div>
+
         {!loading && !error && angles.length === 0 && (
-          <div className="max-w-3xl mx-auto mb-3 px-4 py-4 rounded-2xl text-center" style={{ background: 'rgba(124,92,252,0.04)', border: '1.5px dashed rgba(124,92,252,0.2)' }}>
+          <div className="mx-4 md:max-w-3xl md:mx-auto mb-3 px-4 py-4 rounded-2xl text-center" style={{ background: 'rgba(124,92,252,0.04)', border: '1.5px dashed rgba(124,92,252,0.2)' }}>
             <p className="text-[13px] font-semibold text-brand-dark mb-1">Couldn't load AI angles right now</p>
             <p className="text-[12px] text-brand-muted mb-3">Type your own topic below, or try refreshing.</p>
             <button onClick={onRefresh} className="text-[12px] font-bold text-brand-purple hover:underline">↻ Refresh angles</button>
           </div>
         )}
         {!loading && styleFilter && filteredAngles === angles && (
-          <p className="text-center text-[11px] max-w-3xl mx-auto -mt-1 mb-2" style={{ color: '#9CA3AF' }}>
+          <p className="text-center text-[11px] -mt-1 mb-2" style={{ color: '#9CA3AF' }}>
             No {styleFilter} angles right now. Showing all styles instead.
           </p>
         )}
 
-        <IndustryIntelligencePanel
-          userId={userId}
-          userDomain={userDomain}
-          userRole={userRole}
-          onTopicClick={onCustomInputChange}
-          onStyleFilterChange={setStyleFilter}
-          activeStyleFilter={styleFilter}
-        />
+        <div className="px-4 md:px-8">
+          <IndustryIntelligencePanel
+            userId={userId}
+            userDomain={userDomain}
+            userRole={userRole}
+            onTopicClick={onCustomInputChange}
+            onStyleFilterChange={setStyleFilter}
+            activeStyleFilter={styleFilter}
+          />
+        </div>
       </div>
 
       {/* Footer — input + CTA together so keyboard never hides the button */}

@@ -26,7 +26,7 @@ async function getRoleIndustry(supabase: SupabaseClient, userId: string): Promis
   return { role: profile?.role || 'professional', industry: profile?.domain || 'business' };
 }
 
-// Generates 4 distinct post angles grounded in current (last-7-days) trends
+// Generates 6 distinct post angles grounded in current (last-7-days) trends
 // for the user's role/industry, using Claude's web_search tool so the hooks
 // reference genuinely current events rather than stale training data.
 // Cached 2h per user (angles refresh slowly; the ↻ button forces a redo).
@@ -40,7 +40,7 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
 
   const message = await (anthropic.messages.create as any)({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2500,
+    max_tokens: 4000,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
     system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
     messages: [{

@@ -179,18 +179,15 @@ export default function Phase1Angles({
                 today?
               </span>
             </h1>
-            {sources.length > 0 ? (
-              <p className="text-[11px] mt-0.5 font-medium truncate" style={{ color: '#B0A8D0' }}>
-                Sourced from{' '}
-                <span style={{ color: '#7C5CFC' }}>
-                  {sources.slice(0, 3).map(s => s.domain.replace(/^www\./, '')).join(', ')}
-                </span>
-              </p>
-            ) : (
-              <p className="text-[11px] mt-0.5 font-medium truncate" style={{ color: '#B0A8D0' }}>
-                Trend-grounded for {userRole || 'you'} in {userDomain || 'your field'}
-              </p>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                Live
+              </span>
+              <span className="text-[11px] font-medium" style={{ color: '#B0A8D0' }}>
+                {angles.length > 0 ? `${angles.length} angles` : 'angles'} for {userDomain || userRole || 'you'}
+              </span>
+            </div>
           </div>
           <button
             onClick={handleRefresh}

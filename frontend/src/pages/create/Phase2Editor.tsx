@@ -29,24 +29,6 @@ const LOADING_MESSAGES = [
 // Mirrors backend/lib/writingStyles.ts WRITING_STYLES ids. Used to build real
 // variants of the same topic/hook in genuinely different voices, not just
 // reworded copies of one draft.
-const VARIANT_STYLES: { id: string; emoji: string; label: string }[] = [
-  { id: 'storyteller', emoji: '📖', label: 'Storyteller' },
-  { id: 'contrarian', emoji: '🔥', label: 'Contrarian' },
-  { id: 'teacher', emoji: '🎓', label: 'The Teacher' },
-  { id: 'insider', emoji: '🕵️', label: 'The Insider' },
-  { id: 'motivator', emoji: '💪', label: 'Motivator' },
-  { id: 'analyst', emoji: '📊', label: 'The Analyst' },
-];
-const VARIANT_COUNT = 2;
-
-function pickVariantStyleIds(preferredId?: string): string[] {
-  const others = VARIANT_STYLES.map(s => s.id).filter(id => id !== preferredId);
-  const shuffled = [...others].sort(() => Math.random() - 0.5);
-  const rest = shuffled.slice(0, preferredId ? VARIANT_COUNT - 1 : VARIANT_COUNT);
-  return preferredId ? [preferredId, ...rest] : rest;
-}
-
-interface Variant { styleId: string; content: string; }
 
 function scoreColor(score: number): string {
   if (score >= 80) return '#10B981';
@@ -97,12 +79,7 @@ export default function Phase2Editor({
   const [genError, setGenError] = useState('');
   const [sparkInput, setSparkInput] = useState(preloadedSpark || '');
 
-  // A fresh post starts with 3 real variants (same topic/hook, genuinely
-  // different voices) to choose from, rather than one take with no comparison.
-  const [flowStage, setFlowStage] = useState<'variants' | 'editor'>(editMode ? 'editor' : 'variants');
-  const [variants, setVariants] = useState<Variant[]>([]);
-  const [variantsLoading, setVariantsLoading] = useState(!editMode);
-  const [variantsError, setVariantsError] = useState('');
+  const [flowStage] = useState<'editor'>('editor');
 
   const [hooksOpen, setHooksOpen] = useState(false);
   const [ctasOpen, setCtasOpen] = useState(false);
@@ -203,32 +180,9 @@ export default function Phase2Editor({
     setIsGenerating(false);
   }, [resolveSpark, generateOne, savePost]);
 
-  const handleGenerateVariants = useCallback(async () => {
-    setVariantsLoading(true);
-    setVariantsError('');
-    try {
-      const spark = await resolveSpark();
-      const styleIds = pickVariantStyleIds(angle?.styleId);
-      // Only the variant matching the angle's own originally-picked style
-      // keeps that exact hook; the alternates write their own opening.
-      const results = await Promise.all(
-        styleIds.map((id, i) => generateOne(spark, id, i === 0 && id === angle?.styleId))
-      );
-      setVariants(styleIds.map((styleId, i) => ({ styleId, content: results[i] })));
-    } catch (e: any) {
-      setVariantsError(e.message || "Couldn't generate drafts. Try again.");
-    }
-    setVariantsLoading(false);
-  }, [resolveSpark, generateOne, angle]);
-
-  const chooseVariant = useCallback(async (variant: Variant) => {
-    setContent(variant.content);
-    await savePost(variant.content);
-    setFlowStage('editor');
-  }, [savePost]);
 
   useEffect(() => {
-    if (!editMode) handleGenerateVariants();
+    if (!editMode) handleGenerate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -485,172 +439,6 @@ export default function Phase2Editor({
     const topic = content.split('\n').find(l => l.trim())?.slice(0, 120) || 'LinkedIn carousel';
     window.location.href = `/create-visual?format=carousel&topic=${encodeURIComponent(topic)}`;
   };
-
-  // ── Variant picker (shown once, before the editor, for a fresh post) ──────
-
-  if (flowStage === 'variants') {
-    return (
-      <div className="flex-1 min-h-0 flex flex-col">
-        {/* Compact header */}
-        <div className="bg-white border-b px-4 md:px-8 py-2.5 md:py-5" style={{ borderColor: '#EDE8FF' }}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-[15px] md:text-[22px] font-extrabold" style={{ color: '#1A1A2E' }}>Pick your take</h1>
-              <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Two voices, same idea. Pick the one that feels like you.</p>
-            </div>
-            <button
-              onClick={handleGenerateVariants}
-              disabled={variantsLoading}
-              className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-2 rounded-full transition-all disabled:opacity-50 flex-shrink-0"
-              style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.07)', border: '1.5px solid rgba(124,92,252,0.12)' }}
-            >
-              <RefreshCw size={12} className={variantsLoading ? 'animate-spin' : ''} />
-              {variantsLoading ? 'Writing…' : 'New 2'}
-            </button>
-          </div>
-        </div>
-
-        {/* Cards */}
-        <div className="flex-1 min-h-0 flex flex-col">
-          {variantsError && !variantsLoading && (
-            <div className="mx-4 mt-4 text-[12px] font-medium px-3 py-2 rounded-xl flex-shrink-0" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
-              {variantsError}
-            </div>
-          )}
-
-          {/* Mobile: full-height swipe */}
-          <div className="md:hidden flex-1 min-h-0 flex flex-col" style={{ background: '#F4F0FF' }}>
-            {variantsLoading ? (
-              <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-4 px-6">
-                <GenerationTimer label="Writing three takes on your idea…" />
-                <div className="flex gap-4 w-full mt-4" style={{ overflow: 'hidden' }}>
-                  {Array.from({ length: VARIANT_COUNT }).map((_, i) => (
-                    <div key={i} className="flex-shrink-0 bg-white overflow-hidden" style={{ width: 'calc(88vw)', borderRadius: 20, border: '1.5px solid #E8E2FF' }}>
-                      <div style={{ height: 4, background: 'rgba(124,92,252,0.15)' }} />
-                      <div className="flex flex-col gap-2 p-4">
-                        <div className="skeleton h-5 w-24 rounded-full" />
-                        <div style={{ height: 1, background: '#F4F0FF', margin: '8px 0' }} />
-                        {[88,75,80,65].map((w, j) => <div key={j} className="skeleton h-3 rounded" style={{ width: `${w}%` }} />)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <>
-                <div
-                  className="flex-1 min-h-0 flex gap-4 overflow-x-auto snap-x snap-mandatory"
-                  style={{ scrollbarWidth: 'none', padding: '16px 20px 12px' }}
-                >
-                  {variants.map((v, i) => {
-                    const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
-                    const VARIANT_ACCENT: Record<string, string> = {
-                      storyteller: '#7C5CFC', contrarian: '#F72585', teacher: '#0EA5E9',
-                      insider: '#6366F1', motivator: '#10B981', analyst: '#F59E0B',
-                    };
-                    const accent = VARIANT_ACCENT[v.styleId] || '#7C5CFC';
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => chooseVariant(v)}
-                        className="flex-shrink-0 snap-center h-full flex flex-col overflow-hidden text-left active:scale-[0.99] transition-transform"
-                        style={{
-                          width: 'calc(88vw)',
-                          borderRadius: 20,
-                          border: '1.5px solid #E8E2FF',
-                          background: '#fff',
-                          boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-                        }}
-                      >
-                        {/* Colored top bar */}
-                        <div style={{ height: 4, background: `linear-gradient(90deg, ${accent}60, ${accent}15)`, flexShrink: 0 }} />
-                        <div className="flex flex-col flex-1 p-4">
-                          {/* Badge */}
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: `${accent}12`, color: accent }}>
-                              {meta?.emoji} {meta?.label || v.styleId}
-                            </span>
-                          </div>
-                          {/* Divider */}
-                          <div style={{ height: 1, background: '#F4F0FF', marginBottom: 12, flexShrink: 0 }} />
-                          {/* Content */}
-                          <p className="flex-1 text-[14px] font-medium" style={{ color: '#111827', lineHeight: 1.65, whiteSpace: 'pre-wrap', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical' }}>
-                            {v.content}
-                          </p>
-                          {/* Footer */}
-                          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #F4F0FF', flexShrink: 0 }}>
-                            <div className="flex items-center justify-between">
-                              <span style={{ fontSize: 11, color: '#A0A0B0', fontWeight: 500 }}>Tap to use</span>
-                              <span className="text-[12px] font-bold" style={{ color: accent }}>Use this →</span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Gradient dots */}
-                {variants.length > 1 && (
-                  <div className="flex justify-center items-center gap-2 pb-3 flex-shrink-0">
-                    {variants.map((_, i) => (
-                      <span key={i} className="rounded-full" style={{ width: 6, height: 6, background: 'rgba(124,92,252,0.2)' }} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Desktop: 3-col grid */}
-          {!variantsLoading ? (
-            <div className="hidden md:grid md:grid-cols-3 gap-4 max-w-5xl mx-auto px-8 py-6">
-              {variants.map((v, i) => {
-                const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
-                const VARIANT_ACCENT: Record<string, string> = {
-                  storyteller: '#7C5CFC', contrarian: '#F72585', teacher: '#0EA5E9',
-                  insider: '#6366F1', motivator: '#10B981', analyst: '#F59E0B',
-                };
-                const accent = VARIANT_ACCENT[v.styleId] || '#7C5CFC';
-                return (
-                  <button
-                    key={i}
-                    onClick={() => chooseVariant(v)}
-                    className="bg-white flex flex-col text-left overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all"
-                    style={{ borderRadius: 16, border: '1.5px solid #E8E2FF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-                  >
-                    <div style={{ height: 4, background: `linear-gradient(90deg, ${accent}60, ${accent}15)` }} />
-                    <div className="flex flex-col flex-1 p-4">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 self-start" style={{ background: `${accent}12`, color: accent }}>
-                        {meta?.emoji} {meta?.label || v.styleId}
-                      </span>
-                      <div style={{ height: 1, background: '#F4F0FF', marginBottom: 12 }} />
-                      <p className="text-[13px] flex-1 line-clamp-8 mb-3" style={{ color: '#111827', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
-                        {v.content}
-                      </p>
-                      <div className="w-full text-[12px] font-bold text-center py-2.5 rounded-xl" style={{ background: `${accent}10`, color: accent }}>
-                        Use this version
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="hidden md:flex justify-center py-12">
-              <GenerationTimer label="Writing three takes on your idea…" />
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white border-t px-4 md:px-8 py-3 flex items-center justify-between" style={{ borderColor: '#EDE8FF' }}>
-          <button onClick={onBack} className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: '#6B7280' }}>
-            <ArrowLeft size={14} /> Back
-          </button>
-          <p className="text-[11px]" style={{ color: '#B0A8D0' }}>Swipe to see both</p>
-        </div>
-      </div>
-    );
-  }
 
   // ── Render helpers ───────────────────────────────────────────────────────
 

@@ -245,7 +245,7 @@ export default function CreatePost() {
       <Sidebar />
       <MobileHeader title="Create" />
       {currentPhase > 0 && !editMode && (
-        <div className="bg-white border-b border-[rgba(124,92,252,0.06)] px-4 py-1.5 flex items-center">
+        <div className="hidden md:block bg-white border-b border-[rgba(124,92,252,0.06)] px-4 py-1.5">
           <button
             onClick={handleBackToPicker}
             className="text-[12px] font-semibold text-brand-muted hover:text-brand-purple transition-colors flex items-center gap-1"

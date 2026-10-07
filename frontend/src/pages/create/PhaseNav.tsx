@@ -10,7 +10,7 @@ const STEPS = [
 export default function PhaseNav({ currentPhase }: { currentPhase: 0 | 1 | 2 | 3 }) {
   if (currentPhase === 0) return null;
   return (
-    <div className="bg-white border-b flex items-center justify-center overflow-x-auto" style={{ borderColor: '#EDE8FF' }}>
+    <div className={`bg-white border-b items-center justify-center overflow-x-auto ${currentPhase === 2 ? 'hidden md:flex' : 'flex'}`} style={{ borderColor: '#EDE8FF' }}>
       <div className="flex items-center">
         {STEPS.map((step, i) => {
           const state = step.n < currentPhase ? 'done' : step.n === currentPhase ? 'active' : 'upcoming';

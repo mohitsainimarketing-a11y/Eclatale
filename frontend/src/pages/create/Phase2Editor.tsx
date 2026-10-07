@@ -130,6 +130,7 @@ export default function Phase2Editor({
   const [carouselState, setCarouselState] = useState<'idle' | 'generating'>('idle');
   const [savingDraft, setSavingDraft] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   // ── Generation ────────────────────────────────────────────────────────────
 
@@ -615,8 +616,34 @@ export default function Phase2Editor({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {/* Spark bar */}
-      <div className="bg-white border-b px-4 md:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center gap-2" style={{ borderColor: '#EDE8FF' }}>
+
+      {/* ── Mobile-only compact header ── */}
+      <div className="md:hidden bg-white border-b flex items-center gap-2 px-4 py-2.5 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+        <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0" style={{ color: '#6B7280' }}>
+          <ArrowLeft size={18} />
+        </button>
+        <button
+          onClick={onBack}
+          className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full truncate text-left"
+          style={{ border: '1.5px solid #D4CEFF', color: '#7C5CFC' }}
+        >
+          <Check size={11} className="flex-shrink-0" />
+          <span className="truncate">
+            {angle ? `${angle.style} · ${angle.hook.slice(0, 28)}${angle.hook.length > 28 ? '…' : ''}` : (editMode ? 'Editing draft' : customTopic.slice(0, 28) || 'New post')}
+          </span>
+        </button>
+        <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: content.length > 2700 ? '#F72585' : '#9CA3AF' }}>{content.length}</span>
+        <button
+          onClick={() => setMobileDrawerOpen(true)}
+          className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
+          style={{ color: '#6B7280' }}
+        >
+          <MoreHorizontal size={18} />
+        </button>
+      </div>
+
+      {/* ── Desktop-only spark bar ── */}
+      <div className="hidden md:flex bg-white border-b px-6 py-2.5 items-center gap-2 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
         {angle ? (
           <span
             className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
@@ -639,7 +666,7 @@ export default function Phase2Editor({
           className="flex-1 min-w-0 text-[13px] bg-transparent outline-none px-2 py-0.5"
           style={{ color: '#1A1A2E' }}
         />
-        <div className="flex items-center gap-1 flex-shrink-0 self-start sm:self-auto">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {LENGTH_OPTIONS.map(l => (
             <button
               key={l.id}
@@ -655,11 +682,13 @@ export default function Phase2Editor({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-        {/* Left column: editor */}
+      {/* ── Main content area ── */}
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+        {/* Left column / mobile full editor */}
         <div className="flex-1 min-w-0 bg-white flex flex-col md:border-r" style={{ borderColor: '#EDE8FF' }}>
-          {/* Toolbar */}
-          <div className="flex items-center gap-1 px-4 py-2 border-b flex-wrap" style={{ borderColor: '#EDE8FF' }}>
+
+          {/* Desktop-only toolbar */}
+          <div className="hidden md:flex items-center gap-1 px-4 py-2 border-b flex-wrap" style={{ borderColor: '#EDE8FF' }}>
             <FormatBtn icon={Bold} onClick={() => transformSelection(BOLD)} label="Bold" shortcut="⌘B" preview="𝗕" />
             <FormatBtn icon={Italic} onClick={() => transformSelection(ITALIC)} label="Italic" shortcut="⌘I" preview="𝘐" />
             <FormatBtn icon={Bold} onClick={() => transformSelection(BOLD_ITALIC)} label="Bold Italic" shortcut="⌘⇧B" preview="𝗕𝘐" />
@@ -687,7 +716,6 @@ export default function Phase2Editor({
               )}
             </div>
             <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
-
             <div className="relative">
               <button onClick={() => setHooksOpen(o => !o)} className="flex items-center gap-1 text-[12px] font-bold px-2.5 py-1.5 rounded-full" style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.06)' }}>
                 Hooks <ChevronDown size={12} />
@@ -715,7 +743,6 @@ export default function Phase2Editor({
                 </div>
               )}
             </div>
-
             {topSources.length > 0 && (
               <div className="flex items-center gap-1.5 ml-auto flex-wrap">
                 {topSources.map((s, i) => (
@@ -728,8 +755,8 @@ export default function Phase2Editor({
             )}
           </div>
 
-          {/* Editor */}
-          <div className="flex-1 min-h-[280px] p-4">
+          {/* Editor textarea */}
+          <div className="flex-1 min-h-0 p-4">
             {isGenerating ? (
               <div className="h-full rounded-xl p-4 flex flex-col items-center justify-center gap-4" style={{ background: '#FDFCFF', border: '1.5px solid #EDE8FF' }}>
                 <GenerationTimer />
@@ -751,16 +778,16 @@ export default function Phase2Editor({
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 onKeyDown={handleEditorKeyDown}
-                className="w-full h-full min-h-[280px] outline-none resize-y"
-                style={{ border: '1.5px solid #EDE8FF', borderRadius: 12, padding: 16, fontSize: 13.5, lineHeight: 1.85, color: '#1A1A2E', background: '#FDFCFF' }}
+                className="w-full h-full min-h-[200px] outline-none md:resize-y resize-none"
+                style={{ border: '1.5px solid #EDE8FF', borderRadius: 12, padding: 16, fontSize: 14, lineHeight: 1.9, color: '#1A1A2E', background: '#FDFCFF' }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#7C5CFC'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(124,92,252,0.06)'; }}
                 onBlur={e => { e.currentTarget.style.borderColor = '#EDE8FF'; e.currentTarget.style.boxShadow = 'none'; }}
               />
             )}
           </div>
 
-          {/* Editor footer */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 border-t" style={{ borderColor: '#EDE8FF' }}>
+          {/* Desktop-only editor footer (Aria refine + char count) */}
+          <div className="hidden md:flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 border-t" style={{ borderColor: '#EDE8FF' }}>
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>{content.length} / 3,000</span>
               <button
@@ -797,9 +824,8 @@ export default function Phase2Editor({
           </div>
         </div>
 
-        {/* Right column: intelligence panel */}
-        <div className="w-full md:w-[240px] flex-shrink-0 p-4 flex flex-row md:flex-col gap-3 overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none" style={{ background: '#F8F5FF' }}>
-          {/* LinkedIn preview */}
+        {/* Right column: desktop only */}
+        <div className="hidden md:flex md:w-[240px] flex-shrink-0 p-4 flex-col gap-3 overflow-y-auto" style={{ background: '#F8F5FF' }}>
           <LinkedInPreviewCard
             userName={userName}
             userInitials={userInitials}
@@ -807,11 +833,10 @@ export default function Phase2Editor({
             content={content}
             cutoff={CUTOFF}
           />
-
           {!insightsOpen ? (
             <button
               onClick={() => setInsightsOpen(true)}
-              className="text-left rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start"
+              className="text-left rounded-[14px] p-3.5"
               style={{ background: 'white', border: '1.5px dashed #D4CEFF' }}
             >
               <p className="text-[11px] font-bold flex items-center gap-1" style={{ color: '#7C5CFC' }}>
@@ -820,119 +845,173 @@ export default function Phase2Editor({
               <p className="text-[10px] mt-1" style={{ color: '#9CA3AF' }}>Content score, best time to post, carousel</p>
             </button>
           ) : (
-          <>
-          {/* Content Signal */}
-          <div className="bg-white rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
-            <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Content Signal</p>
-            {authLocked ? (
-              <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to enable AI content check.</p>
-            ) : authLoading ? (
-              <div className="space-y-2">
-                <div className="skeleton h-3 w-2/3 rounded" />
-                <div className="skeleton h-5 w-full rounded" />
-                <div className="skeleton h-3 w-full rounded" />
-              </div>
-            ) : authScore?.signal ? (
-              <>
-                {/* Signal label + traffic light */}
-                <div className="flex items-center justify-between gap-2 mb-2.5">
-                  <span className="text-[13px] font-extrabold" style={{ color: '#1A1A2E' }}>
-                    {authScore.signal.label}
-                  </span>
-                  <span
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    title={authScore.signal.readyToPost ? 'Ready to post' : 'Review suggested'}
-                    style={{
-                      background: authScore.signal.readyToPost ? '#10B981' : '#F59E0B',
-                      boxShadow: authScore.signal.readyToPost
-                        ? '0 0 0 3px rgba(16,185,129,0.2)'
-                        : '0 0 0 3px rgba(245,158,11,0.2)',
-                    }}
-                  />
-                </div>
-                {authScore.signal.readyToPost ? (
-                  <p className="text-[11px] font-semibold" style={{ color: '#10B981' }}>
-                    ✓ Looks ready to post
+            <>
+              <div className="bg-white rounded-[14px] p-3.5" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
+                <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Content Signal</p>
+                {authLocked ? (
+                  <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to enable AI content check.</p>
+                ) : authLoading ? (
+                  <div className="space-y-2">
+                    <div className="skeleton h-3 w-2/3 rounded" />
+                    <div className="skeleton h-5 w-full rounded" />
+                    <div className="skeleton h-3 w-full rounded" />
+                  </div>
+                ) : authScore?.signal ? (
+                  <>
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <span className="text-[13px] font-extrabold" style={{ color: '#1A1A2E' }}>{authScore.signal.label}</span>
+                      <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: authScore.signal.readyToPost ? '#10B981' : '#F59E0B', boxShadow: authScore.signal.readyToPost ? '0 0 0 3px rgba(16,185,129,0.2)' : '0 0 0 3px rgba(245,158,11,0.2)' }} />
+                    </div>
+                    {authScore.signal.readyToPost ? (
+                      <p className="text-[11px] font-semibold" style={{ color: '#10B981' }}>✓ Looks ready to post</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase" style={{ color: '#F59E0B' }}>{authScore.signal.issues.length} thing{authScore.signal.issues.length !== 1 ? 's' : ''} to check</p>
+                        {authScore.signal.issues.map((issue, i) => (
+                          <div key={i} className="rounded-lg p-2" style={{ background: '#FFFBF0', border: '1px solid rgba(245,158,11,0.2)' }}>
+                            <p className="text-[10px] leading-snug mb-1" style={{ color: '#92400E' }}>
+                              <AlertTriangle size={9} className="inline mr-1" style={{ verticalAlign: 'middle' }} />
+                              {issue.message}
+                            </p>
+                            <p className="text-[9px] flex items-start gap-0.5" style={{ color: '#B45309' }}>
+                              <ChevronRight size={9} className="flex-shrink-0 mt-0.5" />
+                              {issue.suggestion}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : authScore ? (
+                  <p className="text-[11px] font-semibold" style={{ color: authScore.readyToPost ? '#10B981' : '#F59E0B' }}>
+                    {authScore.readyToPost ? '✓ Looks ready to post' : 'One thing to review'}
                   </p>
                 ) : (
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-bold uppercase" style={{ color: '#F59E0B' }}>
-                      {authScore.signal.issues.length} thing{authScore.signal.issues.length !== 1 ? 's' : ''} to check
-                    </p>
-                    {authScore.signal.issues.map((issue, i) => (
-                      <div key={i} className="rounded-lg p-2" style={{ background: '#FFFBF0', border: '1px solid rgba(245,158,11,0.2)' }}>
-                        <p className="text-[10px] leading-snug mb-1" style={{ color: '#92400E' }}>
-                          <AlertTriangle size={9} className="inline mr-1" style={{ verticalAlign: 'middle' }} />
-                          {issue.message}
-                        </p>
-                        <p className="text-[9px] flex items-start gap-0.5" style={{ color: '#B45309' }}>
-                          <ChevronRight size={9} className="flex-shrink-0 mt-0.5" />
-                          {issue.suggestion}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Checking in a moment...</p>
                 )}
-              </>
-            ) : authScore ? (
-              // Fallback for old API responses without signal field
-              <p className="text-[11px] font-semibold" style={{ color: authScore.readyToPost ? '#10B981' : '#F59E0B' }}>
-                {authScore.readyToPost ? '✓ Looks ready to post' : 'One thing to review'}
-              </p>
-            ) : (
-              <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Checking in a moment...</p>
-            )}
-          </div>
-
-          {/* Best time */}
-          <div className="bg-white rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start relative" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
-            <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Best Time To Post</p>
-            {bestTimeLocked ? (
-              <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to see this.</p>
-            ) : bestTimeLoading ? (
-              <div className="skeleton h-8 w-full rounded" />
-            ) : (
-              <>
-                <p className="text-[13px] font-bold flex items-center gap-1.5 mb-0.5" style={{ color: '#1A1A2E' }}>
-                  <Clock size={13} style={{ color: '#7C5CFC' }} />
-                  {bestTime?.recommendedDays?.[0] ? `${bestTime.recommendedDays[0].slice(0, 3)} ${bestTime.recommendedTimes?.[0] || ''}` : 'Not enough data yet'}
+              </div>
+              <div className="bg-white rounded-[14px] p-3.5" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
+                <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Best Time To Post</p>
+                {bestTimeLocked ? (
+                  <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to see this.</p>
+                ) : bestTimeLoading ? (
+                  <div className="skeleton h-8 w-full rounded" />
+                ) : (
+                  <>
+                    <p className="text-[13px] font-bold flex items-center gap-1.5 mb-0.5" style={{ color: '#1A1A2E' }}>
+                      <Clock size={13} style={{ color: '#7C5CFC' }} />
+                      {bestTime?.recommendedDays?.[0] ? `${bestTime.recommendedDays[0].slice(0, 3)} ${bestTime.recommendedTimes?.[0] || ''}` : 'Not enough data yet'}
+                    </p>
+                    <p className="text-[10px] mb-2.5" style={{ color: '#9CA3AF' }}>Your audience peaks then</p>
+                    <button onClick={openSchedule} className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}>Schedule</button>
+                  </>
+                )}
+              </div>
+              <div className="rounded-[14px] p-3.5 relative" style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(247,37,133,0.08) 100%)' }}>
+                <span className="absolute top-2.5 right-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'white', color: '#7C5CFC' }}>Recommended</span>
+                <LayoutGrid size={16} style={{ color: '#7C5CFC' }} className="mb-1.5" />
+                <p className="text-[12px] font-bold mb-1.5" style={{ color: '#7C5CFC' }}>Turn into carousel</p>
+                <p className="text-[10px] mb-2.5" style={{ color: '#6B7280', lineHeight: 1.5 }}>
+                  Carousels average 1,451 impressions vs 605 for images. This post has {estimateSlides(content)} perfect slides in it.
                 </p>
-                <p className="text-[10px] mb-2.5" style={{ color: '#9CA3AF' }}>Your audience peaks then</p>
-                <button onClick={openSchedule} className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}>Schedule</button>
-              </>
-            )}
-          </div>
-
-          {/* Carousel CTA */}
-          <div className="rounded-[14px] p-3.5 flex-shrink-0 w-[200px] md:w-auto snap-start relative" style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(247,37,133,0.08) 100%)' }}>
-            <span className="absolute top-2.5 right-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'white', color: '#7C5CFC' }}>Recommended</span>
-            <LayoutGrid size={16} style={{ color: '#7C5CFC' }} className="mb-1.5" />
-            <p className="text-[12px] font-bold mb-1.5" style={{ color: '#7C5CFC' }}>Turn into carousel</p>
-            <p className="text-[10px] mb-2.5" style={{ color: '#6B7280', lineHeight: 1.5 }}>
-              Carousels average 1,451 impressions vs 605 for images. This post has {estimateSlides(content)} perfect slides in it.
-            </p>
-            {carouselState === 'generating' ? (
-              <p className="text-[11px] font-bold" style={{ color: '#10B981' }}>Carousel generating...</p>
-            ) : (
-              <button onClick={handleCarousel} className="text-[11px] font-bold" style={{ color: '#7C5CFC' }}>
-                Generate {estimateSlides(content)}-slide carousel →
-              </button>
-            )}
-          </div>
-          <button
-            onClick={() => setInsightsOpen(false)}
-            className="text-[11px] font-semibold flex-shrink-0 w-[200px] md:w-auto snap-start"
-            style={{ color: '#9CA3AF' }}
-          >
-            Hide extra tools
-          </button>
-          </>
+                {carouselState === 'generating' ? (
+                  <p className="text-[11px] font-bold" style={{ color: '#10B981' }}>Carousel generating...</p>
+                ) : (
+                  <button onClick={handleCarousel} className="text-[11px] font-bold" style={{ color: '#7C5CFC' }}>
+                    Generate {estimateSlides(content)}-slide carousel →
+                  </button>
+                )}
+              </div>
+              <button onClick={() => setInsightsOpen(false)} className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>Hide extra tools</button>
+            </>
           )}
         </div>
       </div>
 
-      {/* Bottom action bar */}
-      <div className="bg-white border-t px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center gap-2" style={{ borderColor: '#EDE8FF' }}>
+      {/* ── Mobile-only bottom bar ── */}
+      <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+        {/* Mobile Hooks panel: slides up above the bottom bar */}
+        {hooksOpen && (
+          <div className="fixed inset-0 z-40 flex flex-col justify-end md:hidden" onClick={() => setHooksOpen(false)}>
+            <div className="mx-0 mb-[112px] mx-4 rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()} style={{ maxHeight: '60vh', overflowY: 'auto', boxShadow: '0 -4px 32px rgba(124,92,252,0.18)' }}>
+              <HookLibraryPanel
+                userId={userId}
+                userRole={userRole}
+                userDomain={userDomain}
+                onInsert={text => { insertHookTemplate(text); setHooksOpen(false); }}
+              />
+            </div>
+          </div>
+        )}
+        {/* Mobile CTAs panel */}
+        {ctasOpen && (
+          <div className="fixed inset-0 z-40 flex flex-col justify-end md:hidden" onClick={() => setCtasOpen(false)}>
+            <div className="mx-4 mb-[112px] bg-white rounded-2xl p-3 overflow-y-auto" onClick={e => e.stopPropagation()} style={{ maxHeight: '60vh', boxShadow: '0 -4px 32px rgba(124,92,252,0.18)' }}>
+              <p className="text-[10px] font-bold uppercase px-1 pb-2 mb-1 border-b" style={{ color: '#9CA3AF', borderColor: '#EDE8FF' }}>Call to action</p>
+              {CTA_TEMPLATES.map((c, i) => (
+                <button key={i} onClick={() => { insertAtCursor('\n\n' + c); setCtasOpen(false); }} className="block w-full text-left text-[13px] px-2 py-2.5 rounded-xl active:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Formatting toolbar row */}
+        <div className="flex items-center gap-0.5 px-3 py-2 border-b overflow-x-auto flex-shrink-0" style={{ borderColor: '#F0EEF8', scrollbarWidth: 'none' }}>
+          <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] font-extrabold flex-shrink-0" style={{ color: '#1A1A2E' }}>B</button>
+          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] font-medium italic flex-shrink-0" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
+          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[14px] flex-shrink-0 line-through" style={{ color: '#1A1A2E' }}>S</button>
+          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
+          <button
+            onClick={() => { setHooksOpen(o => !o); setCtasOpen(false); }}
+            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0"
+            style={{ color: '#7C5CFC', background: hooksOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}
+          >
+            Hooks
+          </button>
+          <button
+            onClick={() => { setCtasOpen(o => !o); setHooksOpen(false); }}
+            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0"
+            style={{ color: '#7C5CFC', background: ctasOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}
+          >
+            CTAs
+          </button>
+          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
+          <button
+            onClick={handleHumanize}
+            disabled={humanizing || !content.trim()}
+            className="flex items-center gap-1 text-[11px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-40"
+            style={{ background: 'rgba(124,92,252,0.07)', color: '#7C5CFC' }}
+          >
+            <Wand2 size={11} />
+            {humanizing ? 'Working…' : 'Humanize'}
+          </button>
+        </div>
+
+        {/* Primary CTA row */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <button
+            onClick={handlePublish}
+            disabled={publishing || isGenerating || !content.trim()}
+            className="flex-1 flex items-center justify-center gap-2 text-[14px] font-bold text-white py-3.5 rounded-2xl disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 6px 20px rgba(124,92,252,0.28)' }}
+          >
+            {publishing ? 'Publishing...' : 'Post to LinkedIn'}
+          </button>
+          <button
+            onClick={() => setMobileDrawerOpen(true)}
+            className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0"
+            style={{ border: '1.5px solid #EDE8FF', color: '#6B7280' }}
+            aria-label="More options"
+          >
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Desktop-only bottom action bar ── */}
+      <div className="hidden md:flex bg-white border-t px-6 py-3 flex-row items-center gap-2" style={{ borderColor: '#EDE8FF' }}>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={onBack} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
             <ArrowLeft size={13} /> Back
@@ -951,12 +1030,89 @@ export default function Phase2Editor({
         <button
           onClick={handlePublish}
           disabled={publishing || isGenerating || !content.trim()}
-          className="flex items-center justify-center gap-1.5 text-[13px] font-bold text-white px-6 py-2.5 rounded-full disabled:opacity-50 w-full md:w-auto"
+          className="flex items-center justify-center gap-1.5 text-[13px] font-bold text-white px-6 py-2.5 rounded-full disabled:opacity-50"
           style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 4px 16px rgba(124,92,252,0.25)' }}
         >
           {publishing ? 'Publishing...' : 'Post to LinkedIn →'}
         </button>
       </div>
+
+      {/* ── Mobile drawer (bottom sheet for secondary actions) ── */}
+      {mobileDrawerOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end animate-fadeIn" style={{ background: 'rgba(0,0,0,0.40)' }} onClick={() => setMobileDrawerOpen(false)}>
+          <div className="bg-white rounded-t-3xl px-5 pt-4 pb-8" onClick={e => e.stopPropagation()} style={{ maxHeight: '88vh', overflowY: 'auto' }}>
+            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: '#E5E7EB' }} />
+
+            {/* Length */}
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#9CA3AF' }}>Post length</p>
+            <div className="flex gap-2 mb-5">
+              {LENGTH_OPTIONS.map(l => (
+                <button
+                  key={l.id}
+                  onClick={() => onLengthChange(l.id)}
+                  className="flex-1 py-2.5 rounded-xl text-[12px] font-bold transition-all"
+                  style={selectedLength === l.id
+                    ? { background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white' }
+                    : { color: '#6B7280', border: '1.5px solid #EDE8FF' }}
+                >
+                  {l.emoji} {l.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Aria refine */}
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#9CA3AF' }}>Refine with Aria</p>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 mb-5" style={{ border: '1.5px solid #EDE8FF' }}>
+              <Sparkles size={14} style={{ color: '#7C5CFC', flexShrink: 0 }} />
+              <input
+                type="text"
+                value={ariaInput}
+                onChange={e => setAriaInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim()) { handleAriaRefine(); setMobileDrawerOpen(false); } }}
+                placeholder="Shorten it, add a stat, change the ending..."
+                className="flex-1 text-[13px] bg-transparent outline-none"
+                style={{ color: '#1A1A2E' }}
+              />
+              <button
+                onClick={() => { if (ariaInput.trim()) { handleAriaRefine(); setMobileDrawerOpen(false); } }}
+                disabled={ariaRefining || !ariaInput.trim()}
+                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+                style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
+              >
+                <Send size={12} color="white" />
+              </button>
+            </div>
+
+            {/* Add context */}
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#9CA3AF' }}>Add context (optional)</p>
+            <input
+              type="text"
+              value={sparkInput}
+              onChange={e => setSparkInput(e.target.value)}
+              placeholder="A URL, quote, or what inspired this post..."
+              className="w-full text-[13px] px-3 py-2.5 rounded-xl mb-5 outline-none"
+              style={{ border: '1.5px solid #EDE8FF', color: '#1A1A2E' }}
+            />
+
+            {/* Actions grid */}
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Actions</p>
+            <div className="grid grid-cols-3 gap-2.5">
+              <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl active:scale-95 transition-transform" style={{ border: '1.5px solid #EDE8FF' }}>
+                <Copy size={18} style={{ color: '#6B7280' }} />
+                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Copy</span>
+              </button>
+              <button onClick={() => { handleSaveDraft(); setMobileDrawerOpen(false); }} disabled={savingDraft} className="flex flex-col items-center gap-2 py-4 rounded-2xl active:scale-95 transition-transform disabled:opacity-50" style={{ border: '1.5px solid #EDE8FF' }}>
+                <Save size={18} style={{ color: '#6B7280' }} />
+                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>{savingDraft ? 'Saving…' : 'Save'}</span>
+              </button>
+              <button onClick={() => { openSchedule(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl active:scale-95 transition-transform" style={{ border: '1.5px solid #EDE8FF' }}>
+                <Calendar size={18} style={{ color: '#6B7280' }} />
+                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Schedule modal: fixed overlay, triggered from both the bottom bar and Best Time panel */}
       {scheduleOpen && (

@@ -39,71 +39,76 @@ function AngleCard({ angle, selected, onClick }: { angle: Angle; selected: boole
       role="button"
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-      className="relative cursor-pointer h-full flex flex-col overflow-hidden"
+      className="cursor-pointer h-full flex flex-col overflow-hidden"
       style={{
-        borderRadius: 22,
-        padding: '22px 20px 20px',
-        border: selected ? `2px solid ${accent}` : '1.5px solid rgba(237,232,255,0.9)',
-        background: selected
-          ? `linear-gradient(160deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.92) 100%)`
-          : 'rgba(255,255,255,0.95)',
+        borderRadius: 20,
+        border: selected ? `2px solid ${accent}` : '1.5px solid #E8E2FF',
+        background: '#fff',
         boxShadow: selected
-          ? `0 20px 56px ${accent}30, 0 4px 16px rgba(0,0,0,0.06)`
-          : '0 4px 24px rgba(124,92,252,0.10), 0 1px 4px rgba(0,0,0,0.04)',
-        transition: 'all 0.2s ease',
+          ? `0 8px 32px ${accent}22, 0 2px 8px rgba(0,0,0,0.06)`
+          : '0 2px 12px rgba(0,0,0,0.07)',
+        transition: 'box-shadow 0.2s, border-color 0.2s',
       }}
     >
-      {/* Decorative blob top-right */}
-      <div
-        className="absolute pointer-events-none"
-        style={{ top: -48, right: -48, width: 140, height: 140, borderRadius: '50%', background: `${accent}18` }}
-      />
-      {/* Second smaller blob */}
-      <div
-        className="absolute pointer-events-none"
-        style={{ bottom: -24, left: -24, width: 80, height: 80, borderRadius: '50%', background: `${accent}0D` }}
-      />
+      {/* Colored top accent bar */}
+      <div style={{
+        height: 4,
+        background: selected
+          ? `linear-gradient(90deg, ${accent}, ${accent}BB)`
+          : `linear-gradient(90deg, ${accent}50, ${accent}10)`,
+        flexShrink: 0,
+        transition: 'background 0.2s',
+      }} />
 
-      {/* Top row */}
-      <div className="relative flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-full flex-shrink-0"
-            style={{ background: angle.badgeColor, color: angle.badgeTextColor }}
-          >
-            {angle.styleEmoji} {angle.style}
-          </span>
-          {angle.performanceStat && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold min-w-0" style={{ color: angle.performanceColor }}>
-              <PerfIcon size={11} className="flex-shrink-0" />
-              <span className="truncate max-w-[100px]">{angle.performanceStat}</span>
+      <div className="flex flex-col flex-1 p-4">
+        {/* Badge row */}
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+              style={{ background: angle.badgeColor, color: angle.badgeTextColor }}
+            >
+              {angle.styleEmoji} {angle.style}
             </span>
-          )}
+            {angle.performanceStat && (
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold truncate" style={{ color: angle.performanceColor }}>
+                <PerfIcon size={10} className="flex-shrink-0" />
+                <span className="truncate">{angle.performanceStat}</span>
+              </span>
+            )}
+          </div>
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+            style={selected
+              ? { background: accent, boxShadow: `0 2px 8px ${accent}60` }
+              : { background: '#F0EEF8' }}
+          >
+            {selected && <Check size={12} color="white" strokeWidth={3} />}
+          </div>
         </div>
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
-          style={selected
-            ? { background: `linear-gradient(135deg, ${accent}, #F72585)`, boxShadow: `0 4px 12px ${accent}50` }
-            : { background: 'rgba(0,0,0,0.05)' }}
-        >
-          {selected && <Check size={14} color="white" strokeWidth={3} />}
-        </div>
-      </div>
 
-      {/* Hook — the hero */}
-      <p
-        className="relative flex-1"
-        style={{ fontSize: 19, fontWeight: 700, color: '#1A1A2E', lineHeight: 1.5 }}
-      >
-        {angle.hook}
-      </p>
+        {/* Divider */}
+        <div style={{ height: 1, background: '#F4F0FF', marginBottom: 12, flexShrink: 0 }} />
 
-      {/* Bottom insight */}
-      <div className="relative mt-auto pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-        <p className="text-[12px] leading-relaxed" style={{ color: '#9CA3AF' }}>{angle.insight}</p>
-        <p className="text-[11px] font-bold mt-2" style={{ color: selected ? accent : 'rgba(124,92,252,0.5)' }}>
-          {selected ? 'Selected — tap Write this post' : 'Tap to select this angle'}
+        {/* Hook */}
+        <p className="flex-1" style={{ fontSize: 15, fontWeight: 600, color: '#111827', lineHeight: 1.6 }}>
+          {angle.hook}
         </p>
+
+        {/* Insight */}
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #F4F0FF', flexShrink: 0 }}>
+          <p style={{ fontSize: 11.5, color: '#A0A0B0', lineHeight: 1.5 }}>{angle.insight}</p>
+          <div className="flex items-center justify-between mt-2">
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: selected ? accent : '#C4BAF0' }}>
+              {selected ? 'Selected' : 'Tap to select'}
+            </span>
+            {selected && (
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${accent}15`, color: accent }}>
+                <Check size={9} strokeWidth={3} /> Ready
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

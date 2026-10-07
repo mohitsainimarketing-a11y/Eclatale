@@ -501,99 +501,143 @@ export default function Phase2Editor({
             <button
               onClick={handleGenerateVariants}
               disabled={variantsLoading}
-              className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 flex-shrink-0"
-              style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}
+              className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-2 rounded-full transition-all disabled:opacity-50 flex-shrink-0"
+              style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.07)', border: '1.5px solid rgba(124,92,252,0.12)' }}
             >
-              <RefreshCw size={11} className={variantsLoading ? 'animate-spin' : ''} />
+              <RefreshCw size={12} className={variantsLoading ? 'animate-spin' : ''} />
               {variantsLoading ? 'Writing…' : 'New 3'}
             </button>
           </div>
         </div>
 
-        {/* Cards — horizontal scroll on mobile, grid on desktop */}
-        <div className="flex-1 min-h-0 overflow-y-auto md:overflow-y-auto">
+        {/* Cards */}
+        <div className="flex-1 min-h-0 flex flex-col">
           {variantsError && !variantsLoading && (
-            <div className="mx-4 mt-4 text-[12px] font-medium px-3 py-2 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
+            <div className="mx-4 mt-4 text-[12px] font-medium px-3 py-2 rounded-xl flex-shrink-0" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
               {variantsError}
             </div>
           )}
-          {variantsLoading && (
-            <div className="flex justify-center py-8">
-              <GenerationTimer label="Writing three takes on your idea…" />
-            </div>
-          )}
 
-          {/* Mobile: horizontal scroll strip */}
-          {!variantsLoading && (
-            <>
-              <div className="md:hidden flex gap-3 px-4 py-4 overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
-                {variants.map((v, i) => {
-                  const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => chooseVariant(v)}
-                      className="flex-shrink-0 snap-center bg-white text-left active:scale-[0.98] transition-transform"
-                      style={{ width: 'calc(85vw)', borderRadius: 16, border: '1.5px solid #EDE8FF', boxShadow: '0 4px 20px rgba(124,92,252,0.10)', padding: 16 }}
-                    >
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2.5" style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}>
-                        <span>{meta?.emoji}</span>{meta?.label || v.styleId}
-                      </span>
-                      <p className="text-[13px] leading-relaxed line-clamp-6 mb-3" style={{ color: '#1A1A2E', whiteSpace: 'pre-wrap' }}>
-                        {v.content}
-                      </p>
-                      <div className="flex items-center justify-between mt-auto">
-                        <span className="text-[11px] text-brand-muted">Tap to use</span>
-                        <span className="text-[11px] font-bold text-brand-purple">Use this →</span>
+          {/* Mobile: full-height swipe */}
+          <div className="md:hidden flex-1 min-h-0 flex flex-col" style={{ background: '#F4F0FF' }}>
+            {variantsLoading ? (
+              <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-4 px-6">
+                <GenerationTimer label="Writing three takes on your idea…" />
+                <div className="flex gap-4 w-full mt-4" style={{ overflow: 'hidden' }}>
+                  {Array.from({ length: VARIANT_COUNT }).map((_, i) => (
+                    <div key={i} className="flex-shrink-0 bg-white overflow-hidden" style={{ width: 'calc(88vw)', borderRadius: 20, border: '1.5px solid #E8E2FF' }}>
+                      <div style={{ height: 4, background: 'rgba(124,92,252,0.15)' }} />
+                      <div className="flex flex-col gap-2 p-4">
+                        <div className="skeleton h-5 w-24 rounded-full" />
+                        <div style={{ height: 1, background: '#F4F0FF', margin: '8px 0' }} />
+                        {[88,75,80,65].map((w, j) => <div key={j} className="skeleton h-3 rounded" style={{ width: `${w}%` }} />)}
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {/* Scroll dots indicator */}
-              {variants.length > 1 && (
-                <div className="md:hidden flex justify-center gap-1.5 pb-2">
-                  {variants.map((_, i) => (
-                    <span key={i} className="w-1.5 h-1.5 rounded-full bg-brand-purple/20" />
+                    </div>
                   ))}
                 </div>
-              )}
+              </div>
+            ) : (
+              <>
+                <div
+                  className="flex-1 min-h-0 flex gap-4 overflow-x-auto snap-x snap-mandatory"
+                  style={{ scrollbarWidth: 'none', padding: '16px 20px 12px' }}
+                >
+                  {variants.map((v, i) => {
+                    const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
+                    const VARIANT_ACCENT: Record<string, string> = {
+                      storyteller: '#7C5CFC', contrarian: '#F72585', teacher: '#0EA5E9',
+                      insider: '#6366F1', motivator: '#10B981', analyst: '#F59E0B',
+                    };
+                    const accent = VARIANT_ACCENT[v.styleId] || '#7C5CFC';
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => chooseVariant(v)}
+                        className="flex-shrink-0 snap-center h-full flex flex-col overflow-hidden text-left active:scale-[0.99] transition-transform"
+                        style={{
+                          width: 'calc(88vw)',
+                          borderRadius: 20,
+                          border: '1.5px solid #E8E2FF',
+                          background: '#fff',
+                          boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+                        }}
+                      >
+                        {/* Colored top bar */}
+                        <div style={{ height: 4, background: `linear-gradient(90deg, ${accent}60, ${accent}15)`, flexShrink: 0 }} />
+                        <div className="flex flex-col flex-1 p-4">
+                          {/* Badge */}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: `${accent}12`, color: accent }}>
+                              {meta?.emoji} {meta?.label || v.styleId}
+                            </span>
+                          </div>
+                          {/* Divider */}
+                          <div style={{ height: 1, background: '#F4F0FF', marginBottom: 12, flexShrink: 0 }} />
+                          {/* Content */}
+                          <p className="flex-1 text-[14px] font-medium" style={{ color: '#111827', lineHeight: 1.65, whiteSpace: 'pre-wrap', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical' }}>
+                            {v.content}
+                          </p>
+                          {/* Footer */}
+                          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #F4F0FF', flexShrink: 0 }}>
+                            <div className="flex items-center justify-between">
+                              <span style={{ fontSize: 11, color: '#A0A0B0', fontWeight: 500 }}>Tap to use</span>
+                              <span className="text-[12px] font-bold" style={{ color: accent }}>Use this →</span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Gradient dots */}
+                {variants.length > 1 && (
+                  <div className="flex justify-center items-center gap-2 pb-3 flex-shrink-0">
+                    {variants.map((_, i) => (
+                      <span key={i} className="rounded-full" style={{ width: 6, height: 6, background: 'rgba(124,92,252,0.2)' }} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
-              {/* Desktop: 3-col grid */}
-              <div className="hidden md:grid md:grid-cols-3 gap-4 max-w-5xl mx-auto px-8 py-6">
-                {variants.map((v, i) => {
-                  const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => chooseVariant(v)}
-                      className="bg-white flex flex-col text-left hover:shadow-lg hover:-translate-y-0.5 transition-all"
-                      style={{ borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}
-                    >
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 self-start" style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}>
-                        <span>{meta?.emoji}</span>{meta?.label || v.styleId}
+          {/* Desktop: 3-col grid */}
+          {!variantsLoading ? (
+            <div className="hidden md:grid md:grid-cols-3 gap-4 max-w-5xl mx-auto px-8 py-6">
+              {variants.map((v, i) => {
+                const meta = VARIANT_STYLES.find(s => s.id === v.styleId);
+                const VARIANT_ACCENT: Record<string, string> = {
+                  storyteller: '#7C5CFC', contrarian: '#F72585', teacher: '#0EA5E9',
+                  insider: '#6366F1', motivator: '#10B981', analyst: '#F59E0B',
+                };
+                const accent = VARIANT_ACCENT[v.styleId] || '#7C5CFC';
+                return (
+                  <button
+                    key={i}
+                    onClick={() => chooseVariant(v)}
+                    className="bg-white flex flex-col text-left overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                    style={{ borderRadius: 16, border: '1.5px solid #E8E2FF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
+                  >
+                    <div style={{ height: 4, background: `linear-gradient(90deg, ${accent}60, ${accent}15)` }} />
+                    <div className="flex flex-col flex-1 p-4">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 self-start" style={{ background: `${accent}12`, color: accent }}>
+                        {meta?.emoji} {meta?.label || v.styleId}
                       </span>
-                      <p className="text-[12.5px] flex-1 line-clamp-8 mb-3" style={{ color: '#1A1A2E', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                      <div style={{ height: 1, background: '#F4F0FF', marginBottom: 12 }} />
+                      <p className="text-[13px] flex-1 line-clamp-8 mb-3" style={{ color: '#111827', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
                         {v.content}
                       </p>
-                      <div className="w-full text-[12px] font-bold text-brand-purple text-center py-2 rounded-full" style={{ border: '1.5px solid #EDE8FF' }}>
+                      <div className="w-full text-[12px] font-bold text-center py-2.5 rounded-xl" style={{ background: `${accent}10`, color: accent }}>
                         Use this version
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          {variantsLoading && (
-            <div className="md:hidden flex gap-3 px-4 pb-4 overflow-x-auto">
-              {Array.from({ length: VARIANT_COUNT }).map((_, i) => (
-                <div key={i} className="flex-shrink-0 bg-white flex flex-col gap-2" style={{ width: 'calc(85vw)', borderRadius: 16, padding: 16, border: '1.5px solid #EDE8FF', minHeight: 220 }}>
-                  <div className="skeleton h-5 w-20 rounded-full mb-2" />
-                  {[0,1,2,3].map(j => <div key={j} className="skeleton h-3 rounded" style={{ width: `${88 - j * 10}%` }} />)}
-                </div>
-              ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="hidden md:flex justify-center py-12">
+              <GenerationTimer label="Writing three takes on your idea…" />
             </div>
           )}
         </div>
@@ -602,7 +646,7 @@ export default function Phase2Editor({
           <button onClick={onBack} className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: '#6B7280' }}>
             <ArrowLeft size={14} /> Back
           </button>
-          <p className="text-[11px] text-brand-muted">Swipe to see all three</p>
+          <p className="text-[11px]" style={{ color: '#B0A8D0' }}>Swipe to see all three</p>
         </div>
       </div>
     );

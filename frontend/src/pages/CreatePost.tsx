@@ -15,6 +15,7 @@ const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim(
 
 const LAST_ANGLE_STORAGE_KEY = 'eclatale_create_last_angle';
 const LENGTH_STORAGE_KEY = 'eclatale_create_length';
+const PHASE_SESSION_KEY = 'eclatale_create_phase';
 type Phase = 0 | 1 | 2 | 3;
 
 export default function CreatePost() {
@@ -137,10 +138,18 @@ export default function CreatePost() {
 
       // Background-fetch angles so Phase 1 is ready when user arrives
       fetchAngles(u.id, false);
+
+      // Restore phase from session (survives refresh, not new tab)
+      try {
+        const saved = sessionStorage.getItem(PHASE_SESSION_KEY);
+        // Only restore Phase 1 — Phase 2/3 content lives in React state and is gone on refresh
+        if (saved === '1') setCurrentPhase(1);
+      } catch {}
     });
   }, [fetchAngles]);
 
   const goToPhase = (phase: Phase) => {
+    try { sessionStorage.setItem(PHASE_SESSION_KEY, String(phase)); } catch {}
     setPhaseTransitioning(true);
     setTimeout(() => {
       setCurrentPhase(phase);
@@ -186,6 +195,7 @@ export default function CreatePost() {
   const handlePublished = (id: string, urn: string) => {
     setPostId(id);
     setPublishedPostUrn(urn);
+    try { sessionStorage.removeItem(PHASE_SESSION_KEY); } catch {}
     goToPhase(3);
   };
 

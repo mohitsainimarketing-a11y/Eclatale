@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { RefreshCw, PenLine, Check, TrendingUp, User, ShieldCheck, MessageCircle } from 'lucide-react';
 import { Angle, AngleStyle } from './types';
-import IndustryIntelligencePanel from './IndustryIntelligencePanel';
 
 const PERF_ICONS: Record<string, React.ComponentType<any>> = {
   'trending-up': TrendingUp,
@@ -28,7 +27,7 @@ function AngleCard({ angle, selected, onClick }: { angle: Angle; selected: boole
       role="button"
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-      className="relative bg-white cursor-pointer transition-all"
+      className="relative bg-white cursor-pointer transition-all h-full flex flex-col"
       style={{
         borderRadius: 14,
         padding: 16,
@@ -59,9 +58,9 @@ function AngleCard({ angle, selected, onClick }: { angle: Angle; selected: boole
         )}
       </div>
 
-      <p className="text-[13px] mb-2" style={{ color: '#1A1A2E', lineHeight: 1.65 }}>{angle.hook}</p>
+      <p className="text-[14px] mb-2 flex-1" style={{ color: '#1A1A2E', lineHeight: 1.75 }}>{angle.hook}</p>
 
-      <p className="text-[10px] pt-2" style={{ color: '#9CA3AF', borderTop: '1px solid #F0EEF8' }}>{angle.insight}</p>
+      <p className="text-[11px] pt-2 mt-auto" style={{ color: '#9CA3AF', borderTop: '1px solid #F0EEF8' }}>{angle.insight}</p>
     </div>
   );
 }
@@ -146,41 +145,43 @@ export default function Phase1Angles({
         </div>
       </div>
 
-      {/* Cards — scrollable middle */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      {/* Cards */}
+      <div className="flex-1 min-h-0 flex flex-col md:overflow-y-auto">
         {error && !loading && (
-          <div className="mx-4 mt-3 text-[12px] font-medium px-3 py-2 rounded-xl" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
+          <div className="mx-4 mt-3 text-[12px] font-medium px-3 py-2 rounded-xl flex-shrink-0" style={{ background: 'rgba(247,37,133,0.06)', color: '#F72585' }}>
             {error}
           </div>
         )}
 
-        {/* Mobile: one card at a time, horizontal swipe */}
-        <div className="md:hidden flex gap-3 px-4 pt-4 pb-2 overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
-          {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex-shrink-0 snap-center bg-white" style={{ width: 'calc(88vw)', borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF', minHeight: 180 }}>
-                  <AngleCardSkeleton />
-                </div>
-              ))
-            : filteredAngles.map(angle => (
-                <div key={angle.id} className="flex-shrink-0 snap-center" style={{ width: 'calc(88vw)' }}>
-                  <AngleCard angle={angle} selected={selectedAngleId === angle.id} onClick={() => onSelectAngle(angle)} />
-                </div>
-              ))
-          }
-        </div>
-        {/* Swipe dots */}
-        {!loading && filteredAngles.length > 1 && (
-          <div className="md:hidden flex justify-center gap-1.5 pb-3">
-            {filteredAngles.map(a => (
-              <span
-                key={a.id}
-                className="rounded-full transition-all"
-                style={{ width: selectedAngleId === a.id ? 16 : 6, height: 6, background: selectedAngleId === a.id ? '#7C5CFC' : 'rgba(124,92,252,0.2)' }}
-              />
-            ))}
+        {/* Mobile: full-height swipe, one card at a time */}
+        <div className="md:hidden flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 flex gap-3 px-4 pt-4 pb-2 overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex-shrink-0 snap-center bg-white h-full" style={{ width: 'calc(88vw)', borderRadius: 14, padding: 16, border: '1.5px solid #EDE8FF' }}>
+                    <AngleCardSkeleton />
+                  </div>
+                ))
+              : filteredAngles.map(angle => (
+                  <div key={angle.id} className="flex-shrink-0 snap-center h-full" style={{ width: 'calc(88vw)' }}>
+                    <AngleCard angle={angle} selected={selectedAngleId === angle.id} onClick={() => onSelectAngle(angle)} />
+                  </div>
+                ))
+            }
           </div>
-        )}
+          {/* Dots */}
+          {!loading && filteredAngles.length > 1 && (
+            <div className="flex justify-center gap-1.5 py-3 flex-shrink-0">
+              {filteredAngles.map(a => (
+                <span
+                  key={a.id}
+                  className="rounded-full transition-all duration-200"
+                  style={{ width: selectedAngleId === a.id ? 18 : 6, height: 6, background: selectedAngleId === a.id ? '#7C5CFC' : 'rgba(124,92,252,0.2)' }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Desktop: 2-col grid */}
         <div className="hidden md:block px-8 py-6">
@@ -194,28 +195,17 @@ export default function Phase1Angles({
         </div>
 
         {!loading && !error && angles.length === 0 && (
-          <div className="mx-4 md:max-w-3xl md:mx-auto mb-3 px-4 py-4 rounded-2xl text-center" style={{ background: 'rgba(124,92,252,0.04)', border: '1.5px dashed rgba(124,92,252,0.2)' }}>
+          <div className="mx-4 mb-3 px-4 py-4 rounded-2xl text-center" style={{ background: 'rgba(124,92,252,0.04)', border: '1.5px dashed rgba(124,92,252,0.2)' }}>
             <p className="text-[13px] font-semibold text-brand-dark mb-1">Couldn't load AI angles right now</p>
             <p className="text-[12px] text-brand-muted mb-3">Type your own topic below, or try refreshing.</p>
             <button onClick={onRefresh} className="text-[12px] font-bold text-brand-purple hover:underline">↻ Refresh angles</button>
           </div>
         )}
         {!loading && styleFilter && filteredAngles === angles && (
-          <p className="text-center text-[11px] -mt-1 mb-2" style={{ color: '#9CA3AF' }}>
+          <p className="text-center text-[11px] mb-2" style={{ color: '#9CA3AF' }}>
             No {styleFilter} angles right now. Showing all styles instead.
           </p>
         )}
-
-        <div className="px-4 md:px-8">
-          <IndustryIntelligencePanel
-            userId={userId}
-            userDomain={userDomain}
-            userRole={userRole}
-            onTopicClick={onCustomInputChange}
-            onStyleFilterChange={setStyleFilter}
-            activeStyleFilter={styleFilter}
-          />
-        </div>
       </div>
 
       {/* Footer — input + CTA together so keyboard never hides the button */}

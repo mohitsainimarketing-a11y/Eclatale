@@ -283,6 +283,7 @@ export default function CreatePost() {
             userRole={userRole}
             userDomain={userDomain}
             angles={angles}
+            sources={sources}
             loading={anglesLoading}
             error={anglesError}
             updatedAt={anglesUpdatedAt}

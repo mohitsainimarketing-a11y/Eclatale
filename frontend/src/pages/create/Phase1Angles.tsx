@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { RefreshCw, PenLine, Check, TrendingUp, User, ShieldCheck, MessageCircle } from 'lucide-react';
-import { Angle, AngleStyle } from './types';
+import { Angle, AngleStyle, Source } from './types';
 
 const PERF_ICONS: Record<string, React.ComponentType<any>> = {
   'trending-up': TrendingUp,
@@ -133,6 +133,7 @@ interface Phase1Props {
   userRole: string;
   userDomain: string;
   angles: Angle[];
+  sources: Source[];
   loading: boolean;
   error: string;
   updatedAt: string | null;
@@ -147,7 +148,7 @@ interface Phase1Props {
 }
 
 export default function Phase1Angles({
-  userId, userRole, userDomain, angles, loading, error, updatedAt,
+  userId, userRole, userDomain, angles, sources, loading, error, updatedAt,
   selectedAngleId, onSelectAngle, onRefresh,
   customInput, onCustomInputChange, voiceLabel, onContinue, canContinue,
 }: Phase1Props) {
@@ -178,9 +179,18 @@ export default function Phase1Angles({
                 today?
               </span>
             </h1>
-            <p className="text-[11px] mt-0.5 font-medium truncate" style={{ color: '#B0A8D0' }}>
-              AI picks for {userRole || 'you'} · {timeAgo(updatedAt)}
-            </p>
+            {sources.length > 0 ? (
+              <p className="text-[11px] mt-0.5 font-medium truncate" style={{ color: '#B0A8D0' }}>
+                Sourced from{' '}
+                <span style={{ color: '#7C5CFC' }}>
+                  {sources.slice(0, 3).map(s => s.domain.replace(/^www\./, '')).join(', ')}
+                </span>
+              </p>
+            ) : (
+              <p className="text-[11px] mt-0.5 font-medium truncate" style={{ color: '#B0A8D0' }}>
+                Trend-grounded for {userRole || 'you'} in {userDomain || 'your field'}
+              </p>
+            )}
           </div>
           <button
             onClick={handleRefresh}

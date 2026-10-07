@@ -37,7 +37,7 @@ const VARIANT_STYLES: { id: string; emoji: string; label: string }[] = [
   { id: 'motivator', emoji: '💪', label: 'Motivator' },
   { id: 'analyst', emoji: '📊', label: 'The Analyst' },
 ];
-const VARIANT_COUNT = 3;
+const VARIANT_COUNT = 2;
 
 function pickVariantStyleIds(preferredId?: string): string[] {
   const others = VARIANT_STYLES.map(s => s.id).filter(id => id !== preferredId);
@@ -496,7 +496,7 @@ export default function Phase2Editor({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[15px] md:text-[22px] font-extrabold" style={{ color: '#1A1A2E' }}>Pick your take</h1>
-              <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Same idea, three voices. Tap the one that feels like you.</p>
+              <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Two voices, same idea. Pick the one that feels like you.</p>
             </div>
             <button
               onClick={handleGenerateVariants}
@@ -505,7 +505,7 @@ export default function Phase2Editor({
               style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.07)', border: '1.5px solid rgba(124,92,252,0.12)' }}
             >
               <RefreshCw size={12} className={variantsLoading ? 'animate-spin' : ''} />
-              {variantsLoading ? 'Writing…' : 'New 3'}
+              {variantsLoading ? 'Writing…' : 'New 2'}
             </button>
           </div>
         </div>
@@ -646,7 +646,7 @@ export default function Phase2Editor({
           <button onClick={onBack} className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: '#6B7280' }}>
             <ArrowLeft size={14} /> Back
           </button>
-          <p className="text-[11px]" style={{ color: '#B0A8D0' }}>Swipe to see all three</p>
+          <p className="text-[11px]" style={{ color: '#B0A8D0' }}>Swipe to see both</p>
         </div>
       </div>
     );

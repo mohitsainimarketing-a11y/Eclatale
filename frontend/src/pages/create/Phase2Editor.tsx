@@ -131,14 +131,13 @@ export default function Phase2Editor({
     [angle, customTopic]
   );
 
-  // One generation call. `styleId`, when passed, overrides the angle's own
-  // style so the same hook/topic can be regenerated in a different voice
-  // (used to build variants); omit it to use the angle's own style as-is.
-  // `includeHook` false drops the original angle's exact hook text so an
-  // alternate-style variant can find its own opening instead of being
-  // instructed to reuse someone else's, which otherwise makes every variant
-  // start with a near-identical first line regardless of style.
-  const generateOne = useCallback(async (spark: string, styleId?: string, includeHook: boolean = true): Promise<string> => {
+  // Streams one generation, calling onChunk for each token so the editor updates live.
+  const generateStreaming = useCallback(async (
+    spark: string,
+    onChunk: (text: string) => void,
+    styleId?: string,
+    includeHook: boolean = true,
+  ): Promise<void> => {
     const res = await apiFetch(`${API_URL}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -151,9 +150,26 @@ export default function Phase2Editor({
         userId,
       }),
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.message || data.error);
-    return data.content;
+    if (!res.ok || !res.body) {
+      const err = await res.json().catch(() => ({ error: 'Generation failed' }));
+      throw new Error(err.message || err.error || 'Generation failed');
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() ?? '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6);
+        if (payload === '[DONE]') return;
+        try { const { text } = JSON.parse(payload); if (text) onChunk(text); } catch { /* skip malformed */ }
+      }
+    }
   }, [angle, currentTopic, selectedLength, userId, presetStyleId]);
 
   const savePost = useCallback(async (postContent: string) => {
@@ -163,22 +179,25 @@ export default function Phase2Editor({
     if (inserted) setPostId(inserted.id);
   }, [userId, currentTopic]);
 
-  // Single regenerate, used by the in-editor "Try again" retry after a
-  // variant has already been chosen and something goes wrong.
+  // Generate (or re-generate) a post. Streams tokens live into the editor.
   const handleGenerate = useCallback(async () => {
     setIsGenerating(true);
     setGenError('');
     checkedRef.current = false;
+    let accumulated = '';
     try {
       const spark = await resolveSpark();
-      const result = await generateOne(spark);
-      setContent(result);
-      await savePost(result);
+      setContent('');
+      await generateStreaming(spark, (chunk) => {
+        accumulated += chunk;
+        setContent(accumulated);
+      });
+      if (accumulated) await savePost(accumulated);
     } catch (e: any) {
       setGenError(e.message || "Couldn't generate a post. Try again.");
     }
     setIsGenerating(false);
-  }, [resolveSpark, generateOne, savePost]);
+  }, [resolveSpark, generateStreaming, savePost]);
 
 
   useEffect(() => {

@@ -137,12 +137,13 @@ export default function Phase2Editor({
     onChunk: (text: string) => void,
     styleId?: string,
     includeHook: boolean = true,
+    lengthOverride?: PostLength,
   ): Promise<void> => {
     const res = await apiFetch(`${API_URL}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({
-        topic: currentTopic(), tone: 'professional', contentType: 'linkedin-post', contentLength: selectedLength,
+        topic: currentTopic(), tone: 'professional', contentType: 'linkedin-post', contentLength: lengthOverride ?? selectedLength,
         angle: angle
           ? { style: angle.style, styleId: styleId || angle.styleId, hook: includeHook ? angle.hook : undefined, insight: angle.insight }
           : ((styleId || presetStyleId) ? { styleId: styleId || presetStyleId } : undefined),
@@ -180,7 +181,7 @@ export default function Phase2Editor({
   }, [userId, currentTopic]);
 
   // Generate (or re-generate) a post. Streams tokens live into the editor.
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(async (lengthOverride?: PostLength) => {
     setIsGenerating(true);
     setGenError('');
     checkedRef.current = false;
@@ -191,13 +192,19 @@ export default function Phase2Editor({
       await generateStreaming(spark, (chunk) => {
         accumulated += chunk;
         setContent(accumulated);
-      });
+      }, undefined, true, lengthOverride);
       if (accumulated) await savePost(accumulated);
     } catch (e: any) {
       setGenError(e.message || "Couldn't generate a post. Try again.");
     }
     setIsGenerating(false);
   }, [resolveSpark, generateStreaming, savePost]);
+
+  // When the user picks a different length in Phase 2, update the parent and re-generate.
+  const handleLengthAndRegenerate = (l: PostLength) => {
+    onLengthChange(l);
+    handleGenerate(l);
+  };
 
 
   useEffect(() => {
@@ -521,8 +528,10 @@ export default function Phase2Editor({
           {LENGTH_OPTIONS.map(l => (
             <button
               key={l.id}
-              onClick={() => onLengthChange(l.id)}
-              className="text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all"
+              onClick={() => handleLengthAndRegenerate(l.id)}
+              disabled={isGenerating}
+              title={selectedLength === l.id ? 'Regenerate at this length' : `Switch to ${l.label} and regenerate`}
+              className="text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50"
               style={selectedLength === l.id
                 ? { background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' }
                 : { color: '#6B7280', border: '1px solid #EDE8FF' }}
@@ -530,6 +539,16 @@ export default function Phase2Editor({
               {l.emoji} {l.label}
             </button>
           ))}
+          <button
+            onClick={() => handleGenerate()}
+            disabled={isGenerating}
+            title="Regenerate post"
+            className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 ml-1"
+            style={{ color: '#7C5CFC', border: '1px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}
+          >
+            <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} />
+            {isGenerating ? 'Writing...' : 'Regenerate'}
+          </button>
         </div>
       </div>
 
@@ -621,7 +640,7 @@ export default function Phase2Editor({
             ) : genError ? (
               <div className="h-full flex flex-col items-center justify-center text-center gap-3">
                 <p className="text-[13px]" style={{ color: '#F72585' }}>{genError}</p>
-                <button onClick={handleGenerate} className="text-[12px] font-bold px-4 py-2 rounded-full text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Try again</button>
+                <button onClick={() => handleGenerate()} className="text-[12px] font-bold px-4 py-2 rounded-full text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Try again</button>
               </div>
             ) : (
               <textarea
@@ -815,6 +834,16 @@ export default function Phase2Editor({
           <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[14px] flex-shrink-0 line-through" style={{ color: '#1A1A2E' }}>S</button>
           <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
           <button
+            onClick={() => handleGenerate()}
+            disabled={isGenerating}
+            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50"
+            style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.07)' }}
+          >
+            <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} />
+            {isGenerating ? 'Writing...' : 'Redo'}
+          </button>
+          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
+          <button
             onClick={() => { setHooksOpen(o => !o); setCtasOpen(false); }}
             className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0"
             style={{ color: '#7C5CFC', background: hooksOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}
@@ -900,8 +929,9 @@ export default function Phase2Editor({
               {LENGTH_OPTIONS.map(l => (
                 <button
                   key={l.id}
-                  onClick={() => onLengthChange(l.id)}
-                  className="flex-1 py-2.5 rounded-xl text-[12px] font-bold transition-all"
+                  onClick={() => { handleLengthAndRegenerate(l.id); setMobileDrawerOpen(false); }}
+                  disabled={isGenerating}
+                  className="flex-1 py-2.5 rounded-xl text-[12px] font-bold transition-all disabled:opacity-50"
                   style={selectedLength === l.id
                     ? { background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white' }
                     : { color: '#6B7280', border: '1.5px solid #EDE8FF' }}

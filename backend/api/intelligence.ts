@@ -1356,24 +1356,66 @@ ${NO_DASH_RULE}`;
         return res.json(result);
       }
       case 'trending-preview': {
-        const { industry } = await getProfile(userId);
-        const cacheKind = `trending-preview-${industry.slice(0, 40)}`;
-        const cached = !forceRefresh ? await readCache(supabase, userId, cacheKind, 30 * 60 * 1000) : null;
+        const { industry, role } = await getProfile(userId);
+        const cacheKind = `trending-preview-v2-${industry.slice(0, 40)}`;
+        const cached = !forceRefresh ? await readCache(supabase, userId, cacheKind, 45 * 60 * 1000) : null;
         if (cached) return res.json(cached);
         const today = new Date().toISOString().slice(0, 10);
         const trendMsg = await (anthropic.messages.create as any)({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 400,
-          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
+          max_tokens: 1200,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
           system: getDateContext(),
-          messages: [{ role: 'user', content: `Today is ${today}. Search for the top 3 trending topics in ${industry} right now. Return ONLY valid JSON (no prose, no markdown): {"topics":["2-5 word topic 1","2-5 word topic 2","2-5 word topic 3"]}` }],
+          messages: [{
+            role: 'user',
+            content: `Today is ${today}. You are helping a ${role} in ${industry} find the most relevant LinkedIn post topics from today's news.
+
+Search the web for:
+1. New or notable TOOLS and products launched recently in ${industry}
+2. Emerging TRENDS and shifts happening in ${industry} right now
+3. Breaking NEWS and major events in ${industry} this week
+
+For each category find 3 real, specific, recent items. Use the actual article titles and note the source domain.
+
+Return ONLY valid JSON (no prose, no markdown, no explanation):
+{
+  "categories": [
+    {
+      "label": "Tools",
+      "items": [
+        { "topic": "short 3-6 word title", "source": "domain.com" },
+        { "topic": "short 3-6 word title", "source": "domain.com" },
+        { "topic": "short 3-6 word title", "source": "domain.com" }
+      ]
+    },
+    {
+      "label": "Trends",
+      "items": [
+        { "topic": "short 3-6 word title", "source": "domain.com" },
+        { "topic": "short 3-6 word title", "source": "domain.com" },
+        { "topic": "short 3-6 word title", "source": "domain.com" }
+      ]
+    },
+    {
+      "label": "News",
+      "items": [
+        { "topic": "short 3-6 word title", "source": "domain.com" },
+        { "topic": "short 3-6 word title", "source": "domain.com" },
+        { "topic": "short 3-6 word title", "source": "domain.com" }
+      ]
+    }
+  ]
+}`
+          }],
         });
         const trendText = ((trendMsg.content || []).find((b: any) => b.type === 'text') || {}).text || '{}';
         let trendParsed: any = {};
         try { trendParsed = JSON.parse((trendText.match(/\{[\s\S]*\}/) || ['{}'])[0]); } catch { trendParsed = {}; }
-        const topics: string[] = Array.isArray(trendParsed.topics) ? trendParsed.topics.slice(0, 3) : [];
-        const trendResult = { topics, industry, generatedAt: new Date().toISOString() };
-        await writeCache(supabase, userId, cacheKind, { topics, industry });
+        const categories = Array.isArray(trendParsed.categories) ? trendParsed.categories : [];
+        // Flat topics list for backward compat
+        const topics: string[] = categories.flatMap((c: any) => (c.items || []).map((i: any) => i.topic)).filter(Boolean).slice(0, 9);
+        const trendResult = { categories, topics, industry, generatedAt: new Date().toISOString() };
+        await writeCache(supabase, userId, cacheKind, trendResult);
         return res.json(trendResult);
       }
       case 'from-idea': {

@@ -17,11 +17,14 @@ interface Phase0Props {
   onGoDirectIdea?: (topic: string, length: PostLength) => void;
 }
 
+interface TrendItem { topic: string; source: string; }
+interface TrendCategory { label: string; items: TrendItem[]; }
+
 export default function Phase0Picker({
   userId, firstName, voiceLabel,
   onGoIdeas, onGoTrending, onGoRepurpose, onGoIdea, onGoDirectIdea,
 }: Phase0Props) {
-  const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
+  const [trendCategories, setTrendCategories] = useState<TrendCategory[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [idea, setIdea] = useState('');
   const [selectedLength, setSelectedLength] = useState<PostLength>('short');
@@ -34,7 +37,14 @@ export default function Phase0Picker({
       body: JSON.stringify({ userId }),
     })
       .then(r => r.json())
-      .then(d => { if (Array.isArray(d.topics)) setTrendingTopics(d.topics); })
+      .then(d => {
+        if (Array.isArray(d.categories) && d.categories.length > 0) {
+          setTrendCategories(d.categories);
+        } else if (Array.isArray(d.topics)) {
+          // backward compat: flat list
+          setTrendCategories([{ label: 'Trending', items: d.topics.map((t: string) => ({ topic: t, source: '' })) }]);
+        }
+      })
       .catch(() => {})
       .finally(() => setTrendingLoading(false));
   }, [userId]);
@@ -164,38 +174,53 @@ export default function Phase0Picker({
           <div className="mx-4 h-px" style={{ background: '#F0EEF8' }} />
 
           {/* Row 2: What's trending */}
-          <div className="px-4 py-4">
-            <div className="flex items-center gap-3 mb-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white"
+          <div className="px-4 pt-3 pb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white"
                 style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }}>
-                <TrendingUp size={15} />
+                <TrendingUp size={13} />
               </div>
-              <div className="flex items-center gap-2">
-                <p className="text-[14px] font-bold text-brand-dark">What's trending</p>
-                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white flex-shrink-0" style={{ background: '#0F172A' }}>
-                  <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
-                  LIVE
-                </span>
-              </div>
+              <p className="text-[14px] font-bold text-brand-dark">What's trending</p>
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white ml-auto flex-shrink-0" style={{ background: '#0F172A' }}>
+                <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
+                LIVE
+              </span>
             </div>
+
             {trendingLoading ? (
-              <div className="flex gap-1.5">
-                {[80, 64, 72].map((w, i) => (
-                  <div key={i} className="h-8 rounded-full bg-[rgba(124,92,252,0.08)] animate-pulse" style={{ width: w }} />
+              <div className="flex flex-col gap-3">
+                {['Tools', 'Trends', 'News'].map(label => (
+                  <div key={label}>
+                    <div className="h-3 w-12 rounded bg-[rgba(124,92,252,0.08)] animate-pulse mb-2" />
+                    <div className="flex gap-1.5 flex-wrap">
+                      {[90, 110, 80].map((w, i) => (
+                        <div key={i} className="h-7 rounded-full bg-[rgba(124,92,252,0.06)] animate-pulse" style={{ width: w }} />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            ) : trendingTopics.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {trendingTopics.map((t, i) => (
-                  <button
-                    key={i}
-                    onClick={() => onGoDirectIdea ? onGoDirectIdea(t, selectedLength) : onGoTrending(t)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all hover:shadow-sm active:scale-95"
-                    style={{ background: 'rgba(15,23,42,0.06)', color: '#1E3A5F', border: '1px solid rgba(15,23,42,0.1)' }}
-                  >
-                    {t}
-                    <ArrowRight size={11} />
-                  </button>
+            ) : trendCategories.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {trendCategories.map((cat, ci) => (
+                  <div key={ci}>
+                    <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#9CA3AF' }}>{cat.label}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cat.items.map((item, ii) => (
+                        <button
+                          key={ii}
+                          onClick={() => onGoDirectIdea ? onGoDirectIdea(item.topic, selectedLength) : onGoTrending(item.topic)}
+                          className="flex flex-col items-start px-2.5 py-1.5 rounded-xl text-left transition-all hover:shadow-sm active:scale-95"
+                          style={{ background: 'rgba(15,23,42,0.05)', border: '1px solid rgba(15,23,42,0.08)' }}
+                        >
+                          <span className="text-[12px] font-semibold leading-snug" style={{ color: '#1A1A2E' }}>{item.topic}</span>
+                          {item.source && (
+                            <span className="text-[9px] font-medium mt-0.5" style={{ color: '#9CA3AF' }}>{item.source}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (

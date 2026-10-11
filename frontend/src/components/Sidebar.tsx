@@ -214,7 +214,7 @@ export default function Sidebar() {
   );
 }
 
-export function MobileHeader({ title }: { title?: string }) {
+export function MobileHeader({ title: _title }: { title?: string }) {
   const { toggleMobile, breakpoint } = useSidebar();
   if (breakpoint !== 'mobile') return null;
   return (
@@ -222,7 +222,7 @@ export function MobileHeader({ title }: { title?: string }) {
       <button onClick={toggleMobile} aria-label="Open menu" className="w-9 h-9 -ml-1.5 flex items-center justify-center text-brand-dark">
         <Menu size={20} />
       </button>
-      <span className="text-base font-extrabold gradient-text">{title || 'Eclatale'}</span>
+      <a href="/dashboard" className="text-base font-extrabold gradient-text">Eclatale</a>
     </div>
   );
 }

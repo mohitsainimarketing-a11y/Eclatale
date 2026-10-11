@@ -164,40 +164,49 @@ export default function Phase0Picker({
           <div className="mx-4 h-px" style={{ background: '#F0EEF8' }} />
 
           {/* Row 2: What's trending */}
-          <button
-            onClick={() => onGoTrending(trendingTopics[0] || '')}
-            className="w-full flex items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[rgba(15,23,42,0.02)] active:bg-[rgba(15,23,42,0.04)]"
-          >
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white"
-              style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }}>
-              <TrendingUp size={15} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-3 mb-2.5">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white"
+                style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }}>
+                <TrendingUp size={15} />
+              </div>
+              <div className="flex items-center gap-2">
                 <p className="text-[14px] font-bold text-brand-dark">What's trending</p>
                 <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white flex-shrink-0" style={{ background: '#0F172A' }}>
                   <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
                   LIVE
                 </span>
               </div>
-              {trendingLoading ? (
-                <div className="flex gap-1.5">
-                  {[60, 48, 56].map((w, i) => (
-                    <div key={i} className="h-4 rounded-full bg-[rgba(124,92,252,0.08)] animate-pulse" style={{ width: w }} />
-                  ))}
-                </div>
-              ) : trendingTopics.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
-                  {trendingTopics.slice(0, 3).map((t, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[rgba(15,23,42,0.06)] text-[#1E3A5F]">{t}</span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[12px] text-brand-muted">Live industry topics to jump on</p>
-              )}
             </div>
-            <ArrowRight size={15} className="flex-shrink-0 text-[#C0B8D8]" />
-          </button>
+            {trendingLoading ? (
+              <div className="flex gap-1.5">
+                {[80, 64, 72].map((w, i) => (
+                  <div key={i} className="h-8 rounded-full bg-[rgba(124,92,252,0.08)] animate-pulse" style={{ width: w }} />
+                ))}
+              </div>
+            ) : trendingTopics.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {trendingTopics.map((t, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onGoDirectIdea ? onGoDirectIdea(t, selectedLength) : onGoTrending(t)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all hover:shadow-sm active:scale-95"
+                    style={{ background: 'rgba(15,23,42,0.06)', color: '#1E3A5F', border: '1px solid rgba(15,23,42,0.1)' }}
+                  >
+                    {t}
+                    <ArrowRight size={11} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                onClick={() => onGoTrending('')}
+                className="text-[12px] font-semibold text-[#1E3A5F] flex items-center gap-1"
+              >
+                Browse trending topics <ArrowRight size={12} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

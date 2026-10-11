@@ -150,12 +150,37 @@ export default function CreatePost() {
 
   const goToPhase = (phase: Phase) => {
     try { sessionStorage.setItem(PHASE_SESSION_KEY, String(phase)); } catch {}
+    // Push a history entry so the browser back button navigates between phases
+    // instead of leaving /create entirely.
+    window.history.pushState({ createPhase: phase }, '');
     setPhaseTransitioning(true);
     setTimeout(() => {
       setCurrentPhase(phase);
       setPhaseTransitioning(false);
     }, 200);
   };
+
+  // Seed the initial history entry so the first browser back exits /create
+  // rather than hitting a createPhase:0 entry and appearing stuck.
+  useEffect(() => {
+    window.history.replaceState({ createPhase: 0 }, '');
+  }, []);
+
+  // Handle browser back/forward within the create flow.
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const phase = e.state?.createPhase;
+      if (typeof phase === 'number' && phase >= 0 && phase <= 3) {
+        setPhaseTransitioning(true);
+        setTimeout(() => {
+          setCurrentPhase(phase as Phase);
+          setPhaseTransitioning(false);
+        }, 200);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const handleSelectAngle = (angle: Angle) => {
     setSelectedAngle(angle);
@@ -266,7 +291,7 @@ export default function CreatePost() {
       <Sidebar />
       <MobileHeader title="Create" />
       {currentPhase > 0 && !editMode && (
-        <div className="hidden md:block bg-white border-b border-[rgba(124,92,252,0.06)] px-4 py-1.5">
+        <div className="bg-white border-b border-[rgba(124,92,252,0.06)] px-4 py-1.5">
           <button
             onClick={handleBackToPicker}
             className="text-[12px] font-semibold text-brand-muted hover:text-brand-purple transition-colors flex items-center gap-1"

@@ -141,74 +141,62 @@ export default function Phase0Picker({
           <div className="flex-1 h-px" style={{ background: 'rgba(124,92,252,0.1)' }} />
         </div>
 
-        {/* Two secondary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Single combined inspiration card */}
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1.5px solid rgba(124,92,252,0.15)', boxShadow: '0 2px 16px rgba(124,92,252,0.07)' }}>
 
-          {/* Card 1: Give me ideas */}
+          {/* Row 1: Give me ideas */}
           <button
             onClick={onGoIdeas}
-            className="relative rounded-2xl bg-white overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer"
-            style={{ border: '1.5px solid rgba(124,92,252,0.15)' }}
+            className="w-full flex items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[rgba(124,92,252,0.03)] active:bg-[rgba(124,92,252,0.06)]"
           >
-            <div className="h-1.5 w-full" style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }} />
-            <div className="p-4">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2.5 text-white"
-                style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}>
-                <Sparkles size={16} />
-              </div>
-              <p className="text-[14px] font-bold text-brand-dark mb-1">Give me ideas</p>
-              <p className="text-[12px] text-brand-muted leading-snug mb-3">
-                AI finds trending angles for your role and industry
-              </p>
-              <div className="flex items-center gap-1 text-[12px] font-semibold text-[#7C5CFC]">
-                See my angles <ArrowRight size={12} />
-              </div>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}>
+              <Sparkles size={15} />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-bold text-brand-dark">Give me ideas</p>
+              <p className="text-[12px] text-brand-muted">AI angles for your role and industry</p>
+            </div>
+            <ArrowRight size={15} className="flex-shrink-0 text-[#C0B8D8]" />
           </button>
 
-          {/* Card 2: What's trending */}
+          {/* Divider */}
+          <div className="mx-4 h-px" style={{ background: '#F0EEF8' }} />
+
+          {/* Row 2: What's trending */}
           <button
             onClick={() => onGoTrending(trendingTopics[0] || '')}
-            className="rounded-2xl bg-white overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer"
-            style={{ border: '1.5px solid rgba(124,92,252,0.15)' }}
+            className="w-full flex items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[rgba(15,23,42,0.02)] active:bg-[rgba(15,23,42,0.04)]"
           >
-            <div className="h-1.5 w-full" style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }} />
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white"
-                  style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }}>
-                  <TrendingUp size={16} />
-                </div>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
-                  style={{ background: '#0F172A' }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white"
+              style={{ background: 'linear-gradient(135deg, #0F172A, #1E3A5F)' }}>
+              <TrendingUp size={15} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="text-[14px] font-bold text-brand-dark">What's trending</p>
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white flex-shrink-0" style={{ background: '#0F172A' }}>
+                  <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
                   LIVE
-                </div>
+                </span>
               </div>
-              <p className="text-[14px] font-bold text-brand-dark mb-1">What's trending</p>
-              <p className="text-[12px] text-brand-muted leading-snug mb-2.5">
-                Live industry topics to jump on right now
-              </p>
               {trendingLoading ? (
                 <div className="flex gap-1.5">
-                  {[72, 56, 64].map((w, i) => (
-                    <div key={i} className="h-5 rounded-full bg-[rgba(124,92,252,0.08)] animate-pulse" style={{ width: w }} />
+                  {[60, 48, 56].map((w, i) => (
+                    <div key={i} className="h-4 rounded-full bg-[rgba(124,92,252,0.08)] animate-pulse" style={{ width: w }} />
                   ))}
                 </div>
               ) : trendingTopics.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                   {trendingTopics.slice(0, 3).map((t, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[rgba(15,23,42,0.06)] text-[#1E3A5F]">
-                      {t}
-                    </span>
+                    <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[rgba(15,23,42,0.06)] text-[#1E3A5F]">{t}</span>
                   ))}
                 </div>
               ) : (
-                <span className="flex items-center gap-1 text-[12px] font-semibold text-[#1E3A5F]">
-                  Browse topics <ArrowRight size={12} />
-                </span>
+                <p className="text-[12px] text-brand-muted">Live industry topics to jump on</p>
               )}
             </div>
+            <ArrowRight size={15} className="flex-shrink-0 text-[#C0B8D8]" />
           </button>
         </div>
       </div>

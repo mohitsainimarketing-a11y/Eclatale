@@ -16,12 +16,21 @@ const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim(
 const LAST_ANGLE_STORAGE_KEY = 'eclatale_create_last_angle';
 const LENGTH_STORAGE_KEY = 'eclatale_create_length';
 const PHASE_SESSION_KEY = 'eclatale_create_phase';
+const CUSTOM_INPUT_SESSION_KEY = 'eclatale_create_custom_input';
 type Phase = 0 | 1 | 2 | 3;
 
 export default function CreatePost() {
   const { sidebarWidth, breakpoint } = useSidebar();
 
-  const [userId, setUserId] = useState<string | null>(null);
+  // Read userId from Supabase's localStorage cache synchronously so Phase 0
+  // renders immediately without waiting for a network getUser() call.
+  const [userId, setUserId] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('sb-suacpplgbqhupktlmhrt-auth-token');
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.user?.id || null;
+    } catch { return null; }
+  });
   const [userRole, setUserRole] = useState('');
   const [userDomain, setUserDomain] = useState('');
   const [preferredTone, setPreferredTone] = useState('professional');
@@ -30,7 +39,6 @@ export default function CreatePost() {
   const [userAvatar, setUserAvatar] = useState('');
 
   const [currentPhase, setCurrentPhase] = useState<Phase>(0);
-  const [phaseTransitioning, setPhaseTransitioning] = useState(false);
 
   // Angle picker state
   const [angles, setAngles] = useState<Angle[]>([]);
@@ -142,26 +150,26 @@ export default function CreatePost() {
       // Restore phase from session (survives refresh, not new tab)
       try {
         const saved = sessionStorage.getItem(PHASE_SESSION_KEY);
-        // Only restore Phase 1 — Phase 2/3 content lives in React state and is gone on refresh
-        if (saved === '1') setCurrentPhase(1);
+        const savedTopic = sessionStorage.getItem(CUSTOM_INPUT_SESSION_KEY) || '';
+        if (saved === '1') {
+          setCurrentPhase(1);
+        } else if (saved === '2' && savedTopic) {
+          // Restore Phase 2: set topic so Phase2Editor generates on mount
+          setCustomInput(savedTopic);
+          setSelectedAngle(null);
+          setCurrentPhase(2);
+        }
       } catch {}
     });
   }, [fetchAngles]);
 
   const goToPhase = (phase: Phase) => {
     try { sessionStorage.setItem(PHASE_SESSION_KEY, String(phase)); } catch {}
-    // Push a history entry so the browser back button navigates between phases
-    // instead of leaving /create entirely.
     window.history.pushState({ createPhase: phase }, '');
-    setPhaseTransitioning(true);
-    setTimeout(() => {
-      setCurrentPhase(phase);
-      setPhaseTransitioning(false);
-    }, 200);
+    setCurrentPhase(phase);
   };
 
-  // Seed the initial history entry so the first browser back exits /create
-  // rather than hitting a createPhase:0 entry and appearing stuck.
+  // Seed the initial history entry so the first browser back exits /create.
   useEffect(() => {
     window.history.replaceState({ createPhase: 0 }, '');
   }, []);
@@ -171,11 +179,7 @@ export default function CreatePost() {
     const onPop = (e: PopStateEvent) => {
       const phase = e.state?.createPhase;
       if (typeof phase === 'number' && phase >= 0 && phase <= 3) {
-        setPhaseTransitioning(true);
-        setTimeout(() => {
-          setCurrentPhase(phase as Phase);
-          setPhaseTransitioning(false);
-        }, 200);
+        setCurrentPhase(phase as Phase);
       }
     };
     window.addEventListener('popstate', onPop);
@@ -206,6 +210,8 @@ export default function CreatePost() {
     setPostId(null);
     setInitialContent('');
     setPreloadedSpark('');
+    const topic = customInput.trim() || selectedAngle?.hook || '';
+    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic); } catch {}
     goToPhase(2);
   };
 
@@ -280,6 +286,7 @@ export default function CreatePost() {
     setPostId(null);
     setInitialContent('');
     setPreloadedSpark('');
+    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic); } catch {}
     goToPhase(2);
   };
 
@@ -293,15 +300,15 @@ export default function CreatePost() {
       {currentPhase > 0 && !editMode && (
         <div className="bg-white border-b border-[rgba(124,92,252,0.06)] px-4 py-1.5">
           <button
-            onClick={handleBackToPicker}
+            onClick={currentPhase === 2 ? handleBackToAngles : handleBackToPicker}
             className="text-[12px] font-semibold text-brand-muted hover:text-brand-purple transition-colors flex items-center gap-1"
           >
-            ← Change starting point
+            {currentPhase === 2 ? '← Back to angles' : '← Change starting point'}
           </button>
         </div>
       )}
       <PhaseNav currentPhase={currentPhase} />
-      <div className="flex-1 min-h-0 flex flex-col" style={{ opacity: phaseTransitioning ? 0 : 1, transition: 'opacity 0.2s ease' }}>
+      <div className="flex-1 min-h-0 flex flex-col">
         {currentPhase === 0 && userId && (
           <Phase0Picker
             userId={userId}

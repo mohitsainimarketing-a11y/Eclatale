@@ -1742,6 +1742,14 @@ Return ONLY the cleaned post text. No explanation, no preamble, no quotes around
         return res.json({ ok: true });
       }
 
+      case 'research-brief': {
+        const topic = String(body.topic || '').trim();
+        if (!topic) return res.status(400).json({ error: 'topic is required' });
+        const { generateResearchBrief } = await import('../lib/freeTools');
+        const brief = await generateResearchBrief(anthropic, topic);
+        return res.json(brief);
+      }
+
       case 'github-to-linkedin': {
         const ghUsername = String(body.username || '').trim().replace(/^@/, '');
         const targetRole = String(body.targetRole || '').trim();

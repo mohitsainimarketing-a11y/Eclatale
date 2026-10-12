@@ -1,9 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Sparkles, TrendingUp, ArrowRight, Zap, FileText } from 'lucide-react';
+import { Sparkles, TrendingUp, ArrowRight, Zap, FileText, FlaskConical, Copy, Check } from 'lucide-react';
 import { apiFetch } from '../../lib/apiFetch';
 import { Angle, Source, PostLength, LENGTH_OPTIONS } from './types';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
+
+interface ResearchBrief {
+  stats: string[];
+  angles: { style: string; hook: string }[];
+  recommendedHook: string;
+  briefText: string;
+}
 
 interface Phase0Props {
   userId: string;
@@ -13,8 +20,8 @@ interface Phase0Props {
   onGoTrending: (topic: string) => void;
   onGoRepurpose: (spark: string) => void;
   onGoIdea: (angles: Angle[], sources: Source[]) => void;
-  // New: direct path from idea input to Phase 2
   onGoDirectIdea?: (topic: string, length: PostLength) => void;
+  onGoWithResearch?: (topic: string, briefText: string, length: PostLength) => void;
 }
 
 interface TrendItem { topic: string; source: string; }
@@ -22,7 +29,7 @@ interface TrendCategory { label: string; items: TrendItem[]; }
 
 export default function Phase0Picker({
   userId, firstName, voiceLabel,
-  onGoIdeas, onGoTrending, onGoRepurpose, onGoIdea, onGoDirectIdea,
+  onGoIdeas, onGoTrending, onGoRepurpose, onGoIdea, onGoDirectIdea, onGoWithResearch,
 }: Phase0Props) {
   const [trendCategories, setTrendCategories] = useState<TrendCategory[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(true);
@@ -30,6 +37,10 @@ export default function Phase0Picker({
   const [selectedLength, setSelectedLength] = useState<PostLength>('short');
   const [repurposeOpen, setRepurposeOpen] = useState(false);
   const [repurposeText, setRepurposeText] = useState('');
+  const [researchLoading, setResearchLoading] = useState(false);
+  const [researchBrief, setResearchBrief] = useState<ResearchBrief | null>(null);
+  const [researchError, setResearchError] = useState('');
+  const [hookCopied, setHookCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -61,6 +72,32 @@ export default function Phase0Picker({
     } else {
       onGoIdeas();
     }
+  };
+
+  const handleResearchFirst = async () => {
+    if (!canGenerate) return;
+    setResearchBrief(null);
+    setResearchError('');
+    setResearchLoading(true);
+    try {
+      const res = await apiFetch(`${API_URL}/api/intelligence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ action: 'research-brief', topic: idea.trim(), userId }),
+      });
+      const data = await res.json();
+      if (data.error) { setResearchError(data.error); return; }
+      setResearchBrief(data);
+    } catch {
+      setResearchError('Could not load research. Try again.');
+    } finally {
+      setResearchLoading(false);
+    }
+  };
+
+  const handleWriteFromResearch = () => {
+    if (!researchBrief || !onGoWithResearch) return;
+    onGoWithResearch(idea.trim(), researchBrief.briefText, selectedLength);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -125,17 +162,31 @@ export default function Phase0Picker({
               ))}
             </div>
 
-            {/* Generate button */}
-            <button
-              onClick={handleGenerate}
-              disabled={!canGenerate}
-              className="sm:ml-auto flex items-center justify-center gap-2 text-[14px] font-bold text-white px-5 py-2.5 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: canGenerate ? '0 4px 18px rgba(124,92,252,0.32)' : 'none' }}
-              title="Cmd+Enter to generate"
-            >
-              <Zap size={15} fill="white" strokeWidth={0} />
-              Generate post
-            </button>
+            {/* Buttons */}
+            <div className="sm:ml-auto flex items-center gap-2">
+              {onGoWithResearch && (
+                <button
+                  onClick={handleResearchFirst}
+                  disabled={!canGenerate || researchLoading}
+                  className="flex items-center justify-center gap-1.5 text-[13px] font-bold px-4 py-2.5 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF', background: 'white' }}
+                  title="Research your topic first, then write"
+                >
+                  <FlaskConical size={13} />
+                  {researchLoading ? 'Researching…' : 'Research first'}
+                </button>
+              )}
+              <button
+                onClick={handleGenerate}
+                disabled={!canGenerate}
+                className="flex items-center justify-center gap-2 text-[14px] font-bold text-white px-5 py-2.5 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: canGenerate ? '0 4px 18px rgba(124,92,252,0.32)' : 'none' }}
+                title="Cmd+Enter to generate"
+              >
+                <Zap size={15} fill="white" strokeWidth={0} />
+                Generate post
+              </button>
+            </div>
           </div>
 
           {/* Keyboard hint */}
@@ -145,6 +196,104 @@ export default function Phase0Picker({
             </span>
           </div>
         </div>
+
+        {/* Research Brief Panel */}
+        {(researchLoading || researchBrief || researchError) && (
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid rgba(124,92,252,0.2)', background: 'white', boxShadow: '0 4px 24px rgba(124,92,252,0.09)' }}>
+            {/* Header */}
+            <div className="flex items-center gap-2 px-5 py-3.5 border-b" style={{ borderColor: '#F4F0FF', background: 'linear-gradient(90deg, rgba(124,92,252,0.04) 0%, rgba(247,37,133,0.02) 100%)' }}>
+              <FlaskConical size={14} className="text-brand-purple" />
+              <span className="text-[13px] font-bold text-brand-dark">Research Brief</span>
+              {researchBrief && <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: '#10B981' }}>Ready</span>}
+              {researchLoading && <span className="ml-auto text-[10px] font-semibold text-brand-muted animate-pulse">Searching the web…</span>}
+            </div>
+
+            {researchLoading && (
+              <div className="p-5 space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-3 rounded-full bg-[rgba(124,92,252,0.07)] animate-pulse" style={{ width: `${60 + i * 12}%` }} />
+                ))}
+              </div>
+            )}
+
+            {researchError && (
+              <div className="px-5 py-4 text-[13px] text-red-500">{researchError}</div>
+            )}
+
+            {researchBrief && !researchLoading && (
+              <div className="p-5 space-y-4">
+
+                {/* Stats */}
+                {researchBrief.stats.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Key findings</p>
+                    <ul className="space-y-1.5">
+                      {researchBrief.stats.map((stat, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[13px] text-brand-dark leading-snug">
+                          <span className="font-bold text-brand-purple flex-shrink-0 mt-0.5">{i + 1}.</span>
+                          {stat}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Angles */}
+                {researchBrief.angles.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Content angles</p>
+                    <div className="space-y-2">
+                      {researchBrief.angles.map((a, i) => (
+                        <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl" style={{ background: 'rgba(124,92,252,0.03)', border: '1px solid rgba(124,92,252,0.09)' }}>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 mt-0.5 text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}>{a.style}</span>
+                          <p className="text-[12px] text-brand-dark leading-snug">{a.hook}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommended hook */}
+                {researchBrief.recommendedHook && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Recommended hook</p>
+                    <div className="flex items-start gap-2 p-3 rounded-xl" style={{ background: 'rgba(124,92,252,0.05)', border: '1.5px solid rgba(124,92,252,0.15)' }}>
+                      <p className="flex-1 text-[13px] font-semibold text-brand-dark leading-snug">{researchBrief.recommendedHook}</p>
+                      <button
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(researchBrief.recommendedHook);
+                          setHookCopied(true);
+                          setTimeout(() => setHookCopied(false), 1800);
+                        }}
+                        className="flex-shrink-0 p-1 rounded-lg hover:bg-[rgba(124,92,252,0.1)] transition-colors text-brand-muted"
+                      >
+                        {hookCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* CTAs */}
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    onClick={handleWriteFromResearch}
+                    className="flex items-center gap-2 text-[13px] font-bold text-white px-5 py-2.5 rounded-full transition-all"
+                    style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 4px 16px rgba(124,92,252,0.28)' }}
+                  >
+                    <Zap size={13} fill="white" strokeWidth={0} />
+                    Write post from this research
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    className="text-[12px] font-semibold text-brand-muted hover:text-brand-dark transition-colors"
+                  >
+                    Skip, generate directly
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Divider */}
         <div className="flex items-center gap-3">

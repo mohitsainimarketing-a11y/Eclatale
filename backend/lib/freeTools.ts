@@ -596,6 +596,78 @@ Rules for your output text:
   };
 }
 
+// ── Research Brief ───────────────────────────────────────────────────────────
+
+export interface ResearchBrief {
+  stats: string[];
+  angles: { style: string; hook: string }[];
+  recommendedHook: string;
+  briefText: string;
+}
+
+export async function generateResearchBrief(
+  anthropic: Anthropic,
+  topic: string,
+): Promise<ResearchBrief> {
+  let researchText = '';
+
+  // Try live web search first — graceful fallback on failure
+  try {
+    const searchMsg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 3 }],
+      messages: [{
+        role: 'user',
+        content: `Find 5 recent, specific facts or stats about "${topic}" relevant to a LinkedIn post. Return a brief bullet list only.`,
+      }],
+    });
+    researchText = searchMsg.content
+      .filter((b: any) => b.type === 'text')
+      .map((b: any) => b.text)
+      .join('\n')
+      .trim();
+  } catch { /* web search is optional */ }
+
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 900,
+    messages: [{
+      role: 'user',
+      content: `You are a LinkedIn content strategist. Create a research brief for a post about: "${topic}"
+${researchText ? `\nRecent findings (use these as the basis for stats):\n${researchText.slice(0, 1500)}` : ''}
+
+Return ONLY valid JSON:
+{
+  "stats": string[] (3-5 specific facts or data points. Each under 120 chars. No em dashes. Be concrete with real numbers.),
+  "angles": [
+    { "style": "Contrarian" | "Data-driven" | "Story" | "Insider" | "Teaching", "hook": string (scroll-stopping opening line under 90 chars) }
+  ] (exactly 3 different angles, each using a different style),
+  "recommendedHook": string (the single best opening line based on the strongest stat or finding, under 90 chars)
+}
+
+Rules: no em dashes, no en dashes, no banned words: ${BANNED_WORDS}. Be specific.`,
+    }],
+  });
+
+  const text = message.content[0]?.type === 'text' ? message.content[0].text : '{}';
+  const p = parseJsonObject(text);
+
+  const stats = Array.isArray(p.stats) ? p.stats.slice(0, 5).map(String) : [];
+  const angles = Array.isArray(p.angles)
+    ? p.angles.slice(0, 3).map((a: any) => ({ style: String(a.style || ''), hook: String(a.hook || '') }))
+    : [];
+  const recommendedHook = String(p.recommendedHook || '');
+
+  const briefText = [
+    stats.length > 0 ? `Research findings:\n${stats.map((s: string) => `- ${s}`).join('\n')}` : '',
+    angles.length > 0 ? `Content angles:\n${angles.map((a: { style: string; hook: string }) => `- ${a.style}: ${a.hook}`).join('\n')}` : '',
+    recommendedHook ? `Recommended hook: ${recommendedHook}` : '',
+  ].filter(Boolean).join('\n\n');
+
+  return { stats, angles, recommendedHook, briefText };
+}
+
 // ── GitHub to LinkedIn ───────────────────────────────────────────────────────
 
 export interface GithubRepo {

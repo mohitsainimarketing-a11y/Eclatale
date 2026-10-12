@@ -290,6 +290,18 @@ export default function CreatePost() {
     goToPhase(2);
   };
 
+  const handleGoWithResearch = (topic: string, briefText: string, length: PostLength) => {
+    setCustomInput(topic);
+    setSelectedAngle(null);
+    handleLengthChange(length);
+    setEditMode(false);
+    setPostId(null);
+    setInitialContent('');
+    setPreloadedSpark(briefText);
+    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic); } catch {}
+    goToPhase(2);
+  };
+
   const voiceLabel = `${preferredTone.charAt(0).toUpperCase()}${preferredTone.slice(1)}${userDomain ? ' · ' + userDomain : ''}`;
   const contentOffset = breakpoint === 'mobile' ? 0 : sidebarWidth;
 
@@ -319,6 +331,7 @@ export default function CreatePost() {
             onGoRepurpose={handleGoRepurpose}
             onGoIdea={handleGoIdea}
             onGoDirectIdea={handleGoDirectIdea}
+            onGoWithResearch={handleGoWithResearch}
           />
         )}
         {currentPhase === 1 && (

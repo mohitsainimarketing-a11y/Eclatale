@@ -13,6 +13,7 @@ import AboutGenerator from './AboutGenerator';
 import CtaGenerator from './CtaGenerator';
 import PostLengthAnalyzer from './PostLengthAnalyzer';
 import LinkedInPostAnalyzer from './LinkedInPostAnalyzer';
+import CommentGenerator from './CommentGenerator';
 
 const COMPONENTS: Record<string, React.ComponentType> = {
   'hook-generator': HookGenerator,
@@ -25,6 +26,7 @@ const COMPONENTS: Record<string, React.ComponentType> = {
   'cta-generator': CtaGenerator,
   'post-length-analyzer': PostLengthAnalyzer,
   'linkedin-post-analyzer': LinkedInPostAnalyzer,
+  'comment-generator': CommentGenerator,
 };
 
 export default function ToolPage() {

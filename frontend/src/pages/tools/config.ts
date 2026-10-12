@@ -88,6 +88,14 @@ export const TOOLS: ToolConfig[] = [
     description: 'Paste any LinkedIn post and get a complete 5-dimension analysis: hook strength, mobile structure, engagement potential, 2026 algorithm fit, and CTA quality. You also get your estimated reach tier, what the post does well, and 3-5 specific fixes ranked by impact. Useful for your own posts before publishing, or for studying what competitors do well.',
     seoDescription: 'Free LinkedIn post analyzer: score hook, structure, engagement, algorithm fit, and CTA instantly. Get specific fixes, no signup required.',
   },
+  {
+    slug: 'comment-generator',
+    name: 'Comment Generator',
+    emoji: '💬',
+    shortDesc: 'Get 5 ready-to-post comments that add real value and grow your network.',
+    description: "Commenting is the fastest way to grow on LinkedIn, but most comments are hollow. Paste any post, pick a style (Insightful, Question, Agreement, Contrarian, or Story), and get 5 specific, substantive comments you can post in seconds. Each one is written to sound like you, not like AI.",
+    seoDescription: 'Free LinkedIn comment generator: get 5 specific, substantive comments for any post. Pick your style, no signup required.',
+  },
 ];
 
 export function getTool(slug: string): ToolConfig | undefined {

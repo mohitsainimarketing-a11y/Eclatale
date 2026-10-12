@@ -210,6 +210,55 @@ export async function generateCTAs(anthropic: Anthropic, topic: string, goal: st
   return parseJsonArray(text).slice(0, 5).map(String);
 }
 
+// ── Tool 11: Comment Generator ───────────────────────────────────────────────
+
+export async function generateComments(
+  anthropic: Anthropic,
+  post: string,
+  style: string,
+  count: number,
+): Promise<string[]> {
+  const styleGuides: Record<string, string> = {
+    Insightful: 'Add a specific insight, data point, or nuance that extends the conversation. Make the author look smarter for having posted.',
+    Question: 'Ask one sharp, curious question that shows you read carefully. Never a generic "great post!" question.',
+    'Agreement + Add': 'Agree with the core point, then add one concrete example, experience, or idea that builds on it.',
+    Contrarian: 'Respectfully push back on one assumption or claim. Be specific and back it up. Avoid being inflammatory.',
+    Story: 'Share a 2-3 sentence personal story or experience that directly relates to the post. Be specific.',
+  };
+  const guide = styleGuides[style] || styleGuides['Insightful'];
+
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 800,
+    system: getDateContext(),
+    messages: [{
+      role: 'user',
+      content: `You are a LinkedIn engagement expert. Generate ${count} different comments for the post below.
+
+STYLE: ${style}
+STYLE GUIDE: ${guide}
+
+POST:
+"""
+${post}
+"""
+
+Rules for every comment:
+- 1-4 sentences, under 300 characters each
+- Sound like a real professional wrote it, not AI
+- Reference something specific from the actual post content
+- Never start with "Great post!" or "Love this!" or any empty praise
+- Never use: ${BANNED_WORDS}
+${NO_DASH_RULE}
+- No hashtags
+
+Return ONLY a JSON array of ${count} comment strings, no prose, no markdown fences.`,
+    }],
+  });
+  const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
+  return parseJsonArray(text).slice(0, count).map(String);
+}
+
 // ── Tool 10: LinkedIn Post Analyzer ──────────────────────────────────────────
 
 export interface PostAnalysisResult {

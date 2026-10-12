@@ -30,7 +30,7 @@ import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, NO_DASH_RULE, lengthIns
 import { extractPdfText, extractDocxText, extractCsvSummary, truncateForPrompt } from '../lib/resourceParsing';
 import {
   extractClientIp, checkToolRateLimit, logToolUsage,
-  generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs, analyzeLinkedInPost,
+  generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs, analyzeLinkedInPost, generateComments,
 } from '../lib/freeTools';
 import { getIndustryIntelligence } from '../lib/industryIntelligence';
 import { getHookLibrary } from '../lib/hookLibrary';
@@ -916,6 +916,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           case 'linkedin-post-analyzer': {
             const result = await analyzeLinkedInPost(anthropic, String(body.post || ''));
             return res.json(result);
+          }
+          case 'comment-generator': {
+            const comments = await generateComments(
+              anthropic,
+              String(body.post || ''),
+              String(body.style || 'Insightful'),
+              Math.min(5, Math.max(1, Number(body.count) || 5)),
+            );
+            return res.json({ comments });
           }
           default:
             return res.status(400).json({ error: 'Unknown tool' });

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Sparkles, TrendingUp, ArrowRight, Zap } from 'lucide-react';
+import { Sparkles, TrendingUp, ArrowRight, Zap, FileText } from 'lucide-react';
 import { apiFetch } from '../../lib/apiFetch';
 import { Angle, Source, PostLength, LENGTH_OPTIONS } from './types';
 
@@ -28,6 +28,8 @@ export default function Phase0Picker({
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [idea, setIdea] = useState('');
   const [selectedLength, setSelectedLength] = useState<PostLength>('short');
+  const [repurposeOpen, setRepurposeOpen] = useState(false);
+  const [repurposeText, setRepurposeText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -173,7 +175,50 @@ export default function Phase0Picker({
           {/* Divider */}
           <div className="mx-4 h-px" style={{ background: '#F0EEF8' }} />
 
-          {/* Row 2: What's trending */}
+          {/* Row 2: Repurpose content */}
+          <div>
+            <button
+              onClick={() => setRepurposeOpen(o => !o)}
+              className="w-full flex items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[rgba(124,92,252,0.03)] active:bg-[rgba(124,92,252,0.06)]"
+            >
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white"
+                style={{ background: 'linear-gradient(135deg, #0EA5E9, #6366F1)' }}>
+                <FileText size={15} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold text-brand-dark">Repurpose content</p>
+                <p className="text-[12px] text-brand-muted">Paste a PDF, article, or notes to post</p>
+              </div>
+              <ArrowRight size={15} className={`flex-shrink-0 text-[#C0B8D8] transition-transform ${repurposeOpen ? 'rotate-90' : ''}`} />
+            </button>
+            {repurposeOpen && (
+              <div className="px-4 pb-4">
+                <textarea
+                  value={repurposeText}
+                  onChange={e => setRepurposeText(e.target.value)}
+                  placeholder="Paste your content here, an article, PDF text, notes, or a blog post..."
+                  rows={4}
+                  className="w-full resize-none outline-none text-[13px] leading-relaxed text-brand-dark placeholder:text-[#C0B8D8] bg-[#FAFAFE] rounded-xl border border-[#EDE8FF] px-3 py-2.5 mb-2"
+                />
+                <button
+                  onClick={() => {
+                    if (!repurposeText.trim()) return;
+                    onGoRepurpose(repurposeText.trim());
+                  }}
+                  disabled={!repurposeText.trim()}
+                  className="flex items-center gap-1.5 text-[13px] font-bold text-white px-4 py-2 rounded-full disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  style={{ background: 'linear-gradient(135deg, #0EA5E9, #6366F1)' }}
+                >
+                  <Zap size={13} fill="white" strokeWidth={0} /> Turn into a post
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="mx-4 h-px" style={{ background: '#F0EEF8' }} />
+
+          {/* Row 3: What's trending */}
           <div className="px-4 pt-3 pb-4">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white"

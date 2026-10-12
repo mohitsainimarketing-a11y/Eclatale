@@ -83,13 +83,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : '';
     const insightFragment = angle?.insight ? `\nWhy this angle resonates with this reader: ${angle.insight}\n` : '';
     let researchFragment = '';
-    if (researchMode && topic) {
+    // Always research when no spark is provided. If spark exists, the user already
+    // ran Research Brief and the research is embedded there — no duplicate search needed.
+    if (!spark && topic) {
       try {
         const searchRes = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 800,
           tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 3 }],
-          messages: [{ role: 'user', content: `Find 3 recent, specific, credible facts, stats, or news items about: ${topic}. Focus on data published in the last 6 months. Return only the findings as a brief bullet list.` }],
+          messages: [{ role: 'user', content: `Find 3 recent, specific, credible facts, stats, or news items about: ${topic}. Focus on data from the last 6 months. Include the source name for each finding. Return only the findings as a brief bullet list with source names.` }],
         });
         const researchText = searchRes.content
           .filter((b: any) => b.type === 'text')
@@ -97,13 +99,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .join('\n')
           .trim();
         if (researchText) {
-          researchFragment = `\nRecent research and facts to weave into the post (use the most relevant ones naturally, don't list them all):\n${researchText.slice(0, 2000)}\n`;
+          researchFragment = `\nVerified research context. You MUST use only these facts and numbers in the post. Do not invent any statistic, percentage, or figure not present here. If a number is not in this list, do not use it:\n${researchText.slice(0, 2000)}\n`;
         }
       } catch { /* research is optional, never block generation */ }
     }
 
     const sparkFragment = spark
-      ? `\nWhat sparked this post. Ground the content in this, don't ignore it:\n${spark.slice(0, 4000)}\n`
+      ? `\nResearch and context that sparked this post. Ground every fact and number in this source material. Do not invent statistics not present here:\n${spark.slice(0, 4000)}\n`
       : '';
 
     const personaFragment = await buildPersonaPrompt(supabase, userId);

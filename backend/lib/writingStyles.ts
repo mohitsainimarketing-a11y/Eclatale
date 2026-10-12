@@ -88,21 +88,29 @@ export const UNIVERSAL_HUMAN_WRITING_RULES = `CRITICAL HUMAN WRITING RULES. Foll
 - No "-ing" clause openers at sentence start. This runs 5.3x the human rate and is a major AI tell.
 - No noun chains (3+ nouns strung together as modifier: "customer success team onboarding process optimization")
 
+── DATA INTEGRITY (non-negotiable, no exceptions) ──
+- NEVER invent a statistic, percentage, or specific number. If a number is not in the research or spark context provided to you, do not use it. A confident-sounding fabricated stat is worse than no stat.
+- Every claim that opens with a number (47%, $2.4M, 3x growth) must appear verbatim or paraphrased from the research context. If it is not there, do not write it.
+- If you have no research context: write from observation and perspective ("Most teams I talk to...", "In almost every case I have seen...", "The pattern keeps repeating..."). This is honest. Invented precision is not.
+- When you use a stat from research, attribute it naturally ("LinkedIn's 2026 report shows...", "According to [source]...", "A recent [publication] study found...") so the reader can verify it.
+- It is far better to publish a strong opinion post with no numbers than a data post with fabricated numbers. One wrong stat destroys credibility for years.
+
 ── REQUIRED HUMAN MARKERS (include ALL of these) ──
-- ONE odd-precision number with a referent: not "many companies" but "73 of the 91 companies we surveyed"
-- ONE named entity: a real person's name, company name, city, or publication
-- ONE first-person specific detail: something only the author would know ("when we cut our CAC from $340 to $180...")
-- ONE contradiction stated flat, with no hedging and no disclaimer ("We do less. We earn more.")
+- ONE real, sourced number if it appears in the research context: cite it with its source. If no research was provided: use a specific personal observation instead ("of the last 12 hiring cycles I ran" not invented survey data).
+- ONE named entity: a real person's name, company name, city, or publication from the research context or from genuine personal knowledge.
+- ONE first-person specific detail: something concrete and verifiable ("when we cut response time from 4 days to 6 hours" not "when we improved dramatically").
+- ONE contradiction stated flat, with no hedging and no disclaimer ("We do less. We earn more.").
 - VARY sentence length dramatically: some very short. Others build and build before landing the point, giving the reader momentum before the release.
 
 ── AUTHENTICITY ──
 - Write as one specific human with one specific perspective, not a machine averaging all possible humans
 - Use contractions naturally (it's, you're, I've, they're, we've)
 - Human readers identify AI by punctuation first, then vocabulary (53%) and sentence structure (36%). Attack all three.
+- Ground every post in a real trend, real news item, or real research finding. A post untethered from reality reads as filler.
 
 ── FINAL CHECK BEFORE YOU RETURN ANYTHING ──
-Scan your output character by character for "—" and "–". If you find even one, rewrite that
-sentence using a period, colon, comma, or parentheses. Do this before returning the text.`;
+1. Scan your output character by character for "—" and "–". If you find even one, rewrite that sentence using a period, colon, comma, or parentheses.
+2. Scan for every number and percentage. If it did not come from the research or spark context, delete it and rewrite without it.`;
 
 
 // A short, universal instruction for EVERY Claude call that produces text a

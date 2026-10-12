@@ -595,3 +595,146 @@ Rules for your output text:
     coverLetterOpener: String(p.coverLetterOpener || ''),
   };
 }
+
+// ── GitHub to LinkedIn ───────────────────────────────────────────────────────
+
+export interface GithubRepo {
+  name: string;
+  description: string | null;
+  language: string | null;
+  stargazers_count: number;
+  topics: string[];
+  pushed_at: string;
+  html_url: string;
+}
+
+export interface GithubProfile {
+  login: string;
+  name: string | null;
+  bio: string | null;
+  public_repos: number;
+  followers: number;
+  company: string | null;
+  blog: string | null;
+}
+
+export interface GithubToLinkedInResult {
+  profile: GithubProfile;
+  topRepos: GithubRepo[];
+  topLanguages: string[];
+  skillsToAdd: string[];
+  headlineSuggestion: string;
+  aboutOpener: string;
+  postIdeas: { hook: string; angle: string; repo: string }[];
+  credibilitySignals: string[];
+}
+
+export async function githubToLinkedIn(
+  anthropic: Anthropic,
+  username: string,
+  targetRole: string,
+): Promise<GithubToLinkedInResult> {
+  // Fetch GitHub profile and repos (public API, no auth required)
+  const headers: Record<string, string> = { 'User-Agent': 'Eclatale/1.0' };
+  const ghToken = process.env.GITHUB_TOKEN;
+  if (ghToken) headers['Authorization'] = `token ${ghToken}`;
+
+  const [profileRes, reposRes] = await Promise.all([
+    fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, { headers }),
+    fetch(`https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=pushed`, { headers }),
+  ]);
+
+  if (!profileRes.ok) throw new Error(`GitHub user not found: ${username}`);
+
+  const profile = await profileRes.json() as GithubProfile;
+  const allRepos = (reposRes.ok ? await reposRes.json() : []) as any[];
+
+  // Select top repos: sort by stars, filter forks, take top 7 (mirrors hiring-agent logic)
+  const ownRepos: any[] = allRepos.filter((r: any) => !r.fork);
+  const topRepos: GithubRepo[] = ownRepos
+    .sort((a: any, b: any) => b.stargazers_count - a.stargazers_count)
+    .slice(0, 7)
+    .map((r: any) => ({
+      name: r.name,
+      description: r.description,
+      language: r.language,
+      stargazers_count: r.stargazers_count,
+      topics: r.topics || [],
+      pushed_at: r.pushed_at,
+      html_url: r.html_url,
+    }));
+
+  // Aggregate languages across all own repos
+  const langCounts: Record<string, number> = {};
+  ownRepos.forEach((r: any) => { if (r.language) langCounts[r.language] = (langCounts[r.language] || 0) + 1; });
+  const topLanguages = Object.entries(langCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([lang]) => lang);
+
+  const repoSummary = topRepos.map(r =>
+    `- ${r.name} (${r.language || 'unknown'}, ${r.stargazers_count} stars): ${r.description || 'no description'}${r.topics.length ? ` [${r.topics.slice(0, 4).join(', ')}]` : ''}`
+  ).join('\n');
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1600,
+    messages: [{
+      role: 'user',
+      content: `You are a LinkedIn personal brand strategist. Convert this GitHub profile into LinkedIn brand assets.
+
+GITHUB PROFILE:
+Username: ${profile.login}
+Name: ${profile.name || 'not set'}
+Bio: ${profile.bio || 'not set'}
+Public repos: ${profile.public_repos}, Followers: ${profile.followers}
+Company: ${profile.company || 'not set'}
+
+TOP REPOSITORIES:
+${repoSummary}
+
+PRIMARY LANGUAGES: ${topLanguages.join(', ')}
+TARGET ROLE (if provided): ${targetRole || 'not specified'}
+
+Generate LinkedIn brand assets. Return ONLY valid JSON in this exact shape:
+{
+  "skillsToAdd": string[] (8-12 specific technical skills from the repos, ready to add to LinkedIn Skills section),
+  "headlineSuggestion": string (one LinkedIn headline under 120 chars, specific and value-focused, references real work),
+  "aboutOpener": string (2-3 sentence LinkedIn About opening paragraph, first-person, references actual projects, sounds human),
+  "postIdeas": [
+    { "hook": string (opening line for a LinkedIn post, under 100 chars), "angle": string (what makes this post compelling, under 80 chars), "repo": string (repo name this is based on) },
+    { "hook": ..., "angle": ..., "repo": ... },
+    { "hook": ..., "angle": ..., "repo": ... }
+  ],
+  "credibilitySignals": string[] (3-4 specific proof points from the GitHub data to mention on LinkedIn, e.g. "X-star open source library")
+}
+
+Rules:
+- No em dashes, no en dashes
+- No banned words: delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative
+- Be specific: reference actual repo names, real languages, real project outcomes
+- Post hooks must be scroll-stopping, not generic tech advice
+- aboutOpener must NOT start with "I am a" or "I have" — open with a result or project`,
+    }],
+  });
+
+  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
+  const p = parseJsonObject(text);
+
+  return {
+    profile,
+    topRepos,
+    topLanguages,
+    skillsToAdd: Array.isArray(p.skillsToAdd) ? p.skillsToAdd.slice(0, 12).map(String) : [],
+    headlineSuggestion: String(p.headlineSuggestion || ''),
+    aboutOpener: String(p.aboutOpener || ''),
+    postIdeas: Array.isArray(p.postIdeas)
+      ? p.postIdeas.slice(0, 3).map((pi: any) => ({
+          hook: String(pi.hook || ''),
+          angle: String(pi.angle || ''),
+          repo: String(pi.repo || ''),
+        }))
+      : [],
+    credibilitySignals: Array.isArray(p.credibilitySignals) ? p.credibilitySignals.slice(0, 4).map(String) : [],
+  };
+}

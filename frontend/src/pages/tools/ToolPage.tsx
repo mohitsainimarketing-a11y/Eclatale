@@ -18,6 +18,7 @@ import LinkedInDMWriter from './LinkedInDMWriter';
 import HashtagGenerator from './HashtagGenerator';
 import ContentSeriesGenerator from './ContentSeriesGenerator';
 import JobFitAnalyzer from './JobFitAnalyzer';
+import GitHubToLinkedIn from './GitHubToLinkedIn';
 
 const COMPONENTS: Record<string, React.ComponentType> = {
   'hook-generator': HookGenerator,
@@ -35,6 +36,7 @@ const COMPONENTS: Record<string, React.ComponentType> = {
   'hashtag-generator': HashtagGenerator,
   'content-series-generator': ContentSeriesGenerator,
   'job-fit-analyzer': JobFitAnalyzer,
+  'github-to-linkedin': GitHubToLinkedIn,
 };
 
 export default function ToolPage() {

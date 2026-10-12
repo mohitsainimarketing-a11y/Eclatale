@@ -121,6 +121,14 @@ export const TOOLS: ToolConfig[] = [
     seoDescription: 'Free LinkedIn hashtag generator: get a 3-tier mix of reach, mid-range, and niche hashtags for any post. No signup required.',
   },
   {
+    slug: 'github-to-linkedin',
+    name: 'GitHub to LinkedIn',
+    emoji: '🐙',
+    shortDesc: 'Turn your GitHub projects into LinkedIn content, skills, and a stronger profile.',
+    description: 'Paste your GitHub username and get a full LinkedIn brand kit from your real code: skills to add, a rewritten headline, a first-person About opener, three post ideas with hooks (each based on an actual repo), and credibility signals to mention in your profile. Built on the same logic hiring managers use to read GitHub profiles.',
+    seoDescription: 'Free GitHub to LinkedIn tool: convert your GitHub repos into LinkedIn skills, post ideas, headline, and About section. No signup required.',
+  },
+  {
     slug: 'job-fit-analyzer',
     name: 'Job Fit Analyzer',
     emoji: '🎯',

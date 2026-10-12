@@ -1742,6 +1742,15 @@ Return ONLY the cleaned post text. No explanation, no preamble, no quotes around
         return res.json({ ok: true });
       }
 
+      case 'github-to-linkedin': {
+        const ghUsername = String(body.username || '').trim().replace(/^@/, '');
+        const targetRole = String(body.targetRole || '').trim();
+        if (!ghUsername) return res.status(400).json({ error: 'GitHub username is required' });
+        const { githubToLinkedIn } = await import('../lib/freeTools');
+        const result = await githubToLinkedIn(anthropic, ghUsername, targetRole);
+        return res.json(result);
+      }
+
       case 'job-fit-analyzer': {
         const profileText = String(body.profileText || '').trim();
         const jobDescription = String(body.jobDescription || '').trim();

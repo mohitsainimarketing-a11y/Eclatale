@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Home, Sparkles, BarChart3, Compass, FolderOpen, Target, UserCog, Settings,
-  MessageCircle, ChevronLeft, ChevronRight, Menu, X, CalendarDays, Wrench,
+  MessageCircle, ChevronLeft, ChevronRight, Menu, X, CalendarDays, Wrench, Users,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useSidebar, EXPANDED_WIDTH, COLLAPSED_WIDTH } from '../contexts/SidebarContext';
@@ -19,6 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <Sparkles size={18} />, label: 'Create', href: '/create', primary: true },
   { icon: <Compass size={18} />, label: 'Discover', href: '/discover' },
   { icon: <Wrench size={18} />, label: 'Free Tools', href: '/tools' },
+  { icon: <Users size={18} />, label: 'Leads', href: '/leads' },
   { icon: <BarChart3 size={18} />, label: 'Intelligence', href: '/intelligence' },
   { icon: <FolderOpen size={18} />, label: 'Content Library', href: '/history' },
   { icon: <CalendarDays size={18} />, label: 'Schedule', href: '/schedule' },

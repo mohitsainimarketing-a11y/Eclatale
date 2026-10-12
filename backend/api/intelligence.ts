@@ -1695,6 +1695,53 @@ Return ONLY the cleaned post text. No explanation, no preamble, no quotes around
         return res.json({ content: cleaned });
       }
 
+      // ── Lead management ─────────────────────────────────────────────────────
+      case 'save-lead': {
+        const lead = body.lead || {};
+        const { data, error } = await supabase.from('leads').insert({
+          user_id: userId,
+          linkedin_url: String(lead.linkedinUrl || '').slice(0, 500),
+          name: String(lead.name || '').slice(0, 200),
+          headline: String(lead.headline || '').slice(0, 500),
+          company: String(lead.company || '').slice(0, 200),
+          location: String(lead.location || '').slice(0, 200),
+          connection_degree: String(lead.connectionDegree || '').slice(0, 20),
+          notes: String(lead.notes || ''),
+        }).select().single();
+        if (error) return res.status(500).json({ error: error.message });
+        return res.json({ ok: true, lead: data });
+      }
+      case 'list-leads': {
+        const search = String(body.search || req.query.search || '').trim().toLowerCase();
+        const { data, error } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('user_id', userId)
+          .order('saved_at', { ascending: false });
+        if (error) return res.status(500).json({ error: error.message });
+        const leads = search
+          ? (data || []).filter((l: any) =>
+              [l.name, l.headline, l.company, l.location, l.notes].some(f => f?.toLowerCase().includes(search))
+            )
+          : (data || []);
+        return res.json({ leads });
+      }
+      case 'delete-lead': {
+        const leadId = String(body.leadId || '');
+        if (!leadId) return res.status(400).json({ error: 'Missing leadId' });
+        await supabase.from('leads').delete().eq('id', leadId).eq('user_id', userId);
+        return res.json({ ok: true });
+      }
+      case 'update-lead': {
+        const leadId = String(body.leadId || '');
+        if (!leadId) return res.status(400).json({ error: 'Missing leadId' });
+        const patch: Record<string, string> = { updated_at: new Date().toISOString() };
+        if (body.notes !== undefined) patch.notes = String(body.notes);
+        if (body.tags !== undefined) patch.tags = body.tags;
+        await supabase.from('leads').update(patch).eq('id', leadId).eq('user_id', userId);
+        return res.json({ ok: true });
+      }
+
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

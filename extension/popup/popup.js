@@ -1,13 +1,36 @@
 const contentEl = document.getElementById('content');
+const pageBadge = document.getElementById('pageBadge');
 
 function esc(s) {
   const d = document.createElement('div');
-  d.textContent = s;
+  d.textContent = s || '';
   return d.innerHTML;
 }
 
-function initials(name) {
-  return (name || 'Y').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+function timeAgo(ts) {
+  const mins = Math.round((Date.now() - ts) / 60000);
+  if (mins < 2) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.round(mins / 60)}h ago`;
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('panel-' + btn.dataset.tab);
+    if (panel) panel.classList.add('active');
+  });
+});
+
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
 }
 
 async function getActiveTab() {
@@ -15,127 +38,209 @@ async function getActiveTab() {
   return tab;
 }
 
-async function copyText(text, btn) {
-  await navigator.clipboard.writeText(text);
-  const original = btn.textContent;
-  btn.textContent = 'Copied!';
-  setTimeout(() => { btn.textContent = original; }, 1500);
+function getPageContext(url, title) {
+  if (!url) return { type: 'other', label: 'Ready' };
+  if (/linkedin\.com\/in\//.test(url)) {
+    const slug = url.match(/linkedin\.com\/in\/([^/?#]+)/)?.[1] || '';
+    return { type: 'profile', label: slug || 'LinkedIn profile', url };
+  }
+  if (/linkedin\.com\/feed\/update\//.test(url)) return { type: 'post', label: 'LinkedIn post', url };
+  if (/linkedin\.com\/feed/.test(url)) return { type: 'feed', label: 'LinkedIn feed', url };
+  if (/linkedin\.com\/analytics/.test(url)) return { type: 'analytics', label: 'LinkedIn analytics', url };
+  if (/linkedin\.com/.test(url)) return { type: 'linkedin', label: 'LinkedIn', url };
+  return { type: 'other', label: (title || 'Ready').slice(0, 40) };
 }
 
 async function render() {
   const { token, user } = await getAuth();
   const tab = await getActiveTab();
-  const onLinkedInProfile = !!tab?.url && /^https:\/\/www\.linkedin\.com\/in\//.test(tab.url);
+  const ctx = getPageContext(tab?.url, tab?.title);
+
+  pageBadge.textContent = ctx.label;
 
   if (!token || !user) {
     contentEl.innerHTML = `
-      <div class="signin">
-        <p>Sign in to Eclatale to use your brand assistant.</p>
+      <div class="tab-panel active" id="panel-actions">
+        <div class="signin">
+          <p>Sign in to Eclatale to save leads, copy posts, and track your brand.</p>
+          <button class="btn-primary" id="signInBtn">Sign in</button>
+        </div>
       </div>
-      <button class="btn-primary" id="signInBtn">Sign in →</button>`;
+      <div class="tab-panel" id="panel-leads"></div>
+      <div class="tab-panel" id="panel-stats"></div>`;
     document.getElementById('signInBtn').addEventListener('click', openSignIn);
     return;
   }
 
-  const pageLabel = onLinkedInProfile ? 'On your LinkedIn profile' : (tab?.title ? esc(tab.title).slice(0, 40) : 'Ready to help');
+  // Actions panel content depends on page context
+  let actionsHtml = '';
+
+  if (ctx.type === 'profile') {
+    actionsHtml = `
+      <button class="btn-primary" id="saveLeadBtn">👤 Save Lead</button>
+      <a class="btn-secondary" href="https://eclatale.com/intelligence#profile" target="_blank">Optimize this profile</a>
+      <div class="action-grid">
+        <a class="action-card" href="https://eclatale.com/create" target="_blank"><span class="icon">✨</span>Create post</a>
+        <a class="action-card" href="https://eclatale.com/tools/linkedin-dm-writer" target="_blank"><span class="icon">✉️</span>Write DM</a>
+        <a class="action-card" href="https://eclatale.com/tools/comment-generator" target="_blank"><span class="icon">💬</span>Comment</a>
+        <a class="action-card" href="https://eclatale.com/leads" target="_blank"><span class="icon">👥</span>My leads</a>
+      </div>`;
+  } else if (ctx.type === 'post') {
+    actionsHtml = `
+      <button class="btn-teal" id="copyPostBtn">📋 Copy Post Text</button>
+      <button class="btn-secondary" id="repurposeBtn">🔄 Repurpose in Eclatale</button>
+      <div class="action-grid">
+        <a class="action-card" href="https://eclatale.com/tools/comment-generator" target="_blank"><span class="icon">💬</span>Generate comment</a>
+        <a class="action-card" href="https://eclatale.com/create" target="_blank"><span class="icon">✨</span>Create post</a>
+      </div>`;
+  } else if (ctx.type === 'feed') {
+    actionsHtml = `
+      <a class="btn-primary" href="https://eclatale.com/create" target="_blank">✨ Create a post</a>
+      <div class="action-grid">
+        <a class="action-card" href="https://eclatale.com/tools/hook-generator" target="_blank"><span class="icon">🪝</span>Hook gen</a>
+        <a class="action-card" href="https://eclatale.com/tools/comment-generator" target="_blank"><span class="icon">💬</span>Comment</a>
+        <a class="action-card" href="https://eclatale.com/tools/hashtag-generator" target="_blank"><span class="icon">#</span>Hashtags</a>
+        <a class="action-card" href="https://eclatale.com/leads" target="_blank"><span class="icon">👥</span>My leads</a>
+      </div>`;
+  } else {
+    actionsHtml = `
+      <a class="btn-primary" href="https://eclatale.com/create" target="_blank">✨ Create a post</a>
+      <button class="btn-secondary" id="repurposePageBtn">🔄 Repurpose this page</button>
+      <div class="action-grid">
+        <a class="action-card" href="https://eclatale.com/tools" target="_blank"><span class="icon">🛠</span>Free tools</a>
+        <a class="action-card" href="https://eclatale.com/dashboard" target="_blank"><span class="icon">📊</span>Dashboard</a>
+        <a class="action-card" href="https://eclatale.com/leads" target="_blank"><span class="icon">👥</span>Leads</a>
+        <a class="action-card" href="https://eclatale.com/discover" target="_blank"><span class="icon">🔍</span>Discover</a>
+      </div>`;
+  }
 
   contentEl.innerHTML = `
-    <div class="user-row">
-      <img class="avatar" src="${user.avatarUrl ? esc(user.avatarUrl) : ''}" onerror="this.style.display='none'" alt="">
-      <div>
-        <div class="name">${esc(user.firstName || user.name || 'there')}</div>
-        <div class="context">${pageLabel}</div>
+    <div class="tab-panel active" id="panel-actions">
+      ${actionsHtml}
+      <div class="footer-row">
+        <span class="sync-label" id="lastSyncLabel">Loading sync…</span>
+        <button id="syncNowBtn">Sync now</button>
       </div>
+      <button class="signout-btn" id="signOutBtn">Sign out</button>
     </div>
-
-    <a class="btn-primary" id="generateBtn" href="https://eclatale.com/create" target="_blank" rel="noopener">✨ Generate a post</a>
-
-    ${onLinkedInProfile ? `
-    <div class="section" id="profileSection">
-      <p class="hint">Copy each section of your LinkedIn profile and paste it into Eclatale's Profile Optimizer to get AI-powered improvements.</p>
-      <div class="copy-row"><span>Headline</span><button data-copy="headline">Select &amp; copy →</button></div>
-      <div class="copy-row"><span>About</span><button data-copy="about">Select &amp; copy →</button></div>
-      <div class="copy-row"><span>Experience</span><button data-copy="experience">Select &amp; copy →</button></div>
-      <a class="btn-secondary" href="https://eclatale.com/profile-optimizer" target="_blank" rel="noopener" style="margin-top:6px;">Open Profile Optimizer →</a>
-    </div>` : ''}
-
-    <div class="section" id="repurposeSection">
-      <p class="hint">Repurpose content from: <strong>${tab?.title ? esc(tab.title).slice(0, 60) : 'this page'}</strong></p>
-      <a class="btn-secondary" id="repurposeBtn" href="#" target="_blank" rel="noopener">🔄 Send to Eclatale →</a>
+    <div class="tab-panel" id="panel-leads">
+      <div class="loading" id="leadsLoading">Loading leads…</div>
     </div>
+    <div class="tab-panel" id="panel-stats">
+      <div class="stats" id="statsBar"><div class="loading">Loading…</div></div>
+    </div>`;
 
-    <div class="stats" id="statsBar"><div class="loading">Loading stats…</div></div>
-    <div id="syncRow" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
-      <span id="lastSyncLabel" style="font-size:10px;color:#9CA3AF;"></span>
-      <button id="syncNowBtn" style="font-size:11px;color:#7C5CFC;background:none;border:none;cursor:pointer;font-weight:600;">Sync now</button>
-    </div>
-    <button id="signOutBtn" style="width:100%;text-align:center;background:none;border:none;color:#9CA3AF;font-size:11px;margin-top:4px;cursor:pointer;">Sign out of extension</button>
-  `;
-
+  // Sign out
   document.getElementById('signOutBtn').addEventListener('click', async () => {
     await clearAuth();
     render();
   });
 
-  document.getElementById('repurposeBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    const url = `https://eclatale.com/create/resource?url=${encodeURIComponent(tab?.url || '')}`;
-    chrome.tabs.create({ url });
-  });
-
-  document.querySelectorAll('#profileSection button[data-copy]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.textContent = 'Now select the text on the page and press Ctrl/Cmd+C';
-      setTimeout(() => { btn.textContent = 'Select & copy →'; }, 3000);
+  // Save lead (profile page)
+  if (ctx.type === 'profile') {
+    document.getElementById('saveLeadBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('saveLeadBtn');
+      btn.textContent = 'Saving…';
+      btn.disabled = true;
+      try {
+        // Ask content script to scrape the profile
+        const liTabs = await chrome.tabs.query({ url: 'https://www.linkedin.com/in/*' });
+        const target = liTabs.find(t => t.active) || liTabs[0];
+        if (!target?.id) { showToast('Open the LinkedIn profile tab first'); btn.textContent = '👤 Save Lead'; btn.disabled = false; return; }
+        const scraped = await chrome.tabs.sendMessage(target.id, { type: 'ECLATALE_SCRAPE_LEAD' });
+        if (!scraped?.ok) { showToast('Could not read profile data'); btn.textContent = '👤 Save Lead'; btn.disabled = false; return; }
+        await apiCall('save-lead', { lead: scraped.lead });
+        showToast('Lead saved!');
+        btn.textContent = '✓ Saved';
+      } catch {
+        showToast('Save failed — try again');
+        btn.textContent = '👤 Save Lead';
+        btn.disabled = false;
+      }
     });
+  }
+
+  // Copy post text
+  if (ctx.type === 'post') {
+    document.getElementById('copyPostBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('copyPostBtn');
+      const liTabs = await chrome.tabs.query({ url: 'https://www.linkedin.com/feed/update/*' });
+      const target = liTabs.find(t => t.active) || liTabs[0];
+      if (target?.id) {
+        try {
+          const result = await chrome.tabs.sendMessage(target.id, { type: 'ECLATALE_COPY_POST' });
+          if (result?.text) {
+            await navigator.clipboard.writeText(result.text);
+            showToast('Post copied!');
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => { btn.textContent = '📋 Copy Post Text'; }, 1800);
+          } else { showToast('No post text found'); }
+        } catch { showToast('Could not copy'); }
+      }
+    });
+
+    document.getElementById('repurposeBtn')?.addEventListener('click', () => {
+      chrome.tabs.create({ url: `https://eclatale.com/create?url=${encodeURIComponent(tab?.url || '')}` });
+    });
+  }
+
+  // Repurpose current page
+  document.getElementById('repurposePageBtn')?.addEventListener('click', () => {
+    chrome.tabs.create({ url: `https://eclatale.com/create/resource?url=${encodeURIComponent(tab?.url || '')}` });
   });
-
-  const statsBar = document.getElementById('statsBar');
-  try {
-    const stats = await fetchStats();
-    statsBar.innerHTML = `
-      <div><div class="num">${stats.streak}🔥</div><div class="label">Streak</div></div>
-      <div><div class="num" style="text-transform:capitalize">${esc(stats.stage)}</div><div class="label">Growth stage</div></div>
-    `;
-  } catch {
-    statsBar.innerHTML = `<div class="label" style="text-align:center;width:100%;">Couldn't load stats.</div>`;
-  }
-
-  // Last sync label
-  const { last_insights_sync } = await chrome.storage.local.get(['last_insights_sync']);
-  const lastSyncLabel = document.getElementById('lastSyncLabel');
-  if (lastSyncLabel) {
-    if (last_insights_sync) {
-      const mins = Math.round((Date.now() - last_insights_sync) / 60000);
-      lastSyncLabel.textContent = mins < 2 ? 'Synced just now' : mins < 60 ? `Synced ${mins}m ago` : `Synced ${Math.round(mins / 60)}h ago`;
-    } else {
-      lastSyncLabel.textContent = 'Not synced yet';
-    }
-  }
 
   // Sync now button
-  document.getElementById('syncNowBtn')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
+  document.getElementById('syncNowBtn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('syncNowBtn');
     btn.textContent = 'Syncing…';
     btn.disabled = true;
-    // Try active LinkedIn tab first, then any LinkedIn tab
     const liTabs = await chrome.tabs.query({ url: 'https://www.linkedin.com/*' });
     const target = liTabs.find(t => t.active) || liTabs[0];
     if (target?.id) {
-      try {
-        await chrome.tabs.sendMessage(target.id, { type: 'ECLATALE_SYNC_NOW' });
-        btn.textContent = 'Synced!';
-        if (lastSyncLabel) lastSyncLabel.textContent = 'Synced just now';
-      } catch {
-        btn.textContent = 'Failed';
-      }
+      try { await chrome.tabs.sendMessage(target.id, { type: 'ECLATALE_SYNC_NOW' }); showToast('Synced!'); } catch {}
     } else {
-      // No LinkedIn tab open — open the analytics page
       chrome.tabs.create({ url: 'https://www.linkedin.com/analytics/creator/' });
-      btn.textContent = 'Opening…';
     }
-    setTimeout(() => { btn.textContent = 'Sync now'; btn.disabled = false; }, 2000);
+    btn.textContent = 'Sync now'; btn.disabled = false;
   });
+
+  // Last sync label
+  const { last_insights_sync } = await chrome.storage.local.get(['last_insights_sync']);
+  const lbl = document.getElementById('lastSyncLabel');
+  if (lbl) lbl.textContent = last_insights_sync ? `Synced ${timeAgo(last_insights_sync)}` : 'Not synced yet';
+
+  // Stats panel
+  try {
+    const stats = await fetchStats();
+    document.getElementById('statsBar').innerHTML = `
+      <div><div class="num">${stats.streak}🔥</div><div class="label">Streak</div></div>
+      <div><div class="num" style="text-transform:capitalize">${esc(stats.stage)}</div><div class="label">Stage</div></div>`;
+  } catch {
+    document.getElementById('statsBar').innerHTML = `<div style="font-size:11px;color:#9CA3AF;text-align:center;width:100%">Could not load stats</div>`;
+  }
+
+  // Leads panel
+  try {
+    const data = await apiCall('list-leads', {});
+    const leads = (data.leads || []).slice(0, 5);
+    const leadsContainer = document.getElementById('panel-leads');
+    if (leads.length === 0) {
+      leadsContainer.innerHTML = `<p style="text-align:center;color:#9CA3AF;font-size:11px;padding:20px 0">No leads saved yet. Visit a LinkedIn profile and click Save Lead.</p>`;
+    } else {
+      leadsContainer.innerHTML = leads.map(l => `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(124,92,252,0.06)">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#F72585);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0">${esc((l.name||'?').split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase())}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.name||'Unknown')}</div>
+            <div style="font-size:10px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.company||l.headline||'')}</div>
+          </div>
+          ${l.linkedin_url ? `<a href="${esc(l.linkedin_url)}" target="_blank" style="font-size:10px;color:#7C5CFC;text-decoration:none;flex-shrink:0">↗</a>` : ''}
+        </div>`).join('') +
+        `<a href="https://eclatale.com/leads" target="_blank" style="display:block;text-align:center;font-size:11px;color:#7C5CFC;font-weight:600;margin-top:8px;text-decoration:none">View all leads →</a>`;
+    }
+  } catch {
+    document.getElementById('panel-leads').innerHTML = `<p style="text-align:center;color:#9CA3AF;font-size:11px;padding:16px 0">Could not load leads</p>`;
+  }
 }
 
 render();

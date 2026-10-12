@@ -7,9 +7,17 @@
 <body>
   <div class="wrap">
     <header>
-      <img src="../icons/icon-48.png" alt="" width="24" height="24">
-      <span class="wordmark">Eclatale</span>
+      <div class="header-left">
+        <img src="../icons/icon-48.png" alt="" width="18" height="18">
+        <span class="wordmark">Eclatale</span>
+      </div>
+      <span class="page-badge" id="pageBadge"></span>
     </header>
+    <div class="tabs">
+      <button class="tab active" data-tab="actions">Actions</button>
+      <button class="tab" data-tab="leads">Leads</button>
+      <button class="tab" data-tab="stats">Stats</button>
+    </div>
     <div id="content"><div class="loading">Loading…</div></div>
   </div>
   <script src="../utils/auth.js"></script>

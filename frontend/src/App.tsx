@@ -34,6 +34,7 @@ const ToolsHub = lazy(() => import('./pages/tools/ToolsHub'));
 const ToolPage = lazy(() => import('./pages/tools/ToolPage'));
 const Discover = lazy(() => import('./pages/Discover'));
 const Resources = lazy(() => import('./pages/Resources'));
+const Leads = lazy(() => import('./pages/Leads'));
 
 function PageLoader() {
   return (
@@ -112,6 +113,7 @@ function App() {
           <Route path="/resources" element={<Resources />} />
           <Route path="/tools" element={<ToolsHub />} />
           <Route path="/tools/:toolSlug" element={<ToolPage />} />
+          <Route path="/leads" element={<Leads />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

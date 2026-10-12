@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 const MIN_POSTS_FOR_REAL_DATA = 50;
 const CACHE_MS = 24 * 60 * 60 * 1000;
@@ -107,7 +108,7 @@ export async function getIndustryIntelligence(
 
 async function generateSupplement(anthropic: Anthropic, role: string, domain: string) {
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 900,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
     system: getDateContext(),
@@ -128,7 +129,7 @@ async function generateSupplement(anthropic: Anthropic, role: string, domain: st
 
 async function generateFullEstimate(anthropic: Anthropic, role: string, domain: string): Promise<Omit<IndustryIntelligenceResult, 'dataSource' | 'postsAnalyzed' | 'generatedAt'>> {
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 1200,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
     system: getDateContext(),

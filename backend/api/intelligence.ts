@@ -36,13 +36,14 @@ import { getIndustryIntelligence } from '../lib/industryIntelligence';
 import { getHookLibrary } from '../lib/hookLibrary';
 import { createAngles, ANGLE_STYLE_META } from '../lib/angles';
 import { sendBriefingToUser, weeklyIndustryBriefingCron, buildBriefingData } from '../lib/weeklyBriefing';
+import { MODELS } from '../lib/models';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 // Base64-encoded PDF/DOCX uploads (resource-upload action) can exceed the
 // default 4.5mb body limit, so raise it for this multiplexed function.
-export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
+export const config = { maxDuration: 60, api: { bodyParser: { sizeLimit: '15mb' } } };
 
 function parseJsonObject(text: string): any {
   const match = text.match(/\{[\s\S]*\}/);
@@ -99,7 +100,7 @@ async function competitorIntelligence(userId: string, forceRefresh: boolean) {
   const trendResult = await getTrendContext(anthropic, supabase, industry, role);
   const trendFragment = buildTrendPromptFragment(trendResult, industry);
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 1500,
     system: `${getDateContext()}\n\n${trendFragment ? trendFragment + '\n\n' : ''}${COMPETITOR_INTELLIGENCE_SYSTEM}`,
     messages: [{ role: 'user', content: buildCompetitorIntelligenceUserPrompt(role, industry, goalsText) }],
@@ -137,7 +138,7 @@ async function growthScore(userId: string, forceRefresh: boolean) {
   const d = await gatherGrowthData(supabase, userId);
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 500,
     system: getDateContext(),
     messages: [{ role: 'user', content: buildGrowthScorePrompt(d) }],
@@ -274,7 +275,7 @@ async function bestTimeToPost(userId: string, forceRefresh: boolean) {
   }
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 600,
     system: `${getDateContext()}\n\n${BEST_TIME_SYSTEM}`,
     messages: [{ role: 'user', content: buildBestTimeUserPrompt(role, industry, hasHistory, historySummary) }],
@@ -1186,7 +1187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!topic) return res.status(400).json({ error: 'Missing topic' });
         const sources = await searchSourcesForTopic(anthropic, topic).catch(() => []);
         const qMessage = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 200,
           messages: [{ role: 'user', content: `Someone wants to write a LinkedIn post about: "${topic}". Ask them ONE short, genuinely useful clarifying question to sharpen the post (e.g. personal experience vs industry insight, who the reader is, what the goal is). Return ONLY the question, no preamble, no quotes.\n\n${NO_DASH_RULE}` }],
         });
@@ -1223,7 +1224,7 @@ ${UNIVERSAL_HUMAN_WRITING_RULES}
 Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown formatting, no quotes around it.`;
 
         const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
+          model: MODELS.sonnet,
           max_tokens: 1400,
           system: systemPrompt,
           messages: [{ role: 'user', content: `Write the post about: ${topic}` }],
@@ -1256,7 +1257,7 @@ Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown for
 Only include articles published in the last 30 days. Prefer the last 7 days. Use reputable publications.`;
 
         const message = await (anthropic.messages.create as any)({
-          model: 'claude-sonnet-4-6',
+          model: MODELS.sonnet,
           max_tokens: 3000,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4 }],
           messages: [{
@@ -1296,7 +1297,7 @@ ${NO_DASH_RULE} (this applies to the "excerpt" field you write; article titles a
         let finalItems = items;
         if (items.length === 0) {
           const fbMsg = await anthropic.messages.create({
-            model: 'claude-haiku-4-5-20251001',
+            model: MODELS.haiku,
             max_tokens: 2000,
             messages: [{
               role: 'user',
@@ -1373,7 +1374,7 @@ Return ONLY valid JSON with this exact shape:
 ${NO_DASH_RULE}`;
 
         const message = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 1800,
           messages: [{ role: 'user', content: prompt }],
         });
@@ -1394,7 +1395,7 @@ ${NO_DASH_RULE}`;
         if (cached) return res.json(cached);
         const today = new Date().toISOString().slice(0, 10);
         const trendMsg = await (anthropic.messages.create as any)({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 1200,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
           system: getDateContext(),
@@ -1456,7 +1457,7 @@ Return ONLY valid JSON (no prose, no markdown, no explanation):
         const { role, industry } = await getProfile(userId);
         const styleNames = Object.keys(ANGLE_STYLE_META).join(', ');
         const ideaMsg = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 2000,
           system: getDateContext(),
           messages: [{ role: 'user', content: `Generate 5 distinct LinkedIn post angles based on this idea from a ${role} in ${industry}:\n\nIDEA: "${idea.slice(0, 500)}"\n\nFor each angle:\n- Write a compelling hook (2-3 sentences) that directly builds on their idea\n- Assign a style from exactly these options (use exact casing): ${styleNames}\n- Write one sentence explaining why this framing works\n- Add a realistic performance stat\n\nReturn ONLY valid JSON (no prose, no markdown):\n{"angles":[{"style":"Contrarian","hook":"...","insight":"...","performanceStat":"..."}]}\n\n${NO_DASH_RULE}` }],
@@ -1514,7 +1515,7 @@ Return ONLY valid JSON (no prose, no markdown, no explanation):
         const postContent = String(body.postContent || '').trim();
         if (!postContent) return res.status(400).json({ error: 'Missing postContent' });
         const message = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 150,
           messages: [{ role: 'user', content: `Extract 3-7 short content tags for this LinkedIn post, in the style #LeadershipLessons, #AIMarketing, #StartupGrowth (PascalCase, no spaces, one hashtag each). Return ONLY a JSON array of strings, e.g. ["#Leadership","#AI"].\n\nPost:\n${postContent.slice(0, 2000)}` }],
         });
@@ -1548,7 +1549,7 @@ Return ONLY valid JSON (no prose, no markdown, no explanation):
         const resourceLabel = String(body.resourceLabel || 'this resource');
         if (!resourceText) return res.status(400).json({ error: 'Missing resourceText' });
         const message = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 600,
           messages: [{ role: 'user', content: `Analyze ${resourceLabel} below. Return ONLY JSON: {"keyThemes": ["3-5 short bullet themes"], "angles": ["2-4 specific LinkedIn post angle ideas grounded in this content"], "openingLine": "one sentence a brand assistant would say to open a conversation about this, referencing the single most interesting insight"}\n\n${NO_DASH_RULE}\n\nContent:\n${truncateForPrompt(resourceText)}` }],
         });
@@ -1570,7 +1571,7 @@ Return ONLY valid JSON (no prose, no markdown, no explanation):
         const trimmedHistory = [...history];
         while (trimmedHistory.length && trimmedHistory[0].role !== 'user') trimmedHistory.shift();
         const reply = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
+          model: MODELS.sonnet,
           max_tokens: 400,
           system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful. Never generic. Keep replies to 2-4 sentences, conversational tone.\n\n${NO_DASH_RULE}`,
           messages: [...trimmedHistory.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user', content: message }],
@@ -1668,7 +1669,7 @@ Return ONLY valid JSON (no prose, no markdown, no explanation):
         if (!raw.trim()) return res.status(422).json({ error: 'postContent is required' });
 
         const msg = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 2000,
           system: `You are a post editor that removes every AI tell from LinkedIn posts. You apply five passes in your head before returning the result:
 

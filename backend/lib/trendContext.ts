@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
@@ -64,7 +65,7 @@ export async function getTrendContext(anthropic: Anthropic, supabase: SupabaseCl
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: MODELS.haiku,
       max_tokens: 700,
       system: `${getDateContext()}\n\nYou are a trend researcher. Use web search to find what is genuinely trending right now, not historical or evergreen topics.`,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],

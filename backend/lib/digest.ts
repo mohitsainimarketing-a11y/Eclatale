@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
+import { MODELS } from './models';
 
 export interface DigestData {
   userId: string;
@@ -107,7 +108,7 @@ Generate a JSON object with EXACTLY these fields:
 No em dashes, en dashes, or arrows. Return ONLY valid JSON.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 900,
     system: getDateContext(),
     messages: [{ role: 'user', content: prompt }],

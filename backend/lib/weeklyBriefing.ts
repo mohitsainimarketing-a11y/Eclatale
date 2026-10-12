@@ -7,6 +7,7 @@ import { getPersonalBest } from './hookLibrary';
 import { calculateStage } from './growthJourney';
 import { getWritingStyle, NO_DASH_RULE } from './writingStyles';
 import { sendIndustryBriefing } from './emailService';
+import { MODELS } from './models';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -36,7 +37,7 @@ async function generateOpportunity(
     : "They don't have enough post history yet to show a personal pattern.";
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 300,
     system: getDateContext(),
     messages: [{

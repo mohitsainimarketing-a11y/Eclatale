@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getDateContext } from '../lib/dateContext';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { NO_DASH_RULE } from '../lib/writingStyles';
+import { MODELS } from '../lib/models';
 
 // Carousel mode plans 6 slides with Claude, then generates 6 images. Comfortably
 // past Vercel's 10s Hobby-plan default; this raises the ceiling (60s is the max
@@ -22,7 +23,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // removes anything phrase-like for the model to echo back as fake typography.
 async function abstractVisualTheme(topic: string): Promise<string> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 100,
     system: getDateContext(),
     messages: [{
@@ -90,7 +91,7 @@ interface SlidePlan { headline: string; visualConcept: string; }
 
 async function planCarouselSlides(topic: string): Promise<{ caption: string; slides: SlidePlan[] }> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 1200,
     system: getDateContext(),
     messages: [{

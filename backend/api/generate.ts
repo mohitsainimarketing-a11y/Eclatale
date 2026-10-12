@@ -11,9 +11,12 @@ import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicE
 import { checkWeeklyPostLimit, incrementWeeklyPostCount } from '../lib/featureGates';
 import { handleSendFreeLimit } from './intelligence';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
+import { MODELS } from '../lib/models';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export const config = { maxDuration: 60 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -88,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!spark && topic) {
       try {
         const searchRes = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.haiku,
           max_tokens: 800,
           tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 3 }],
           messages: [{ role: 'user', content: `Find 3 recent, specific, credible facts, stats, or news items about: ${topic}. Focus on data from the last 6 months. Include the source name for each finding. Return only the findings as a brief bullet list with source names.` }],
@@ -134,7 +137,7 @@ ${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-
     res.setHeader('X-Accel-Buffering', 'no');
 
     const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-6',
+      model: MODELS.sonnet,
       max_tokens: 2048,
       messages: [{ role: 'user', content: `Write a ${contentType.replace(/-/g, ' ')} about: ${topic}` }],
       system: cachedSystem(dynamicContent),

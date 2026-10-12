@@ -7,6 +7,7 @@ import { cachedSystem } from '../lib/promptCache';
 import { getDateContext } from '../lib/dateContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
+import { MODELS } from '../lib/models';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -62,7 +63,7 @@ ${currentContent.substring(0, 4000)}
 Return the full adapted ${targetLabel}.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: MODELS.sonnet,
       max_tokens: 2048,
       messages: [{ role: 'user', content: userMessage }],
       system: cachedSystem(dynamicContent),

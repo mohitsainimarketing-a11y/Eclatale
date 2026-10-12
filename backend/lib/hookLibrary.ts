@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 const TRENDING_CACHE_MS = 6 * 60 * 60 * 1000;
 const MIN_POSTS_FOR_PERSONAL_BEST = 3;
@@ -201,7 +202,7 @@ async function getTrendingHooks(anthropic: Anthropic, supabase: SupabaseClient, 
   if (cached) return cached;
 
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 700,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
     system: getDateContext(),

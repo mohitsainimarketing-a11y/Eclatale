@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { readCache } from './intelligenceCache';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 export interface AriaMessage {
   role: 'user' | 'assistant';
@@ -162,7 +163,7 @@ export async function ariaChat(
   const trimmedHistory = conversationHistory.slice(-16); // keep the request small; full history is persisted separately
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 500,
     system: systemPrompt,
     messages: [...trimmedHistory, { role: 'user', content: message }],

@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getDateContext } from './dateContext';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 function parseJsonObject(text: string): any {
   const match = text.match(/\{[\s\S]*\}/);
@@ -91,7 +92,7 @@ export async function analyzePost(
   contentLength?: string
 ): Promise<PostAnalysis> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001-20251001',
+    model: MODELS.haiku,
     max_tokens: 1024,
     system: `${getDateContext()}\n\n${buildAnalyzePostPrompt(contentLength)}`,
     messages: [{ role: 'user', content: `Post to analyze:\n\n${postContent}` }],
@@ -223,7 +224,7 @@ export async function analyzeUserPatterns(
     `Styles: ${((persona as any)?.communication_styles || []).join(', ') || 'not specified'}.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 1200,
     system: `${getDateContext()}\n\n${USER_PATTERNS_INSTRUCTIONS}`,
     messages: [{ role: 'user', content: `${context}\n\nWriting pattern data across their last ${rows.length} posts (oldest to newest):\n${JSON.stringify(compact)}` }],
@@ -270,7 +271,7 @@ ${NO_DASH_RULE}
 Return ONLY valid JSON, no other text.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 400,
     system: getDateContext(),
     messages: [{ role: 'user', content: prompt }],

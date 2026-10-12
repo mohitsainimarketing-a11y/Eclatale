@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getDateContext } from './dateContext';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 function parseJsonObject(text: string): any {
   const match = text.match(/\{[\s\S]*\}/);
@@ -28,7 +29,7 @@ export interface AccuracyResult {
 
 export async function runFactualAccuracyCheck(anthropic: Anthropic, postContent: string): Promise<AccuracyResult> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 1200,
     system: `${getDateContext()}\n\nYou are a fact-checker for social media content. Use web search to verify specific, checkable claims.`,
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
@@ -62,7 +63,7 @@ export async function runTopicFreshnessCheck(
   anthropic: Anthropic, postContent: string, userRole: string, userDomain: string
 ): Promise<FreshnessResult> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 500,
     system: getDateContext(),
     messages: [{
@@ -101,7 +102,7 @@ export async function runVoiceAuthenticityCheck(
 ): Promise<VoiceResult> {
   const lengthNote = contentLength ? CONTENT_LENGTH_VOICE_NOTE[contentLength] || '' : '';
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 500,
     system: getDateContext(),
     messages: [{
@@ -144,7 +145,7 @@ export async function runSupportingReferences(anthropic: Anthropic, postContent:
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: MODELS.sonnet,
       max_tokens: 1200,
       system: `${getDateContext()}\n\nYou are a research assistant finding credible sources to support a LinkedIn post. Use web search.`,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
@@ -201,7 +202,7 @@ export interface AuthenticityScoreResult {
 async function classifyContentTone(anthropic: Anthropic, postContent: string): Promise<string> {
   try {
     const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: MODELS.haiku,
       max_tokens: 20,
       messages: [{
         role: 'user',

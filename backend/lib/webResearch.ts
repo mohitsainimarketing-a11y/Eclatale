@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 export interface Source {
   title: string;
@@ -48,7 +49,7 @@ export function extractDomain(url: string): string {
 // sources for a topic, then scores each by domain authority + recency.
 export async function searchSourcesForTopic(anthropic: Anthropic, topic: string): Promise<Source[]> {
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 1500,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
     messages: [{

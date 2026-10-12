@@ -8,6 +8,7 @@ import { getTrendContext, buildTrendPromptFragment } from '../lib/trendContext';
 import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicErrors';
 import { readCache, writeCache } from '../lib/intelligenceCache';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
+import { MODELS } from '../lib/models';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -65,7 +66,7 @@ For EACH topic, decide whether it's "trending" (tied to something happening this
 Return ONLY a JSON array of 5 objects, each shaped exactly like: { "topic": "the topic text", "whyNow": "one sentence on why this is timely right now", "trending": true or false }. No other text.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: MODELS.haiku,
       max_tokens: 900,
       system: topicPrompt,
       messages: [{ role: 'user', content: userMessage }],

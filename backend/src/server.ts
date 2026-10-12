@@ -7,6 +7,7 @@ import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { SYSTEM_PROMPT_BASE, CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, OUTPUT_RULES, TOPIC_SUGGESTION_PROMPT } from '../lib/contentPrompts';
 import { calculateVoiceMatchScore } from '../lib/voiceMatchScore';
 import { getDateContext } from '../lib/dateContext';
+import { MODELS } from '../lib/models';
 
 dotenv.config();
 
@@ -32,7 +33,7 @@ app.post('/api/generate', async (req, res) => {
     const systemPrompt = `${getDateContext()}\n\n${SYSTEM_PROMPT_BASE}\n\n${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:\n- Role: ${role}\n- Industry: ${industry}\n${goalsText}\n\n${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}\n\n${OUTPUT_RULES}\n\n${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 2048,
+      model: MODELS.sonnet, max_tokens: 2048,
       messages: [{ role: 'user', content: `Write a ${contentType.replace(/-/g, ' ')} about: ${topic}` }],
       system: systemPrompt,
     });
@@ -56,7 +57,7 @@ app.post('/api/suggest-topics', async (req, res) => {
     const topicPrompt = `${getDateContext()}\n\n${TOPIC_SUGGESTION_PROMPT.replace("${'{role}'}", role).replace("${'{industry}'}", industry)}`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 512,
+      model: MODELS.haiku, max_tokens: 512,
       system: topicPrompt,
       messages: [{ role: 'user', content: `Suggest 5 timely, high-signal content topics for a ${role} in the ${industry} industry${query ? ` related to "${query}"` : ''}.\n\n${personaFragment ? `About this person:\n${personaFragment}\n\n` : ''}Think about what's happening RIGHT NOW in ${industry}. Return ONLY a JSON array of 5 strings.` }],
     });
@@ -81,7 +82,7 @@ app.post('/api/guided-questions', async (req, res) => {
     const industry = profile?.domain || 'business';
 
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 1024,
+      model: MODELS.haiku, max_tokens: 1024,
       system: getDateContext(),
       messages: [{ role: 'user', content: `A ${role} in the ${industry} industry wants to create a ${contentType.replace(/-/g, ' ')} based on this rough idea:\n\n"${rawIdea}"\n\nGenerate exactly 4 smart, specific follow-up questions that will extract the GOLD from their experience. Focus on concrete details, specific numbers, personal stories, counterintuitive insights, and unique perspectives that will make the content impossible to ignore.\n\nReturn ONLY a JSON array of objects with "id" (q1-q4), "question" (the question text), and "placeholder" (a short example answer hint). No explanation.` }],
     });
@@ -115,7 +116,7 @@ app.post('/api/guided-generate', async (req, res) => {
     const systemPrompt = `${getDateContext()}\n\n${SYSTEM_PROMPT_BASE}\n\n${personaFragment ? personaFragment + '\n' : ''}The person you're writing for:\n- Role: ${role}\n- Industry: ${industry}\n${goalsText}\n\n${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional}\n\nAdditional: Weave their specific details NATURALLY. The reader should never sense this was generated from a questionnaire.\n\n${OUTPUT_RULES}\n\n${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 2048,
+      model: MODELS.sonnet, max_tokens: 2048,
       messages: [{ role: 'user', content: `Create a ${contentType.replace(/-/g, ' ')} based on this idea and context:\n\nMy idea: "${rawIdea}"\n\n${qaPairs ? `Context from my answers:\n\n${qaPairs}` : ''}\n\nTransform this into compelling content.` }],
       system: systemPrompt,
     });

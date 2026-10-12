@@ -4,6 +4,7 @@ import { getDateContext } from './dateContext';
 import { readCache, writeCache } from './intelligenceCache';
 import { computeTrustScore, extractDomain } from './webResearch';
 import { STATIC_CONTENT_BLOCK, dynamicBlock } from './promptCache';
+import { MODELS } from './models';
 
 // Fixed visual metadata per angle style, kept server-side (not model-generated)
 // so every card renders with exact design-system colors instead of hoping
@@ -39,7 +40,7 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
   const { role, industry } = await getRoleIndustry(supabase, userId);
 
   const message = await (anthropic.messages.create as any)({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 4000,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
     system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
@@ -81,7 +82,7 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
   // retry without web_search so users always get something useful.
   if (rawAngles.length === 0) {
     const fallback = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: MODELS.sonnet,
       max_tokens: 3000,
       system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
       messages: [{

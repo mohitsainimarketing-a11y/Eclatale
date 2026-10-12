@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { getWritingStyle, WRITING_STYLES, NO_DASH_RULE, lengthInstruction, TALK_LENGTH_OPTIONS } from './writingStyles';
 import { cachedSystem } from './promptCache';
 import { getDateContext } from './dateContext';
+import { MODELS } from './models';
 
 const BANNED_WORDS = 'delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative';
 // Anonymous ceiling for the public /tools pages. The homepage demo no longer
@@ -55,7 +56,7 @@ export async function logToolUsage(supabase: SupabaseClient, ip: string, tool: s
 
 export async function generateHooks(anthropic: Anthropic, topic: string, style: string): Promise<string[]> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 600,
     system: getDateContext(),
     messages: [{
@@ -92,7 +93,7 @@ ${lengthInstruction(length)}
 This is a free demo on a public tools page. Generate a high-quality example post that showcases what this style can do. Return just the post text, no explanation, no markdown formatting, no quotes around it.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 1400,
     system: cachedSystem(dynamicContent),
     messages: [{ role: 'user', content: `Write the post about: ${topic}` }],
@@ -115,7 +116,7 @@ export interface HeadlineAnalysis {
 
 export async function analyzeHeadline(anthropic: Anthropic, headline: string): Promise<HeadlineAnalysis> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 900,
     system: getDateContext(),
     messages: [{
@@ -152,7 +153,7 @@ export interface ViralScoreResult {
 
 export async function scoreViralPotential(anthropic: Anthropic, post: string): Promise<ViralScoreResult> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 700,
     system: getDateContext(),
     messages: [{
@@ -183,7 +184,7 @@ export async function generateAboutSection(
   anthropic: Anthropic, role: string, industry: string, specialty: string, achievement: string, tone: string
 ): Promise<string> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 700,
     system: getDateContext(),
     messages: [{
@@ -198,7 +199,7 @@ export async function generateAboutSection(
 
 export async function generateCTAs(anthropic: Anthropic, topic: string, goal: string): Promise<string[]> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 500,
     system: getDateContext(),
     messages: [{
@@ -227,7 +228,7 @@ export async function generateContentSeries(
   seriesLength: number,
 ): Promise<SeriesPost[]> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 1200,
     system: getDateContext(),
     messages: [{
@@ -274,7 +275,7 @@ ${NO_DASH_RULE}
 
 export async function generateHashtags(anthropic: Anthropic, topic: string): Promise<{ high: string[]; mid: string[]; niche: string[] }> {
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 600,
     system: getDateContext(),
     messages: [{
@@ -323,7 +324,7 @@ export async function generateLinkedInDMs(
   const guide = goalGuides[goal] || goalGuides['Connect'];
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 900,
     system: getDateContext(),
     messages: [{
@@ -370,7 +371,7 @@ export async function generateComments(
   const guide = styleGuides[style] || styleGuides['Insightful'];
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 800,
     system: getDateContext(),
     messages: [{
@@ -429,7 +430,7 @@ export async function analyzeLinkedInPost(anthropic: Anthropic, post: string): P
   const wordCount = post.trim().split(/\s+/).length;
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 1200,
     system: getDateContext(),
     messages: [{
@@ -542,7 +543,7 @@ export async function analyzeJobFit(
   jobDescription: string,
 ): Promise<JobFitResult> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 1500,
     messages: [{
       role: 'user',
@@ -614,7 +615,7 @@ export async function generateResearchBrief(
   // Try live web search first — graceful fallback on failure
   try {
     const searchMsg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: MODELS.haiku,
       max_tokens: 800,
       tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 3 }],
       messages: [{
@@ -630,7 +631,7 @@ export async function generateResearchBrief(
   } catch { /* web search is optional */ }
 
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 900,
     messages: [{
       role: 'user',
@@ -749,7 +750,7 @@ export async function githubToLinkedIn(
   ).join('\n');
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODELS.sonnet,
     max_tokens: 1600,
     messages: [{
       role: 'user',

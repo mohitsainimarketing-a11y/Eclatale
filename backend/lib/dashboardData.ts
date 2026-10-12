@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import { NO_DASH_RULE } from './writingStyles';
+import { MODELS } from './models';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -306,7 +307,7 @@ export async function generateRecommendations(
 
   const summary = distribution.map(d => `${d.tone}: ${d.count} posts, avg readability ${d.avgScore}/100`).join('\n');
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.haiku,
     max_tokens: 700,
     messages: [{
       role: 'user',

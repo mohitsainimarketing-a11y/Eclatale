@@ -10,6 +10,7 @@ import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicE
 import { requireFeature } from '../lib/featureGates';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { NO_DASH_RULE } from '../lib/writingStyles';
+import { MODELS } from '../lib/models';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -78,7 +79,7 @@ ${repurposeMode === 'reaction' ? `- The author has a specific personal reaction 
     let extractedPattern = '';
     if (repurposeMode === 'pattern') {
       const patternMsg = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: MODELS.haiku,
         max_tokens: 150,
         messages: [{
           role: 'user',
@@ -113,7 +114,7 @@ ${sourceText.substring(0, 4000)}
 Extract the key insight, filter it through my perspective as a ${role} in ${industry}, and create original content from it.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: MODELS.sonnet,
       max_tokens: 2048,
       messages: [{ role: 'user', content: userMessage }],
       system: cachedSystem(dynamicContent),

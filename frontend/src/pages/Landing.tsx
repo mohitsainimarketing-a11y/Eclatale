@@ -726,7 +726,7 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center">
           {[
             { value: 3, suffix: '', label: 'free posts every week' },
-            { value: 9, suffix: '', label: 'free tools, no signup' },
+            { value: 14, suffix: '', label: 'free tools, no signup' },
             { value: 100, suffix: '%', label: 'official LinkedIn API' },
             { value: 0, suffix: '', label: 'card required to start' },
           ].map((stat, i) => (
@@ -785,6 +785,41 @@ export default function Landing() {
                 <p className="text-sm text-brand-muted leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Free tools strip */}
+      <section className="py-14 md:py-18 px-5 md:px-8 bg-white border-t border-[rgba(124,92,252,0.06)]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <p className="tiny text-brand-muted mb-3">14 FREE TOOLS. NO ACCOUNT NEEDED.</p>
+            <h2 className="h2 text-brand-dark mb-3">Try them right now</h2>
+            <p className="body-text max-w-md mx-auto">Every tool is free, instant, and runs on the same AI engine as the full product.</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8">
+            {[
+              { emoji: '🪝', name: 'Hook Generator', slug: 'hook-generator' },
+              { emoji: '💬', name: 'Comment Generator', slug: 'comment-generator' },
+              { emoji: '✉️', name: 'DM Writer', slug: 'linkedin-dm-writer' },
+              { emoji: '#️⃣', name: 'Hashtag Generator', slug: 'hashtag-generator' },
+              { emoji: '📅', name: 'Content Series', slug: 'content-series-generator' },
+              { emoji: '🚀', name: 'Viral Score', slug: 'viral-score' },
+              { emoji: '🔬', name: 'Post Analyzer', slug: 'linkedin-post-analyzer' },
+              { emoji: '🎯', name: 'Headline Analyzer', slug: 'headline-analyzer' },
+            ].map(t => (
+              <a key={t.slug} href={`/tools/${t.slug}`}
+                className="card card-hover p-4 flex items-center gap-3 group"
+              >
+                <span className="text-xl flex-shrink-0">{t.emoji}</span>
+                <span className="text-[13px] font-semibold text-brand-dark leading-snug group-hover:text-brand-purple transition-colors">{t.name}</span>
+              </a>
+            ))}
+          </div>
+          <div className="text-center">
+            <a href="/tools" className="btn-secondary inline-flex items-center gap-2">
+              See all 14 free tools
+            </a>
           </div>
         </div>
       </section>

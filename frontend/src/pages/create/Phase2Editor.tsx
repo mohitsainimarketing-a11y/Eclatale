@@ -78,6 +78,7 @@ export default function Phase2Editor({
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [genError, setGenError] = useState('');
   const [sparkInput, setSparkInput] = useState(preloadedSpark || '');
+  const [researchMode, setResearchMode] = useState(false);
 
   const [flowStage] = useState<'editor'>('editor');
 
@@ -148,6 +149,7 @@ export default function Phase2Editor({
           ? { style: angle.style, styleId: styleId || angle.styleId, hook: includeHook ? angle.hook : undefined, insight: angle.insight }
           : ((styleId || presetStyleId) ? { styleId: styleId || presetStyleId } : undefined),
         spark: spark || undefined,
+        researchMode: researchMode || undefined,
         userId,
       }),
     });
@@ -540,6 +542,16 @@ export default function Phase2Editor({
             </button>
           ))}
           <button
+            onClick={() => setResearchMode(r => !r)}
+            title="Research mode: web-searches for fresh facts before writing"
+            className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all ml-1"
+            style={researchMode
+              ? { background: 'linear-gradient(135deg, #0EA5E9, #6366F1)', color: 'white', border: 'none' }
+              : { color: '#6B7280', border: '1px solid #EDE8FF' }}
+          >
+            🔍 Research
+          </button>
+          <button
             onClick={() => handleGenerate()}
             disabled={isGenerating}
             title="Regenerate post"
@@ -547,7 +559,7 @@ export default function Phase2Editor({
             style={{ color: '#7C5CFC', border: '1px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}
           >
             <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} />
-            {isGenerating ? 'Writing...' : 'Regenerate'}
+            {isGenerating ? (researchMode ? 'Researching...' : 'Writing...') : 'Regenerate'}
           </button>
         </div>
       </div>

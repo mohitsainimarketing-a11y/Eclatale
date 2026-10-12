@@ -33,6 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const angle: { style?: string; styleId?: string; hook?: string; insight?: string } | undefined =
       req.body.angle && typeof req.body.angle === 'object' ? req.body.angle : undefined;
     const spark = typeof req.body.spark === 'string' ? req.body.spark.trim() : '';
+    const researchMode = req.body.researchMode === true;
     let userId = req.body.userId;
     if (!topic || !tone || !contentType || !userId) return res.status(400).json({ error: 'Missing required fields' });
     const authCheck = await checkAuthToken(supabase, req);
@@ -81,6 +82,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? `\nOpen with or closely riff on this exact hook. Keep its energy and specificity, minor wording changes are fine: "${angle.hook}"\n`
       : '';
     const insightFragment = angle?.insight ? `\nWhy this angle resonates with this reader: ${angle.insight}\n` : '';
+    let researchFragment = '';
+    if (researchMode && topic) {
+      try {
+        const searchRes = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 800,
+          tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 3 }],
+          messages: [{ role: 'user', content: `Find 3 recent, specific, credible facts, stats, or news items about: ${topic}. Focus on data published in the last 6 months. Return only the findings as a brief bullet list.` }],
+        });
+        const researchText = searchRes.content
+          .filter((b: any) => b.type === 'text')
+          .map((b: any) => b.text)
+          .join('\n')
+          .trim();
+        if (researchText) {
+          researchFragment = `\nRecent research and facts to weave into the post (use the most relevant ones naturally, don't list them all):\n${researchText.slice(0, 2000)}\n`;
+        }
+      } catch { /* research is optional, never block generation */ }
+    }
+
     const sparkFragment = spark
       ? `\nWhat sparked this post. Ground the content in this, don't ignore it:\n${spark.slice(0, 4000)}\n`
       : '';
@@ -100,7 +121,7 @@ ${trendFragment ? trendFragment + '\n' : ''}
 ${writingStyle ? writingStyle.prompt : (TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional)}
 
 ${styleNudge ? `Additional instruction based on this person's own writing patterns: ${styleNudge}\n` : ''}
-${angleFragment}${structureFragment}${hookFragment}${insightFragment}${sparkFragment}
+${angleFragment}${structureFragment}${hookFragment}${insightFragment}${sparkFragment}${researchFragment}
 ${CONTENT_TYPE_INSTRUCTIONS[contentType] || CONTENT_TYPE_INSTRUCTIONS['linkedin-post']}
 
 ${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-post' ? CONTENT_LENGTH_INSTRUCTIONS[length] : '')}`.trim();

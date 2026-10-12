@@ -3,6 +3,7 @@ import {
   ArrowLeft, Copy, Save, Calendar, Bold, Italic, Strikethrough, Minus, List, ListOrdered, MoreHorizontal,
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
   ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw, FlaskConical, Layers,
+  Monitor, Smartphone, Eye, Pencil, Zap, Smile, History, Settings2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
@@ -26,15 +27,52 @@ const LOADING_MESSAGES = [
   'Almost ready...',
 ];
 
+const ARIA_THINKING_MSGS = [
+  'Aria is on it...',
+  'Consulting the writing gods...',
+  'Teaching words to behave...',
+  'Polishing every syllable...',
+  'Sprinkling the magic dust...',
+  'Almost done, pinky promise...',
+];
+
 const VARIANT_STYLES = [
   { styleId: 'storyteller', label: 'Tell a story', emoji: '📖' },
   { styleId: 'contrarian', label: 'Challenge the norm', emoji: '🔥' },
   { styleId: 'analyst', label: 'Lead with data', emoji: '📊' },
 ] as const;
 
-// Mirrors backend/lib/writingStyles.ts WRITING_STYLES ids. Used to build real
-// variants of the same topic/hook in genuinely different voices, not just
-// reworded copies of one draft.
+const QUICK_ACTIONS = [
+  {
+    label: 'Improve this post',
+    emoji: '⚡',
+    instruction: 'Improve the overall quality of this post. Make it more engaging, punchy, and ready to perform on LinkedIn. Keep the core message and structure.',
+  },
+  {
+    label: 'Rewrite the hook',
+    emoji: '🎣',
+    instruction: 'Rewrite only the opening line or two (the hook). Make it more attention-grabbing and scroll-stopping. Keep the rest of the post exactly the same.',
+  },
+  {
+    label: 'Fix grammar',
+    emoji: '✅',
+    instruction: 'Fix all grammar and spelling mistakes. Do not change the tone, structure, or meaning. Minimal edits only.',
+  },
+  {
+    label: 'Remove AI tells',
+    emoji: '🧹',
+    instruction: 'Remove all AI writing patterns: no em dashes, no staccato stacks, no banned words like "delve", "leverage", "transformative", "cutting-edge". Make it sound like a real human wrote it.',
+  },
+];
+
+const MAKE_IT_PILLS = [
+  { label: 'Shorter', instruction: 'Make this post shorter. Cut it by about 30% while keeping all key points.' },
+  { label: 'Longer', instruction: 'Expand this post with more depth, examples, or supporting detail. Add roughly 30% more content.' },
+  { label: 'Bolder', instruction: 'Make the language bolder and more confident. Stronger verbs, more decisive statements, less hedging.' },
+  { label: 'Funnier', instruction: 'Add a touch of wit and dry humor. Keep it professional but make it more enjoyable to read.' },
+  { label: 'Casual', instruction: 'Make the tone more casual and conversational. Like explaining to a smart friend over coffee.' },
+  { label: 'Formal', instruction: 'Make the tone more formal and professional. Appropriate for a senior corporate audience.' },
+];
 
 function scoreColor(score: number): string {
   if (score >= 80) return '#10B981';
@@ -66,8 +104,6 @@ interface Phase2Props {
   onPublished: (postId: string, urn: string) => void;
   preloadedSpark?: string;
   preloadedResearchBrief?: ResearchBrief;
-  // Writing style chosen outside the angle picker (currently the homepage
-  // demo chips). Only consulted when there is no angle to take a style from.
   presetStyleId?: string;
 }
 
@@ -90,7 +126,11 @@ export default function Phase2Editor({
   const [variants, setVariants] = useState<{ styleId: string; label: string; emoji: string; content: string }[]>([]);
   const [generatingVariants, setGeneratingVariants] = useState(false);
 
-  const [flowStage] = useState<'editor'>('editor');
+  // New UI state for LinkedIn-style editor
+  const [previewMode, setPreviewMode] = useState<'edit' | 'preview'>('edit');
+  const [deviceView, setDeviceView] = useState<'desktop' | 'mobile'>('desktop');
+  const [ariaThinkingIdx, setAriaThinkingIdx] = useState(0);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const [hooksOpen, setHooksOpen] = useState(false);
   const [ctasOpen, setCtasOpen] = useState(false);
@@ -142,7 +182,6 @@ export default function Phase2Editor({
     [angle, customTopic]
   );
 
-  // Streams one generation, calling onChunk for each token so the editor updates live.
   const generateStreaming = useCallback(async (
     spark: string,
     onChunk: (text: string) => void,
@@ -191,7 +230,6 @@ export default function Phase2Editor({
     if (inserted) setPostId(inserted.id);
   }, [userId, currentTopic]);
 
-  // Generate (or re-generate) a post. Streams tokens live into the editor.
   const handleGenerate = useCallback(async (lengthOverride?: PostLength) => {
     setIsGenerating(true);
     setGenError('');
@@ -211,12 +249,10 @@ export default function Phase2Editor({
     setIsGenerating(false);
   }, [resolveSpark, generateStreaming, savePost]);
 
-  // When the user picks a different length in Phase 2, update the parent and re-generate.
   const handleLengthAndRegenerate = (l: PostLength) => {
     onLengthChange(l);
     handleGenerate(l);
   };
-
 
   useEffect(() => {
     if (!editMode) handleGenerate();
@@ -228,6 +264,13 @@ export default function Phase2Editor({
     const t = setInterval(() => setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length), 2000);
     return () => clearInterval(t);
   }, [isGenerating]);
+
+  // Rotate Aria thinking messages while refining
+  useEffect(() => {
+    if (!ariaRefining) return;
+    const t = setInterval(() => setAriaThinkingIdx(i => (i + 1) % ARIA_THINKING_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [ariaRefining]);
 
   // ── Authenticity score (2s after content is ready) + best time ─────────────
 
@@ -264,20 +307,21 @@ export default function Phase2Editor({
     }).catch(() => {}).finally(() => setBestTimeLoading(false));
   }, [userId]);
 
-  // ── Aria refine ──────────────────────────────────────────────────────────
+  // ── Aria refine (accepts optional preset instruction for quick actions) ──
 
-  const handleAriaRefine = async () => {
-    if (!ariaInput.trim() || ariaRefining) return;
+  const handleAriaRefine = async (overrideInstruction?: string) => {
+    const instruction = overrideInstruction || ariaInput.trim();
+    if (!instruction || ariaRefining) return;
     setAriaRefining(true);
     try {
       const res = await apiFetch(`${API_URL}/api/refine-content`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({ currentContent: content, instruction: ariaInput.trim(), userId }),
+        body: JSON.stringify({ currentContent: content, instruction, userId }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.message || data.error);
       setContent(data.content);
-      setAriaInput('');
+      if (!overrideInstruction) setAriaInput('');
       checkedRef.current = false;
       if (postId) await supabase.from('posts').update({ content: data.content }).eq('id', postId);
     } catch (e: any) {
@@ -286,7 +330,7 @@ export default function Phase2Editor({
     setAriaRefining(false);
   };
 
-  // ── Variant generation (3 styles, same topic) ────────────────────────────
+  // ── Variant generation ────────────────────────────────────────────────────
 
   const handleGenerateVariants = useCallback(async () => {
     if (generatingVariants || isGenerating) return;
@@ -342,9 +386,6 @@ export default function Phase2Editor({
     requestAnimationFrame(() => { el.focus(); el.selectionStart = el.selectionEnd = start + text.length; });
   };
 
-  // Same as insertAtCursor, but if the inserted text has a [placeholder],
-  // selects it so the user can just start typing over it, since a textarea has
-  // no rich-text highlighting, so a text selection is the closest thing.
   const insertHookTemplate = (text: string) => {
     const el = textareaRef.current;
     const insertText = text + '\n\n';
@@ -499,62 +540,51 @@ export default function Phase2Editor({
     window.location.href = `/create-visual?format=carousel&topic=${encodeURIComponent(topic)}`;
   };
 
-  // ── Render helpers ───────────────────────────────────────────────────────
-
-  const CUTOFF = 210;
-
   const topSources = sources.slice(0, 3);
+  const isRefining = ariaRefining || humanizing;
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
 
-      {/* ── Mobile-only compact header ── */}
+      {/* ── Mobile compact header ── */}
       <div className="md:hidden bg-white border-b flex items-center gap-2 px-4 py-2.5 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
         <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0" style={{ color: '#6B7280' }}>
           <ArrowLeft size={18} />
         </button>
-        <button
-          onClick={onBack}
-          className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full truncate text-left"
-          style={{ border: '1.5px solid #D4CEFF', color: '#7C5CFC' }}
-        >
-          <Check size={11} className="flex-shrink-0" />
-          <span className="truncate">
-            {angle ? `${angle.style} · ${angle.hook.slice(0, 28)}${angle.hook.length > 28 ? '…' : ''}` : (editMode ? 'Editing draft' : customTopic.slice(0, 28) || 'New post')}
-          </span>
-        </button>
+        <span className="flex-1 min-w-0 text-[12px] font-semibold truncate" style={{ color: '#1A1A2E' }}>
+          {angle ? angle.hook.slice(0, 32) : (customTopic.slice(0, 32) || 'New post')}
+        </span>
         <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: content.length > 2700 ? '#F72585' : '#9CA3AF' }}>{content.length}</span>
         <button
-          onClick={() => setMobileDrawerOpen(true)}
-          className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
-          style={{ color: '#6B7280' }}
+          onClick={() => setAiPanelOpen(true)}
+          className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full flex-shrink-0"
+          style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}
         >
-          <MoreHorizontal size={18} />
+          <Sparkles size={12} /> AI Edit
         </button>
       </div>
 
-      {/* ── Desktop-only spark bar ── */}
-      <div className="hidden md:flex bg-white border-b px-6 py-2.5 items-center gap-2 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+      {/* ── Desktop top bar: topic chip + spark + length + controls ── */}
+      <div className="hidden md:flex bg-white border-b px-4 py-2 items-center gap-2 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
         {angle ? (
-          <span
-            className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
-            style={{ border: '1.5px solid #D4CEFF', color: '#7C5CFC' }}
-          >
-            <Check size={12} /> {angle.style} · {angle.hook.slice(0, 40)}{angle.hook.length > 40 ? '…' : ''}
-            <button onClick={onBack} aria-label="Change angle" className="ml-1 hover:opacity-70"><X size={12} /></button>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full flex-shrink-0" style={{ border: '1.5px solid #D4CEFF', color: '#7C5CFC' }}>
+            <Check size={11} /> {angle.style} · {angle.hook.slice(0, 35)}{angle.hook.length > 35 ? '…' : ''}
+            <button onClick={onBack} aria-label="Change angle" className="ml-1 hover:opacity-70"><X size={11} /></button>
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full flex-shrink-0" style={{ border: '1.5px solid #D4CEFF', color: '#7C5CFC' }}>
-            {editMode ? 'Editing draft' : (customTopic.slice(0, 40) || 'Custom post')}
-            <button onClick={onBack} aria-label="Back" className="ml-1 hover:opacity-70"><X size={12} /></button>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full flex-shrink-0" style={{ border: '1.5px solid #D4CEFF', color: '#7C5CFC' }}>
+            {editMode ? 'Editing draft' : (customTopic.slice(0, 35) || 'Custom post')}
+            <button onClick={onBack} aria-label="Back" className="ml-1 hover:opacity-70"><X size={11} /></button>
           </span>
         )}
         <input
           type="text"
           value={sparkInput}
           onChange={e => setSparkInput(e.target.value)}
-          placeholder="What sparked this? A URL, quote, or what triggered it (optional)"
-          className="flex-1 min-w-0 text-[13px] bg-transparent outline-none px-2 py-0.5"
+          placeholder="Paste a URL, quote, or what sparked this post (optional)"
+          className="flex-1 min-w-0 text-[12px] bg-transparent outline-none px-2"
           style={{ color: '#1A1A2E' }}
         />
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -563,7 +593,7 @@ export default function Phase2Editor({
               key={l.id}
               onClick={() => handleLengthAndRegenerate(l.id)}
               disabled={isGenerating}
-              title={selectedLength === l.id ? 'Regenerate at this length' : `Switch to ${l.label} and regenerate`}
+              title={selectedLength === l.id ? 'Regenerate at this length' : `Switch to ${l.label}`}
               className="text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50"
               style={selectedLength === l.id
                 ? { background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' }
@@ -575,33 +605,31 @@ export default function Phase2Editor({
           <button
             onClick={handleGenerateVariants}
             disabled={generatingVariants || isGenerating}
-            title="Generate 3 writing styles side by side and pick your favourite"
             className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 ml-1"
             style={variantsOpen
-              ? { background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white', border: 'none' }
+              ? { background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white' }
               : { color: '#6B7280', border: '1px solid #EDE8FF' }}
           >
-            <Layers size={11} /> 3 Styles
+            <Layers size={10} /> 3 Styles
           </button>
           <button
             onClick={() => handleGenerate()}
             disabled={isGenerating}
-            title="Regenerate post"
             className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 ml-1"
             style={{ color: '#7C5CFC', border: '1px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}
           >
-            <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} />
+            <RefreshCw size={10} className={isGenerating ? 'animate-spin' : ''} />
             {isGenerating ? 'Writing...' : 'Regenerate'}
           </button>
         </div>
       </div>
 
       {/* ── Main content area ── */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
 
         {/* Variant comparison overlay */}
         {variantsOpen && (
-          <div className="absolute inset-0 z-30 flex flex-col" style={{ background: 'white' }}>
+          <div className="absolute inset-0 z-30 flex flex-col bg-white">
             <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
               <div>
                 <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>3 writing styles, same topic</p>
@@ -621,12 +649,7 @@ export default function Phase2Editor({
                       <span className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>{v.emoji} {v.label}</span>
                       {v.content && !generatingVariants && (
                         <button
-                          onClick={() => {
-                            setContent(v.content);
-                            setVariantsOpen(false);
-                            checkedRef.current = false;
-                            if (postId) supabase.from('posts').update({ content: v.content }).eq('id', postId);
-                          }}
+                          onClick={() => { setContent(v.content); setVariantsOpen(false); checkedRef.current = false; if (postId) supabase.from('posts').update({ content: v.content }).eq('id', postId); }}
                           className="text-[11px] font-bold px-3 py-1.5 rounded-full text-white flex-shrink-0"
                           style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
                         >
@@ -651,57 +674,88 @@ export default function Phase2Editor({
             </div>
           </div>
         )}
-        {/* Left column / mobile full editor */}
-        <div className="flex-1 min-w-0 bg-white flex flex-col md:border-r" style={{ borderColor: '#EDE8FF' }}>
 
-          {/* Desktop-only toolbar */}
-          <div className="hidden md:flex items-center gap-1 px-4 py-2 border-b flex-wrap" style={{ borderColor: '#EDE8FF' }}>
-            <FormatBtn icon={Bold} onClick={() => transformSelection(BOLD)} label="Bold" shortcut="⌘B" preview="𝗕" />
-            <FormatBtn icon={Italic} onClick={() => transformSelection(ITALIC)} label="Italic" shortcut="⌘I" preview="𝘐" />
-            <FormatBtn icon={Bold} onClick={() => transformSelection(BOLD_ITALIC)} label="Bold Italic" shortcut="⌘⇧B" preview="𝗕𝘐" />
-            <FormatBtn icon={Strikethrough} onClick={() => transformSelection(applyStrikethrough)} label="Strikethrough" shortcut="⌘⇧X" preview="S̶" />
-            <div className="w-px h-5 mx-0.5" style={{ background: '#EDE8FF' }} />
-            <div className="relative">
-              <ToolBtn icon={MoreHorizontal} onClick={() => setFormatMoreOpen(o => !o)} label="More formatting" />
-              {formatMoreOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-48 max-w-[calc(100vw-32px)]">
-                  <div className="flex gap-1 flex-wrap mb-2 pb-2 border-b" style={{ borderColor: '#EDE8FF' }}>
-                    {['😀', '🔥', '💡', '✅', '📈', '🎯', '🚀', '👏', '💬', '⚡', '🙌', '✨'].map(e => (
-                      <button key={e} onClick={() => { insertAtCursor(e); setFormatMoreOpen(false); }} className="text-lg p-1 hover:bg-[rgba(124,92,252,0.06)] rounded-lg">{e}</button>
-                    ))}
-                  </div>
-                  <button onClick={() => { insertAtCursor('\n───\n'); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[12px] font-medium px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
-                    <Minus size={13} /> Divider
-                  </button>
-                  <button onClick={() => { prefixLines(() => '• '); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[12px] font-medium px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
-                    <List size={13} /> Bullets
-                  </button>
-                  <button onClick={() => { prefixLines(i => `${i + 1}. `); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[12px] font-medium px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
-                    <ListOrdered size={13} /> Numbers
-                  </button>
+        {/* ── LEFT: AI Panel (desktop only) ── */}
+        <div className="hidden md:flex w-[264px] flex-shrink-0 border-r flex-col" style={{ borderColor: '#EDE8FF', background: '#FAFAFE' }}>
+
+          {/* Panel header */}
+          <div className="px-4 pt-4 pb-3 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}>
+                <Sparkles size={12} color="white" />
+              </div>
+              <span className="text-[13px] font-extrabold" style={{ color: '#1A1A2E' }}>AI Edit</span>
+              <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}>Aria</span>
+            </div>
+            <p className="text-[11px] mt-1.5" style={{ color: '#9CA3AF' }}>Refine your draft, in your own voice.</p>
+          </div>
+
+          {/* Quick action buttons */}
+          <div className="px-3 pt-3 pb-2 flex-shrink-0">
+            <div className="flex flex-col gap-1.5">
+              {QUICK_ACTIONS.map(action => (
+                <button
+                  key={action.label}
+                  onClick={() => handleAriaRefine(action.instruction)}
+                  disabled={isRefining || isGenerating || !content.trim()}
+                  className="flex items-center gap-2.5 w-full text-left px-3 py-2.5 rounded-xl transition-all disabled:opacity-40"
+                  style={{ background: 'rgba(124,92,252,0.06)', border: '1px solid rgba(124,92,252,0.10)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,92,252,0.12)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,92,252,0.06)'; }}
+                >
+                  <span className="text-[16px] flex-shrink-0">{action.emoji}</span>
+                  <span className="text-[12px] font-semibold" style={{ color: '#1A1A2E' }}>{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Make it... pills */}
+          <div className="px-3 pb-3 flex-shrink-0 border-b" style={{ borderColor: '#EDE8FF' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Make it...</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MAKE_IT_PILLS.map(pill => (
+                <button
+                  key={pill.label}
+                  onClick={() => handleAriaRefine(pill.instruction)}
+                  disabled={isRefining || isGenerating || !content.trim()}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all disabled:opacity-40"
+                  style={{ background: 'white', border: '1.5px solid #EDE8FF', color: '#6B7280' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#ADA8F0'; e.currentTarget.style.color = '#7C5CFC'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE8FF'; e.currentTarget.style.color = '#6B7280'; }}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Hooks + CTAs */}
+          <div className="px-3 py-2.5 border-b flex items-center gap-2 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+            <div className="relative flex-1">
+              <button
+                onClick={() => { setHooksOpen(o => !o); setCtasOpen(false); }}
+                className="w-full flex items-center justify-center gap-1 text-[11px] font-bold py-1.5 rounded-lg"
+                style={{ background: hooksOpen ? 'rgba(124,92,252,0.12)' : 'rgba(124,92,252,0.06)', color: '#7C5CFC' }}
+              >
+                Hooks <ChevronDown size={11} />
+              </button>
+              {hooksOpen && (
+                <div className="absolute top-full left-0 mt-1 z-20 w-80 max-w-[calc(100vw-32px)]">
+                  <HookLibraryPanel userId={userId} userRole={userRole} userDomain={userDomain} onInsert={text => { insertHookTemplate(text); setHooksOpen(false); }} />
                 </div>
               )}
             </div>
-            <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
-            <div className="relative">
-              <button onClick={() => setHooksOpen(o => !o)} className="flex items-center gap-1 text-[12px] font-bold px-2.5 py-1.5 rounded-full" style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.06)' }}>
-                Hooks <ChevronDown size={12} />
-              </button>
-              {hooksOpen && (
-                <HookLibraryPanel
-                  userId={userId}
-                  userRole={userRole}
-                  userDomain={userDomain}
-                  onInsert={text => { insertHookTemplate(text); setHooksOpen(false); }}
-                />
-              )}
-            </div>
-            <div className="relative">
-              <button onClick={() => setCtasOpen(o => !o)} className="flex items-center gap-1 text-[12px] font-bold px-2.5 py-1.5 rounded-full" style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.06)' }}>
-                CTAs <ChevronDown size={12} />
+            <div className="relative flex-1">
+              <button
+                onClick={() => { setCtasOpen(o => !o); setHooksOpen(false); }}
+                className="w-full flex items-center justify-center gap-1 text-[11px] font-bold py-1.5 rounded-lg"
+                style={{ background: ctasOpen ? 'rgba(124,92,252,0.12)' : 'rgba(124,92,252,0.06)', color: '#7C5CFC' }}
+              >
+                CTAs <ChevronDown size={11} />
               </button>
               {ctasOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-80 max-w-[calc(100vw-32px)] max-h-72 overflow-y-auto">
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl p-2 z-20 modal-shadow w-80 max-w-[calc(100vw-32px)] max-h-64 overflow-y-auto">
                   {CTA_TEMPLATES.map((c, i) => (
                     <button key={i} onClick={() => { insertAtCursor('\n\n' + c); setCtasOpen(false); }} className="block w-full text-left text-[12px] px-2.5 py-2 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
                       {c}
@@ -710,366 +764,485 @@ export default function Phase2Editor({
                 </div>
               )}
             </div>
-            {topSources.length > 0 && (
-              <div className="flex items-center gap-1.5 ml-auto flex-wrap">
-                {topSources.map((s, i) => (
-                  <span key={i} title={s.excerpt} className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full" style={{ background: '#F8F5FF', color: '#6B7280' }}>
-                    <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold" style={{ background: scoreColor(s.trustScore) }}>{s.trustScore}</span>
-                    {s.domain}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Editor textarea */}
-          <div className="flex-1 min-h-0 p-4">
-            {isGenerating ? (
-              <div className="h-full rounded-xl p-4 flex flex-col items-center justify-center gap-4" style={{ background: '#FDFCFF', border: '1.5px solid #EDE8FF' }}>
-                <GenerationTimer />
-                <p className="text-[12px] font-semibold animate-fadeIn text-center" style={{ color: '#7C5CFC' }} key={loadingMsgIdx}>
-                  {LOADING_MESSAGES[loadingMsgIdx]}
-                </p>
-                <div className="w-full max-w-sm flex flex-col gap-2">
-                  {[0, 1, 2, 3].map(i => <div key={i} className="skeleton h-3.5 rounded" style={{ width: `${90 - i * 12}%` }} />)}
-                </div>
-              </div>
-            ) : genError ? (
-              <div className="h-full flex flex-col items-center justify-center text-center gap-3">
-                <p className="text-[13px]" style={{ color: '#F72585' }}>{genError}</p>
-                <button onClick={() => handleGenerate()} className="text-[12px] font-bold px-4 py-2 rounded-full text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Try again</button>
-              </div>
-            ) : (
-              <textarea
-                ref={textareaRef}
-                value={content}
-                onChange={e => setContent(e.target.value)}
-                onKeyDown={handleEditorKeyDown}
-                className="w-full h-full min-h-[200px] outline-none md:resize-y resize-none"
-                style={{ border: '1.5px solid #EDE8FF', borderRadius: 12, padding: 16, fontSize: 14, lineHeight: 1.9, color: '#1A1A2E', background: '#FDFCFF' }}
-                onFocus={e => { e.currentTarget.style.borderColor = '#7C5CFC'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(124,92,252,0.06)'; }}
-                onBlur={e => { e.currentTarget.style.borderColor = '#EDE8FF'; e.currentTarget.style.boxShadow = 'none'; }}
-              />
-            )}
-          </div>
-
-          {/* Desktop-only editor footer (Aria refine + char count) */}
-          <div className="hidden md:flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 border-t" style={{ borderColor: '#EDE8FF' }}>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>{content.length} / 3,000</span>
-              <button
-                onClick={handleHumanize}
-                disabled={humanizing || !content.trim()}
-                title="Remove AI tells: banned words, staccato stacks, reveal bridges, and more"
-                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full disabled:opacity-40 transition-opacity"
-                style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
-              >
-                <Wand2 size={10} />
-                {humanizing ? 'Humanizing…' : 'Humanize'}
-              </button>
-            </div>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Sparkles size={14} style={{ color: '#7C5CFC', flexShrink: 0 }} />
-              <input
-                type="text"
-                value={ariaInput}
-                onChange={e => setAriaInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleAriaRefine(); }}
-                placeholder="Ask Aria to refine: make it shorter, add a stat, change the ending..."
-                className="flex-1 min-w-0 text-[12px] bg-transparent outline-none"
-                style={{ color: '#1A1A2E' }}
-              />
-              <button
-                onClick={handleAriaRefine}
-                disabled={ariaRefining || !ariaInput.trim()}
-                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
-              >
-                <Send size={12} color="white" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right column: desktop only */}
-        <div className="hidden md:flex md:w-[240px] flex-shrink-0 p-4 flex-col gap-3 overflow-y-auto" style={{ background: '#F8F5FF' }}>
-          <LinkedInPreviewCard
-            userName={userName}
-            userInitials={userInitials}
-            userAvatar={userAvatar}
-            content={content}
-            cutoff={CUTOFF}
-          />
-
-          {/* Research brief reference panel */}
+          {/* Research brief (if available) */}
           {preloadedResearchBrief && preloadedResearchBrief.stats.length > 0 && (
-            <div className="bg-white rounded-[14px] overflow-hidden" style={{ border: '1.5px solid #BAE6FD' }}>
-              <button
-                onClick={() => setResearchPanelOpen(o => !o)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5"
-              >
-                <span className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: '#0284C7' }}>
-                  <FlaskConical size={11} /> Research used
+            <div className="mx-3 mt-2 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '1.5px solid #BAE6FD' }}>
+              <button onClick={() => setResearchPanelOpen(o => !o)} className="w-full flex items-center justify-between px-3 py-2">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: '#0284C7' }}>
+                  <FlaskConical size={10} /> Research used
                 </span>
-                <span className="text-[10px] font-semibold" style={{ color: '#9CA3AF' }}>
+                <span className="text-[9px] font-semibold" style={{ color: '#9CA3AF' }}>
                   {researchPanelOpen ? 'hide' : `${preloadedResearchBrief.stats.length} stats`}
                 </span>
               </button>
               {researchPanelOpen && (
-                <div className="px-3.5 pb-3 flex flex-col gap-1.5">
-                  {preloadedResearchBrief.stats.slice(0, 4).map((stat, i) => (
+                <div className="px-3 pb-2.5 flex flex-col gap-1.5">
+                  {preloadedResearchBrief.stats.slice(0, 3).map((stat, i) => (
                     <p key={i} className="text-[10px] leading-snug p-2 rounded-lg" style={{ background: '#F0F9FF', color: '#0369A1', border: '1px solid #BAE6FD' }}>
                       {stat}
                     </p>
                   ))}
-                  {preloadedResearchBrief.recommendedHook && (
-                    <p className="text-[10px] mt-1 leading-snug" style={{ color: '#6B7280' }}>
-                      Hook: <span style={{ color: '#1A1A2E', fontStyle: 'italic' }}>"{preloadedResearchBrief.recommendedHook.slice(0, 70)}{preloadedResearchBrief.recommendedHook.length > 70 ? '…' : ''}"</span>
-                    </p>
-                  )}
                 </div>
               )}
             </div>
           )}
 
-          {!insightsOpen ? (
-            <button
-              onClick={() => setInsightsOpen(true)}
-              className="text-left rounded-[14px] p-3.5"
-              style={{ background: 'white', border: '1.5px dashed #D4CEFF' }}
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Content signal (compact) */}
+          {authScore?.signal && !authScore.signal.readyToPost && (
+            <div className="mx-3 mb-2 flex-shrink-0">
+              <div className="rounded-xl px-3 py-2.5" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.20)' }}>
+                <p className="text-[10px] font-bold mb-1.5" style={{ color: '#92400E' }}>
+                  {authScore.signal.issues.length} thing{authScore.signal.issues.length !== 1 ? 's' : ''} to check
+                </p>
+                {authScore.signal.issues.slice(0, 2).map((issue, i) => (
+                  <p key={i} className="text-[10px] leading-snug mb-1" style={{ color: '#B45309' }}>
+                    <AlertTriangle size={9} className="inline mr-1" style={{ verticalAlign: 'middle' }} />
+                    {issue.suggestion}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Aria free-text input */}
+          <div className="px-3 pb-3 flex-shrink-0">
+            {isRefining ? (
+              <div className="rounded-xl px-3 py-3 flex flex-col items-center gap-2" style={{ background: 'rgba(124,92,252,0.06)', border: '1.5px solid #D4CEFF' }}>
+                <AriaClockSpinner />
+                <p className="text-[11px] font-semibold text-center animate-pulse" style={{ color: '#7C5CFC' }} key={ariaThinkingIdx}>
+                  {ARIA_THINKING_MSGS[ariaThinkingIdx]}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl overflow-hidden" style={{ border: '1.5px solid #EDE8FF' }}>
+                <div className="flex items-center gap-1.5 px-2.5 pt-2.5 pb-1">
+                  <Sparkles size={12} style={{ color: '#7C5CFC', flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    value={ariaInput}
+                    onChange={e => setAriaInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleAriaRefine(); }}
+                    placeholder="Ask Aria anything..."
+                    className="flex-1 min-w-0 text-[12px] bg-transparent outline-none"
+                    style={{ color: '#1A1A2E' }}
+                  />
+                </div>
+                <div className="flex items-center gap-1 px-2.5 pb-2">
+                  <span className="text-[10px]" style={{ color: '#C4BAF0' }}>e.g. make it shorter, add a hook, change the ending</span>
+                  <button
+                    onClick={() => handleAriaRefine()}
+                    disabled={!ariaInput.trim() || isRefining || !content.trim()}
+                    className="ml-auto w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+                    style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
+                  >
+                    <Send size={10} color="white" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── CENTER: LinkedIn-style editor ── */}
+        <div className="flex-1 min-h-0 flex flex-col" style={{ background: '#F3F2EF' }}>
+
+          {/* Editor top controls: Edit/Preview + Desktop/Mobile */}
+          <div className="hidden md:flex items-center justify-between px-4 py-2 flex-shrink-0" style={{ background: '#F3F2EF' }}>
+            {/* Left: Edit / Preview tabs */}
+            <div className="flex items-center gap-0.5 p-0.5 rounded-xl" style={{ background: 'rgba(0,0,0,0.06)' }}>
+              <button
+                onClick={() => setPreviewMode('edit')}
+                className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
+                style={previewMode === 'edit'
+                  ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }
+                  : { color: '#6B7280' }}
+              >
+                <Pencil size={11} /> Edit
+              </button>
+              <button
+                onClick={() => setPreviewMode('preview')}
+                className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
+                style={previewMode === 'preview'
+                  ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }
+                  : { color: '#6B7280' }}
+              >
+                <Eye size={11} /> Preview
+              </button>
+            </div>
+
+            {/* Right: Desktop / Mobile toggle */}
+            <div className="flex items-center gap-0.5 p-0.5 rounded-xl" style={{ background: 'rgba(0,0,0,0.06)' }}>
+              <button
+                onClick={() => setDeviceView('desktop')}
+                className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
+                style={deviceView === 'desktop'
+                  ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }
+                  : { color: '#6B7280' }}
+              >
+                <Monitor size={11} /> Desktop
+              </button>
+              <button
+                onClick={() => setDeviceView('mobile')}
+                className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
+                style={deviceView === 'mobile'
+                  ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }
+                  : { color: '#6B7280' }}
+              >
+                <Smartphone size={11} /> Mobile
+              </button>
+            </div>
+          </div>
+
+          {/* LinkedIn card area */}
+          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center py-4 px-4">
+            <div
+              className="w-full"
+              style={{ maxWidth: deviceView === 'mobile' ? 400 : 600 }}
             >
-              <p className="text-[11px] font-bold flex items-center gap-1" style={{ color: '#7C5CFC' }}>
-                Show more tools <ChevronDown size={12} />
-              </p>
-              <p className="text-[10px] mt-1" style={{ color: '#9CA3AF' }}>Content score, best time to post, carousel</p>
-            </button>
-          ) : (
-            <>
-              <div className="bg-white rounded-[14px] p-3.5" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
-                <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Content Signal</p>
-                {authLocked ? (
-                  <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to enable AI content check.</p>
-                ) : authLoading ? (
-                  <div className="space-y-2">
-                    <div className="skeleton h-3 w-2/3 rounded" />
-                    <div className="skeleton h-5 w-full rounded" />
-                    <div className="skeleton h-3 w-full rounded" />
+              {/* LinkedIn-style post card */}
+              <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.10)', border: '1px solid rgba(0,0,0,0.08)' }}>
+
+                {/* Card header: avatar + name + Edit/Preview */}
+                <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                  {userAvatar
+                    ? <img src={userAvatar} alt={userName} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                    : <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>{userInitials || 'Y'}</div>
+                  }
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-bold leading-tight" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
+                    <p className="text-[11px]" style={{ color: '#888' }}>Just now · 🌐</p>
                   </div>
-                ) : authScore?.signal ? (
-                  <>
-                    <div className="flex items-center justify-between gap-2 mb-2.5">
-                      <span className="text-[13px] font-extrabold" style={{ color: '#1A1A2E' }}>{authScore.signal.label}</span>
-                      <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: authScore.signal.readyToPost ? '#10B981' : '#F59E0B', boxShadow: authScore.signal.readyToPost ? '0 0 0 3px rgba(16,185,129,0.2)' : '0 0 0 3px rgba(245,158,11,0.2)' }} />
+                  {/* Mobile edit/preview toggle in the card header */}
+                  <div className="md:hidden flex items-center gap-1 p-0.5 rounded-xl" style={{ background: '#F3F2EF' }}>
+                    <button onClick={() => setPreviewMode('edit')} className="text-[10px] font-bold px-2 py-1 rounded-lg" style={previewMode === 'edit' ? { background: 'white', color: '#1A1A2E' } : { color: '#888' }}>Edit</button>
+                    <button onClick={() => setPreviewMode('preview')} className="text-[10px] font-bold px-2 py-1 rounded-lg" style={previewMode === 'preview' ? { background: 'white', color: '#1A1A2E' } : { color: '#888' }}>Preview</button>
+                  </div>
+                </div>
+
+                {/* Content area */}
+                <div className="px-4 pb-3">
+                  {isGenerating ? (
+                    <div className="flex flex-col items-center justify-center gap-4 py-10">
+                      <GenerationTimer />
+                      <p className="text-[12px] font-semibold animate-fadeIn text-center" style={{ color: '#7C5CFC' }} key={loadingMsgIdx}>
+                        {LOADING_MESSAGES[loadingMsgIdx]}
+                      </p>
+                      <div className="w-full flex flex-col gap-2">
+                        {[0, 1, 2, 3].map(i => <div key={i} className="skeleton h-3.5 rounded" style={{ width: `${90 - i * 12}%` }} />)}
+                      </div>
                     </div>
-                    {authScore.signal.readyToPost ? (
-                      <p className="text-[11px] font-semibold" style={{ color: '#10B981' }}>✓ Looks ready to post</p>
-                    ) : (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase" style={{ color: '#F59E0B' }}>{authScore.signal.issues.length} thing{authScore.signal.issues.length !== 1 ? 's' : ''} to check</p>
-                        {authScore.signal.issues.map((issue, i) => (
-                          <div key={i} className="rounded-lg p-2" style={{ background: '#FFFBF0', border: '1px solid rgba(245,158,11,0.2)' }}>
-                            <p className="text-[10px] leading-snug mb-1" style={{ color: '#92400E' }}>
-                              <AlertTriangle size={9} className="inline mr-1" style={{ verticalAlign: 'middle' }} />
-                              {issue.message}
-                            </p>
-                            <p className="text-[9px] flex items-start gap-0.5" style={{ color: '#B45309' }}>
-                              <ChevronRight size={9} className="flex-shrink-0 mt-0.5" />
-                              {issue.suggestion}
-                            </p>
-                          </div>
-                        ))}
+                  ) : genError ? (
+                    <div className="flex flex-col items-center justify-center text-center gap-3 py-8">
+                      <p className="text-[13px]" style={{ color: '#F72585' }}>{genError}</p>
+                      <button onClick={() => handleGenerate()} className="text-[12px] font-bold px-4 py-2 rounded-full text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Try again</button>
+                    </div>
+                  ) : previewMode === 'preview' ? (
+                    <LinkedInPostPreview content={content} />
+                  ) : (
+                    <textarea
+                      ref={textareaRef}
+                      value={content}
+                      onChange={e => setContent(e.target.value)}
+                      onKeyDown={handleEditorKeyDown}
+                      className="w-full outline-none resize-none"
+                      style={{
+                        minHeight: 220,
+                        fontSize: 14,
+                        lineHeight: 1.8,
+                        color: '#1A1A2E',
+                        background: 'transparent',
+                        border: 'none',
+                      }}
+                      placeholder="Write your LinkedIn post here..."
+                    />
+                  )}
+                </div>
+
+                {/* Engagement strip */}
+                <div className="px-4 py-2.5 border-t" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}>
+                      <ThumbsUp size={14} /> Like
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}>
+                      <MessageCircle size={14} /> Comment
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}>
+                      <Repeat2 size={14} /> Repost
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom toolbar: formatting + emoji + char count */}
+                <div className="px-3 pb-3 flex items-center gap-1 flex-wrap border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+                  <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] font-extrabold transition-colors" style={{ color: '#444' }} onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>B</button>
+                  <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] italic transition-colors" style={{ color: '#444', fontStyle: 'italic' }} onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>I</button>
+                  <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] line-through transition-colors" style={{ color: '#444' }} onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>S</button>
+                  <div className="w-px h-5 mx-0.5" style={{ background: '#EDE8FF' }} />
+                  {/* Emoji picker */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setFormatMoreOpen(o => !o)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                      style={{ color: '#666' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                      title="Add emoji"
+                    >
+                      <Smile size={15} />
+                    </button>
+                    {formatMoreOpen && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-white rounded-xl p-2 z-20 modal-shadow" style={{ width: 200 }}>
+                        <div className="flex gap-1 flex-wrap mb-2 pb-2 border-b" style={{ borderColor: '#EDE8FF' }}>
+                          {['😀', '🔥', '💡', '✅', '📈', '🎯', '🚀', '👏', '💬', '⚡', '🙌', '✨', '💪', '🤔', '👀', '🎉'].map(e => (
+                            <button key={e} onClick={() => { insertAtCursor(e); setFormatMoreOpen(false); }} className="text-lg p-1 hover:bg-[rgba(124,92,252,0.06)] rounded-lg">{e}</button>
+                          ))}
+                        </div>
+                        <button onClick={() => { prefixLines(() => '• '); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
+                          <List size={12} /> Add bullets
+                        </button>
+                        <button onClick={() => { prefixLines(i => `${i + 1}. `); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
+                          <ListOrdered size={12} /> Add numbers
+                        </button>
+                        <button onClick={() => { insertAtCursor('\n───\n'); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
+                          <Minus size={12} /> Divider
+                        </button>
                       </div>
                     )}
-                  </>
-                ) : authScore ? (
-                  <p className="text-[11px] font-semibold" style={{ color: authScore.readyToPost ? '#10B981' : '#F59E0B' }}>
-                    {authScore.readyToPost ? '✓ Looks ready to post' : 'One thing to review'}
-                  </p>
-                ) : (
-                  <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Checking in a moment...</p>
-                )}
-              </div>
-              <div className="bg-white rounded-[14px] p-3.5" style={{ boxShadow: '0 4px 24px rgba(124,92,252,0.08)' }}>
-                <p className="text-[10px] font-bold uppercase mb-2.5" style={{ color: '#9CA3AF' }}>Best Time To Post</p>
-                {bestTimeLocked ? (
-                  <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Upgrade to Individual to see this.</p>
-                ) : bestTimeLoading ? (
-                  <div className="skeleton h-8 w-full rounded" />
-                ) : (
-                  <>
-                    <p className="text-[13px] font-bold flex items-center gap-1.5 mb-0.5" style={{ color: '#1A1A2E' }}>
-                      <Clock size={13} style={{ color: '#7C5CFC' }} />
-                      {bestTime?.recommendedDays?.[0] ? `${bestTime.recommendedDays[0].slice(0, 3)} ${bestTime.recommendedTimes?.[0] || ''}` : 'Not enough data yet'}
-                    </p>
-                    <p className="text-[10px] mb-2.5" style={{ color: '#9CA3AF' }}>Your audience peaks then</p>
-                    <button onClick={openSchedule} className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #EDE8FF' }}>Schedule</button>
-                  </>
-                )}
-              </div>
-              <div className="rounded-[14px] p-3.5 relative" style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(247,37,133,0.08) 100%)' }}>
-                <span className="absolute top-2.5 right-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'white', color: '#7C5CFC' }}>Recommended</span>
-                <LayoutGrid size={16} style={{ color: '#7C5CFC' }} className="mb-1.5" />
-                <p className="text-[12px] font-bold mb-1.5" style={{ color: '#7C5CFC' }}>Turn into carousel</p>
-                <p className="text-[10px] mb-2.5" style={{ color: '#6B7280', lineHeight: 1.5 }}>
-                  Carousels average 1,451 impressions vs 605 for images. This post has {estimateSlides(content)} perfect slides in it.
-                </p>
-                {carouselState === 'generating' ? (
-                  <p className="text-[11px] font-bold" style={{ color: '#10B981' }}>Carousel generating...</p>
-                ) : (
-                  <button onClick={handleCarousel} className="text-[11px] font-bold" style={{ color: '#7C5CFC' }}>
-                    Generate {estimateSlides(content)}-slide carousel →
+                  </div>
+                  <div className="w-px h-5 mx-0.5" style={{ background: '#EDE8FF' }} />
+                  <button
+                    onClick={handleHumanize}
+                    disabled={humanizing || !content.trim()}
+                    className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-40 transition-all"
+                    style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
+                  >
+                    <Wand2 size={11} />
+                    {humanizing ? 'Humanizing…' : 'Humanize'}
                   </button>
-                )}
+                  {/* Source trust badges */}
+                  {topSources.length > 0 && (
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      {topSources.map((s, i) => (
+                        <span key={i} title={s.excerpt} className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#F8F5FF', color: '#6B7280' }}>
+                          <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[8px] font-bold" style={{ background: scoreColor(s.trustScore) }}>{s.trustScore}</span>
+                          {s.domain}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <span className="ml-auto text-[11px] font-semibold" style={{ color: content.length > 2700 ? '#F72585' : '#9CA3AF' }}>{content.length} / 3,000</span>
+                </div>
+
+                {/* Char count bar */}
+                <div className="px-3 pb-3">
+                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: '#F0EEF8' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-150"
+                      style={{
+                        width: `${Math.min(100, (content.length / 3000) * 100)}%`,
+                        background: content.length > 2850 ? '#F72585' : content.length > 2400 ? '#F59E0B' : '#10B981',
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <button onClick={() => setInsightsOpen(false)} className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>Hide extra tools</button>
-            </>
-          )}
+
+              {/* Content signal + Best time (below card) */}
+              <div className="flex gap-3 mt-3">
+                {/* Content signal */}
+                <div className="flex-1 bg-white rounded-xl p-3" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.07)' }}>
+                  <p className="text-[9px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#9CA3AF' }}>Content Signal</p>
+                  {authLocked ? (
+                    <p className="text-[10px]" style={{ color: '#9CA3AF' }}>Upgrade to check.</p>
+                  ) : authLoading ? (
+                    <div className="skeleton h-4 w-3/4 rounded" />
+                  ) : authScore?.signal ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: authScore.signal.readyToPost ? '#10B981' : '#F59E0B', boxShadow: authScore.signal.readyToPost ? '0 0 0 3px rgba(16,185,129,0.20)' : '0 0 0 3px rgba(245,158,11,0.20)' }} />
+                      <span className="text-[11px] font-bold" style={{ color: '#1A1A2E' }}>{authScore.signal.label}</span>
+                    </div>
+                  ) : (
+                    <p className="text-[10px]" style={{ color: '#9CA3AF' }}>Checking...</p>
+                  )}
+                </div>
+
+                {/* Best time */}
+                <div className="flex-1 bg-white rounded-xl p-3" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.07)' }}>
+                  <p className="text-[9px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#9CA3AF' }}>Best Time</p>
+                  {bestTimeLocked ? (
+                    <p className="text-[10px]" style={{ color: '#9CA3AF' }}>Upgrade to see.</p>
+                  ) : bestTimeLoading ? (
+                    <div className="skeleton h-4 w-2/3 rounded" />
+                  ) : (
+                    <p className="text-[11px] font-bold flex items-center gap-1" style={{ color: '#1A1A2E' }}>
+                      <Clock size={11} style={{ color: '#7C5CFC' }} />
+                      {bestTime?.recommendedDays?.[0] ? `${bestTime.recommendedDays[0].slice(0, 3)} ${bestTime.recommendedTimes?.[0] || ''}` : 'Not enough data'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Carousel */}
+                <div className="flex-1 rounded-xl p-3 cursor-pointer" style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.10) 0%, rgba(247,37,133,0.10) 100%)', boxShadow: '0 1px 6px rgba(0,0,0,0.07)' }} onClick={handleCarousel}>
+                  <p className="text-[9px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#7C5CFC' }}>Carousel</p>
+                  <p className="text-[11px] font-bold" style={{ color: '#7C5CFC' }}>{estimateSlides(content)} slides</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Desktop bottom action bar ── */}
+          <div className="hidden md:flex bg-white border-t px-4 py-2.5 items-center gap-2 flex-shrink-0" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+            <button onClick={onBack} className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
+              <ArrowLeft size={12} /> Back
+            </button>
+            <button onClick={handleCopy} className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
+              <Copy size={12} /> Copy
+            </button>
+            <button onClick={handleSaveDraft} disabled={savingDraft} className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-full disabled:opacity-50" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
+              <Save size={12} /> {savingDraft ? 'Saving...' : 'Save draft'}
+            </button>
+            <div className="flex-1" />
+            <button onClick={openSchedule} className="flex items-center gap-1.5 text-[13px] font-bold px-4 py-2 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}>
+              <Calendar size={13} /> Schedule
+            </button>
+            <button
+              onClick={handlePublish}
+              disabled={publishing || isGenerating || !content.trim()}
+              className="flex items-center gap-1.5 text-[13px] font-bold text-white px-5 py-2 rounded-full disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #0A66C2 0%, #004182 100%)', boxShadow: '0 4px 14px rgba(10,102,194,0.35)' }}
+            >
+              {publishing ? 'Publishing...' : 'Post to LinkedIn'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── Mobile-only bottom bar ── */}
-      <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
-        {/* Mobile Hooks panel: slides up above the bottom bar */}
-        {hooksOpen && (
-          <div className="fixed inset-0 z-40 flex flex-col justify-end md:hidden" onClick={() => setHooksOpen(false)}>
-            <div className="mx-0 mb-[112px] mx-4 rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()} style={{ maxHeight: '60vh', overflowY: 'auto', boxShadow: '0 -4px 32px rgba(124,92,252,0.18)' }}>
-              <HookLibraryPanel
-                userId={userId}
-                userRole={userRole}
-                userDomain={userDomain}
-                onInsert={text => { insertHookTemplate(text); setHooksOpen(false); }}
-              />
-            </div>
-          </div>
-        )}
-        {/* Mobile CTAs panel */}
-        {ctasOpen && (
-          <div className="fixed inset-0 z-40 flex flex-col justify-end md:hidden" onClick={() => setCtasOpen(false)}>
-            <div className="mx-4 mb-[112px] bg-white rounded-2xl p-3 overflow-y-auto" onClick={e => e.stopPropagation()} style={{ maxHeight: '60vh', boxShadow: '0 -4px 32px rgba(124,92,252,0.18)' }}>
-              <p className="text-[10px] font-bold uppercase px-1 pb-2 mb-1 border-b" style={{ color: '#9CA3AF', borderColor: '#EDE8FF' }}>Call to action</p>
-              {CTA_TEMPLATES.map((c, i) => (
-                <button key={i} onClick={() => { insertAtCursor('\n\n' + c); setCtasOpen(false); }} className="block w-full text-left text-[13px] px-2 py-2.5 rounded-xl active:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* ── Mobile: editing area is full screen, toolbar at bottom ── */}
+      <div className="md:hidden flex-1 min-h-0 flex flex-col bg-white">
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          onKeyDown={handleEditorKeyDown}
+          className="flex-1 min-h-0 w-full outline-none resize-none px-4 py-3"
+          style={{ fontSize: 15, lineHeight: 1.8, color: '#1A1A2E', background: 'transparent', border: 'none' }}
+          placeholder="Your post appears here..."
+        />
+      </div>
 
-        {/* Formatting toolbar row */}
+      {/* Mobile bottom bar */}
+      <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
         <div className="flex items-center gap-0.5 px-3 py-2 border-b overflow-x-auto flex-shrink-0" style={{ borderColor: '#F0EEF8', scrollbarWidth: 'none' }}>
           <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] font-extrabold flex-shrink-0" style={{ color: '#1A1A2E' }}>B</button>
-          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] font-medium italic flex-shrink-0" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
-          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[14px] flex-shrink-0 line-through" style={{ color: '#1A1A2E' }}>S</button>
+          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] italic flex-shrink-0" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
+          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[14px] line-through flex-shrink-0" style={{ color: '#1A1A2E' }}>S</button>
           <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          <button
-            onClick={() => handleGenerate()}
-            disabled={isGenerating}
-            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50"
-            style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.07)' }}
-          >
-            <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} />
-            {isGenerating ? 'Writing...' : 'Redo'}
+          <button onClick={() => handleGenerate()} disabled={isGenerating} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50" style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.07)' }}>
+            <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} /> {isGenerating ? 'Writing...' : 'Redo'}
           </button>
           <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          <button
-            onClick={() => { setHooksOpen(o => !o); setCtasOpen(false); }}
-            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0"
-            style={{ color: '#7C5CFC', background: hooksOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}
-          >
-            Hooks
-          </button>
-          <button
-            onClick={() => { setCtasOpen(o => !o); setHooksOpen(false); }}
-            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0"
-            style={{ color: '#7C5CFC', background: ctasOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}
-          >
-            CTAs
-          </button>
+          <button onClick={() => { setHooksOpen(o => !o); setCtasOpen(false); }} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0" style={{ color: '#7C5CFC', background: hooksOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}>Hooks</button>
+          <button onClick={() => { setCtasOpen(o => !o); setHooksOpen(false); }} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0" style={{ color: '#7C5CFC', background: ctasOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}>CTAs</button>
           <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          <button
-            onClick={handleGenerateVariants}
-            disabled={generatingVariants || isGenerating}
-            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50"
-            style={{ color: '#7C5CFC', background: variantsOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}
-          >
+          <button onClick={handleGenerateVariants} disabled={generatingVariants || isGenerating} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50" style={{ color: '#7C5CFC', background: variantsOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}>
             <Layers size={11} /> 3 Styles
           </button>
-          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          <button
-            onClick={handleHumanize}
-            disabled={humanizing || !content.trim()}
-            className="flex items-center gap-1 text-[11px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-40"
-            style={{ background: 'rgba(124,92,252,0.07)', color: '#7C5CFC' }}
-          >
-            <Wand2 size={11} />
-            {humanizing ? 'Working…' : 'Humanize'}
-          </button>
         </div>
-
-        {/* Primary CTA row */}
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={handlePublish}
             disabled={publishing || isGenerating || !content.trim()}
-            className="flex-1 flex items-center justify-center gap-2 text-[14px] font-bold text-white py-3.5 rounded-2xl disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 6px 20px rgba(124,92,252,0.28)' }}
+            className="flex-1 flex items-center justify-center gap-2 text-[14px] font-bold text-white py-3 rounded-2xl disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #0A66C2 0%, #004182 100%)', boxShadow: '0 6px 20px rgba(10,102,194,0.30)' }}
           >
             {publishing ? 'Publishing...' : 'Post to LinkedIn'}
           </button>
-          <button
-            onClick={() => setMobileDrawerOpen(true)}
-            className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0"
-            style={{ border: '1.5px solid #EDE8FF', color: '#6B7280' }}
-            aria-label="More options"
-          >
+          <button onClick={() => setMobileDrawerOpen(true)} className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0" style={{ border: '1.5px solid #EDE8FF', color: '#6B7280' }}>
             <MoreHorizontal size={20} />
           </button>
         </div>
       </div>
 
-      {/* ── Desktop-only bottom action bar ── */}
-      <div className="hidden md:flex bg-white border-t px-6 py-3 flex-row items-center gap-2" style={{ borderColor: '#EDE8FF' }}>
-        <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={onBack} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
-            <ArrowLeft size={13} /> Back
-          </button>
-          <button onClick={handleCopy} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
-            <Copy size={13} /> Copy
-          </button>
-          <button onClick={handleSaveDraft} disabled={savingDraft} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full disabled:opacity-50" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
-            <Save size={13} /> {savingDraft ? 'Saving...' : 'Save draft'}
-          </button>
-          <button onClick={openSchedule} className="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
-            <Calendar size={13} /> Schedule
-          </button>
+      {/* Mobile Hooks panel */}
+      {hooksOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex flex-col justify-end" onClick={() => setHooksOpen(false)}>
+          <div className="mx-4 mb-[112px] rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()} style={{ maxHeight: '60vh', overflowY: 'auto', boxShadow: '0 -4px 32px rgba(124,92,252,0.18)' }}>
+            <HookLibraryPanel userId={userId} userRole={userRole} userDomain={userDomain} onInsert={text => { insertHookTemplate(text); setHooksOpen(false); }} />
+          </div>
         </div>
-        <div className="flex-1" />
-        <button
-          onClick={handlePublish}
-          disabled={publishing || isGenerating || !content.trim()}
-          className="flex items-center justify-center gap-1.5 text-[13px] font-bold text-white px-6 py-2.5 rounded-full disabled:opacity-50"
-          style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 4px 16px rgba(124,92,252,0.25)' }}
-        >
-          {publishing ? 'Publishing...' : 'Post to LinkedIn →'}
-        </button>
-      </div>
+      )}
 
-      {/* ── Mobile drawer (bottom sheet for secondary actions) ── */}
-      {mobileDrawerOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end animate-fadeIn" style={{ background: 'rgba(0,0,0,0.40)' }} onClick={() => setMobileDrawerOpen(false)}>
-          <div className="bg-white rounded-t-3xl px-5 pt-4 pb-8" onClick={e => e.stopPropagation()} style={{ maxHeight: '88vh', overflowY: 'auto' }}>
-            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: '#E5E7EB' }} />
+      {/* Mobile CTAs panel */}
+      {ctasOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex flex-col justify-end" onClick={() => setCtasOpen(false)}>
+          <div className="mx-4 mb-[112px] bg-white rounded-2xl p-3 overflow-y-auto" onClick={e => e.stopPropagation()} style={{ maxHeight: '60vh', boxShadow: '0 -4px 32px rgba(124,92,252,0.18)' }}>
+            <p className="text-[10px] font-bold uppercase px-1 pb-2 mb-1 border-b" style={{ color: '#9CA3AF', borderColor: '#EDE8FF' }}>Call to action</p>
+            {CTA_TEMPLATES.map((c, i) => (
+              <button key={i} onClick={() => { insertAtCursor('\n\n' + c); setCtasOpen(false); }} className="block w-full text-left text-[13px] px-2 py-2.5 rounded-xl active:bg-[rgba(124,92,252,0.06)]" style={{ color: '#1A1A2E' }}>{c}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile AI panel (slide-up sheet) */}
+      {aiPanelOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end animate-fadeIn" style={{ background: 'rgba(0,0,0,0.40)' }} onClick={() => setAiPanelOpen(false)}>
+          <div className="bg-white rounded-t-3xl px-4 pt-4 pb-8" onClick={e => e.stopPropagation()} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: '#E5E7EB' }} />
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}>
+                <Sparkles size={12} color="white" />
+              </div>
+              <span className="text-[14px] font-extrabold" style={{ color: '#1A1A2E' }}>AI Edit</span>
+            </div>
+
+            {/* Quick actions */}
+            <div className="flex flex-col gap-2 mb-4">
+              {QUICK_ACTIONS.map(action => (
+                <button
+                  key={action.label}
+                  onClick={() => { handleAriaRefine(action.instruction); setAiPanelOpen(false); }}
+                  disabled={isRefining || !content.trim()}
+                  className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl disabled:opacity-40"
+                  style={{ background: 'rgba(124,92,252,0.06)', border: '1px solid rgba(124,92,252,0.12)' }}
+                >
+                  <span className="text-[18px]">{action.emoji}</span>
+                  <span className="text-[13px] font-semibold" style={{ color: '#1A1A2E' }}>{action.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Make it pills */}
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Make it...</p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {MAKE_IT_PILLS.map(pill => (
+                <button
+                  key={pill.label}
+                  onClick={() => { handleAriaRefine(pill.instruction); setAiPanelOpen(false); }}
+                  disabled={isRefining || !content.trim()}
+                  className="text-[12px] font-semibold px-3 py-1.5 rounded-full disabled:opacity-40"
+                  style={{ background: '#F4F0FF', color: '#7C5CFC' }}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
 
             {/* Length */}
-            <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#9CA3AF' }}>Post length</p>
-            <div className="flex gap-2 mb-5">
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Post length</p>
+            <div className="flex gap-2 mb-4">
               {LENGTH_OPTIONS.map(l => (
                 <button
                   key={l.id}
-                  onClick={() => { handleLengthAndRegenerate(l.id); setMobileDrawerOpen(false); }}
+                  onClick={() => { handleLengthAndRegenerate(l.id); setAiPanelOpen(false); }}
                   disabled={isGenerating}
-                  className="flex-1 py-2.5 rounded-xl text-[12px] font-bold transition-all disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50"
                   style={selectedLength === l.id
                     ? { background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white' }
                     : { color: '#6B7280', border: '1.5px solid #EDE8FF' }}
@@ -1079,66 +1252,49 @@ export default function Phase2Editor({
               ))}
             </div>
 
-            {/* Research brief (mobile) */}
-            {preloadedResearchBrief && preloadedResearchBrief.stats.length > 0 && (
-              <div className="mb-5">
-                <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#0284C7' }}>Research used</p>
-                <div className="flex flex-col gap-1.5">
-                  {preloadedResearchBrief.stats.slice(0, 3).map((stat, i) => (
-                    <p key={i} className="text-[11px] leading-snug p-2.5 rounded-xl" style={{ background: '#F0F9FF', color: '#0369A1', border: '1px solid #BAE6FD' }}>
-                      {stat}
-                    </p>
-                  ))}
-                </div>
+            {/* Aria input */}
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Ask Aria</p>
+            {isRefining ? (
+              <div className="rounded-xl px-4 py-4 flex flex-col items-center gap-3 mb-4" style={{ background: 'rgba(124,92,252,0.06)', border: '1.5px solid #D4CEFF' }}>
+                <AriaClockSpinner />
+                <p className="text-[12px] font-semibold text-center" style={{ color: '#7C5CFC' }} key={ariaThinkingIdx}>
+                  {ARIA_THINKING_MSGS[ariaThinkingIdx]}
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 mb-4" style={{ border: '1.5px solid #EDE8FF' }}>
+                <Sparkles size={15} style={{ color: '#7C5CFC', flexShrink: 0 }} />
+                <input
+                  type="text"
+                  value={ariaInput}
+                  onChange={e => setAriaInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim()) { handleAriaRefine(); setAiPanelOpen(false); } }}
+                  placeholder="Shorten it, add a stat, change the ending..."
+                  className="flex-1 text-[13px] bg-transparent outline-none"
+                  style={{ color: '#1A1A2E' }}
+                />
+                <button
+                  onClick={() => { if (ariaInput.trim()) { handleAriaRefine(); setAiPanelOpen(false); } }}
+                  disabled={!ariaInput.trim()}
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+                  style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
+                >
+                  <Send size={13} color="white" />
+                </button>
               </div>
             )}
 
-            {/* Aria refine */}
-            <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#9CA3AF' }}>Refine with Aria</p>
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 mb-5" style={{ border: '1.5px solid #EDE8FF' }}>
-              <Sparkles size={14} style={{ color: '#7C5CFC', flexShrink: 0 }} />
-              <input
-                type="text"
-                value={ariaInput}
-                onChange={e => setAriaInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim()) { handleAriaRefine(); setMobileDrawerOpen(false); } }}
-                placeholder="Shorten it, add a stat, change the ending..."
-                className="flex-1 text-[13px] bg-transparent outline-none"
-                style={{ color: '#1A1A2E' }}
-              />
-              <button
-                onClick={() => { if (ariaInput.trim()) { handleAriaRefine(); setMobileDrawerOpen(false); } }}
-                disabled={ariaRefining || !ariaInput.trim()}
-                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
-              >
-                <Send size={12} color="white" />
-              </button>
-            </div>
-
-            {/* Add context */}
-            <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#9CA3AF' }}>Add context (optional)</p>
-            <input
-              type="text"
-              value={sparkInput}
-              onChange={e => setSparkInput(e.target.value)}
-              placeholder="A URL, quote, or what inspired this post..."
-              className="w-full text-[13px] px-3 py-2.5 rounded-xl mb-5 outline-none"
-              style={{ border: '1.5px solid #EDE8FF', color: '#1A1A2E' }}
-            />
-
-            {/* Actions grid */}
-            <p className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Actions</p>
+            {/* Secondary actions */}
             <div className="grid grid-cols-3 gap-2.5">
-              <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl active:scale-95 transition-transform" style={{ border: '1.5px solid #EDE8FF' }}>
+              <button onClick={() => { handleCopy(); setAiPanelOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Copy size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Copy</span>
               </button>
-              <button onClick={() => { handleSaveDraft(); setMobileDrawerOpen(false); }} disabled={savingDraft} className="flex flex-col items-center gap-2 py-4 rounded-2xl active:scale-95 transition-transform disabled:opacity-50" style={{ border: '1.5px solid #EDE8FF' }}>
+              <button onClick={() => { handleSaveDraft(); setAiPanelOpen(false); }} disabled={savingDraft} className="flex flex-col items-center gap-2 py-4 rounded-2xl disabled:opacity-50" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Save size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>{savingDraft ? 'Saving…' : 'Save'}</span>
               </button>
-              <button onClick={() => { openSchedule(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl active:scale-95 transition-transform" style={{ border: '1.5px solid #EDE8FF' }}>
+              <button onClick={() => { openSchedule(); setAiPanelOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Calendar size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
               </button>
@@ -1147,7 +1303,31 @@ export default function Phase2Editor({
         </div>
       )}
 
-      {/* Schedule modal: fixed overlay, triggered from both the bottom bar and Best Time panel */}
+      {/* Mobile more options drawer */}
+      {mobileDrawerOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end animate-fadeIn" style={{ background: 'rgba(0,0,0,0.40)' }} onClick={() => setMobileDrawerOpen(false)}>
+          <div className="bg-white rounded-t-3xl px-5 pt-4 pb-8" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: '#E5E7EB' }} />
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Options</p>
+            <div className="grid grid-cols-3 gap-2.5">
+              <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
+                <Copy size={18} style={{ color: '#6B7280' }} />
+                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Copy</span>
+              </button>
+              <button onClick={() => { handleSaveDraft(); setMobileDrawerOpen(false); }} disabled={savingDraft} className="flex flex-col items-center gap-2 py-4 rounded-2xl disabled:opacity-50" style={{ border: '1.5px solid #EDE8FF' }}>
+                <Save size={18} style={{ color: '#6B7280' }} />
+                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>{savingDraft ? 'Saving…' : 'Save'}</span>
+              </button>
+              <button onClick={() => { openSchedule(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
+                <Calendar size={18} style={{ color: '#6B7280' }} />
+                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule modal */}
       {scheduleOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-fadeIn" onClick={() => setScheduleOpen(false)}>
           <div className="bg-white rounded-2xl p-5 w-full max-w-xs shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -1161,33 +1341,13 @@ export default function Phase2Editor({
               </div>
             )}
             <label className="block text-[11px] font-bold mb-1" style={{ color: '#6B7280' }}>Date</label>
-            <input
-              type="date"
-              value={scheduleDate}
-              min={new Date().toISOString().slice(0, 10)}
-              onChange={e => setScheduleDate(e.target.value)}
-              className="w-full text-[13px] px-3 py-2 rounded-xl mb-3"
-              style={{ border: '1.5px solid #EDE8FF' }}
-            />
+            <input type="date" value={scheduleDate} min={new Date().toISOString().slice(0, 10)} onChange={e => setScheduleDate(e.target.value)} className="w-full text-[13px] px-3 py-2 rounded-xl mb-3" style={{ border: '1.5px solid #EDE8FF' }} />
             <label className="block text-[11px] font-bold mb-1" style={{ color: '#6B7280' }}>Time</label>
-            <input
-              type="time"
-              value={scheduleTime}
-              onChange={e => setScheduleTime(e.target.value)}
-              className="w-full text-[13px] px-3 py-2 rounded-xl mb-4"
-              style={{ border: '1.5px solid #EDE8FF' }}
-            />
-            <button
-              onClick={handleConfirmSchedule}
-              disabled={scheduling || !scheduleDate || !scheduleTime}
-              className="w-full text-[13px] font-bold text-white py-2.5 rounded-full disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
-            >
+            <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full text-[13px] px-3 py-2 rounded-xl mb-4" style={{ border: '1.5px solid #EDE8FF' }} />
+            <button onClick={handleConfirmSchedule} disabled={scheduling || !scheduleDate || !scheduleTime} className="w-full text-[13px] font-bold text-white py-2.5 rounded-full disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
               {scheduling ? 'Scheduling...' : 'Confirm schedule'}
             </button>
-            <p className="text-[10px] text-center mt-2" style={{ color: '#9CA3AF' }}>
-              Posts publish within the hour of your selected time.
-            </p>
+            <p className="text-[10px] text-center mt-2" style={{ color: '#9CA3AF' }}>Posts publish within the hour of your selected time.</p>
           </div>
         </div>
       )}
@@ -1195,9 +1355,44 @@ export default function Phase2Editor({
   );
 }
 
-// Indeterminate spinner + live elapsed-seconds readout for the generation
-// waits, which run anywhere from ~2s to ~15s depending on length/variant
-// count. No fake progress-to-100%, since we don't know the real duration.
+// Spinning clock animation used in Aria's loading state
+function AriaClockSpinner() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(i => (i + 1) % 12), 200);
+    return () => clearInterval(t);
+  }, []);
+  const handAngle = tick * 30;
+  return (
+    <div className="relative" style={{ width: 44, height: 44 }}>
+      <svg width={44} height={44} viewBox="0 0 44 44">
+        <circle cx={22} cy={22} r={19} stroke="rgba(124,92,252,0.20)" strokeWidth={3} fill="none" />
+        <circle cx={22} cy={22} r={19} stroke="url(#ariaGrad)" strokeWidth={3} fill="none" strokeDasharray={120} strokeDashoffset={80} strokeLinecap="round" />
+        <line
+          x1={22} y1={22}
+          x2={22 + 11 * Math.sin((handAngle * Math.PI) / 180)}
+          y2={22 - 11 * Math.cos((handAngle * Math.PI) / 180)}
+          stroke="#7C5CFC" strokeWidth={2} strokeLinecap="round"
+        />
+        <line
+          x1={22} y1={22}
+          x2={22 + 7 * Math.sin(((handAngle * 12) * Math.PI) / 180)}
+          y2={22 - 7 * Math.cos(((handAngle * 12) * Math.PI) / 180)}
+          stroke="#F72585" strokeWidth={2.5} strokeLinecap="round"
+        />
+        <circle cx={22} cy={22} r={2} fill="#7C5CFC" />
+        <defs>
+          <linearGradient id="ariaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#7C5CFC" />
+            <stop offset="100%" stopColor="#F72585" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+// Generation spinner (used while post is streaming)
 function GenerationTimer({ label }: { label?: string }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -1210,10 +1405,7 @@ function GenerationTimer({ label }: { label?: string }) {
       <div className="relative" style={{ width: 56, height: 56 }}>
         <svg width={56} height={56} className="animate-spin" style={{ animationDuration: '1.1s' }}>
           <circle cx={28} cy={28} r={22} stroke="rgba(124,92,252,0.12)" strokeWidth={4} fill="none" />
-          <circle
-            cx={28} cy={28} r={22} stroke="url(#genTimerGradient)" strokeWidth={4} fill="none"
-            strokeDasharray={138} strokeDashoffset={95} strokeLinecap="round"
-          />
+          <circle cx={28} cy={28} r={22} stroke="url(#genTimerGradient)" strokeWidth={4} fill="none" strokeDasharray={138} strokeDashoffset={95} strokeLinecap="round" />
           <defs>
             <linearGradient id="genTimerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#7C5CFC" />
@@ -1230,132 +1422,25 @@ function GenerationTimer({ label }: { label?: string }) {
   );
 }
 
-function ToolBtn({ icon: Icon, onClick, label }: { icon: React.ComponentType<any>; onClick: () => void; label: string }) {
-  return (
-    <button onClick={onClick} aria-label={label} title={label} className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors" style={{ color: '#6B7280' }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,92,252,0.06)'; e.currentTarget.style.color = '#7C5CFC'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280'; }}
-    >
-      <Icon size={14} />
-    </button>
-  );
-}
-
-// Simulates a LinkedIn feed post card with the real "see more" expand/collapse
-// and a character count progress bar at the bottom.
-function LinkedInPreviewCard({
-  userName, userInitials, userAvatar, content, cutoff,
-}: { userName: string; userInitials: string; userAvatar: string; content: string; cutoff: number }) {
+// Read-only LinkedIn post preview (used in Preview mode)
+function LinkedInPostPreview({ content }: { content: string }) {
   const [expanded, setExpanded] = React.useState(false);
-  const LIMIT = 3000;
-  const pct = Math.min(100, (content.length / LIMIT) * 100);
-  const overLimit = content.length > LIMIT;
-  const needsSeeMore = content.length > cutoff;
+  const CUTOFF = 210;
+  const needsSeeMore = content.length > CUTOFF;
+  const visibleText = (!needsSeeMore || expanded) ? content : content.slice(0, CUTOFF);
 
-  const visibleText = (!needsSeeMore || expanded) ? content : content.slice(0, cutoff);
-
-  // Bar color: green up to 80%, amber 80-95%, red 95%+
-  const barColor = pct >= 95 ? '#F72585' : pct >= 80 ? '#F59E0B' : '#10B981';
-
+  if (!content.trim()) {
+    return <p className="text-[13px] italic py-4" style={{ color: '#C4C4C4' }}>Your post will appear here as you write...</p>;
+  }
   return (
-    <div className="bg-white rounded-[14px] flex-shrink-0 w-[210px] md:w-auto snap-start overflow-hidden" style={{ boxShadow: '0 2px 12px rgba(124,92,252,0.10)', border: '1px solid #EDE8FF' }}>
-      {/* Card header */}
-      <div className="px-3 pt-3 pb-2">
-        <p className="text-[9px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Preview</p>
-        <div className="flex items-center gap-2 mb-2">
-          {userAvatar
-            ? <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-            : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>{userInitials || 'Y'}</div>
-          }
-          <div className="min-w-0">
-            <p className="text-[11.5px] font-bold truncate leading-tight" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
-            <p className="text-[9px] leading-tight" style={{ color: '#9CA3AF' }}>Just now · 🌐</p>
-          </div>
-        </div>
-
-        {/* Post text */}
-        {content.trim() ? (
-          <div>
-            <p className="text-[11px] whitespace-pre-wrap break-words leading-relaxed" style={{ color: '#1A1A2E' }}>
-              {visibleText}
-            </p>
-            {needsSeeMore && (
-              <button
-                onClick={() => setExpanded(e => !e)}
-                className="text-[11px] font-semibold mt-0.5"
-                style={{ color: '#0a66c2' }}
-              >
-                {expanded ? 'see less' : '...see more'}
-              </button>
-            )}
-          </div>
-        ) : (
-          <p className="text-[11px] italic" style={{ color: '#C4C4C4' }}>Your post will appear here as you type...</p>
-        )}
-      </div>
-
-      {/* Engagement strip */}
-      <div className="px-3 pb-2.5">
-        <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: '#F0EEF8' }}>
-          <span className="flex items-center gap-1 text-[10px]" style={{ color: '#9CA3AF' }}>
-            <ThumbsUp size={11} /> Like
-          </span>
-          <span className="flex items-center gap-1 text-[10px]" style={{ color: '#9CA3AF' }}>
-            <MessageCircle size={11} /> Comment
-          </span>
-          <span className="flex items-center gap-1 text-[10px]" style={{ color: '#9CA3AF' }}>
-            <Repeat2 size={11} /> Repost
-          </span>
-        </div>
-      </div>
-
-      {/* Character count bar */}
-      <div className="px-3 pb-3">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[9px] font-semibold" style={{ color: overLimit ? '#F72585' : '#9CA3AF' }}>
-            {overLimit ? `${content.length - LIMIT} over limit` : `${content.length} / ${LIMIT}`}
-          </span>
-          {needsSeeMore && !expanded && (
-            <span className="text-[9px] font-semibold" style={{ color: '#7C5CFC' }}>
-              Hook: {cutoff} chars
-            </span>
-          )}
-        </div>
-        <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: '#F0EEF8' }}>
-          <div
-            className="h-full rounded-full transition-all duration-150"
-            style={{ width: `${pct}%`, background: barColor }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Format button: shows a styled-text preview and a keyboard shortcut tooltip.
-function FormatBtn({ icon: Icon, onClick, label, shortcut, preview }: {
-  icon: React.ComponentType<any>; onClick: () => void; label: string; shortcut: string; preview: string;
-}) {
-  const [hov, setHov] = React.useState(false);
-  return (
-    <div className="relative">
-      <button
-        onClick={onClick}
-        aria-label={`${label} (${shortcut})`}
-        onMouseEnter={() => setHov(true)}
-        onMouseLeave={() => setHov(false)}
-        className="h-7 px-2 rounded-lg flex items-center gap-1 transition-colors text-[13px] font-semibold"
-        style={{ color: '#6B7280' }}
-        onMouseDown={e => { e.currentTarget.style.background = 'rgba(124,92,252,0.10)'; }}
-        onMouseUp={e => { e.currentTarget.style.background = hov ? 'rgba(124,92,252,0.06)' : 'transparent'; e.currentTarget.style.color = '#7C5CFC'; }}
-      >
-        <span style={{ fontFamily: 'inherit' }}>{preview}</span>
-      </button>
-      {hov && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap pointer-events-none z-50"
-          style={{ background: '#1A1A2E', color: 'white' }}>
-          {label} <span style={{ opacity: 0.6 }}>{shortcut}</span>
-        </div>
+    <div>
+      <p className="text-[14px] whitespace-pre-wrap break-words leading-relaxed" style={{ color: '#1A1A2E' }}>
+        {visibleText}
+      </p>
+      {needsSeeMore && (
+        <button onClick={() => setExpanded(e => !e)} className="text-[13px] font-semibold mt-0.5" style={{ color: '#0a66c2' }}>
+          {expanded ? 'see less' : '...see more'}
+        </button>
       )}
     </div>
   );

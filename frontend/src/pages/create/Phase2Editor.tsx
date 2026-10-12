@@ -27,9 +27,9 @@ const LOADING_MESSAGES = [
 ];
 
 const VARIANT_STYLES = [
-  { styleId: 'storyteller', label: 'Storyteller', emoji: '📖' },
-  { styleId: 'contrarian', label: 'Contrarian', emoji: '🔥' },
-  { styleId: 'analyst', label: 'Analyst', emoji: '📊' },
+  { styleId: 'storyteller', label: 'Tell a story', emoji: '📖' },
+  { styleId: 'contrarian', label: 'Challenge the norm', emoji: '🔥' },
+  { styleId: 'analyst', label: 'Lead with data', emoji: '📊' },
 ] as const;
 
 // Mirrors backend/lib/writingStyles.ts WRITING_STYLES ids. Used to build real

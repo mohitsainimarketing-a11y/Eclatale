@@ -29,6 +29,15 @@ const STYLE_ACCENT: Record<string, string> = {
   Insight: '#8B5CF6',
 };
 
+const STYLE_LABEL: Record<string, string> = {
+  Contrarian: 'Challenge the norm',
+  Storyteller: 'Tell a story',
+  'Data-driven': 'Lead with data',
+  Insider: 'Behind the scenes',
+  Teacher: 'Step by step',
+  Motivator: 'Inspire action',
+};
+
 function AngleCard({ angle, selected, onClick }: { angle: Angle; selected: boolean; onClick: () => void }) {
   const PerfIcon = PERF_ICONS[angle.performanceIcon] || TrendingUp;
   const accent = STYLE_ACCENT[angle.style] || '#7C5CFC';
@@ -68,7 +77,7 @@ function AngleCard({ angle, selected, onClick }: { angle: Angle; selected: boole
               className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
               style={{ background: angle.badgeColor, color: angle.badgeTextColor }}
             >
-              {angle.styleEmoji} {angle.style}
+              {angle.styleEmoji} {STYLE_LABEL[angle.style] || angle.style}
             </span>
             {angle.performanceStat && (
               <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold truncate" style={{ color: angle.performanceColor }}>

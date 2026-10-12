@@ -30,7 +30,7 @@ import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, NO_DASH_RULE, lengthIns
 import { extractPdfText, extractDocxText, extractCsvSummary, truncateForPrompt } from '../lib/resourceParsing';
 import {
   extractClientIp, checkToolRateLimit, logToolUsage,
-  generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs, analyzeLinkedInPost, generateComments,
+  generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs, analyzeLinkedInPost, generateComments, generateLinkedInDMs, generateHashtags,
 } from '../lib/freeTools';
 import { getIndustryIntelligence } from '../lib/industryIntelligence';
 import { getHookLibrary } from '../lib/hookLibrary';
@@ -925,6 +925,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               Math.min(5, Math.max(1, Number(body.count) || 5)),
             );
             return res.json({ comments });
+          }
+          case 'linkedin-dm-writer': {
+            const dms = await generateLinkedInDMs(
+              anthropic,
+              String(body.recipientRole || ''),
+              String(body.yourRole || ''),
+              String(body.goal || 'Connect'),
+              String(body.context || ''),
+            );
+            return res.json({ dms });
+          }
+          case 'hashtag-generator': {
+            const result = await generateHashtags(anthropic, String(body.topic || ''));
+            return res.json(result);
           }
           default:
             return res.status(400).json({ error: 'Unknown tool' });

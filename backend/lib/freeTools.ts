@@ -210,6 +210,88 @@ export async function generateCTAs(anthropic: Anthropic, topic: string, goal: st
   return parseJsonArray(text).slice(0, 5).map(String);
 }
 
+// ── Tool 13: Hashtag Generator ───────────────────────────────────────────────
+
+export async function generateHashtags(anthropic: Anthropic, topic: string): Promise<{ high: string[]; mid: string[]; niche: string[] }> {
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 600,
+    system: getDateContext(),
+    messages: [{
+      role: 'user',
+      content: `Generate LinkedIn hashtags for this topic: "${topic}".
+
+Return exactly this JSON shape — no prose, no markdown:
+{
+  "high": [5 hashtags with 1M+ followers each, broad topics],
+  "mid": [7 hashtags with 100K-1M followers, industry or function specific],
+  "niche": [8 hashtags with under 100K followers, highly specific or community tags]
+}
+
+Rules:
+- All lowercase, no spaces, no punctuation except the # prefix
+- Real LinkedIn hashtags that actually exist
+- Relevant to the topic, not generic filler
+- Do not repeat across tiers`,
+    }],
+  });
+  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
+  const parsed = parseJsonObject(text);
+  return {
+    high: Array.isArray(parsed.high) ? parsed.high.slice(0, 7).map(String) : [],
+    mid: Array.isArray(parsed.mid) ? parsed.mid.slice(0, 9).map(String) : [],
+    niche: Array.isArray(parsed.niche) ? parsed.niche.slice(0, 10).map(String) : [],
+  };
+}
+
+// ── Tool 12: LinkedIn DM Writer ──────────────────────────────────────────────
+
+export async function generateLinkedInDMs(
+  anthropic: Anthropic,
+  recipientRole: string,
+  yourRole: string,
+  goal: string,
+  context: string,
+): Promise<string[]> {
+  const goalGuides: Record<string, string> = {
+    Connect: 'A warm connection request. 1-2 sentences. No pitch. Reference something real about them or their work.',
+    Collaborate: 'Propose working together on something specific. Be concrete about what you bring and what you want.',
+    Pitch: 'A soft sell that leads with their problem, not your solution. Under 5 sentences.',
+    'Get advice': 'Ask for one specific, answerable question. Show you have done your homework. Make it easy to say yes.',
+    'Follow up': 'Reference a prior interaction (post, comment, event). Be brief, friendly, and have a clear ask.',
+  };
+  const guide = goalGuides[goal] || goalGuides['Connect'];
+
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 900,
+    system: getDateContext(),
+    messages: [{
+      role: 'user',
+      content: `You are a LinkedIn outreach expert. Write 3 different DM variations for the scenario below.
+
+SENDER: ${yourRole || 'a professional'}
+RECIPIENT: ${recipientRole || 'a LinkedIn connection'}
+GOAL: ${goal}
+GOAL GUIDE: ${guide}
+CONTEXT: ${context || 'no additional context'}
+
+Rules for every DM:
+- Start with their name placeholder like "Hi [Name],"
+- Sound like a real person wrote it, not a template
+- Never open with "I hope this message finds you well"
+- Never use: ${BANNED_WORDS}
+- ${NO_DASH_RULE}
+- Under 120 words each
+- Each variation should feel meaningfully different in approach
+
+Return ONLY a JSON array of 3 DM strings. No prose, no markdown fences.`,
+    }],
+  });
+  const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
+  return parseJsonArray(text).slice(0, 3).map(String);
+}
+
 // ── Tool 11: Comment Generator ───────────────────────────────────────────────
 
 export async function generateComments(

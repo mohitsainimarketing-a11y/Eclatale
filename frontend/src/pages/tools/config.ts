@@ -96,6 +96,22 @@ export const TOOLS: ToolConfig[] = [
     description: "Commenting is the fastest way to grow on LinkedIn, but most comments are hollow. Paste any post, pick a style (Insightful, Question, Agreement, Contrarian, or Story), and get 5 specific, substantive comments you can post in seconds. Each one is written to sound like you, not like AI.",
     seoDescription: 'Free LinkedIn comment generator: get 5 specific, substantive comments for any post. Pick your style, no signup required.',
   },
+  {
+    slug: 'linkedin-dm-writer',
+    name: 'LinkedIn DM Writer',
+    emoji: '✉️',
+    shortDesc: 'Write cold DMs that get replies. 3 variations for any goal.',
+    description: 'Most cold DMs get ignored because they sound like templates. Describe who you are, who you are messaging, and your goal. Get 3 different DM variations, each with a different approach, all under 120 words, none starting with "I hope this message finds you well."',
+    seoDescription: 'Free LinkedIn DM writer: get 3 cold outreach variations for any goal. Sounds human, gets replies. No signup required.',
+  },
+  {
+    slug: 'hashtag-generator',
+    name: 'Hashtag Generator',
+    emoji: '#️⃣',
+    shortDesc: 'Find the right hashtags. Mix of reach, niche, and community tags.',
+    description: 'The wrong hashtags hurt more than they help. Paste your post or describe your topic and get 15-20 hashtags split into three tiers: high-reach (1M+ followers), mid-range (100K-1M), and niche (under 100K). The mix that actually gets you found.',
+    seoDescription: 'Free LinkedIn hashtag generator: get a 3-tier mix of reach, mid-range, and niche hashtags for any post. No signup required.',
+  },
 ];
 
 export function getTool(slug: string): ToolConfig | undefined {

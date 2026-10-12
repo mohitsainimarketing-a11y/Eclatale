@@ -490,6 +490,28 @@ export default function Dashboard() {
             </div>
           </div>}
 
+          {/* Free tools strip */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-brand-dark">Free tools</p>
+              <a href="/tools" className="text-[11px] font-semibold text-brand-purple hover:underline">See all 14 →</a>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {([
+                { label: 'Comment Generator', href: '/tools/comment-generator', icon: '💬' },
+                { label: 'DM Writer', href: '/tools/linkedin-dm-writer', icon: '✉️' },
+                { label: 'Hashtag Generator', href: '/tools/hashtag-generator', icon: '#' },
+                { label: 'Content Series', href: '/tools/content-series-generator', icon: '📅' },
+              ] as { label: string; href: string; icon: string }[]).map(t => (
+                <a key={t.href} href={t.href}
+                  className="card p-3 flex items-center gap-2.5 hover:border-brand-purple/30 hover:shadow-sm transition-all group">
+                  <span className="text-lg flex-shrink-0">{t.icon}</span>
+                  <span className="text-xs font-semibold text-brand-dark group-hover:text-brand-purple leading-tight">{t.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
           {/* Upgrade banner */}
           {overview?.subscriptionTier === 'free' && (
             <a href="/pricing" className="block rounded-2xl p-5 md:p-6 text-white relative overflow-hidden group"

@@ -6,6 +6,34 @@ chrome.runtime.onInstalled.addListener(() => {
     title: 'Repurpose with Eclatale',
     contexts: ['selection'],
   });
+  // Background sync every 6 hours
+  chrome.alarms.create('background-sync', { periodInMinutes: 360 });
+});
+
+// Re-register alarm on service worker restart (alarms survive, but just in case)
+chrome.runtime.onStartup.addListener(() => {
+  chrome.alarms.get('background-sync', (a) => {
+    if (!a) chrome.alarms.create('background-sync', { periodInMinutes: 360 });
+  });
+});
+
+async function triggerSyncOnLinkedInTabs() {
+  const { eclatale_token } = await chrome.storage.local.get(['eclatale_token']);
+  if (!eclatale_token) return; // user not signed in, skip
+  const tabs = await chrome.tabs.query({ url: 'https://www.linkedin.com/*' });
+  for (const tab of tabs) {
+    if (tab.id == null) continue;
+    try {
+      await chrome.tabs.sendMessage(tab.id, { type: 'ECLATALE_SYNC_NOW' });
+    } catch (_) {
+      // Tab may not have the content script ready — safe to ignore
+    }
+  }
+  await chrome.storage.local.set({ last_background_sync: Date.now() });
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'background-sync') triggerSyncOnLinkedInTabs();
 });
 
 chrome.contextMenus.onClicked.addListener((info) => {

@@ -273,31 +273,70 @@
 
   async function run() {
     const pageType = getPageType();
+    let synced = false;
 
     if (pageType === 'own-profile') {
       if (!await shouldSync('last_profile_sync')) return;
       const data = await scrapeOwnProfile();
       await syncToEclatale(data);
+      synced = true;
     }
 
     if (pageType === 'analytics') {
       if (!await shouldSync('last_analytics_sync')) return;
       const data = await scrapeAnalyticsPage();
       await syncToEclatale(data);
+      synced = true;
     }
 
     if (pageType === 'activity') {
       if (!await shouldSync('last_activity_sync')) return;
       const data = await scrapePostActivity();
       await syncToEclatale(data);
+      synced = true;
     }
 
     if (pageType === 'post') {
       if (!await shouldSync(`last_post_sync_${window.location.pathname}`)) return;
       const data = await scrapePostDetail();
       await syncToEclatale(data);
+      synced = true;
     }
+
+    if (synced) await chrome.storage.local.set({ last_insights_sync: Date.now() });
   }
+
+  async function runForced() {
+    // Background-triggered sync: bypass throttle, scrape whatever page is visible
+    const pageType = getPageType();
+    if (pageType === 'own-profile') {
+      const data = await scrapeOwnProfile();
+      await syncToEclatale(data);
+      await chrome.storage.local.set({ last_profile_sync: Date.now() });
+    } else if (pageType === 'analytics') {
+      const data = await scrapeAnalyticsPage();
+      await syncToEclatale(data);
+      await chrome.storage.local.set({ last_analytics_sync: Date.now() });
+    } else if (pageType === 'activity') {
+      const data = await scrapePostActivity();
+      await syncToEclatale(data);
+      await chrome.storage.local.set({ last_activity_sync: Date.now() });
+    } else if (pageType === 'post') {
+      const data = await scrapePostDetail();
+      await syncToEclatale(data);
+      await chrome.storage.local.set({ [`last_post_sync_${window.location.pathname}`]: Date.now() });
+    }
+    // Record last sync time for popup display
+    await chrome.storage.local.set({ last_insights_sync: Date.now() });
+  }
+
+  // Listen for background-triggered or popup-triggered forced sync
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === 'ECLATALE_SYNC_NOW') {
+      runForced().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }));
+      return true; // keep channel open for async response
+    }
+  });
 
   // Run on page load + SPA navigation
   run();

@@ -65,7 +65,11 @@ async function render() {
     </div>
 
     <div class="stats" id="statsBar"><div class="loading">Loading stats…</div></div>
-    <button id="signOutBtn" style="width:100%;text-align:center;background:none;border:none;color:#9CA3AF;font-size:11px;margin-top:10px;cursor:pointer;">Sign out of extension</button>
+    <div id="syncRow" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+      <span id="lastSyncLabel" style="font-size:10px;color:#9CA3AF;"></span>
+      <button id="syncNowBtn" style="font-size:11px;color:#7C5CFC;background:none;border:none;cursor:pointer;font-weight:600;">Sync now</button>
+    </div>
+    <button id="signOutBtn" style="width:100%;text-align:center;background:none;border:none;color:#9CA3AF;font-size:11px;margin-top:4px;cursor:pointer;">Sign out of extension</button>
   `;
 
   document.getElementById('signOutBtn').addEventListener('click', async () => {
@@ -96,6 +100,42 @@ async function render() {
   } catch {
     statsBar.innerHTML = `<div class="label" style="text-align:center;width:100%;">Couldn't load stats.</div>`;
   }
+
+  // Last sync label
+  const { last_insights_sync } = await chrome.storage.local.get(['last_insights_sync']);
+  const lastSyncLabel = document.getElementById('lastSyncLabel');
+  if (lastSyncLabel) {
+    if (last_insights_sync) {
+      const mins = Math.round((Date.now() - last_insights_sync) / 60000);
+      lastSyncLabel.textContent = mins < 2 ? 'Synced just now' : mins < 60 ? `Synced ${mins}m ago` : `Synced ${Math.round(mins / 60)}h ago`;
+    } else {
+      lastSyncLabel.textContent = 'Not synced yet';
+    }
+  }
+
+  // Sync now button
+  document.getElementById('syncNowBtn')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.textContent = 'Syncing…';
+    btn.disabled = true;
+    // Try active LinkedIn tab first, then any LinkedIn tab
+    const liTabs = await chrome.tabs.query({ url: 'https://www.linkedin.com/*' });
+    const target = liTabs.find(t => t.active) || liTabs[0];
+    if (target?.id) {
+      try {
+        await chrome.tabs.sendMessage(target.id, { type: 'ECLATALE_SYNC_NOW' });
+        btn.textContent = 'Synced!';
+        if (lastSyncLabel) lastSyncLabel.textContent = 'Synced just now';
+      } catch {
+        btn.textContent = 'Failed';
+      }
+    } else {
+      // No LinkedIn tab open — open the analytics page
+      chrome.tabs.create({ url: 'https://www.linkedin.com/analytics/creator/' });
+      btn.textContent = 'Opening…';
+    }
+    setTimeout(() => { btn.textContent = 'Sync now'; btn.disabled = false; }, 2000);
+  });
 }
 
 render();

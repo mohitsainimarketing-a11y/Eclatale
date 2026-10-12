@@ -1742,6 +1742,15 @@ Return ONLY the cleaned post text. No explanation, no preamble, no quotes around
         return res.json({ ok: true });
       }
 
+      case 'job-fit-analyzer': {
+        const profileText = String(body.profileText || '').trim();
+        const jobDescription = String(body.jobDescription || '').trim();
+        if (!profileText || !jobDescription) return res.status(400).json({ error: 'profileText and jobDescription are required' });
+        const { analyzeJobFit } = await import('../lib/freeTools');
+        const result = await analyzeJobFit(anthropic, profileText, jobDescription);
+        return res.json(result);
+      }
+
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

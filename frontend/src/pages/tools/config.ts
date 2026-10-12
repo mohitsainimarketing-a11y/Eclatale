@@ -120,6 +120,14 @@ export const TOOLS: ToolConfig[] = [
     description: 'The wrong hashtags hurt more than they help. Paste your post or describe your topic and get 15-20 hashtags split into three tiers: high-reach (1M+ followers), mid-range (100K-1M), and niche (under 100K). The mix that actually gets you found.',
     seoDescription: 'Free LinkedIn hashtag generator: get a 3-tier mix of reach, mid-range, and niche hashtags for any post. No signup required.',
   },
+  {
+    slug: 'job-fit-analyzer',
+    name: 'Job Fit Analyzer',
+    emoji: '🎯',
+    shortDesc: 'See how well your profile matches a job, and exactly what to fix.',
+    description: 'Paste your LinkedIn profile text and a job description. Get an overall match score, a list of keywords you have and keywords you are missing, three specific profile rewrites (headline, about, skills), and a ready-to-use cover letter opener. Know your gaps before the hiring manager does.',
+    seoDescription: 'Free job fit analyzer: compare your LinkedIn profile to any job description, see your match score, missing keywords, and get specific profile fixes. No signup required.',
+  },
 ];
 
 export function getTool(slug: string): ToolConfig | undefined {

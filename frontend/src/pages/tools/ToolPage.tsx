@@ -17,6 +17,7 @@ import CommentGenerator from './CommentGenerator';
 import LinkedInDMWriter from './LinkedInDMWriter';
 import HashtagGenerator from './HashtagGenerator';
 import ContentSeriesGenerator from './ContentSeriesGenerator';
+import JobFitAnalyzer from './JobFitAnalyzer';
 
 const COMPONENTS: Record<string, React.ComponentType> = {
   'hook-generator': HookGenerator,
@@ -33,6 +34,7 @@ const COMPONENTS: Record<string, React.ComponentType> = {
   'linkedin-dm-writer': LinkedInDMWriter,
   'hashtag-generator': HashtagGenerator,
   'content-series-generator': ContentSeriesGenerator,
+  'job-fit-analyzer': JobFitAnalyzer,
 };
 
 export default function ToolPage() {

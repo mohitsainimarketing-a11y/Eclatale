@@ -524,3 +524,74 @@ Return ONLY valid JSON in this exact shape:
     wordCount,
   };
 }
+
+// ── Job Fit Analyzer ─────────────────────────────────────────────────────────
+
+export interface JobFitResult {
+  matchScore: number;
+  keywordMatchPct: number;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  profileSuggestions: { section: string; current: string; rewrite: string }[];
+  coverLetterOpener: string;
+}
+
+export async function analyzeJobFit(
+  anthropic: Anthropic,
+  profileText: string,
+  jobDescription: string,
+): Promise<JobFitResult> {
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1500,
+    messages: [{
+      role: 'user',
+      content: `You are a career coach and LinkedIn optimization expert. Analyze how well this LinkedIn profile matches the job description.
+
+LINKEDIN PROFILE:
+${profileText.slice(0, 3000)}
+
+JOB DESCRIPTION:
+${jobDescription.slice(0, 3000)}
+
+Analyze the match and return ONLY valid JSON in this exact shape:
+{
+  "matchScore": number (0-100, overall fit),
+  "keywordMatchPct": number (0-100, % of JD keywords present in profile),
+  "matchedKeywords": string[] (keywords from JD found in profile, max 15),
+  "missingKeywords": string[] (important JD keywords missing from profile, max 10),
+  "profileSuggestions": [
+    { "section": "Headline", "current": "brief quote or description of current headline", "rewrite": "improved version targeting this role" },
+    { "section": "About", "current": "brief quote or description of current about", "rewrite": "improved opening sentence or hook for this role" },
+    { "section": "Skills", "current": "missing skills not listed", "rewrite": "specific skills to add from JD" }
+  ],
+  "coverLetterOpener": "one compelling opening paragraph (2-3 sentences) for a cover letter for this role, written in first person, no em dashes, no banned words"
+}
+
+Rules for your output text:
+- No em dashes, no en dashes
+- No banned words: delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative
+- Be specific, reference actual content from the profile and JD
+- coverLetterOpener must sound human, not like AI
+- Keep each suggestion rewrite under 200 characters`,
+    }],
+  });
+
+  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
+  const p = parseJsonObject(text);
+
+  return {
+    matchScore: clamp(p.matchScore, 0, 100),
+    keywordMatchPct: clamp(p.keywordMatchPct, 0, 100),
+    matchedKeywords: Array.isArray(p.matchedKeywords) ? p.matchedKeywords.slice(0, 15).map(String) : [],
+    missingKeywords: Array.isArray(p.missingKeywords) ? p.missingKeywords.slice(0, 10).map(String) : [],
+    profileSuggestions: Array.isArray(p.profileSuggestions)
+      ? p.profileSuggestions.slice(0, 3).map((s: any) => ({
+          section: String(s.section || ''),
+          current: String(s.current || ''),
+          rewrite: String(s.rewrite || ''),
+        }))
+      : [],
+    coverLetterOpener: String(p.coverLetterOpener || ''),
+  };
+}

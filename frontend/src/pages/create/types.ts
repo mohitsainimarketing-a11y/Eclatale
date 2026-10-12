@@ -74,6 +74,13 @@ export interface GrowthJourneyResult {
   metrics: { postsPublished: number; currentStreak: number; longestStreak: number; [key: string]: any };
 }
 
+export interface ResearchBrief {
+  stats: string[];
+  angles: { style: string; hook: string }[];
+  recommendedHook: string;
+  briefText: string;
+}
+
 export interface HookTypeStat { type: string; percentage: number; relativePerformance?: string; }
 export interface IndustryIntelligenceResult {
   topHookTypes: HookTypeStat[];

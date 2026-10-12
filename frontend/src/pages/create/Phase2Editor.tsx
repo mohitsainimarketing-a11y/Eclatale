@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ArrowLeft, Copy, Save, Calendar, Bold, Italic, Strikethrough, Minus, List, ListOrdered, MoreHorizontal,
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
-  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw,
+  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw, FlaskConical, Layers,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
 import { copyToClipboard } from '../../utils/clipboard';
 import { RICH_TEXT_STYLES, applyStrikethrough } from '../../lib/richText';
 import { useToast } from '../../contexts/ToastContext';
-import { Angle, Source, PostLength, LENGTH_OPTIONS, AuthenticityScoreResult } from './types';
+import { Angle, Source, PostLength, LENGTH_OPTIONS, AuthenticityScoreResult, ResearchBrief } from './types';
 import { CTA_TEMPLATES } from './hookCtaTemplates';
 import HookLibraryPanel from './HookLibraryPanel';
 
@@ -25,6 +25,12 @@ const LOADING_MESSAGES = [
   'Matching your voice...',
   'Almost ready...',
 ];
+
+const VARIANT_STYLES = [
+  { styleId: 'storyteller', label: 'Storyteller', emoji: '📖' },
+  { styleId: 'contrarian', label: 'Contrarian', emoji: '🔥' },
+  { styleId: 'analyst', label: 'Analyst', emoji: '📊' },
+] as const;
 
 // Mirrors backend/lib/writingStyles.ts WRITING_STYLES ids. Used to build real
 // variants of the same topic/hook in genuinely different voices, not just
@@ -59,6 +65,7 @@ interface Phase2Props {
   onBack: () => void;
   onPublished: (postId: string, urn: string) => void;
   preloadedSpark?: string;
+  preloadedResearchBrief?: ResearchBrief;
   // Writing style chosen outside the angle picker (currently the homepage
   // demo chips). Only consulted when there is no angle to take a style from.
   presetStyleId?: string;
@@ -67,7 +74,7 @@ interface Phase2Props {
 export default function Phase2Editor({
   userId, userName, userInitials, userAvatar, userRole, userDomain, angle, customTopic, sources,
   editMode, initialPostId, initialContent, selectedLength, onLengthChange, onBack, onPublished,
-  preloadedSpark, presetStyleId,
+  preloadedSpark, preloadedResearchBrief, presetStyleId,
 }: Phase2Props) {
   const { showToast } = useToast();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -78,7 +85,10 @@ export default function Phase2Editor({
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [genError, setGenError] = useState('');
   const [sparkInput, setSparkInput] = useState(preloadedSpark || '');
-  const [researchMode, setResearchMode] = useState(false);
+  const [researchPanelOpen, setResearchPanelOpen] = useState(true);
+  const [variantsOpen, setVariantsOpen] = useState(false);
+  const [variants, setVariants] = useState<{ styleId: string; label: string; emoji: string; content: string }[]>([]);
+  const [generatingVariants, setGeneratingVariants] = useState(false);
 
   const [flowStage] = useState<'editor'>('editor');
 
@@ -149,7 +159,6 @@ export default function Phase2Editor({
           ? { style: angle.style, styleId: styleId || angle.styleId, hook: includeHook ? angle.hook : undefined, insight: angle.insight }
           : ((styleId || presetStyleId) ? { styleId: styleId || presetStyleId } : undefined),
         spark: spark || undefined,
-        researchMode: researchMode || undefined,
         userId,
       }),
     });
@@ -276,6 +285,28 @@ export default function Phase2Editor({
     }
     setAriaRefining(false);
   };
+
+  // ── Variant generation (3 styles, same topic) ────────────────────────────
+
+  const handleGenerateVariants = useCallback(async () => {
+    if (generatingVariants || isGenerating) return;
+    setGeneratingVariants(true);
+    setVariantsOpen(true);
+    setVariants(VARIANT_STYLES.map(s => ({ ...s, content: '' })));
+    const spark = await resolveSpark();
+    await Promise.allSettled(
+      VARIANT_STYLES.map(async (style, idx) => {
+        try {
+          let acc = '';
+          await generateStreaming(spark, (chunk) => {
+            acc += chunk;
+            setVariants(prev => prev.map((v, i) => i === idx ? { ...v, content: acc } : v));
+          }, style.styleId, false);
+        } catch { /* leave variant empty on error */ }
+      })
+    );
+    setGeneratingVariants(false);
+  }, [generatingVariants, isGenerating, resolveSpark, generateStreaming]);
 
   // ── 4-pass humanizer ─────────────────────────────────────────────────────
 
@@ -542,14 +573,15 @@ export default function Phase2Editor({
             </button>
           ))}
           <button
-            onClick={() => setResearchMode(r => !r)}
-            title="Research mode: web-searches for fresh facts before writing"
-            className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all ml-1"
-            style={researchMode
-              ? { background: 'linear-gradient(135deg, #0EA5E9, #6366F1)', color: 'white', border: 'none' }
+            onClick={handleGenerateVariants}
+            disabled={generatingVariants || isGenerating}
+            title="Generate 3 writing styles side by side and pick your favourite"
+            className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 ml-1"
+            style={variantsOpen
+              ? { background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white', border: 'none' }
               : { color: '#6B7280', border: '1px solid #EDE8FF' }}
           >
-            🔍 Research
+            <Layers size={11} /> 3 Styles
           </button>
           <button
             onClick={() => handleGenerate()}
@@ -559,13 +591,66 @@ export default function Phase2Editor({
             style={{ color: '#7C5CFC', border: '1px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}
           >
             <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} />
-            {isGenerating ? (researchMode ? 'Researching...' : 'Writing...') : 'Regenerate'}
+            {isGenerating ? 'Writing...' : 'Regenerate'}
           </button>
         </div>
       </div>
 
       {/* ── Main content area ── */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative">
+
+        {/* Variant comparison overlay */}
+        {variantsOpen && (
+          <div className="absolute inset-0 z-30 flex flex-col" style={{ background: 'white' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+              <div>
+                <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>3 writing styles, same topic</p>
+                <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
+                  {generatingVariants ? 'Generating all three...' : 'Pick the one that fits you best'}
+                </p>
+              </div>
+              <button onClick={() => setVariantsOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ color: '#6B7280', background: '#F3F4F6' }}>
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-3 p-4 h-full" style={{ minWidth: variants.length * 290 }}>
+                {variants.map((v, i) => (
+                  <div key={v.styleId} className="flex flex-col rounded-2xl overflow-hidden flex-shrink-0" style={{ width: 280, border: '1.5px solid #EDE8FF', background: '#FDFCFF' }}>
+                    <div className="px-4 py-3 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+                      <span className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>{v.emoji} {v.label}</span>
+                      {v.content && !generatingVariants && (
+                        <button
+                          onClick={() => {
+                            setContent(v.content);
+                            setVariantsOpen(false);
+                            checkedRef.current = false;
+                            if (postId) supabase.from('posts').update({ content: v.content }).eq('id', postId);
+                          }}
+                          className="text-[11px] font-bold px-3 py-1.5 rounded-full text-white flex-shrink-0"
+                          style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
+                        >
+                          Use this
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex-1 p-4 overflow-y-auto">
+                      {v.content ? (
+                        <p className="text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: '#1A1A2E' }}>{v.content}</p>
+                      ) : (
+                        <div className="flex flex-col gap-2 pt-1">
+                          {[80, 65, 90, 55, 75].map((w, j) => (
+                            <div key={j} className="skeleton h-3 rounded" style={{ width: `${w}%` }} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         {/* Left column / mobile full editor */}
         <div className="flex-1 min-w-0 bg-white flex flex-col md:border-r" style={{ borderColor: '#EDE8FF' }}>
 
@@ -715,6 +800,38 @@ export default function Phase2Editor({
             content={content}
             cutoff={CUTOFF}
           />
+
+          {/* Research brief reference panel */}
+          {preloadedResearchBrief && preloadedResearchBrief.stats.length > 0 && (
+            <div className="bg-white rounded-[14px] overflow-hidden" style={{ border: '1.5px solid #BAE6FD' }}>
+              <button
+                onClick={() => setResearchPanelOpen(o => !o)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5"
+              >
+                <span className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: '#0284C7' }}>
+                  <FlaskConical size={11} /> Research used
+                </span>
+                <span className="text-[10px] font-semibold" style={{ color: '#9CA3AF' }}>
+                  {researchPanelOpen ? 'hide' : `${preloadedResearchBrief.stats.length} stats`}
+                </span>
+              </button>
+              {researchPanelOpen && (
+                <div className="px-3.5 pb-3 flex flex-col gap-1.5">
+                  {preloadedResearchBrief.stats.slice(0, 4).map((stat, i) => (
+                    <p key={i} className="text-[10px] leading-snug p-2 rounded-lg" style={{ background: '#F0F9FF', color: '#0369A1', border: '1px solid #BAE6FD' }}>
+                      {stat}
+                    </p>
+                  ))}
+                  {preloadedResearchBrief.recommendedHook && (
+                    <p className="text-[10px] mt-1 leading-snug" style={{ color: '#6B7280' }}>
+                      Hook: <span style={{ color: '#1A1A2E', fontStyle: 'italic' }}>"{preloadedResearchBrief.recommendedHook.slice(0, 70)}{preloadedResearchBrief.recommendedHook.length > 70 ? '…' : ''}"</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {!insightsOpen ? (
             <button
               onClick={() => setInsightsOpen(true)}
@@ -871,6 +988,15 @@ export default function Phase2Editor({
           </button>
           <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
           <button
+            onClick={handleGenerateVariants}
+            disabled={generatingVariants || isGenerating}
+            className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50"
+            style={{ color: '#7C5CFC', background: variantsOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}
+          >
+            <Layers size={11} /> 3 Styles
+          </button>
+          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
+          <button
             onClick={handleHumanize}
             disabled={humanizing || !content.trim()}
             className="flex items-center gap-1 text-[11px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-40"
@@ -952,6 +1078,20 @@ export default function Phase2Editor({
                 </button>
               ))}
             </div>
+
+            {/* Research brief (mobile) */}
+            {preloadedResearchBrief && preloadedResearchBrief.stats.length > 0 && (
+              <div className="mb-5">
+                <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#0284C7' }}>Research used</p>
+                <div className="flex flex-col gap-1.5">
+                  {preloadedResearchBrief.stats.slice(0, 3).map((stat, i) => (
+                    <p key={i} className="text-[11px] leading-snug p-2.5 rounded-xl" style={{ background: '#F0F9FF', color: '#0369A1', border: '1px solid #BAE6FD' }}>
+                      {stat}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Aria refine */}
             <p className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#9CA3AF' }}>Refine with Aria</p>

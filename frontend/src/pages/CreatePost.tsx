@@ -8,7 +8,7 @@ import Phase0Picker from './create/Phase0Picker';
 import Phase1Angles from './create/Phase1Angles';
 import Phase2Editor from './create/Phase2Editor';
 import Phase3Publish from './create/Phase3Publish';
-import { Angle, Source, PostLength } from './create/types';
+import { Angle, Source, PostLength, ResearchBrief } from './create/types';
 import { consumePendingDemo } from '../lib/pendingDemo';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
@@ -54,6 +54,7 @@ export default function CreatePost() {
   const [initialContent, setInitialContent] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [preloadedSpark, setPreloadedSpark] = useState('');
+  const [preloadedResearchBrief, setPreloadedResearchBrief] = useState<ResearchBrief | null>(null);
   // Style the visitor picked on the homepage demo chip, carried through signup.
   const [presetStyleId, setPresetStyleId] = useState('');
   const [selectedLength, setSelectedLength] = useState<PostLength>(() => {
@@ -290,14 +291,15 @@ export default function CreatePost() {
     goToPhase(2);
   };
 
-  const handleGoWithResearch = (topic: string, briefText: string, length: PostLength) => {
+  const handleGoWithResearch = (topic: string, brief: ResearchBrief, length: PostLength) => {
     setCustomInput(topic);
     setSelectedAngle(null);
     handleLengthChange(length);
     setEditMode(false);
     setPostId(null);
     setInitialContent('');
-    setPreloadedSpark(briefText);
+    setPreloadedSpark(brief.briefText);
+    setPreloadedResearchBrief(brief);
     try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic); } catch {}
     goToPhase(2);
   };
@@ -373,6 +375,7 @@ export default function CreatePost() {
             onBack={handleBackToAngles}
             onPublished={handlePublished}
             preloadedSpark={preloadedSpark || undefined}
+            preloadedResearchBrief={preloadedResearchBrief || undefined}
             presetStyleId={presetStyleId || undefined}
           />
         )}

@@ -1,16 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Sparkles, TrendingUp, ArrowRight, Zap, FileText, FlaskConical, Copy, Check } from 'lucide-react';
 import { apiFetch } from '../../lib/apiFetch';
-import { Angle, Source, PostLength, LENGTH_OPTIONS } from './types';
+import { Angle, Source, PostLength, LENGTH_OPTIONS, ResearchBrief } from './types';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
-
-interface ResearchBrief {
-  stats: string[];
-  angles: { style: string; hook: string }[];
-  recommendedHook: string;
-  briefText: string;
-}
 
 interface Phase0Props {
   userId: string;
@@ -21,7 +14,7 @@ interface Phase0Props {
   onGoRepurpose: (spark: string) => void;
   onGoIdea: (angles: Angle[], sources: Source[]) => void;
   onGoDirectIdea?: (topic: string, length: PostLength) => void;
-  onGoWithResearch?: (topic: string, briefText: string, length: PostLength) => void;
+  onGoWithResearch?: (topic: string, brief: ResearchBrief, length: PostLength) => void;
 }
 
 interface TrendItem { topic: string; source: string; }
@@ -97,7 +90,7 @@ export default function Phase0Picker({
 
   const handleWriteFromResearch = () => {
     if (!researchBrief || !onGoWithResearch) return;
-    onGoWithResearch(idea.trim(), researchBrief.briefText, selectedLength);
+    onGoWithResearch(idea.trim(), researchBrief, selectedLength);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

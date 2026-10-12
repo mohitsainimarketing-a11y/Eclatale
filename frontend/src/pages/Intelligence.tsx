@@ -393,7 +393,9 @@ export default function Intelligence() {
 
 function IntelligenceInner() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('competitor');
+  const [tab, setTab] = useState<Tab>(() =>
+    typeof window !== 'undefined' && window.location.hash === '#profile' ? 'profile' : 'competitor'
+  );
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {

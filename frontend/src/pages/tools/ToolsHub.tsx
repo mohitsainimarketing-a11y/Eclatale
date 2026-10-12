@@ -8,7 +8,7 @@ export default function ToolsHub() {
     <div className="min-h-screen gradient-bg-page">
       <Seo
         title="Free LinkedIn Tools | Eclatale"
-        description="13 free AI-powered LinkedIn tools: comment generator, DM writer, hashtag generator, hook generator, post analyzer, viral score checker, and more. No signup required, instant results."
+        description="14 free AI-powered LinkedIn tools: content series planner, comment generator, DM writer, hashtag generator, hook generator, post analyzer, and more. No signup required, instant results."
         path="/tools"
         jsonLd={[
           {
@@ -43,7 +43,7 @@ export default function ToolsHub() {
           Free <span className="gradient-text">LinkedIn Tools</span>
         </h1>
         <p className="body-text max-w-xl mx-auto mb-5">
-          13 free tools to write better, grow faster, and stand out on LinkedIn. No account required.
+          14 free tools to write better, grow faster, and stand out on LinkedIn. No account required.
         </p>
         <p className="text-xs font-semibold text-brand-muted">
           No signup · No card · Instant results

@@ -23,7 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <FolderOpen size={18} />, label: 'Content Library', href: '/history' },
   { icon: <CalendarDays size={18} />, label: 'Schedule', href: '/schedule' },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup' },
-  { icon: <UserCog size={18} />, label: 'Profile Optimizer', href: '/intelligence' },
+  { icon: <UserCog size={18} />, label: 'Profile Optimizer', href: '/intelligence#profile' },
   { icon: <Settings size={18} />, label: 'Settings', href: '/settings' },
 ];
 

@@ -30,7 +30,7 @@ import { getWritingStyle, UNIVERSAL_HUMAN_WRITING_RULES, NO_DASH_RULE, lengthIns
 import { extractPdfText, extractDocxText, extractCsvSummary, truncateForPrompt } from '../lib/resourceParsing';
 import {
   extractClientIp, checkToolRateLimit, logToolUsage,
-  generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs, analyzeLinkedInPost, generateComments, generateLinkedInDMs, generateHashtags,
+  generateHooks, generateDemoPost, analyzeHeadline, scoreViralPotential, generateAboutSection, generateCTAs, analyzeLinkedInPost, generateComments, generateLinkedInDMs, generateHashtags, generateContentSeries,
 } from '../lib/freeTools';
 import { getIndustryIntelligence } from '../lib/industryIntelligence';
 import { getHookLibrary } from '../lib/hookLibrary';
@@ -939,6 +939,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           case 'hashtag-generator': {
             const result = await generateHashtags(anthropic, String(body.topic || ''));
             return res.json(result);
+          }
+          case 'content-series-generator': {
+            const posts = await generateContentSeries(
+              anthropic,
+              String(body.topic || ''),
+              String(body.audience || ''),
+              Math.min(7, Math.max(3, Number(body.seriesLength) || 5)),
+            );
+            return res.json({ posts });
           }
           default:
             return res.status(400).json({ error: 'Unknown tool' });

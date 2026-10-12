@@ -210,6 +210,66 @@ export async function generateCTAs(anthropic: Anthropic, topic: string, goal: st
   return parseJsonArray(text).slice(0, 5).map(String);
 }
 
+// ── Tool 14: Content Series Generator ────────────────────────────────────────
+
+export interface SeriesPost {
+  day: number;
+  title: string;
+  hook: string;
+  angle: string;
+  format: string;
+}
+
+export async function generateContentSeries(
+  anthropic: Anthropic,
+  topic: string,
+  audience: string,
+  seriesLength: number,
+): Promise<SeriesPost[]> {
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1200,
+    system: getDateContext(),
+    messages: [{
+      role: 'user',
+      content: `You are a LinkedIn content strategist. Create a ${seriesLength}-post content series plan.
+
+TOPIC: ${topic}
+AUDIENCE: ${audience || 'LinkedIn professionals'}
+
+Each post in the series must:
+- Build on the previous one (logical progression)
+- Stand alone as its own post (no "in my last post..." references)
+- Cover a different angle or sub-topic
+
+Return ONLY a JSON array of ${seriesLength} objects, no prose, no markdown fences:
+[
+  {
+    "day": 1,
+    "title": "short working title for the post",
+    "hook": "the exact first line (under 200 chars, stops scrolling)",
+    "angle": "one sentence: what specific value or insight this post delivers",
+    "format": "one of: Story, List, Lesson, Contrarian, Data, How-to, Case Study"
+  }
+]
+
+Rules for hooks:
+- Never open with a question
+- Never use: ${BANNED_WORDS}
+${NO_DASH_RULE}
+- Vary the format across the series`,
+    }],
+  });
+  const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
+  return parseJsonArray(text).slice(0, seriesLength).map((p: any, i: number) => ({
+    day: Number(p.day) || i + 1,
+    title: String(p.title || ''),
+    hook: String(p.hook || ''),
+    angle: String(p.angle || ''),
+    format: String(p.format || 'Story'),
+  }));
+}
+
 // ── Tool 13: Hashtag Generator ───────────────────────────────────────────────
 
 export async function generateHashtags(anthropic: Anthropic, topic: string): Promise<{ high: string[]; mid: string[]; niche: string[] }> {

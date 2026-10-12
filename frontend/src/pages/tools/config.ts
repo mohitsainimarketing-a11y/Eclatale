@@ -105,6 +105,14 @@ export const TOOLS: ToolConfig[] = [
     seoDescription: 'Free LinkedIn DM writer: get 3 cold outreach variations for any goal. Sounds human, gets replies. No signup required.',
   },
   {
+    slug: 'content-series-generator',
+    name: 'Content Series Generator',
+    emoji: '📅',
+    shortDesc: 'Plan a 3, 5, or 7-post series with hooks and angles for each.',
+    description: 'One topic, a full series plan. Pick your topic, your audience, and how many posts you want. Get a sequenced plan with a working title, a ready-to-use first line, the core angle, and the ideal format for each post. Each post builds on the last and stands alone.',
+    seoDescription: 'Free LinkedIn content series generator: plan a 3, 5, or 7-post series with hooks, angles, and formats. No signup required.',
+  },
+  {
     slug: 'hashtag-generator',
     name: 'Hashtag Generator',
     emoji: '#️⃣',

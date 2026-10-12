@@ -16,6 +16,7 @@ import LinkedInPostAnalyzer from './LinkedInPostAnalyzer';
 import CommentGenerator from './CommentGenerator';
 import LinkedInDMWriter from './LinkedInDMWriter';
 import HashtagGenerator from './HashtagGenerator';
+import ContentSeriesGenerator from './ContentSeriesGenerator';
 
 const COMPONENTS: Record<string, React.ComponentType> = {
   'hook-generator': HookGenerator,
@@ -31,6 +32,7 @@ const COMPONENTS: Record<string, React.ComponentType> = {
   'comment-generator': CommentGenerator,
   'linkedin-dm-writer': LinkedInDMWriter,
   'hashtag-generator': HashtagGenerator,
+  'content-series-generator': ContentSeriesGenerator,
 };
 
 export default function ToolPage() {

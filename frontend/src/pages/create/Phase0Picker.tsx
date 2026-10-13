@@ -46,8 +46,7 @@ export default function Phase0Picker({
       .then(d => {
         if (Array.isArray(d.categories) && d.categories.length > 0) {
           setTrendCategories(d.categories);
-        } else if (Array.isArray(d.topics)) {
-          // backward compat: flat list
+        } else if (Array.isArray(d.topics) && d.topics.length > 0) {
           setTrendCategories([{ label: 'Trending', items: d.topics.map((t: string) => ({ topic: t, source: '' })) }]);
         }
       })

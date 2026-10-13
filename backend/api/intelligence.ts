@@ -1392,16 +1392,30 @@ ${NO_DASH_RULE}`;
         const { industry, role } = await getProfile(userId);
         const cacheKind = `trending-preview-v2-${industry.slice(0, 40)}`;
         const cached = !forceRefresh ? await readCache(supabase, userId, cacheKind, 45 * 60 * 1000) : null;
-        if (cached) return res.json(cached);
+        if (cached && Array.isArray((cached as any).categories) && (cached as any).categories.length > 0) return res.json(cached);
         const today = new Date().toISOString().slice(0, 10);
-        const trendMsg = await (anthropic.messages.create as any)({
-          model: MODELS.haiku,
-          max_tokens: 1200,
-          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
-          system: getDateContext(),
-          messages: [{
-            role: 'user',
-            content: `Today is ${today}. You are helping a ${role} in ${industry} find the most relevant LinkedIn post topics from today's news.
+
+        const parseTrendJson = (content: any[]): any[] => {
+          const allText = content.filter((b: any) => b.type === 'text').map((b: any) => b.text || '').join('');
+          if (!allText) return [];
+          try {
+            const match = allText.match(/\{[\s\S]*\}/);
+            if (!match) return [];
+            const parsed = JSON.parse(match[0]);
+            return Array.isArray(parsed.categories) ? parsed.categories : [];
+          } catch { return []; }
+        };
+
+        let categories: any[] = [];
+        try {
+          const trendMsg = await (anthropic.messages.create as any)({
+            model: MODELS.haiku,
+            max_tokens: 1500,
+            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
+            system: getDateContext(),
+            messages: [{
+              role: 'user',
+              content: `Today is ${today}. You are helping a ${role} in ${industry} find the most relevant LinkedIn post topics from today's news.
 
 Search the web for:
 1. New or notable TOOLS and products launched recently in ${industry}
@@ -1411,44 +1425,33 @@ Search the web for:
 For each category find 3 real, specific, recent items. Use the actual article titles and note the source domain.
 
 Return ONLY valid JSON (no prose, no markdown, no explanation):
-{
-  "categories": [
-    {
-      "label": "Tools",
-      "items": [
-        { "topic": "short 3-6 word title", "source": "domain.com" },
-        { "topic": "short 3-6 word title", "source": "domain.com" },
-        { "topic": "short 3-6 word title", "source": "domain.com" }
-      ]
-    },
-    {
-      "label": "Trends",
-      "items": [
-        { "topic": "short 3-6 word title", "source": "domain.com" },
-        { "topic": "short 3-6 word title", "source": "domain.com" },
-        { "topic": "short 3-6 word title", "source": "domain.com" }
-      ]
-    },
-    {
-      "label": "News",
-      "items": [
-        { "topic": "short 3-6 word title", "source": "domain.com" },
-        { "topic": "short 3-6 word title", "source": "domain.com" },
-        { "topic": "short 3-6 word title", "source": "domain.com" }
-      ]
-    }
-  ]
-}`
-          }],
-        });
-        const trendText = ((trendMsg.content || []).find((b: any) => b.type === 'text') || {}).text || '{}';
-        let trendParsed: any = {};
-        try { trendParsed = JSON.parse((trendText.match(/\{[\s\S]*\}/) || ['{}'])[0]); } catch { trendParsed = {}; }
-        const categories = Array.isArray(trendParsed.categories) ? trendParsed.categories : [];
+{"categories":[{"label":"Tools","items":[{"topic":"short 3-6 word title","source":"domain.com"},{"topic":"short 3-6 word title","source":"domain.com"},{"topic":"short 3-6 word title","source":"domain.com"}]},{"label":"Trends","items":[{"topic":"short 3-6 word title","source":"domain.com"},{"topic":"short 3-6 word title","source":"domain.com"},{"topic":"short 3-6 word title","source":"domain.com"}]},{"label":"News","items":[{"topic":"short 3-6 word title","source":"domain.com"},{"topic":"short 3-6 word title","source":"domain.com"},{"topic":"short 3-6 word title","source":"domain.com"}]}]}`
+            }],
+          });
+          categories = parseTrendJson(trendMsg.content || []);
+        } catch { /* web search failed, fall through to fallback */ }
+
+        // Fallback: ask Claude without web search if we got nothing
+        if (categories.length === 0) {
+          try {
+            const fallbackMsg = await anthropic.messages.create({
+              model: MODELS.haiku,
+              max_tokens: 1000,
+              messages: [{
+                role: 'user',
+                content: `Generate 9 specific, timely LinkedIn post topics for a ${role} in ${industry}. Divide them into 3 groups: Tools (new software/AI tools relevant to ${industry}), Trends (emerging industry shifts), and News (notable recent events or announcements in ${industry}).
+
+Return ONLY valid JSON: {"categories":[{"label":"Tools","items":[{"topic":"...","source":""},{"topic":"...","source":""},{"topic":"...","source":""}]},{"label":"Trends","items":[{"topic":"...","source":""},{"topic":"...","source":""},{"topic":"...","source":""}]},{"label":"News","items":[{"topic":"...","source":""},{"topic":"...","source":""},{"topic":"...","source":""}]}]}`,
+              }],
+            });
+            categories = parseTrendJson(fallbackMsg.content || []);
+          } catch { /* give up */ }
+        }
+
         // Flat topics list for backward compat
         const topics: string[] = categories.flatMap((c: any) => (c.items || []).map((i: any) => i.topic)).filter(Boolean).slice(0, 9);
         const trendResult = { categories, topics, industry, generatedAt: new Date().toISOString() };
-        await writeCache(supabase, userId, cacheKind, trendResult);
+        if (categories.length > 0) await writeCache(supabase, userId, cacheKind, trendResult);
         return res.json(trendResult);
       }
       case 'from-idea': {

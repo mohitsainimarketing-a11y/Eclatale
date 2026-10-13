@@ -4,6 +4,7 @@ import {
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
   ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw, FlaskConical, Layers,
   Monitor, Smartphone, Eye, Pencil, Zap, Smile, History, Settings2,
+  Undo2, Redo2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
@@ -14,6 +15,11 @@ import { Angle, Source, PostLength, LENGTH_OPTIONS, AuthenticityScoreResult, Res
 import { CTA_TEMPLATES } from './hookCtaTemplates';
 import HookLibraryPanel from './HookLibraryPanel';
 import Avatar from '../../components/Avatar';
+import { useUndoStack } from '../../hooks/useUndoStack';
+import EmojiPickerLazy from './EmojiPickerLazy';
+import MoreStylesDrawer from './MoreStylesDrawer';
+import VersionHistoryDrawer, { PostVersion } from './VersionHistoryDrawer';
+import { ContentStyle } from './contentStyles';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 const BOLD = RICH_TEXT_STYLES.find(s => s.id === 'bold')!.apply;
@@ -160,6 +166,22 @@ export default function Phase2Editor({
   const [savingDraft, setSavingDraft] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  // ── Phase 2: Undo/redo ──────────────────────────────────────────────────────
+  const { push: pushUndo, undo: undoStep, redo: redoStep, canUndo, canRedo, reset: resetUndo } = useUndoStack(initialContent);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Phase 2: Diff preview (Make-It pills + More styles) ──────────────────────
+  const [pendingDiff, setPendingDiff] = useState<{ before: string; after: string; label: string } | null>(null);
+
+  // ── Phase 2: More styles drawer ──────────────────────────────────────────────
+  const [moreStylesOpen, setMoreStylesOpen] = useState(false);
+  const [formatOptionsOpen, setFormatOptionsOpen] = useState(false);
+
+  // ── Phase 2: Version history ─────────────────────────────────────────────────
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [versions, setVersions] = useState<PostVersion[]>([]);
+  const [savingVersion, setSavingVersion] = useState(false);
 
   // ── Generation ────────────────────────────────────────────────────────────
 
@@ -314,6 +336,7 @@ export default function Phase2Editor({
     const instruction = overrideInstruction || ariaInput.trim();
     if (!instruction || ariaRefining) return;
     setAriaRefining(true);
+    const prevContent = content;
     try {
       const res = await apiFetch(`${API_URL}/api/refine-content`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -321,10 +344,14 @@ export default function Phase2Editor({
       });
       const data = await res.json();
       if (data.error) throw new Error(data.message || data.error);
+      pushUndo(prevContent);
       setContent(data.content);
       if (!overrideInstruction) setAriaInput('');
       checkedRef.current = false;
-      if (postId) await supabase.from('posts').update({ content: data.content }).eq('id', postId);
+      if (postId) {
+        await supabase.from('posts').update({ content: data.content }).eq('id', postId);
+        await saveVersion('Before AI refinement').catch(() => {});
+      }
     } catch (e: any) {
       showToast('error', e.message || 'Refine failed. Try again.');
     }
@@ -358,6 +385,7 @@ export default function Phase2Editor({
   const handleHumanize = async () => {
     if (!content.trim() || humanizing) return;
     setHumanizing(true);
+    const prevContent = content;
     try {
       const res = await apiFetch(`${API_URL}/api/humanize-post`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -365,15 +393,98 @@ export default function Phase2Editor({
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      pushUndo(prevContent);
       setContent(data.content);
       checkedRef.current = false;
-      if (postId) await supabase.from('posts').update({ content: data.content }).eq('id', postId);
+      if (postId) {
+        await supabase.from('posts').update({ content: data.content }).eq('id', postId);
+        await saveVersion('Before humanize').catch(() => {});
+      }
       showToast('success', 'AI tells removed. Post humanized.');
     } catch (e: any) {
       showToast('error', e.message || 'Humanize failed. Try again.');
     }
     setHumanizing(false);
   };
+
+  // ── Phase 2: save / load versions ────────────────────────────────────────
+
+  const saveVersion = useCallback(async (label: string) => {
+    if (!postId || !content.trim()) return;
+    setSavingVersion(true);
+    try {
+      await supabase.from('post_versions').insert({
+        post_id: postId, user_id: userId, content, label,
+      });
+      await loadVersions();
+    } catch { /* table may not exist yet */ }
+    setSavingVersion(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId, userId, content]);
+
+  const loadVersions = useCallback(async () => {
+    if (!postId) return;
+    try {
+      const { data } = await supabase
+        .from('post_versions')
+        .select('id,content,label,created_at')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (data) setVersions(data as PostVersion[]);
+    } catch { /* ignore if table does not exist yet */ }
+  }, [postId]);
+
+  useEffect(() => { loadVersions(); }, [loadVersions]);
+
+  const handleRestore = useCallback(async (version: PostVersion) => {
+    pushUndo(content);
+    const restoredContent = version.content;
+    setContent(restoredContent);
+    checkedRef.current = false;
+    if (postId) {
+      await supabase.from('posts').update({ content: restoredContent }).eq('id', postId);
+      // Restore creates a new version so history is never lost
+      await supabase.from('post_versions').insert({
+        post_id: postId, user_id: userId, content: restoredContent, label: `Restored: ${version.label || 'version'}`,
+      });
+      await loadVersions();
+    }
+    showToast('success', 'Version restored. Previous state saved for undo.');
+  }, [content, postId, userId, pushUndo, loadVersions, showToast]);
+
+  // ── Phase 2: style refine (shows diff, reversible) ────────────────────────
+
+  const handleStyleRefine = async (instruction: string, label: string) => {
+    if (!content.trim() || ariaRefining) return;
+    setAriaRefining(true);
+    try {
+      const res = await apiFetch(`${API_URL}/api/refine-content`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ currentContent: content, instruction, userId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.message || data.error);
+      setPendingDiff({ before: content, after: data.content, label });
+    } catch (e: any) {
+      showToast('error', e.message || 'Style change failed. Try again.');
+    }
+    setAriaRefining(false);
+  };
+
+  const acceptDiff = async () => {
+    if (!pendingDiff) return;
+    pushUndo(pendingDiff.before);
+    setContent(pendingDiff.after);
+    checkedRef.current = false;
+    if (postId) {
+      await supabase.from('posts').update({ content: pendingDiff.after }).eq('id', postId);
+      await saveVersion(`Before: ${pendingDiff.label}`).catch(() => {});
+    }
+    setPendingDiff(null);
+  };
+
+  const rejectDiff = () => setPendingDiff(null);
 
   // ── Toolbar helpers ──────────────────────────────────────────────────────
 
@@ -426,10 +537,25 @@ export default function Phase2Editor({
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
-    if (e.key === 'b' && !e.shiftKey) { e.preventDefault(); transformSelection(BOLD); }
+    if (e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; pushUndo(content); }
+      const prev = undoStep();
+      if (prev !== null) setContent(prev);
+    } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+      e.preventDefault();
+      const next = redoStep();
+      if (next !== null) setContent(next);
+    } else if (e.key === 'b' && !e.shiftKey) { e.preventDefault(); transformSelection(BOLD); }
     else if (e.key === 'i' && !e.shiftKey) { e.preventDefault(); transformSelection(ITALIC); }
     else if (e.key === 'b' && e.shiftKey) { e.preventDefault(); transformSelection(BOLD_ITALIC); }
     else if ((e.key === 'x' || e.key === 'X') && e.shiftKey) { e.preventDefault(); transformSelection(applyStrikethrough); }
+  };
+
+  const handleContentChange = (val: string) => {
+    setContent(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { pushUndo(val); debounceRef.current = null; }, 1000);
   };
 
   // ── Bottom bar actions ───────────────────────────────────────────────────
@@ -662,6 +788,43 @@ export default function Phase2Editor({
           </div>
         )}
 
+        {/* Pending diff overlay (Make-It pills and More styles) */}
+        {pendingDiff && (
+          <div className="absolute inset-0 z-30 flex flex-col bg-white">
+            <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+              <div>
+                <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>"{pendingDiff.label}" preview</p>
+                <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Accept to apply, reject to keep your original</p>
+              </div>
+              <button onClick={rejectDiff} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ color: '#6B7280', background: '#F3F4F6' }}>
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 flex gap-3 p-4 overflow-hidden">
+              <div className="flex-1 flex flex-col rounded-2xl overflow-hidden" style={{ border: '1.5px solid #EDE8FF', background: '#FDFCFF' }}>
+                <div className="px-4 py-2.5 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+                  <span className="text-[11px] font-bold" style={{ color: '#9CA3AF' }}>Before</span>
+                </div>
+                <div className="flex-1 p-4 overflow-y-auto">
+                  <p className="text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: '#6B7280' }}>{pendingDiff.before}</p>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col rounded-2xl overflow-hidden" style={{ border: '1.5px solid #ADA8F0', background: '#FDFCFF' }}>
+                <div className="px-4 py-2.5 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+                  <span className="text-[11px] font-bold" style={{ color: '#7C5CFC' }}>After</span>
+                </div>
+                <div className="flex-1 p-4 overflow-y-auto">
+                  <p className="text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: '#1A1A2E' }}>{pendingDiff.after}</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-4 pb-4 flex gap-3 flex-shrink-0">
+              <button onClick={rejectDiff} className="flex-1 py-2 rounded-full font-bold text-[13px]" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>Reject</button>
+              <button onClick={acceptDiff} className="flex-1 py-2 rounded-full font-bold text-[13px] text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Accept</button>
+            </div>
+          </div>
+        )}
+
         {/* ── LEFT: AI Panel (desktop only) ── */}
         <div className="hidden md:flex w-[264px] flex-shrink-0 border-r flex-col" style={{ borderColor: '#EDE8FF', background: '#FAFAFE' }}>
 
@@ -704,7 +867,7 @@ export default function Phase2Editor({
               {MAKE_IT_PILLS.map(pill => (
                 <button
                   key={pill.label}
-                  onClick={() => handleAriaRefine(pill.instruction)}
+                  onClick={() => handleStyleRefine(pill.instruction, pill.label)}
                   disabled={isRefining || isGenerating || !content.trim()}
                   className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all disabled:opacity-40"
                   style={{ background: 'white', border: '1.5px solid #EDE8FF', color: '#6B7280' }}
@@ -715,6 +878,14 @@ export default function Phase2Editor({
                 </button>
               ))}
             </div>
+            <button
+              onClick={() => setMoreStylesOpen(true)}
+              disabled={isRefining || isGenerating || !content.trim()}
+              className="mt-2 w-full text-[11px] font-bold py-1.5 rounded-lg transition-all disabled:opacity-40"
+              style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.06)', border: '1px dashed #D4CEFF' }}
+            >
+              More styles...
+            </button>
           </div>
 
           {/* Length */}
@@ -952,7 +1123,7 @@ export default function Phase2Editor({
                     <textarea
                       ref={textareaRef}
                       value={content}
-                      onChange={e => setContent(e.target.value)}
+                      onChange={e => handleContentChange(e.target.value)}
                       onKeyDown={handleEditorKeyDown}
                       className="w-full outline-none resize-none"
                       style={{
@@ -983,38 +1154,51 @@ export default function Phase2Editor({
                   </div>
                 </div>
 
-                {/* Bottom toolbar: formatting + emoji + char count */}
+                {/* Bottom toolbar: formatting + emoji + undo/redo + char count */}
                 <div className="px-3 pb-3 flex items-center gap-1 flex-wrap border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+                  <button onClick={() => { if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; pushUndo(content); } const prev = undoStep(); if (prev !== null) setContent(prev); }} disabled={!canUndo} className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30" style={{ color: '#444' }} title="Undo (Ctrl+Z)" onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}><Undo2 size={13} /></button>
+                  <button onClick={() => { const next = redoStep(); if (next !== null) setContent(next); }} disabled={!canRedo} className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30" style={{ color: '#444' }} title="Redo (Ctrl+Shift+Z)" onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}><Redo2 size={13} /></button>
+                  <div className="w-px h-5 mx-0.5" style={{ background: '#EDE8FF' }} />
                   <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] font-extrabold transition-colors" style={{ color: '#444' }} onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>B</button>
                   <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] italic transition-colors" style={{ color: '#444', fontStyle: 'italic' }} onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>I</button>
                   <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] line-through transition-colors" style={{ color: '#444' }} onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>S</button>
                   <div className="w-px h-5 mx-0.5" style={{ background: '#EDE8FF' }} />
-                  {/* Emoji picker */}
+                  {/* Emoji picker (full emoji-mart) */}
                   <div className="relative">
                     <button
                       onClick={() => setFormatMoreOpen(o => !o)}
                       className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
-                      style={{ color: '#666' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#F0EEF8'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                      style={{ color: '#666', background: formatMoreOpen ? '#F0EEF8' : 'transparent' }}
                       title="Add emoji"
                     >
                       <Smile size={15} />
                     </button>
                     {formatMoreOpen && (
-                      <div className="absolute bottom-full left-0 mb-1 bg-white rounded-xl p-2 z-20 modal-shadow" style={{ width: 200 }}>
-                        <div className="flex gap-1 flex-wrap mb-2 pb-2 border-b" style={{ borderColor: '#EDE8FF' }}>
-                          {['😀', '🔥', '💡', '✅', '📈', '🎯', '🚀', '👏', '💬', '⚡', '🙌', '✨', '💪', '🤔', '👀', '🎉'].map(e => (
-                            <button key={e} onClick={() => { insertAtCursor(e); setFormatMoreOpen(false); }} className="text-lg p-1 hover:bg-[rgba(124,92,252,0.06)] rounded-lg">{e}</button>
-                          ))}
-                        </div>
-                        <button onClick={() => { prefixLines(() => '• '); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
+                      <div className="absolute bottom-full left-0 mb-1 z-20" style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.12))' }}>
+                        <EmojiPickerLazy onSelect={emoji => { insertAtCursor(emoji); setFormatMoreOpen(false); }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => { setFormatOptionsOpen(o => !o); setFormatMoreOpen(false); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                      style={{ color: '#666', background: formatOptionsOpen ? '#F0EEF8' : 'transparent' }}
+                      title="Format"
+                      onMouseEnter={e => { if (!formatOptionsOpen) e.currentTarget.style.background = '#F0EEF8'; }}
+                      onMouseLeave={e => { if (!formatOptionsOpen) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <MoreHorizontal size={15} />
+                    </button>
+                    {formatOptionsOpen && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-white rounded-xl p-2 z-20 modal-shadow" style={{ width: 160 }}>
+                        <button onClick={() => { prefixLines(() => '• '); setFormatOptionsOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
                           <List size={12} /> Add bullets
                         </button>
-                        <button onClick={() => { prefixLines(i => `${i + 1}. `); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
+                        <button onClick={() => { prefixLines(i => `${i + 1}. `); setFormatOptionsOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
                           <ListOrdered size={12} /> Add numbers
                         </button>
-                        <button onClick={() => { insertAtCursor('\n───\n'); setFormatMoreOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
+                        <button onClick={() => { insertAtCursor('\n───\n'); setFormatOptionsOpen(false); }} className="flex items-center gap-2 w-full text-left text-[11px] px-2 py-1.5 rounded-lg hover:bg-[rgba(124,92,252,0.06)]" style={{ color: '#444' }}>
                           <Minus size={12} /> Divider
                         </button>
                       </div>
@@ -1112,6 +1296,9 @@ export default function Phase2Editor({
             <button onClick={handleSaveDraft} disabled={savingDraft} className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-full disabled:opacity-50" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
               <Save size={12} /> {savingDraft ? 'Saving...' : 'Save draft'}
             </button>
+            <button onClick={() => setVersionHistoryOpen(true)} className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-full" style={{ color: '#6B7280', border: '1px solid #EDE8FF' }}>
+              <History size={12} /> History
+            </button>
             <div className="flex-1" />
             <button onClick={openSchedule} className="flex items-center gap-1.5 text-[13px] font-bold px-4 py-2 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}>
               <Calendar size={13} /> Schedule
@@ -1133,7 +1320,7 @@ export default function Phase2Editor({
         <textarea
           ref={textareaRef}
           value={content}
-          onChange={e => setContent(e.target.value)}
+          onChange={e => handleContentChange(e.target.value)}
           onKeyDown={handleEditorKeyDown}
           className="flex-1 min-h-0 w-full outline-none resize-none px-4 py-3"
           style={{ fontSize: 15, lineHeight: 1.8, color: '#1A1A2E', background: 'transparent', border: 'none' }}
@@ -1225,11 +1412,11 @@ export default function Phase2Editor({
 
             {/* Make it pills */}
             <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Make it...</p>
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-2">
               {MAKE_IT_PILLS.map(pill => (
                 <button
                   key={pill.label}
-                  onClick={() => { handleAriaRefine(pill.instruction); setAiPanelOpen(false); }}
+                  onClick={() => { handleStyleRefine(pill.instruction, pill.label); setAiPanelOpen(false); }}
                   disabled={isRefining || !content.trim()}
                   className="text-[12px] font-semibold px-3 py-1.5 rounded-full disabled:opacity-40"
                   style={{ background: '#F4F0FF', color: '#7C5CFC' }}
@@ -1238,6 +1425,14 @@ export default function Phase2Editor({
                 </button>
               ))}
             </div>
+            <button
+              onClick={() => { setMoreStylesOpen(true); setAiPanelOpen(false); }}
+              disabled={isRefining || !content.trim()}
+              className="w-full text-[12px] font-bold py-2 rounded-xl mb-4 disabled:opacity-40"
+              style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.06)', border: '1px dashed #D4CEFF' }}
+            >
+              More styles...
+            </button>
 
             {/* Length */}
             <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Post length</p>
@@ -1331,6 +1526,25 @@ export default function Phase2Editor({
           </div>
         </div>
       )}
+
+      {/* More styles drawer */}
+      <MoreStylesDrawer
+        open={moreStylesOpen}
+        onClose={() => setMoreStylesOpen(false)}
+        onApply={(style: ContentStyle) => handleStyleRefine(style.promptFragment, style.label)}
+        disabled={isRefining || isGenerating || !content.trim()}
+      />
+
+      {/* Version history drawer */}
+      <VersionHistoryDrawer
+        open={versionHistoryOpen}
+        onClose={() => setVersionHistoryOpen(false)}
+        versions={versions}
+        currentContent={content}
+        onRestore={handleRestore}
+        onSaveCurrent={() => saveVersion('Manual save')}
+        isSaving={savingVersion}
+      />
 
       {/* Schedule modal */}
       {scheduleOpen && (

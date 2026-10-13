@@ -340,6 +340,10 @@ export default function Phase2Editor({
   const handleAriaRefine = async (overrideInstruction?: string) => {
     const instruction = overrideInstruction || ariaInput.trim();
     if (!instruction || ariaRefining) return;
+    if (!content.trim()) {
+      showToast('error', 'Generate a post first, then ask Aria to edit it.');
+      return;
+    }
     setAriaRefining(true);
     const prevContent = content;
     try {
@@ -1441,7 +1445,7 @@ export default function Phase2Editor({
               type="text"
               value={ariaInput}
               onChange={e => setAriaInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim()) handleAriaRefine(); }}
+              onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim() && content.trim()) handleAriaRefine(); }}
               placeholder="Ask Aria to edit your post..."
               className="flex-1 min-w-0 text-[13px] bg-transparent outline-none"
               style={{ color: '#1A1A2E' }}
@@ -1449,8 +1453,8 @@ export default function Phase2Editor({
             {ariaInput.trim() ? (
               <button
                 onClick={() => handleAriaRefine()}
-                disabled={isRefining}
-                className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0"
+                disabled={isRefining || !content.trim()}
+                className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0 disabled:opacity-40"
                 style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
               >
                 <ChevronRight size={12} color="white" />

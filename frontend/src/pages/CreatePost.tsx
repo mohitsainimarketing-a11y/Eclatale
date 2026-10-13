@@ -155,8 +155,8 @@ export default function CreatePost() {
         const savedTopic = sessionStorage.getItem(CUSTOM_INPUT_SESSION_KEY) || '';
         if (saved === '1') {
           setCurrentPhase(1);
-        } else if (saved === '2' && savedTopic) {
-          setCustomInput(savedTopic);
+        } else if (saved === '2') {
+          if (savedTopic) setCustomInput(savedTopic);
           setSelectedAngle(null);
           // Restore saved content so Phase2Editor doesn't call the API again on refresh
           const savedContent = sessionStorage.getItem(CONTENT_SESSION_KEY) || '';
@@ -265,9 +265,9 @@ export default function CreatePost() {
     setEditMode(false);
     setPostId(null);
     setInitialContent('');
-    // Use customInput as topic hint
     setCustomInput('repurposed content');
     setSelectedAngle(null);
+    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, 'repurposed content'); } catch {}
     goToPhase(2);
   };
 

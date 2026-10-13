@@ -4,7 +4,7 @@ import {
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
   ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw, FlaskConical, Layers,
   Monitor, Smartphone, Eye, Pencil, Zap, Smile, History, Settings2,
-  Undo2, Redo2,
+  Undo2, Redo2, Paperclip,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
@@ -1370,18 +1370,26 @@ export default function Phase2Editor({
 
       {/* ── Mobile bottom bar ── */}
       <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#F0EEF8' }}>
-        {/* Format + Aria strip — fixed 44px row */}
-        <div className="flex items-center h-11 px-3 gap-0.5">
-          <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[14px] font-bold flex-shrink-0" style={{ color: '#374151' }}>B</button>
-          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[14px] flex-shrink-0" style={{ color: '#374151', fontStyle: 'italic' }}>I</button>
-          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[13px] line-through flex-shrink-0" style={{ color: '#374151' }}>S</button>
-          <button onClick={() => setFormatMoreOpen(o => !o)} className="w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: formatMoreOpen ? '#7C5CFC' : '#6B7280' }}>
-            <Smile size={15} />
+        {/* Format + Aria strip */}
+        <div className="flex items-center h-11 px-2 gap-0.5">
+          {/* Format group */}
+          <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-bold flex-shrink-0" style={{ color: '#374151' }}>B</button>
+          <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] flex-shrink-0" style={{ color: '#374151', fontStyle: 'italic' }}>I</button>
+          <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[12px] line-through flex-shrink-0" style={{ color: '#374151' }}>S</button>
+          <button onClick={() => setFormatMoreOpen(o => !o)} className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: formatMoreOpen ? '#7C5CFC' : '#9CA3AF' }}>
+            <Smile size={14} />
           </button>
-          <div className="w-px h-5 mx-2 flex-shrink-0" style={{ background: '#E5E7EB' }} />
-          {/* Aria input pill */}
-          <div className="flex-1 min-w-0 flex items-center gap-1.5 h-8 rounded-full px-3" style={{ background: '#F4F0FF', border: '1px solid #DDD8FF' }}>
-            <Sparkles size={10} style={{ color: '#7C5CFC', flexShrink: 0 }} />
+          <div className="w-px h-4 mx-1 flex-shrink-0" style={{ background: '#E5E7EB' }} />
+          {/* Aria input — Claude chat-box style */}
+          <div className="flex-1 min-w-0 flex items-center gap-1 h-8 rounded-xl px-2" style={{ background: 'white', border: '1.5px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <button
+              onClick={() => setMobileDrawerOpen(true)}
+              className="flex-shrink-0 p-0.5 rounded"
+              style={{ color: '#C4C4CF' }}
+              title="More options"
+            >
+              <Paperclip size={12} />
+            </button>
             <input
               type="text"
               value={ariaInput}
@@ -1391,17 +1399,25 @@ export default function Phase2Editor({
               className="flex-1 min-w-0 text-[11px] bg-transparent outline-none"
               style={{ color: '#1A1A2E' }}
             />
-            {ariaInput.trim() && (
-              <button onClick={() => handleAriaRefine()} disabled={isRefining} className="flex-shrink-0">
-                <ChevronRight size={12} style={{ color: '#7C5CFC' }} />
+            {ariaInput.trim() ? (
+              <button
+                onClick={() => handleAriaRefine()}
+                disabled={isRefining}
+                className="w-5 h-5 flex items-center justify-center rounded-full flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
+              >
+                <ChevronRight size={10} color="white" />
               </button>
+            ) : (
+              <Sparkles size={10} style={{ color: '#C4C4CF', flexShrink: 0 }} />
             )}
           </div>
-          {/* AI panel trigger */}
+          {/* More — opens full AI Edit panel */}
           <button
             onClick={() => setAiPanelOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0 ml-1.5"
+            className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0 ml-1"
             style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
+            title="AI Edit"
           >
             <Sparkles size={13} color="white" />
           </button>

@@ -17,6 +17,7 @@ const LAST_ANGLE_STORAGE_KEY = 'eclatale_create_last_angle';
 const LENGTH_STORAGE_KEY = 'eclatale_create_length';
 const PHASE_SESSION_KEY = 'eclatale_create_phase';
 const CUSTOM_INPUT_SESSION_KEY = 'eclatale_create_custom_input';
+const CONTENT_SESSION_KEY = 'eclatale_create_content';
 type Phase = 0 | 1 | 2 | 3;
 
 export default function CreatePost() {
@@ -155,9 +156,11 @@ export default function CreatePost() {
         if (saved === '1') {
           setCurrentPhase(1);
         } else if (saved === '2' && savedTopic) {
-          // Restore Phase 2: set topic so Phase2Editor generates on mount
           setCustomInput(savedTopic);
           setSelectedAngle(null);
+          // Restore saved content so Phase2Editor doesn't call the API again on refresh
+          const savedContent = sessionStorage.getItem(CONTENT_SESSION_KEY) || '';
+          if (savedContent) setInitialContent(savedContent);
           setCurrentPhase(2);
         }
       } catch {}

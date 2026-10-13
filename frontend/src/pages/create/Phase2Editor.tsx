@@ -266,7 +266,10 @@ export default function Phase2Editor({
         accumulated += chunk;
         setContent(accumulated);
       }, undefined, true, lengthOverride);
-      if (accumulated) await savePost(accumulated);
+      if (accumulated) {
+        await savePost(accumulated);
+        try { sessionStorage.setItem('eclatale_create_content', accumulated); } catch {}
+      }
     } catch (e: any) {
       setGenError(e.message || "Couldn't generate a post. Try again.");
     }
@@ -556,6 +559,7 @@ export default function Phase2Editor({
 
   const handleContentChange = (val: string) => {
     setContent(val);
+    try { sessionStorage.setItem('eclatale_create_content', val); } catch {}
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => { pushUndo(val); debounceRef.current = null; }, 1000);
   };
@@ -1480,6 +1484,32 @@ export default function Phase2Editor({
           </button>
         </div>
       </div>
+
+      {/* Mobile diff preview — shown when AI style refine (emoji, Make-It, etc.) has a pending result */}
+      {pendingDiff && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(26,26,46,0.55)' }}>
+          <div className="flex-1" onClick={() => setPendingDiff(null)} />
+          <div className="bg-white rounded-t-3xl flex flex-col" style={{ maxHeight: '80vh' }}>
+            <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-3 flex-shrink-0" style={{ background: '#E5E7EB' }} />
+            <div className="flex items-center justify-between px-5 pb-3 flex-shrink-0">
+              <div>
+                <p className="text-[14px] font-bold" style={{ color: '#1A1A2E' }}>"{pendingDiff.label}" preview</p>
+                <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Accept to apply, reject to keep your original</p>
+              </div>
+              <button onClick={() => setPendingDiff(null)} className="w-8 h-8 flex items-center justify-center rounded-full" style={{ background: '#F3F4F6', color: '#6B7280' }}>
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-3">
+              <p className="text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: '#1A1A2E' }}>{pendingDiff.after}</p>
+            </div>
+            <div className="flex gap-3 px-5 pb-8 pt-3 flex-shrink-0 border-t" style={{ borderColor: '#F0EEF8' }}>
+              <button onClick={() => setPendingDiff(null)} className="flex-1 py-3 rounded-2xl font-bold text-[14px]" style={{ color: '#6B7280', border: '1.5px solid #EDE8FF' }}>Reject</button>
+              <button onClick={acceptDiff} className="flex-1 py-3 rounded-2xl font-bold text-[14px] text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Accept</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile emoji picker — fixed overlay above bottom bar, avoids all overflow clipping */}
       {formatMoreOpen && (

@@ -279,7 +279,8 @@ export default function Phase2Editor({
   };
 
   useEffect(() => {
-    if (!editMode) handleGenerate();
+    // Skip generation if content already exists (avoids wasteful API call on refresh)
+    if (!editMode && !initialContent.trim()) handleGenerate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1334,7 +1335,7 @@ export default function Phase2Editor({
       </div>
 
       {/* ── Mobile: edit or preview ── */}
-      <div className="md:hidden flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
+      <div className="md:hidden flex-1 min-h-0 flex flex-col bg-white overflow-y-auto">
         {previewMode === 'preview' ? (
           <div className="flex-1 overflow-y-auto">
             {/* LinkedIn preview card — no outer padding, feels immersive */}
@@ -1375,7 +1376,16 @@ export default function Phase2Editor({
             onFocus={() => setKbVisible(true)}
             onBlur={() => setKbVisible(false)}
             className="flex-1 min-h-0 w-full outline-none resize-none px-5 pt-4 pb-2"
-            style={{ fontSize: 16, lineHeight: 1.85, color: '#1A1A2E', background: 'white', border: 'none' }}
+            style={{
+              fontSize: 16,
+              lineHeight: 1.85,
+              color: '#1A1A2E',
+              background: 'white',
+              border: 'none',
+              overflowY: 'auto',
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+            }}
             placeholder="Your post appears here..."
           />
         )}
@@ -1389,7 +1399,13 @@ export default function Phase2Editor({
           <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] font-bold flex-shrink-0" style={{ color: '#374151' }}>B</button>
           <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] flex-shrink-0" style={{ color: '#374151', fontStyle: 'italic' }}>I</button>
           <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] line-through flex-shrink-0" style={{ color: '#374151' }}>S</button>
-          <button onClick={() => setFormatMoreOpen(o => !o)} className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: formatMoreOpen ? '#7C5CFC' : '#9CA3AF' }}>
+          <button
+            onClick={() => handleStyleRefine('Add 3 to 5 relevant emojis throughout this post. Place them at the start of key lines, after punchy phrases, or to highlight moments of emotion or impact. Keep it professional and do not overdo it.', 'Add emojis')}
+            disabled={isRefining || !content.trim()}
+            className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 disabled:opacity-40"
+            style={{ color: '#9CA3AF' }}
+            title="AI: add emojis"
+          >
             <Smile size={15} />
           </button>
           <div className="flex-1" />

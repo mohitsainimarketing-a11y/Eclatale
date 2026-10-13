@@ -701,9 +701,14 @@ export default function Phase2Editor({
         {kbVisible ? (
           <button
             onMouseDown={e => { e.preventDefault(); textareaRef.current?.blur(); }}
-            className="text-[13px] font-semibold px-1"
-            style={{ color: '#7C5CFC' }}
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full"
+            style={{
+              background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)',
+              color: 'white',
+              boxShadow: '0 0 0 3px rgba(124,92,252,0.18), 0 2px 8px rgba(124,92,252,0.30)',
+            }}
           >
+            <span className="w-1.5 h-1.5 rounded-full bg-white opacity-90" style={{ animation: 'pulse 1.4s ease-in-out infinite' }} />
             Done
           </button>
         ) : (

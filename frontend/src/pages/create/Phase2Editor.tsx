@@ -1370,59 +1370,73 @@ export default function Phase2Editor({
 
       {/* ── Mobile bottom bar ── */}
       <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#F0EEF8' }}>
-        {/* Format + Aria strip */}
-        <div className="flex items-center h-11 px-2 gap-0.5">
-          {/* Format group */}
-          <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-bold flex-shrink-0" style={{ color: '#374151' }}>B</button>
-          <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] flex-shrink-0" style={{ color: '#374151', fontStyle: 'italic' }}>I</button>
-          <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[12px] line-through flex-shrink-0" style={{ color: '#374151' }}>S</button>
+
+        {/* Row 1: Format toolbar */}
+        <div className="flex items-center h-10 px-3 gap-0.5 border-b" style={{ borderColor: '#F5F3FF' }}>
+          <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] font-bold flex-shrink-0" style={{ color: '#374151' }}>B</button>
+          <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] flex-shrink-0" style={{ color: '#374151', fontStyle: 'italic' }}>I</button>
+          <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[13px] line-through flex-shrink-0" style={{ color: '#374151' }}>S</button>
           <button onClick={() => setFormatMoreOpen(o => !o)} className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: formatMoreOpen ? '#7C5CFC' : '#9CA3AF' }}>
-            <Smile size={14} />
+            <Smile size={15} />
           </button>
-          <div className="w-px h-4 mx-1 flex-shrink-0" style={{ background: '#E5E7EB' }} />
-          {/* Aria input — Claude chat-box style */}
-          <div className="flex-1 min-w-0 flex items-center gap-1 h-8 rounded-xl px-2" style={{ background: 'white', border: '1.5px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div className="flex-1" />
+          <button
+            onClick={handleHumanize}
+            disabled={humanizing || !content.trim()}
+            className="flex items-center gap-1 text-[11px] font-semibold px-3 h-7 rounded-full disabled:opacity-40"
+            style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
+          >
+            <Wand2 size={11} /> {humanizing ? 'Humanizing…' : 'Humanize'}
+          </button>
+        </div>
+
+        {/* Row 2: Aria — own dedicated section */}
+        <div className="flex items-center gap-2 px-3 py-2">
+          {/* Claude-style input box */}
+          <div
+            className="flex-1 min-w-0 flex items-center gap-2 rounded-2xl px-3 py-2"
+            style={{ background: '#FAFAFE', border: '1.5px solid #EDE8FF', boxShadow: '0 1px 4px rgba(124,92,252,0.08)' }}
+          >
             <button
               onClick={() => setMobileDrawerOpen(true)}
-              className="flex-shrink-0 p-0.5 rounded"
+              className="flex-shrink-0"
               style={{ color: '#C4C4CF' }}
-              title="More options"
             >
-              <Paperclip size={12} />
+              <Paperclip size={14} />
             </button>
             <input
               type="text"
               value={ariaInput}
               onChange={e => setAriaInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim()) handleAriaRefine(); }}
-              placeholder="Ask Aria..."
-              className="flex-1 min-w-0 text-[11px] bg-transparent outline-none"
+              placeholder="Ask Aria to edit your post..."
+              className="flex-1 min-w-0 text-[13px] bg-transparent outline-none"
               style={{ color: '#1A1A2E' }}
             />
             {ariaInput.trim() ? (
               <button
                 onClick={() => handleAriaRefine()}
                 disabled={isRefining}
-                className="w-5 h-5 flex items-center justify-center rounded-full flex-shrink-0"
+                className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
               >
-                <ChevronRight size={10} color="white" />
+                <ChevronRight size={12} color="white" />
               </button>
             ) : (
-              <Sparkles size={10} style={{ color: '#C4C4CF', flexShrink: 0 }} />
+              <Sparkles size={12} style={{ color: '#C4C4CF', flexShrink: 0 }} />
             )}
           </div>
-          {/* More — opens full AI Edit panel */}
+          {/* AI Edit — opens full panel */}
           <button
             onClick={() => setAiPanelOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0 ml-1"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
-            title="AI Edit"
           >
-            <Sparkles size={13} color="white" />
+            <Sparkles size={15} color="white" />
           </button>
         </div>
-        {/* Post row */}
+
+        {/* Row 3: Post action */}
         <div className="flex items-center gap-2 px-3 pb-4">
           <button
             onClick={handlePublish}

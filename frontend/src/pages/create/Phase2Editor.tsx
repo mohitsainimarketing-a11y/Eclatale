@@ -177,6 +177,7 @@ export default function Phase2Editor({
   // ── Phase 2: More styles drawer ──────────────────────────────────────────────
   const [moreStylesOpen, setMoreStylesOpen] = useState(false);
   const [formatOptionsOpen, setFormatOptionsOpen] = useState(false);
+  const [kbVisible, setKbVisible] = useState(false);
 
   // ── Phase 2: Version history ─────────────────────────────────────────────────
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -697,7 +698,17 @@ export default function Phase2Editor({
           >Preview</button>
         </div>
         <span className="flex-1" />
-        <span className="text-[10px] font-medium" style={{ color: content.length > 2700 ? '#F72585' : '#C4C4CF' }}>{content.length}</span>
+        {kbVisible ? (
+          <button
+            onMouseDown={e => { e.preventDefault(); textareaRef.current?.blur(); }}
+            className="text-[13px] font-semibold px-1"
+            style={{ color: '#7C5CFC' }}
+          >
+            Done
+          </button>
+        ) : (
+          <span className="text-[10px] font-medium" style={{ color: content.length > 2700 ? '#F72585' : '#C4C4CF' }}>{content.length}</span>
+        )}
       </div>
 
       {/* ── Desktop top bar: topic chip + spark + length + controls ── */}
@@ -1361,6 +1372,8 @@ export default function Phase2Editor({
             value={content}
             onChange={e => handleContentChange(e.target.value)}
             onKeyDown={handleEditorKeyDown}
+            onFocus={() => setKbVisible(true)}
+            onBlur={() => setKbVisible(false)}
             className="flex-1 min-h-0 w-full outline-none resize-none px-5 pt-4 pb-2"
             style={{ fontSize: 16, lineHeight: 1.85, color: '#1A1A2E', background: 'white', border: 'none' }}
             placeholder="Your post appears here..."

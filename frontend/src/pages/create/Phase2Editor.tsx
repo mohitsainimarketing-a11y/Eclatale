@@ -1375,16 +1375,9 @@ export default function Phase2Editor({
           <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[14px] font-bold flex-shrink-0" style={{ color: '#374151' }}>B</button>
           <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[14px] flex-shrink-0" style={{ color: '#374151', fontStyle: 'italic' }}>I</button>
           <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[13px] line-through flex-shrink-0" style={{ color: '#374151' }}>S</button>
-          <div className="relative flex-shrink-0">
-            <button onClick={() => setFormatMoreOpen(o => !o)} className="w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: '#6B7280' }}>
-              <Smile size={15} />
-            </button>
-            {formatMoreOpen && (
-              <div className="absolute bottom-full left-0 mb-2 z-20" style={{ filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.18))' }}>
-                <EmojiPickerLazy onSelect={emoji => { insertAtCursor(emoji); setFormatMoreOpen(false); }} />
-              </div>
-            )}
-          </div>
+          <button onClick={() => setFormatMoreOpen(o => !o)} className="w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: formatMoreOpen ? '#7C5CFC' : '#6B7280' }}>
+            <Smile size={15} />
+          </button>
           <div className="w-px h-5 mx-2 flex-shrink-0" style={{ background: '#E5E7EB' }} />
           {/* Aria input pill */}
           <div className="flex-1 min-w-0 flex items-center gap-1.5 h-8 rounded-full px-3" style={{ background: '#F4F0FF', border: '1px solid #DDD8FF' }}>
@@ -1428,6 +1421,15 @@ export default function Phase2Editor({
           </button>
         </div>
       </div>
+
+      {/* Mobile emoji picker — fixed overlay above bottom bar, avoids all overflow clipping */}
+      {formatMoreOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center" onClick={() => setFormatMoreOpen(false)}>
+          <div className="absolute inset-x-0 bottom-[104px] flex justify-center px-4" onClick={e => e.stopPropagation()}>
+            <EmojiPickerLazy onSelect={emoji => { insertAtCursor(emoji); setFormatMoreOpen(false); }} />
+          </div>
+        </div>
+      )}
 
       {/* Mobile Hooks panel */}
       {hooksOpen && (

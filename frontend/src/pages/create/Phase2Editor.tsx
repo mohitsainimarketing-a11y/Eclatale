@@ -1439,6 +1439,13 @@ export default function Phase2Editor({
                 <Sparkles size={12} color="white" />
               </div>
               <span className="text-[14px] font-extrabold" style={{ color: '#1A1A2E' }}>AI Edit</span>
+              <button
+                onClick={() => setAiPanelOpen(false)}
+                className="ml-auto w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
+                style={{ background: '#F3F4F6', color: '#6B7280' }}
+              >
+                <X size={15} />
+              </button>
             </div>
 
             {/* Quick actions */}

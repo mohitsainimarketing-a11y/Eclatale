@@ -1518,7 +1518,14 @@ export default function Phase2Editor({
       {/* Mobile emoji picker — fixed overlay above bottom bar, avoids all overflow clipping */}
       {formatMoreOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center" onClick={() => setFormatMoreOpen(false)}>
-          <div className="absolute inset-x-0 bottom-[104px] flex justify-center px-4" onClick={e => e.stopPropagation()}>
+          <div className="absolute inset-x-0 bottom-[104px] flex flex-col items-center px-4 gap-2" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setFormatMoreOpen(false)}
+              className="self-end w-8 h-8 flex items-center justify-center rounded-full shadow-md"
+              style={{ background: 'white', color: '#6B7280' }}
+            >
+              <X size={14} />
+            </button>
             <EmojiPickerLazy onSelect={emoji => { insertAtCursor(emoji); setFormatMoreOpen(false); }} />
           </div>
         </div>
@@ -1677,8 +1684,13 @@ export default function Phase2Editor({
       {mobileDrawerOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end animate-fadeIn" style={{ background: 'rgba(0,0,0,0.40)' }} onClick={() => setMobileDrawerOpen(false)}>
           <div className="bg-white rounded-t-3xl px-5 pt-4 pb-8" onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: '#E5E7EB' }} />
-            <p className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Options</p>
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: '#E5E7EB' }} />
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Options</p>
+              <button onClick={() => setMobileDrawerOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: '#F3F4F6', color: '#6B7280' }}>
+                <X size={14} />
+              </button>
+            </div>
             <div className="grid grid-cols-3 gap-2.5">
               <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Copy size={18} style={{ color: '#6B7280' }} />

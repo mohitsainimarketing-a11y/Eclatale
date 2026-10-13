@@ -675,18 +675,29 @@ export default function Phase2Editor({
   return (
     <div className="flex-1 min-h-0 flex flex-col">
 
-      {/* ── Mobile compact header ── */}
-      <div className="md:hidden bg-white border-b flex items-center gap-2 px-3 py-2 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
-        <button onClick={onBack} className="w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0" style={{ color: '#6B7280' }}>
-          <ArrowLeft size={16} />
+      {/* ── Mobile header ── */}
+      <div className="md:hidden bg-white border-b flex items-center px-4 h-10 flex-shrink-0" style={{ borderColor: '#F0EEF8' }}>
+        <button onClick={onBack} className="mr-3 flex-shrink-0 -ml-1 p-1" style={{ color: '#9CA3AF' }}>
+          <ArrowLeft size={17} />
         </button>
-        {/* Edit / Preview toggle */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg flex-shrink-0" style={{ background: '#F3F2EF' }}>
-          <button onClick={() => setPreviewMode('edit')} className="text-[10px] font-bold px-2.5 py-0.5 rounded-md transition-all" style={previewMode === 'edit' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 2px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Edit</button>
-          <button onClick={() => setPreviewMode('preview')} className="text-[10px] font-bold px-2.5 py-0.5 rounded-md transition-all" style={previewMode === 'preview' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 2px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Preview</button>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <button
+            onClick={() => setPreviewMode('edit')}
+            className="text-[12px] font-semibold transition-all"
+            style={previewMode === 'edit'
+              ? { color: '#1A1A2E', borderBottom: '2px solid #7C5CFC', paddingBottom: 1 }
+              : { color: '#B0B0C3', borderBottom: '2px solid transparent', paddingBottom: 1 }}
+          >Edit</button>
+          <button
+            onClick={() => setPreviewMode('preview')}
+            className="text-[12px] font-semibold transition-all"
+            style={previewMode === 'preview'
+              ? { color: '#1A1A2E', borderBottom: '2px solid #7C5CFC', paddingBottom: 1 }
+              : { color: '#B0B0C3', borderBottom: '2px solid transparent', paddingBottom: 1 }}
+          >Preview</button>
         </div>
         <span className="flex-1" />
-        <span className="text-[10px] font-semibold flex-shrink-0" style={{ color: content.length > 2700 ? '#F72585' : '#9CA3AF' }}>{content.length}</span>
+        <span className="text-[10px] font-medium" style={{ color: content.length > 2700 ? '#F72585' : '#C4C4CF' }}>{content.length}</span>
       </div>
 
       {/* ── Desktop top bar: topic chip + spark + length + controls ── */}
@@ -1314,23 +1325,24 @@ export default function Phase2Editor({
       {/* ── Mobile: edit or preview ── */}
       <div className="md:hidden flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
         {previewMode === 'preview' ? (
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.10)', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                <Avatar src={userAvatar} initials={userInitials || 'Y'} alt={userName} size={40} />
+          <div className="flex-1 overflow-y-auto">
+            {/* LinkedIn preview card — no outer padding, feels immersive */}
+            <div className="bg-white">
+              <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+                <Avatar src={userAvatar} initials={userInitials || 'Y'} alt={userName} size={38} />
                 <div>
-                  <p className="text-[14px] font-bold" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
-                  <p className="text-[11px]" style={{ color: '#888' }}>Just now · 🌐</p>
+                  <p className="text-[14px] font-bold leading-tight" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
+                  <p className="text-[11px]" style={{ color: '#9CA3AF' }}>Just now · 🌐</p>
                 </div>
               </div>
-              <div className="px-4 pb-4">
+              <div className="px-5 pb-5">
                 <LinkedInPostPreview content={content} />
               </div>
-              <div className="px-4 py-2.5 border-t" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><ThumbsUp size={14} /> Like</span>
-                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><MessageCircle size={14} /> Comment</span>
-                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><Repeat2 size={14} /> Repost</span>
+              <div className="px-5 py-3 border-t" style={{ borderColor: '#F3F4F6' }}>
+                <div className="flex items-center gap-5">
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><ThumbsUp size={13} /> Like</span>
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><MessageCircle size={13} /> Comment</span>
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><Repeat2 size={13} /> Repost</span>
                 </div>
               </div>
             </div>
@@ -1349,71 +1361,70 @@ export default function Phase2Editor({
             value={content}
             onChange={e => handleContentChange(e.target.value)}
             onKeyDown={handleEditorKeyDown}
-            className="flex-1 min-h-0 w-full outline-none resize-none px-5 py-4"
-            style={{ fontSize: 16, lineHeight: 1.8, color: '#1A1A2E', background: 'transparent', border: 'none' }}
+            className="flex-1 min-h-0 w-full outline-none resize-none px-5 pt-4 pb-2"
+            style={{ fontSize: 16, lineHeight: 1.85, color: '#1A1A2E', background: 'white', border: 'none' }}
             placeholder="Your post appears here..."
           />
         )}
       </div>
 
       {/* ── Mobile bottom bar ── */}
-      <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
-        {/* Format + Aria row */}
-        <div className="flex items-center gap-1 px-3 py-2">
-          <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[15px] font-extrabold flex-shrink-0" style={{ color: '#1A1A2E' }}>B</button>
-          <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[15px] italic flex-shrink-0" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
-          <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] line-through flex-shrink-0" style={{ color: '#1A1A2E' }}>S</button>
+      <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#F0EEF8' }}>
+        {/* Format + Aria strip — fixed 44px row */}
+        <div className="flex items-center h-11 px-3 gap-0.5">
+          <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[14px] font-bold flex-shrink-0" style={{ color: '#374151' }}>B</button>
+          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[14px] flex-shrink-0" style={{ color: '#374151', fontStyle: 'italic' }}>I</button>
+          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-lg text-[13px] line-through flex-shrink-0" style={{ color: '#374151' }}>S</button>
           <div className="relative flex-shrink-0">
-            <button onClick={() => setFormatMoreOpen(o => !o)} className="w-8 h-8 flex items-center justify-center rounded-lg" style={{ color: '#6B7280', background: formatMoreOpen ? '#F0EEF8' : 'transparent' }}>
-              <Smile size={16} />
+            <button onClick={() => setFormatMoreOpen(o => !o)} className="w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: '#6B7280' }}>
+              <Smile size={15} />
             </button>
             {formatMoreOpen && (
-              <div className="absolute bottom-full left-0 mb-1 z-20" style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.12))' }}>
+              <div className="absolute bottom-full left-0 mb-2 z-20" style={{ filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.18))' }}>
                 <EmojiPickerLazy onSelect={emoji => { insertAtCursor(emoji); setFormatMoreOpen(false); }} />
               </div>
             )}
           </div>
-          <div className="w-px h-4 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          {/* Aria input */}
-          <div className="flex-1 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5" style={{ background: '#F4F0FF', border: '1.5px solid #EDE8FF' }}>
-            <Sparkles size={11} style={{ color: '#7C5CFC', flexShrink: 0 }} />
+          <div className="w-px h-5 mx-2 flex-shrink-0" style={{ background: '#E5E7EB' }} />
+          {/* Aria input pill */}
+          <div className="flex-1 min-w-0 flex items-center gap-1.5 h-8 rounded-full px-3" style={{ background: '#F4F0FF', border: '1px solid #DDD8FF' }}>
+            <Sparkles size={10} style={{ color: '#7C5CFC', flexShrink: 0 }} />
             <input
               type="text"
               value={ariaInput}
               onChange={e => setAriaInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim()) handleAriaRefine(); }}
               placeholder="Ask Aria..."
-              className="flex-1 min-w-0 text-[12px] bg-transparent outline-none"
+              className="flex-1 min-w-0 text-[11px] bg-transparent outline-none"
               style={{ color: '#1A1A2E' }}
             />
             {ariaInput.trim() && (
               <button onClick={() => handleAriaRefine()} disabled={isRefining} className="flex-shrink-0">
-                <ChevronRight size={13} style={{ color: '#7C5CFC' }} />
+                <ChevronRight size={12} style={{ color: '#7C5CFC' }} />
               </button>
             )}
           </div>
-          {/* More / AI Edit button */}
+          {/* AI panel trigger */}
           <button
             onClick={() => setAiPanelOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 ml-1"
-            style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white' }}
-            title="AI Edit"
+            className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0 ml-1.5"
+            style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
           >
-            <Sparkles size={14} />
+            <Sparkles size={13} color="white" />
           </button>
         </div>
-        {/* Post action row */}
-        <div className="flex items-center gap-3 px-4 pb-3">
+        {/* Post row */}
+        <div className="flex items-center gap-2 px-3 pb-4">
           <button
             onClick={handlePublish}
             disabled={publishing || isGenerating || !content.trim()}
-            className="flex-1 flex items-center justify-center gap-2 text-[14px] font-bold text-white py-3 rounded-2xl disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #0A66C2 0%, #004182 100%)', boxShadow: '0 6px 20px rgba(10,102,194,0.30)' }}
+            className="flex-1 h-12 flex items-center justify-center text-[14px] font-bold text-white rounded-2xl disabled:opacity-40"
+            style={{ background: '#0A66C2', boxShadow: '0 4px 16px rgba(10,102,194,0.28)' }}
           >
             {publishing ? 'Publishing...' : 'Post to LinkedIn'}
           </button>
-          <button onClick={() => setMobileDrawerOpen(true)} className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0" style={{ border: '1.5px solid #EDE8FF', color: '#6B7280' }}>
-            <MoreHorizontal size={20} />
+          <button onClick={() => setMobileDrawerOpen(true)} className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0" style={{ border: '1.5px solid #EDE8FF', color: '#9CA3AF' }}>
+            <MoreHorizontal size={18} />
           </button>
         </div>
       </div>

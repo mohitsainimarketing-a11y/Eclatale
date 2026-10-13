@@ -13,6 +13,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { Angle, Source, PostLength, LENGTH_OPTIONS, AuthenticityScoreResult, ResearchBrief } from './types';
 import { CTA_TEMPLATES } from './hookCtaTemplates';
 import HookLibraryPanel from './HookLibraryPanel';
+import Avatar from '../../components/Avatar';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001').trim();
 const BOLD = RICH_TEXT_STYLES.find(s => s.id === 'bold')!.apply;
@@ -588,20 +589,6 @@ export default function Phase2Editor({
           style={{ color: '#1A1A2E' }}
         />
         <div className="flex items-center gap-1 flex-shrink-0">
-          {LENGTH_OPTIONS.map(l => (
-            <button
-              key={l.id}
-              onClick={() => handleLengthAndRegenerate(l.id)}
-              disabled={isGenerating}
-              title={selectedLength === l.id ? 'Regenerate at this length' : `Switch to ${l.label}`}
-              className="text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50"
-              style={selectedLength === l.id
-                ? { background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' }
-                : { color: '#6B7280', border: '1px solid #EDE8FF' }}
-            >
-              {l.emoji} {l.label}
-            </button>
-          ))}
           <button
             onClick={handleGenerateVariants}
             disabled={generatingVariants || isGenerating}
@@ -725,6 +712,27 @@ export default function Phase2Editor({
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE8FF'; e.currentTarget.style.color = '#6B7280'; }}
                 >
                   {pill.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Length */}
+          <div className="px-3 py-2.5 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Length</p>
+            <div className="flex flex-wrap gap-1.5">
+              {LENGTH_OPTIONS.map(l => (
+                <button
+                  key={l.id}
+                  onClick={() => handleLengthAndRegenerate(l.id)}
+                  disabled={isGenerating}
+                  title={selectedLength === l.id ? 'Regenerate at this length' : `Switch to ${l.label}`}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all disabled:opacity-50"
+                  style={selectedLength === l.id
+                    ? { background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' }
+                    : { background: 'white', border: '1.5px solid #EDE8FF', color: '#6B7280' }}
+                >
+                  {l.emoji} {l.label}
                 </button>
               ))}
             </div>
@@ -909,10 +917,7 @@ export default function Phase2Editor({
 
                 {/* Card header: avatar + name + Edit/Preview */}
                 <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                  {userAvatar
-                    ? <img src={userAvatar} alt={userName} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-                    : <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>{userInitials || 'Y'}</div>
-                  }
+                  <Avatar src={userAvatar} initials={userInitials || 'Y'} alt={userName} size={40} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[14px] font-bold leading-tight" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
                     <p className="text-[11px]" style={{ color: '#888' }}>Just now · 🌐</p>

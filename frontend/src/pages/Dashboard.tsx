@@ -210,7 +210,7 @@ export default function Dashboard() {
   return (
     <AppShell mobileTitle="Eclatale">
       <div className="min-w-0 pb-8">
-        <div className="max-w-[1280px] mx-auto px-5 md:px-8 py-6 md:py-8">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-6 md:py-8">
 
           {/* Header bar */}
           <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
@@ -361,8 +361,24 @@ export default function Dashboard() {
           </div>
           )}
 
+          {/* Zero-post empty state */}
+          {overview && overview.totalPostsPublished === 0 && (
+            <div className="card p-8 text-center mb-6" style={{ border: '1.5px dashed rgba(124,92,252,0.25)', background: 'rgba(124,92,252,0.02)' }}>
+              <div className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
+                <Sparkles size={22} color="white" />
+              </div>
+              <h2 className="text-base font-bold text-brand-dark mb-1">Write your first post</h2>
+              <p className="text-sm text-brand-muted mb-5 max-w-xs mx-auto">
+                Your brand score and charts will fill in as you publish. One post is all it takes to get started.
+              </p>
+              <a href="/create" className="btn-primary text-sm inline-flex">
+                <Sparkles size={14} /> Create post
+              </a>
+            </div>
+          )}
+
           {/* Charts + Activity feed */}
-          {overview && <div className="grid grid-cols-1 lg:grid-cols-[65%_1fr] gap-6 mb-6">
+          {overview && overview.totalPostsPublished > 0 && <div className="grid grid-cols-1 lg:grid-cols-[65%_1fr] gap-6 mb-6">
             <div className="space-y-6 min-w-0">
               {/* Posting activity */}
               <div className="card p-6">

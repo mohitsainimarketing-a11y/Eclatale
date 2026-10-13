@@ -303,37 +303,41 @@ export default function Discover() {
       <div className="min-h-screen bg-[#FAFAFE]">
         <div className="max-w-6xl mx-auto px-5 md:px-8 py-6 md:py-8">
 
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Content Discovery</h1>
-            <p className="text-sm text-brand-muted mt-1">
-              {data && !activeQuery
-                ? <>Live content for <span className="font-semibold text-brand-dark">{data.role}s in {data.industry}</span>. Click any article to write about it or repurpose it.</>
-                : activeQuery
-                ? <>Showing results for "<span className="font-semibold text-brand-dark">{activeQuery}</span>"</>
-                : 'Discovering content from across the web…'}
-            </p>
+          {/* Header + search merged */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 mb-5">
+            <div className="flex-shrink-0">
+              <h1 className="text-xl md:text-2xl font-bold text-brand-dark">Content Discovery</h1>
+              <p className="text-[12px] text-brand-muted mt-0.5 hidden md:block">
+                {data && !activeQuery
+                  ? <><span className="font-semibold text-brand-dark">{data.role}s in {data.industry}</span></>
+                  : activeQuery
+                  ? <>"<span className="font-semibold text-brand-dark">{activeQuery}</span>"</>
+                  : 'Searching the web for you'}
+              </p>
+            </div>
+            <form onSubmit={handleSearch} className="flex gap-2 flex-1 md:max-w-xl">
+              <div className="relative flex-1">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  placeholder="Search any topic: AI, leadership, SaaS…"
+                  className="input w-full pl-9 text-sm"
+                />
+              </div>
+              <button type="submit" disabled={loading || !searchInput.trim()} className="btn-primary text-sm disabled:opacity-50 px-4">
+                Search
+              </button>
+              <button type="button" onClick={handleRefresh} disabled={loading} className="btn-secondary text-sm disabled:opacity-50 px-3" title="Refresh">
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+              </button>
+            </form>
           </div>
 
-          {/* Search + refresh */}
-          <form onSubmit={handleSearch} className="flex gap-2 mb-5">
-            <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                placeholder="Search any topic: AI, leadership, marketing, SaaS…"
-                className="input w-full pl-9 text-sm"
-              />
-            </div>
-            <button type="submit" disabled={loading || !searchInput.trim()} className="btn-primary text-sm disabled:opacity-50 px-4">
-              Search
-            </button>
-            <button type="button" onClick={handleRefresh} disabled={loading} className="btn-secondary text-sm disabled:opacity-50 px-3" title="Refresh">
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            </button>
-          </form>
+          {/* Two-column layout: content + context panel */}
+          <div className="flex gap-6 items-start">
+          <div className="flex-1 min-w-0">
 
           {/* Category filters + sort */}
           {!loading && data && (
@@ -406,6 +410,49 @@ export default function Discover() {
               <button onClick={handleRefresh} className="underline hover:no-underline">Refresh</button>
             </p>
           )}
+          </div>{/* end main column */}
+
+          {/* Right context panel (desktop only) */}
+          <div className="hidden lg:flex flex-col gap-4 flex-shrink-0" style={{ width: 252 }}>
+            {data && (
+              <div className="card p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Your focus</p>
+                <p className="text-[13px] font-bold text-brand-dark leading-snug mb-1">
+                  {data.role}
+                </p>
+                <p className="text-[11px] text-brand-muted mb-3">{data.industry}</p>
+                <a
+                  href="/persona-setup"
+                  className="text-[11px] font-semibold text-brand-purple hover:underline"
+                >
+                  Edit voice profile
+                </a>
+              </div>
+            )}
+            <div className="card p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Write about this</p>
+              <p className="text-[12px] text-brand-muted mb-3 leading-relaxed">
+                Found something interesting? Open an article and click Content Idea to start a post in your voice.
+              </p>
+              <a
+                href="/create"
+                className="w-full flex items-center justify-center gap-1.5 text-[12px] font-bold py-2 rounded-xl text-white"
+                style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
+              >
+                Start from scratch
+              </a>
+            </div>
+            {data && (
+              <div className="card p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Content found</p>
+                <p className="text-[22px] font-extrabold text-brand-dark mb-0.5">{data.items.length}</p>
+                <p className="text-[11px] text-brand-muted">
+                  {data.cached ? 'Cached' : 'Live'} · {allCategories.length - 1} categories
+                </p>
+              </div>
+            )}
+          </div>
+          </div>{/* end two-column */}
         </div>
       </div>
 

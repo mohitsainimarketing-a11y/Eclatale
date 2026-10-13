@@ -180,15 +180,15 @@ export default function Phase1Angles({
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b px-4 md:px-8 py-3 md:py-5" style={{ borderColor: '#EDE8FF' }}>
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
             <h1 className="text-[17px] md:text-[26px] font-extrabold leading-tight" style={{ color: '#1A1A2E' }}>
               What will you post{' '}
               <span style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                 today?
               </span>
             </h1>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 mb-3">
               <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
                 Live
@@ -196,6 +196,25 @@ export default function Phase1Angles({
               <span className="text-[11px] font-medium" style={{ color: '#B0A8D0' }}>
                 {angles.length > 0 ? `${angles.length} angles` : 'angles'} for {userDomain || userRole || 'you'}
               </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setStyleFilter(null)}
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all"
+                style={!styleFilter ? { background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' } : { background: 'rgba(124,92,252,0.06)', color: '#6B7280', border: '1px solid #EDE8FF' }}
+              >
+                All
+              </button>
+              {(Object.entries(STYLE_LABEL) as [AngleStyle, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setStyleFilter(styleFilter === key ? null : key)}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all"
+                  style={styleFilter === key ? { background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' } : { background: 'rgba(124,92,252,0.06)', color: '#6B7280', border: '1px solid #EDE8FF' }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
           <button

@@ -12,11 +12,10 @@ interface AriaMsg {
 }
 
 // Aria only appears on authenticated "app" pages, not marketing/legal/auth pages.
-const ARIA_ROUTES = ['/dashboard', '/create', '/history', '/persona-setup', '/settings', '/create-visual', '/intelligence', '/pricing', '/onboarding'];
+const ARIA_ROUTES = ['/dashboard', '/history', '/persona-setup', '/settings', '/create-visual', '/intelligence', '/pricing', '/onboarding'];
 
 const QUICK_ACTIONS: Record<string, string[]> = {
   '/dashboard': ['Generate a post', 'Check my score', 'Find ideas'],
-  '/create': ['Make it shorter', 'Change the tone', 'Add a stat'],
   '/intelligence': ["What's my best post?", 'How can I improve?'],
   '/pricing': ["What's included?", 'How does the trial work?'],
 };

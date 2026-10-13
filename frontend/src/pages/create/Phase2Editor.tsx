@@ -680,17 +680,13 @@ export default function Phase2Editor({
         <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0" style={{ color: '#6B7280' }}>
           <ArrowLeft size={18} />
         </button>
-        <span className="flex-1 min-w-0 text-[12px] font-semibold truncate" style={{ color: '#1A1A2E' }}>
-          {angle ? angle.hook.slice(0, 32) : (customTopic.slice(0, 32) || 'New post')}
-        </span>
+        {/* Edit / Preview toggle */}
+        <div className="flex items-center gap-0.5 p-0.5 rounded-xl flex-shrink-0" style={{ background: '#F3F2EF' }}>
+          <button onClick={() => setPreviewMode('edit')} className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all" style={previewMode === 'edit' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 3px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Edit</button>
+          <button onClick={() => setPreviewMode('preview')} className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all" style={previewMode === 'preview' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 3px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Preview</button>
+        </div>
+        <span className="flex-1" />
         <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: content.length > 2700 ? '#F72585' : '#9CA3AF' }}>{content.length}</span>
-        <button
-          onClick={() => setAiPanelOpen(true)}
-          className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full flex-shrink-0"
-          style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}
-        >
-          <Sparkles size={12} /> AI Edit
-        </button>
       </div>
 
       {/* ── Desktop top bar: topic chip + spark + length + controls ── */}
@@ -1027,8 +1023,8 @@ export default function Phase2Editor({
           </div>
         </div>
 
-        {/* ── CENTER: LinkedIn-style editor ── */}
-        <div className="flex-1 min-h-0 flex flex-col" style={{ background: '#F3F2EF' }}>
+        {/* ── CENTER: LinkedIn-style editor (desktop only) ── */}
+        <div className="hidden md:flex flex-1 min-h-0 flex-col" style={{ background: '#F3F2EF' }}>
 
           {/* Editor top controls: Edit/Preview + Desktop/Mobile */}
           <div className="hidden md:flex items-center justify-between px-4 py-2 flex-shrink-0" style={{ background: '#F3F2EF' }}>
@@ -1315,37 +1311,88 @@ export default function Phase2Editor({
         </div>
       </div>
 
-      {/* ── Mobile: editing area is full screen, toolbar at bottom ── */}
-      <div className="md:hidden flex-1 min-h-0 flex flex-col bg-white">
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={e => handleContentChange(e.target.value)}
-          onKeyDown={handleEditorKeyDown}
-          className="flex-1 min-h-0 w-full outline-none resize-none px-4 py-3"
-          style={{ fontSize: 15, lineHeight: 1.8, color: '#1A1A2E', background: 'transparent', border: 'none' }}
-          placeholder="Your post appears here..."
-        />
+      {/* ── Mobile: edit or preview ── */}
+      <div className="md:hidden flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
+        {previewMode === 'preview' ? (
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.10)', border: '1px solid rgba(0,0,0,0.08)' }}>
+              <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                <Avatar src={userAvatar} initials={userInitials || 'Y'} alt={userName} size={40} />
+                <div>
+                  <p className="text-[14px] font-bold" style={{ color: '#1A1A2E' }}>{userName || 'You'}</p>
+                  <p className="text-[11px]" style={{ color: '#888' }}>Just now · 🌐</p>
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                <LinkedInPostPreview content={content} />
+              </div>
+              <div className="px-4 py-2.5 border-t" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><ThumbsUp size={14} /> Like</span>
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><MessageCircle size={14} /> Comment</span>
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: '#666' }}><Repeat2 size={14} /> Repost</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : isGenerating ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
+            <GenerationTimer />
+            <p className="text-[13px] font-semibold text-center" style={{ color: '#7C5CFC' }} key={loadingMsgIdx}>{LOADING_MESSAGES[loadingMsgIdx]}</p>
+            <div className="w-full flex flex-col gap-2">
+              {[0, 1, 2, 3].map(i => <div key={i} className="skeleton h-3.5 rounded" style={{ width: `${90 - i * 12}%` }} />)}
+            </div>
+          </div>
+        ) : (
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={e => handleContentChange(e.target.value)}
+            onKeyDown={handleEditorKeyDown}
+            className="flex-1 min-h-0 w-full outline-none resize-none px-5 py-4"
+            style={{ fontSize: 16, lineHeight: 1.8, color: '#1A1A2E', background: 'transparent', border: 'none' }}
+            placeholder="Your post appears here..."
+          />
+        )}
       </div>
 
-      {/* Mobile bottom bar */}
+      {/* ── Mobile bottom bar ── */}
       <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
-        <div className="flex items-center gap-0.5 px-3 py-2 border-b overflow-x-auto flex-shrink-0" style={{ borderColor: '#F0EEF8', scrollbarWidth: 'none' }}>
-          <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] font-extrabold flex-shrink-0" style={{ color: '#1A1A2E' }}>B</button>
-          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] italic flex-shrink-0" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
-          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[14px] line-through flex-shrink-0" style={{ color: '#1A1A2E' }}>S</button>
-          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          <button onClick={() => handleGenerate()} disabled={isGenerating} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50" style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.07)' }}>
-            <RefreshCw size={11} className={isGenerating ? 'animate-spin' : ''} /> {isGenerating ? 'Writing...' : 'Redo'}
+        {/* Minimal formatting row */}
+        <div className="flex items-center gap-1 px-4 py-2 border-b" style={{ borderColor: '#F0EEF8' }}>
+          <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] font-extrabold" style={{ color: '#1A1A2E' }}>B</button>
+          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] italic" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
+          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[14px] line-through" style={{ color: '#1A1A2E' }}>S</button>
+          <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
+          <div className="relative">
+            <button onClick={() => setFormatMoreOpen(o => !o)} className="w-9 h-9 flex items-center justify-center rounded-xl" style={{ color: '#6B7280', background: formatMoreOpen ? '#F0EEF8' : 'transparent' }}>
+              <Smile size={17} />
+            </button>
+            {formatMoreOpen && (
+              <div className="absolute bottom-full left-0 mb-1 z-20" style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.12))' }}>
+                <EmojiPickerLazy onSelect={emoji => { insertAtCursor(emoji); setFormatMoreOpen(false); }} />
+              </div>
+            )}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={handleHumanize}
+            disabled={humanizing || !content.trim()}
+            className="flex items-center gap-1 text-[12px] font-bold px-3 py-1.5 rounded-full disabled:opacity-40"
+            style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
+          >
+            <Wand2 size={12} /> {humanizing ? 'Humanizing…' : 'Humanize'}
           </button>
-          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          <button onClick={() => { setHooksOpen(o => !o); setCtasOpen(false); }} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0" style={{ color: '#7C5CFC', background: hooksOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}>Hooks</button>
-          <button onClick={() => { setCtasOpen(o => !o); setHooksOpen(false); }} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0" style={{ color: '#7C5CFC', background: ctasOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}>CTAs</button>
-          <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
-          <button onClick={handleGenerateVariants} disabled={generatingVariants || isGenerating} className="flex items-center gap-1 text-[12px] font-bold px-3 py-2 rounded-full flex-shrink-0 disabled:opacity-50" style={{ color: '#7C5CFC', background: variantsOpen ? 'rgba(124,92,252,0.14)' : 'rgba(124,92,252,0.07)' }}>
-            <Layers size={11} /> 3 Styles
+          <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
+          <button
+            onClick={() => setAiPanelOpen(true)}
+            className="flex items-center gap-1 text-[12px] font-bold px-3 py-1.5 rounded-full"
+            style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white' }}
+          >
+            <Sparkles size={12} /> AI Edit
           </button>
         </div>
+        {/* Action row */}
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={handlePublish}

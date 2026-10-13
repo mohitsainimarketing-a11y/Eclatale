@@ -223,7 +223,7 @@ export function MobileHeader({ title: _title }: { title?: string }) {
       <button onClick={toggleMobile} aria-label="Open menu" className="w-9 h-9 -ml-1.5 flex items-center justify-center text-brand-dark">
         <Menu size={20} />
       </button>
-      <a href="/dashboard" className="text-base font-extrabold gradient-text">Eclatale</a>
+      <a href="/dashboard" className="text-xl font-extrabold gradient-text tracking-tight">Eclatale</a>
     </div>
   );
 }

@@ -676,17 +676,17 @@ export default function Phase2Editor({
     <div className="flex-1 min-h-0 flex flex-col">
 
       {/* ── Mobile compact header ── */}
-      <div className="md:hidden bg-white border-b flex items-center gap-2 px-4 py-2.5 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
-        <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0" style={{ color: '#6B7280' }}>
-          <ArrowLeft size={18} />
+      <div className="md:hidden bg-white border-b flex items-center gap-2 px-3 py-2 flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+        <button onClick={onBack} className="w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0" style={{ color: '#6B7280' }}>
+          <ArrowLeft size={16} />
         </button>
         {/* Edit / Preview toggle */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-xl flex-shrink-0" style={{ background: '#F3F2EF' }}>
-          <button onClick={() => setPreviewMode('edit')} className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all" style={previewMode === 'edit' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 3px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Edit</button>
-          <button onClick={() => setPreviewMode('preview')} className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all" style={previewMode === 'preview' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 3px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Preview</button>
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg flex-shrink-0" style={{ background: '#F3F2EF' }}>
+          <button onClick={() => setPreviewMode('edit')} className="text-[10px] font-bold px-2.5 py-0.5 rounded-md transition-all" style={previewMode === 'edit' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 2px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Edit</button>
+          <button onClick={() => setPreviewMode('preview')} className="text-[10px] font-bold px-2.5 py-0.5 rounded-md transition-all" style={previewMode === 'preview' ? { background: 'white', color: '#1A1A2E', boxShadow: '0 1px 2px rgba(0,0,0,0.10)' } : { color: '#6B7280' }}>Preview</button>
         </div>
         <span className="flex-1" />
-        <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: content.length > 2700 ? '#F72585' : '#9CA3AF' }}>{content.length}</span>
+        <span className="text-[10px] font-semibold flex-shrink-0" style={{ color: content.length > 2700 ? '#F72585' : '#9CA3AF' }}>{content.length}</span>
       </div>
 
       {/* ── Desktop top bar: topic chip + spark + length + controls ── */}
@@ -733,8 +733,8 @@ export default function Phase2Editor({
         </div>
       </div>
 
-      {/* ── Main content area ── */}
-      <div className="flex-1 min-h-0 flex overflow-hidden relative">
+      {/* ── Main content area (desktop only) ── */}
+      <div className="hidden md:flex flex-1 min-h-0 overflow-hidden relative">
 
         {/* Variant comparison overlay */}
         {variantsOpen && (
@@ -1358,15 +1358,14 @@ export default function Phase2Editor({
 
       {/* ── Mobile bottom bar ── */}
       <div className="md:hidden bg-white border-t flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
-        {/* Minimal formatting row */}
-        <div className="flex items-center gap-1 px-4 py-2 border-b" style={{ borderColor: '#F0EEF8' }}>
-          <button onClick={() => transformSelection(BOLD)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] font-extrabold" style={{ color: '#1A1A2E' }}>B</button>
-          <button onClick={() => transformSelection(ITALIC)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[15px] italic" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
-          <button onClick={() => transformSelection(applyStrikethrough)} className="w-9 h-9 flex items-center justify-center rounded-xl text-[14px] line-through" style={{ color: '#1A1A2E' }}>S</button>
-          <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
-          <div className="relative">
-            <button onClick={() => setFormatMoreOpen(o => !o)} className="w-9 h-9 flex items-center justify-center rounded-xl" style={{ color: '#6B7280', background: formatMoreOpen ? '#F0EEF8' : 'transparent' }}>
-              <Smile size={17} />
+        {/* Format + Aria row */}
+        <div className="flex items-center gap-1 px-3 py-2">
+          <button onClick={() => transformSelection(BOLD)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[15px] font-extrabold flex-shrink-0" style={{ color: '#1A1A2E' }}>B</button>
+          <button onClick={() => transformSelection(ITALIC)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[15px] italic flex-shrink-0" style={{ color: '#1A1A2E', fontStyle: 'italic' }}>I</button>
+          <button onClick={() => transformSelection(applyStrikethrough)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] line-through flex-shrink-0" style={{ color: '#1A1A2E' }}>S</button>
+          <div className="relative flex-shrink-0">
+            <button onClick={() => setFormatMoreOpen(o => !o)} className="w-8 h-8 flex items-center justify-center rounded-lg" style={{ color: '#6B7280', background: formatMoreOpen ? '#F0EEF8' : 'transparent' }}>
+              <Smile size={16} />
             </button>
             {formatMoreOpen && (
               <div className="absolute bottom-full left-0 mb-1 z-20" style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.12))' }}>
@@ -1374,26 +1373,37 @@ export default function Phase2Editor({
               </div>
             )}
           </div>
-          <div className="flex-1" />
-          <button
-            onClick={handleHumanize}
-            disabled={humanizing || !content.trim()}
-            className="flex items-center gap-1 text-[12px] font-bold px-3 py-1.5 rounded-full disabled:opacity-40"
-            style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}
-          >
-            <Wand2 size={12} /> {humanizing ? 'Humanizing…' : 'Humanize'}
-          </button>
-          <div className="w-px h-5 mx-1" style={{ background: '#EDE8FF' }} />
+          <div className="w-px h-4 mx-1 flex-shrink-0" style={{ background: '#EDE8FF' }} />
+          {/* Aria input */}
+          <div className="flex-1 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5" style={{ background: '#F4F0FF', border: '1.5px solid #EDE8FF' }}>
+            <Sparkles size={11} style={{ color: '#7C5CFC', flexShrink: 0 }} />
+            <input
+              type="text"
+              value={ariaInput}
+              onChange={e => setAriaInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim()) handleAriaRefine(); }}
+              placeholder="Ask Aria..."
+              className="flex-1 min-w-0 text-[12px] bg-transparent outline-none"
+              style={{ color: '#1A1A2E' }}
+            />
+            {ariaInput.trim() && (
+              <button onClick={() => handleAriaRefine()} disabled={isRefining} className="flex-shrink-0">
+                <ChevronRight size={13} style={{ color: '#7C5CFC' }} />
+              </button>
+            )}
+          </div>
+          {/* More / AI Edit button */}
           <button
             onClick={() => setAiPanelOpen(true)}
-            className="flex items-center gap-1 text-[12px] font-bold px-3 py-1.5 rounded-full"
+            className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 ml-1"
             style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)', color: 'white' }}
+            title="AI Edit"
           >
-            <Sparkles size={12} /> AI Edit
+            <Sparkles size={14} />
           </button>
         </div>
-        {/* Action row */}
-        <div className="flex items-center gap-3 px-4 py-3">
+        {/* Post action row */}
+        <div className="flex items-center gap-3 px-4 pb-3">
           <button
             onClick={handlePublish}
             disabled={publishing || isGenerating || !content.trim()}

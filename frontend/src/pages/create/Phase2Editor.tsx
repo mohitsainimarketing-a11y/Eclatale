@@ -769,19 +769,21 @@ export default function Phase2Editor({
           </button>
         ) : (
           <>
-            <span className="text-[10px] font-medium mr-2" style={{ color: content.length > 2700 ? '#F72585' : '#C4C4CF' }}>{content.length}</span>
+            <span className="text-[10px] font-medium mr-1.5" style={{ color: content.length > 2700 ? '#F72585' : '#C4C4CF' }}>{content.length}</span>
             {/* AI Edit button */}
             <button
               onClick={() => setAiPanelOpen(true)}
-              className="relative flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full"
-              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' }}
+              className="flex items-center gap-1.5 h-8 rounded-xl overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
             >
-              <Sparkles size={11} />
-              AI Edit
+              <span className="flex items-center gap-1 pl-2.5 text-[11px] font-bold text-white">
+                <Sparkles size={11} />
+                AI Edit
+              </span>
               {content.trim() && (
                 <span
-                  className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-white flex items-center justify-center text-[7px] font-bold"
-                  style={{ background: qualityColor(overallQuality) }}
+                  className="h-full flex items-center px-2 text-[10px] font-bold"
+                  style={{ background: 'rgba(0,0,0,0.18)', color: qualityColor(overallQuality) }}
                 >
                   {overallQuality}
                 </span>

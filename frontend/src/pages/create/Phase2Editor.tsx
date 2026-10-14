@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   ArrowLeft, Copy, Save, Calendar, Bold, Italic, Strikethrough, Minus, List, ListOrdered, MoreHorizontal,
   ChevronDown, Send, Sparkles, AlertTriangle, Clock, LayoutGrid,
-  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, Wand2, RefreshCw, FlaskConical, Layers,
+  ThumbsUp, MessageCircle, Repeat2, X, Check, ChevronRight, ChevronLeft, Wand2, RefreshCw, FlaskConical, Layers,
   Monitor, Smartphone, Eye, Pencil, Zap, Smile, History, Settings2,
-  Undo2, Redo2, Paperclip,
+  Undo2, Redo2, Paperclip, ImagePlus, Star, Zap as ZapIcon,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { apiFetch } from '../../lib/apiFetch';
@@ -12,6 +12,7 @@ import { copyToClipboard } from '../../utils/clipboard';
 import { RICH_TEXT_STYLES, applyStrikethrough } from '../../lib/richText';
 import { useToast } from '../../contexts/ToastContext';
 import { Angle, Source, PostLength, LENGTH_OPTIONS, AuthenticityScoreResult, ResearchBrief } from './types';
+import { computePostQuality, computeOverallQuality, qualityLabel, qualityColor } from './postQuality';
 import { CTA_TEMPLATES } from './hookCtaTemplates';
 import HookLibraryPanel from './HookLibraryPanel';
 import Avatar from '../../components/Avatar';
@@ -163,6 +164,8 @@ export default function Phase2Editor({
   const [scheduling, setScheduling] = useState(false);
 
   const [carouselState, setCarouselState] = useState<'idle' | 'generating'>('idle');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -178,6 +181,20 @@ export default function Phase2Editor({
   const [moreStylesOpen, setMoreStylesOpen] = useState(false);
   const [formatOptionsOpen, setFormatOptionsOpen] = useState(false);
   const [kbVisible, setKbVisible] = useState(false);
+
+  // ── Right panel (desktop only) ────────────────────────────────────────────
+  const [rightCollapsed, setRightCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try { return localStorage.getItem('ec_right_collapsed') === 'true'; } catch { return false; }
+  });
+  const [rightAriaInput, setRightAriaInput] = useState('');
+
+  const toggleRightPanel = () => {
+    setRightCollapsed(c => {
+      try { localStorage.setItem('ec_right_collapsed', String(!c)); } catch {}
+      return !c;
+    });
+  };
 
   // ── Phase 2: Version history ─────────────────────────────────────────────────
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -656,6 +673,18 @@ export default function Phase2Editor({
         setPublishing(false);
         return;
       }
+
+      if (selectedImages.length > 0) {
+        const res = await apiFetch(`${API_URL}/api/linkedin/publish`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({ images: selectedImages, caption: content, userId }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.message || data.error);
+        onPublished(data.postId || '', data.linkedinPostUrn || '');
+        return;
+      }
+
       const id = await persistContent();
       if (!id) throw new Error('Could not save post.');
       const res = await apiFetch(`${API_URL}/api/linkedin/publish`, {
@@ -677,8 +706,30 @@ export default function Phase2Editor({
     window.location.href = `/create-visual?format=carousel&topic=${encodeURIComponent(topic)}`;
   };
 
+  const handleImageSelect = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const readers = Array.from(files).slice(0, 9).map(file =>
+      new Promise<string>((resolve, reject) => {
+        if (!file.type.startsWith('image/')) { reject(new Error('Not an image')); return; }
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      })
+    );
+    Promise.allSettled(readers).then(results => {
+      const imgs = results.filter(r => r.status === 'fulfilled').map(r => (r as PromiseFulfilledResult<string>).value);
+      if (imgs.length > 0) setSelectedImages(prev => [...prev, ...imgs].slice(0, 9));
+    });
+  };
+
   const topSources = sources.slice(0, 3);
   const isRefining = ariaRefining || humanizing;
+
+  // ── Client-side post quality (instant) ────────────────────────────────────
+  const qualitySubScores = useMemo(() => computePostQuality(content), [content]);
+  const credibilityScore = authScore?.accuracy?.score != null ? Math.round(authScore.accuracy.score) : null;
+  const overallQuality = computeOverallQuality(qualitySubScores, credibilityScore);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -707,6 +758,16 @@ export default function Phase2Editor({
           >Preview</button>
         </div>
         <span className="flex-1" />
+        {/* Quality chip */}
+        {content.trim() && !kbVisible && (
+          <button
+            onClick={() => setAiPanelOpen(true)}
+            className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mr-2"
+            style={{ background: `${qualityColor(overallQuality)}18`, color: qualityColor(overallQuality), border: `1px solid ${qualityColor(overallQuality)}30` }}
+          >
+            Q:{overallQuality}
+          </button>
+        )}
         {kbVisible ? (
           <button
             onMouseDown={e => { e.preventDefault(); textareaRef.current?.blur(); }}
@@ -1128,8 +1189,8 @@ export default function Phase2Editor({
                 </div>
 
                 {/* Content area */}
-                <div className="px-4 pb-3">
-                  {isGenerating ? (
+                <div className="px-4 pb-3 relative">
+                  {isGenerating && !content && (
                     <div className="flex flex-col items-center justify-center gap-4 py-10">
                       <GenerationTimer />
                       <p className="text-[12px] font-semibold animate-fadeIn text-center" style={{ color: '#7C5CFC' }} key={loadingMsgIdx}>
@@ -1139,31 +1200,40 @@ export default function Phase2Editor({
                         {[0, 1, 2, 3].map(i => <div key={i} className="skeleton h-3.5 rounded" style={{ width: `${90 - i * 12}%` }} />)}
                       </div>
                     </div>
-                  ) : genError ? (
+                  )}
+                  {isGenerating && content && (
+                    <div className="absolute top-2 right-6 z-10 flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full pointer-events-none" style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#7C5CFC] animate-pulse" />
+                      Writing...
+                    </div>
+                  )}
+                  {genError ? (
                     <div className="flex flex-col items-center justify-center text-center gap-3 py-8">
                       <p className="text-[13px]" style={{ color: '#F72585' }}>{genError}</p>
                       <button onClick={() => handleGenerate()} className="text-[12px] font-bold px-4 py-2 rounded-full text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Try again</button>
                     </div>
-                  ) : previewMode === 'preview' ? (
-                    <LinkedInPostPreview content={content} />
-                  ) : (
-                    <textarea
-                      ref={textareaRef}
-                      value={content}
-                      onChange={e => handleContentChange(e.target.value)}
-                      onKeyDown={handleEditorKeyDown}
-                      className="w-full outline-none resize-none"
-                      style={{
-                        minHeight: 220,
-                        fontSize: 14,
-                        lineHeight: 1.8,
-                        color: '#1A1A2E',
-                        background: 'transparent',
-                        border: 'none',
-                      }}
-                      placeholder="Write your LinkedIn post here..."
-                    />
-                  )}
+                  ) : !isGenerating || content ? (
+                    previewMode === 'preview' ? (
+                      <LinkedInPostPreview content={content} />
+                    ) : (
+                      <textarea
+                        ref={textareaRef}
+                        value={content}
+                        onChange={e => handleContentChange(e.target.value)}
+                        onKeyDown={handleEditorKeyDown}
+                        className="w-full outline-none resize-none"
+                        style={{
+                          minHeight: 220,
+                          fontSize: 14,
+                          lineHeight: 1.8,
+                          color: '#1A1A2E',
+                          background: 'transparent',
+                          border: 'none',
+                        }}
+                        placeholder="Write your LinkedIn post here..."
+                      />
+                    )
+                  ) : null}
                 </div>
 
                 {/* Engagement strip */}
@@ -1303,10 +1373,25 @@ export default function Phase2Editor({
                   )}
                 </div>
 
-                {/* Carousel */}
-                <div className="flex-1 rounded-xl p-3 cursor-pointer" style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.10) 0%, rgba(247,37,133,0.10) 100%)', boxShadow: '0 1px 6px rgba(0,0,0,0.07)' }} onClick={handleCarousel}>
-                  <p className="text-[9px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#7C5CFC' }}>Carousel</p>
-                  <p className="text-[11px] font-bold" style={{ color: '#7C5CFC' }}>{estimateSlides(content)} slides</p>
+                {/* Image / Carousel */}
+                <div className="flex-1 rounded-xl p-3 cursor-pointer" style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.10) 0%, rgba(247,37,133,0.10) 100%)', boxShadow: '0 1px 6px rgba(0,0,0,0.07)' }} onClick={() => imageInputRef.current?.click()}>
+                  <p className="text-[9px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#7C5CFC' }}>{selectedImages.length > 0 ? `${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''}` : 'Image'}</p>
+                  {selectedImages.length > 0 ? (
+                    <div className="flex items-center gap-1">
+                      <img src={selectedImages[0]} alt="" className="w-7 h-7 rounded object-cover flex-shrink-0" />
+                      <button
+                        onClick={e => { e.stopPropagation(); handleCarousel(); }}
+                        className="text-[9px] font-bold leading-tight"
+                        style={{ color: '#7C5CFC' }}
+                      >
+                        Carousel
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] font-bold flex items-center gap-1" style={{ color: '#7C5CFC' }}>
+                      <ImagePlus size={12} /> Add image
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1340,6 +1425,223 @@ export default function Phase2Editor({
             </button>
           </div>
         </div>
+
+        {/* ── RIGHT PANEL: Post quality + Variations + Best time + Aria ── */}
+        <div
+          className="hidden md:flex flex-col flex-shrink-0 border-l transition-all duration-200"
+          style={{
+            width: rightCollapsed ? 44 : 300,
+            borderColor: '#EDE8FF',
+            background: '#FAFAFE',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Collapse toggle */}
+          <div className="flex items-center justify-between px-3 py-3 border-b flex-shrink-0" style={{ borderColor: '#EDE8FF' }}>
+            {!rightCollapsed && (
+              <span className="text-[12px] font-extrabold" style={{ color: '#1A1A2E' }}>Post quality</span>
+            )}
+            <button
+              onClick={toggleRightPanel}
+              className="w-7 h-7 flex items-center justify-center rounded-lg ml-auto"
+              style={{ color: '#9CA3AF', background: 'rgba(0,0,0,0.04)' }}
+              title={rightCollapsed ? 'Expand panel' : 'Collapse panel'}
+            >
+              {rightCollapsed ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+            </button>
+          </div>
+
+          {!rightCollapsed && (
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-0">
+
+              {/* ── Quality score ── */}
+              <div className="px-3 py-3 border-b" style={{ borderColor: '#EDE8FF' }}>
+                {/* Overall score */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {authLoading ? (
+                      <div className="skeleton w-10 h-10 rounded-full" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-[15px] flex-shrink-0"
+                        style={{ background: `${qualityColor(overallQuality)}18`, color: qualityColor(overallQuality), border: `2px solid ${qualityColor(overallQuality)}40` }}>
+                        {overallQuality}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-[12px] font-bold" style={{ color: '#1A1A2E' }}>{qualityLabel(overallQuality)}</p>
+                      <p className="text-[10px]" style={{ color: '#9CA3AF' }}>out of 100</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4 sub-scores */}
+                {[
+                  { label: 'Hook', score: qualitySubScores.hook, fixInstruction: 'Rewrite only the opening line or two (the hook). Make it more attention-grabbing and scroll-stopping. Keep the rest of the post exactly the same.' },
+                  { label: 'Readability', score: qualitySubScores.readability, fixInstruction: 'Improve readability. Use shorter, more varied sentences. Mix punchy one-liners with fuller thoughts. Keep the core message.' },
+                  { label: 'Format', score: qualitySubScores.format, fixInstruction: 'Reformat the post for better visual flow. Add paragraph breaks, use shorter paragraphs, and ensure the post breathes well on a screen.' },
+                  { label: 'Credibility', score: credibilityScore ?? (authLoading ? null : overallQuality), fixInstruction: 'Rephrase any unverified claims as personal perspective or opinion. Add context for any statistics mentioned.' },
+                ].map(({ label, score, fixInstruction }) => (
+                  <div key={label} className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-semibold w-[72px] flex-shrink-0" style={{ color: '#6B7280' }}>{label}</span>
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#EDE8FF' }}>
+                      {score != null && (
+                        <div className="h-full rounded-full transition-all duration-300"
+                          style={{ width: `${score}%`, background: qualityColor(score) }} />
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold w-7 text-right flex-shrink-0" style={{ color: score != null ? qualityColor(score) : '#C4C4CF' }}>
+                      {score != null ? score : (authLoading ? '...' : '?')}
+                    </span>
+                    <button
+                      onClick={() => handleAriaRefine(fixInstruction)}
+                      disabled={isRefining || isGenerating || !content.trim()}
+                      title={`Fix ${label.toLowerCase()}`}
+                      className="w-5 h-5 flex items-center justify-center rounded flex-shrink-0 text-[9px] font-bold disabled:opacity-30"
+                      style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}
+                    >
+                      Fix
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Variations ── */}
+              <div className="px-3 py-3 border-b" style={{ borderColor: '#EDE8FF' }}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-[11px] font-bold" style={{ color: '#1A1A2E' }}>Variations</span>
+                  <button
+                    onClick={handleGenerateVariants}
+                    disabled={generatingVariants || isGenerating}
+                    className="text-[10px] font-bold px-2.5 py-1 rounded-full disabled:opacity-50"
+                    style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}
+                  >
+                    {generatingVariants ? 'Writing...' : 'Generate 3'}
+                  </button>
+                </div>
+                {variants.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    {variants.map(v => (
+                      <div key={v.styleId} className="rounded-xl overflow-hidden" style={{ border: '1.5px solid #EDE8FF' }}>
+                        <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: '#EDE8FF', background: '#FDFCFF' }}>
+                          <span className="text-[11px] font-semibold" style={{ color: '#1A1A2E' }}>{v.emoji} {v.label}</span>
+                          {v.content && !generatingVariants && (
+                            <button
+                              onClick={() => { setContent(v.content); setVariantsOpen(false); checkedRef.current = false; if (postId) supabase.from('posts').update({ content: v.content }).eq('id', postId); }}
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white flex-shrink-0"
+                              style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
+                            >
+                              Use
+                            </button>
+                          )}
+                        </div>
+                        <div className="px-3 py-2 max-h-24 overflow-hidden">
+                          {v.content ? (
+                            <p className="text-[11px] leading-relaxed" style={{ color: '#6B7280' }}>
+                              {v.content.slice(0, 120)}{v.content.length > 120 ? '…' : ''}
+                            </p>
+                          ) : (
+                            <div className="flex flex-col gap-1.5">
+                              {[80, 60, 70].map((w, j) => <div key={j} className="skeleton h-2.5 rounded" style={{ width: `${w}%` }} />)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {variants.length === 0 && (
+                  <p className="text-[10px]" style={{ color: '#B0A8D0' }}>Generate 3 different writing styles on the same topic to compare.</p>
+                )}
+              </div>
+
+              {/* ── Best time ── */}
+              <div className="px-3 py-3 border-b" style={{ borderColor: '#EDE8FF' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold" style={{ color: '#1A1A2E' }}>Best time to post</span>
+                  <button onClick={openSchedule} className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}>
+                    Schedule
+                  </button>
+                </div>
+                {bestTimeLocked ? (
+                  <p className="text-[10px] mt-1" style={{ color: '#9CA3AF' }}>Upgrade to Individual to see your best time.</p>
+                ) : bestTimeLoading ? (
+                  <div className="skeleton h-4 w-3/4 rounded mt-1" />
+                ) : (
+                  <p className="text-[12px] font-bold flex items-center gap-1 mt-1" style={{ color: '#1A1A2E' }}>
+                    <Clock size={12} style={{ color: '#7C5CFC' }} />
+                    {bestTime?.recommendedDays?.[0]
+                      ? `${bestTime.recommendedDays[0]} at ${bestTime.recommendedTimes?.[0] || ''}`
+                      : 'Not enough data yet'}
+                  </p>
+                )}
+              </div>
+
+              {/* ── Aria assistant ── */}
+              <div className="px-3 py-3 flex-1">
+                <p className="text-[11px] font-bold mb-2" style={{ color: '#1A1A2E' }}>Ask Aria</p>
+                {isRefining ? (
+                  <div className="rounded-xl px-3 py-3 flex flex-col items-center gap-2" style={{ background: 'rgba(124,92,252,0.06)', border: '1.5px solid #D4CEFF' }}>
+                    <AriaClockSpinner />
+                    <p className="text-[11px] font-semibold text-center animate-pulse" style={{ color: '#7C5CFC' }} key={ariaThinkingIdx}>
+                      {ARIA_THINKING_MSGS[ariaThinkingIdx]}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl overflow-hidden" style={{ border: '1.5px solid #EDE8FF' }}>
+                    <div className="flex items-center gap-1.5 px-2.5 pt-2.5 pb-1">
+                      <Sparkles size={11} style={{ color: '#7C5CFC', flexShrink: 0 }} />
+                      <input
+                        type="text"
+                        value={rightAriaInput}
+                        onChange={e => setRightAriaInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && rightAriaInput.trim() && content.trim()) {
+                            handleAriaRefine(rightAriaInput.trim());
+                            setRightAriaInput('');
+                          }
+                        }}
+                        placeholder="Ask Aria anything..."
+                        className="flex-1 min-w-0 text-[11px] bg-transparent outline-none"
+                        style={{ color: '#1A1A2E' }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1 px-2.5 pb-2">
+                      <span className="text-[9px] flex-1 min-w-0 truncate" style={{ color: '#C4BAF0' }}>make shorter, fix ending...</span>
+                      <button
+                        onClick={() => { if (rightAriaInput.trim() && content.trim()) { handleAriaRefine(rightAriaInput.trim()); setRightAriaInput(''); } }}
+                        disabled={!rightAriaInput.trim() || isRefining || !content.trim()}
+                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+                        style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
+                      >
+                        <Send size={8} color="white" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
+          {/* Collapsed icon strip */}
+          {rightCollapsed && (
+            <div className="flex flex-col items-center pt-3 gap-4">
+              <button onClick={toggleRightPanel} title="Quality score" className="w-8 h-8 flex items-center justify-center rounded-lg" style={{ background: 'rgba(124,92,252,0.08)', color: '#7C5CFC' }}>
+                <Star size={14} />
+              </button>
+              <button onClick={() => { setRightCollapsed(false); handleGenerateVariants(); }} title="Variations" className="w-8 h-8 flex items-center justify-center rounded-lg" style={{ color: '#9CA3AF' }}>
+                <Layers size={14} />
+              </button>
+              <button onClick={toggleRightPanel} title="Best time" className="w-8 h-8 flex items-center justify-center rounded-lg" style={{ color: '#9CA3AF' }}>
+                <Clock size={14} />
+              </button>
+              <button onClick={toggleRightPanel} title="Ask Aria" className="w-8 h-8 flex items-center justify-center rounded-lg" style={{ color: '#9CA3AF' }}>
+                <Sparkles size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* ── Mobile: edit or preview ── */}
@@ -1367,7 +1669,7 @@ export default function Phase2Editor({
               </div>
             </div>
           </div>
-        ) : isGenerating ? (
+        ) : isGenerating && !content ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
             <GenerationTimer />
             <p className="text-[13px] font-semibold text-center" style={{ color: '#7C5CFC' }} key={loadingMsgIdx}>{LOADING_MESSAGES[loadingMsgIdx]}</p>
@@ -1376,26 +1678,34 @@ export default function Phase2Editor({
             </div>
           </div>
         ) : (
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={e => handleContentChange(e.target.value)}
-            onKeyDown={handleEditorKeyDown}
-            onFocus={() => setKbVisible(true)}
-            onBlur={() => setKbVisible(false)}
-            className="flex-1 min-h-0 w-full outline-none resize-none px-5 pt-4 pb-2"
-            style={{
-              fontSize: 16,
-              lineHeight: 1.85,
-              color: '#1A1A2E',
-              background: 'white',
-              border: 'none',
-              overflowY: 'auto',
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch',
-            }}
-            placeholder="Your post appears here..."
-          />
+          <div className="flex-1 min-h-0 relative">
+            {isGenerating && content && (
+              <div className="absolute top-3 right-4 z-10 flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full pointer-events-none" style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#7C5CFC] animate-pulse" />
+                Writing...
+              </div>
+            )}
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={e => handleContentChange(e.target.value)}
+              onKeyDown={handleEditorKeyDown}
+              onFocus={() => setKbVisible(true)}
+              onBlur={() => setKbVisible(false)}
+              className="w-full h-full outline-none resize-none px-5 pt-4 pb-2"
+              style={{
+                fontSize: 16,
+                lineHeight: 1.85,
+                color: '#1A1A2E',
+                background: 'white',
+                border: 'none',
+                overflowY: 'auto',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              placeholder="Your post appears here..."
+            />
+          </div>
         )}
       </div>
 
@@ -1435,11 +1745,17 @@ export default function Phase2Editor({
             style={{ background: '#FAFAFE', border: '1.5px solid #EDE8FF', boxShadow: '0 1px 4px rgba(124,92,252,0.08)' }}
           >
             <button
-              onClick={() => setMobileDrawerOpen(true)}
-              className="flex-shrink-0"
-              style={{ color: '#C4C4CF' }}
+              onClick={() => imageInputRef.current?.click()}
+              className="flex-shrink-0 relative"
+              style={{ color: selectedImages.length > 0 ? '#7C5CFC' : '#C4C4CF' }}
+              title="Attach image"
             >
               <Paperclip size={14} />
+              {selectedImages.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-white flex items-center justify-center text-[8px] font-bold" style={{ background: '#7C5CFC' }}>
+                  {selectedImages.length}
+                </span>
+              )}
             </button>
             <input
               type="text"
@@ -1473,6 +1789,29 @@ export default function Phase2Editor({
           </button>
         </div>
 
+        {/* Image previews strip (shown when images are attached) */}
+        {selectedImages.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 border-t" style={{ borderColor: '#F0EEF8' }}>
+            <span className="text-[10px] font-bold flex-shrink-0" style={{ color: '#7C5CFC' }}>
+              {selectedImages.length} image{selectedImages.length > 1 ? 's' : ''}
+            </span>
+            <div className="flex gap-1.5 overflow-x-auto flex-1 min-w-0">
+              {selectedImages.map((src, i) => (
+                <div key={i} className="relative flex-shrink-0">
+                  <img src={src} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                  <button
+                    onClick={() => setSelectedImages(prev => prev.filter((_, j) => j !== i))}
+                    className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                    style={{ background: '#1A1A2E', color: 'white' }}
+                  >
+                    <X size={7} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Row 3: Post action */}
         <div className="flex items-center gap-2 px-3 pb-4">
           <button
@@ -1481,7 +1820,7 @@ export default function Phase2Editor({
             className="flex-1 h-12 flex items-center justify-center text-[14px] font-bold text-white rounded-2xl disabled:opacity-40"
             style={{ background: '#0A66C2', boxShadow: '0 4px 16px rgba(10,102,194,0.28)' }}
           >
-            {publishing ? 'Publishing...' : 'Post to LinkedIn'}
+            {publishing ? 'Publishing...' : selectedImages.length > 0 ? 'Post with image' : 'Post to LinkedIn'}
           </button>
           <button onClick={() => setMobileDrawerOpen(true)} className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0" style={{ border: '1.5px solid #EDE8FF', color: '#9CA3AF' }}>
             <MoreHorizontal size={18} />
@@ -1691,6 +2030,53 @@ export default function Phase2Editor({
                 <X size={14} />
               </button>
             </div>
+
+            {/* Image section (shown at top) */}
+            <button
+              onClick={() => imageInputRef.current?.click()}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2"
+              style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(247,37,133,0.08) 100%)', border: '1.5px solid #EDE8FF' }}
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
+                <ImagePlus size={18} color="white" />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>
+                  {selectedImages.length > 0 ? `${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''} selected` : 'Add image'}
+                </p>
+                <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
+                  {selectedImages.length > 0 ? 'Tap to change or add more' : 'Attach a photo to your post'}
+                </p>
+              </div>
+            </button>
+
+            {/* Image previews + carousel choice */}
+            {selectedImages.length > 0 && (
+              <div className="mb-3 px-1">
+                <div className="flex gap-2 overflow-x-auto pb-1 mb-2">
+                  {selectedImages.map((src, i) => (
+                    <div key={i} className="relative flex-shrink-0">
+                      <img src={src} alt="" className="w-14 h-14 rounded-xl object-cover" />
+                      <button
+                        onClick={() => setSelectedImages(prev => prev.filter((_, j) => j !== i))}
+                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                        style={{ background: '#1A1A2E', color: 'white' }}
+                      >
+                        <X size={8} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => { setMobileDrawerOpen(false); handleCarousel(); }}
+                  className="w-full py-2.5 rounded-xl text-[12px] font-bold"
+                  style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.06)', border: '1px dashed #D4CEFF' }}
+                >
+                  Turn into carousel instead
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-3 gap-2.5">
               <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Copy size={18} style={{ color: '#6B7280' }} />
@@ -1708,6 +2094,16 @@ export default function Phase2Editor({
           </div>
         </div>
       )}
+
+      {/* Hidden image input */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={e => handleImageSelect(e.target.files)}
+      />
 
       {/* More styles drawer */}
       <MoreStylesDrawer

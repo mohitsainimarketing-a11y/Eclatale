@@ -92,6 +92,7 @@ function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/analytics" element={<Dashboard />} />
           <Route path="/create" element={<CreatePost />} />
           <Route path="/create/talk" element={<Navigate to="/create?mode=scratch" replace />} />
           <Route path="/create/resource" element={<Navigate to="/create?mode=repurpose" replace />} />

@@ -165,6 +165,7 @@ export default function Phase2Editor({
 
   const [carouselState, setCarouselState] = useState<'idle' | 'generating'>('idle');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [imageMenuOpen, setImageMenuOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -1738,7 +1739,48 @@ export default function Phase2Editor({
           </button>
         </div>
 
-        {/* Row 2: Post action */}
+        {/* Row 2: Image attachment */}
+        <div className="flex items-center gap-2 px-3 py-2">
+          <button
+            onClick={() => setImageMenuOpen(true)}
+            className="flex-1 flex items-center gap-2 h-10 px-4 rounded-2xl text-[13px] font-semibold transition-colors"
+            style={{
+              background: selectedImages.length > 0 ? 'rgba(124,92,252,0.08)' : '#FAFAFE',
+              border: `1.5px solid ${selectedImages.length > 0 ? '#7C5CFC' : '#EDE8FF'}`,
+              color: selectedImages.length > 0 ? '#7C5CFC' : '#9CA3AF',
+            }}
+          >
+            <ImagePlus size={16} />
+            {selectedImages.length > 0
+              ? `${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''} attached`
+              : 'Add image to post'}
+          </button>
+        </div>
+
+        {/* Image previews strip (shown when images are attached) */}
+        {selectedImages.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 border-t" style={{ borderColor: '#F0EEF8' }}>
+            <span className="text-[10px] font-bold flex-shrink-0" style={{ color: '#7C5CFC' }}>
+              {selectedImages.length} image{selectedImages.length > 1 ? 's' : ''}
+            </span>
+            <div className="flex gap-1.5 overflow-x-auto flex-1 min-w-0">
+              {selectedImages.map((src, i) => (
+                <div key={i} className="relative flex-shrink-0">
+                  <img src={src} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                  <button
+                    onClick={() => setSelectedImages(prev => prev.filter((_, j) => j !== i))}
+                    className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                    style={{ background: '#1A1A2E', color: 'white' }}
+                  >
+                    <X size={7} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Row 3: Post action */}
         <div className="flex items-center gap-2 px-3 pb-4">
           <button
             onClick={handlePublish}
@@ -1753,6 +1795,58 @@ export default function Phase2Editor({
           </button>
         </div>
       </div>
+
+      {/* Image attachment bottom sheet */}
+      {imageMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50" onClick={() => setImageMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl safe-bottom animate-slideUp"
+            onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-[#E5E7EB] mx-auto mt-3 mb-4" />
+            <div className="px-5 pb-6 space-y-3">
+              <p className="text-[13px] font-bold mb-3" style={{ color: '#1A1A2E' }}>Add image to post</p>
+              {/* Option 1: Attach from device */}
+              <button
+                onClick={() => { setImageMenuOpen(false); imageInputRef.current?.click(); }}
+                className="w-full flex items-center gap-3 p-4 rounded-2xl text-left transition-colors"
+                style={{ background: 'rgba(124,92,252,0.05)', border: '1.5px solid #EDE8FF' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,92,252,0.10)' }}>
+                  <Paperclip size={18} style={{ color: '#7C5CFC' }} />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>Attach from device</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Pick a photo or image from your camera roll</p>
+                </div>
+              </button>
+              {/* Option 2: Create with AI */}
+              <button
+                onClick={() => { setImageMenuOpen(false); window.location.href = '/create?mode=visual'; }}
+                className="w-full flex items-center gap-3 p-4 rounded-2xl text-left transition-colors"
+                style={{ background: 'rgba(247,37,133,0.04)', border: '1.5px solid rgba(247,37,133,0.15)' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(247,37,133,0.10)' }}>
+                  <Sparkles size={18} style={{ color: '#F72585' }} />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>Create image with AI</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Generate a custom image for this post</p>
+                </div>
+              </button>
+              {/* Remove images if any attached */}
+              {selectedImages.length > 0 && (
+                <button
+                  onClick={() => { setSelectedImages([]); setImageMenuOpen(false); }}
+                  className="w-full py-3 rounded-2xl text-[13px] font-semibold text-center"
+                  style={{ color: '#EF4444', border: '1.5px solid rgba(239,68,68,0.2)' }}
+                >
+                  Remove {selectedImages.length} image{selectedImages.length > 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile diff preview — shown when AI style refine (emoji, Make-It, etc.) has a pending result */}
       {pendingDiff && (
@@ -2003,7 +2097,7 @@ export default function Phase2Editor({
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2.5 mb-3">
+            <div className="grid grid-cols-3 gap-2.5">
               <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Copy size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Copy</span>
@@ -2017,14 +2111,6 @@ export default function Phase2Editor({
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
               </button>
             </div>
-            <button
-              onClick={() => { setMobileDrawerOpen(false); handlePublish(); }}
-              disabled={publishing || isGenerating || !content.trim()}
-              className="w-full h-12 flex items-center justify-center gap-2 text-[14px] font-bold text-white rounded-2xl disabled:opacity-40"
-              style={{ background: '#0A66C2', boxShadow: '0 4px 16px rgba(10,102,194,0.22)' }}
-            >
-              {publishing ? 'Publishing...' : selectedImages.length > 0 ? 'Post with image' : 'Post to LinkedIn'}
-            </button>
           </div>
         </div>
       )}

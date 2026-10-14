@@ -93,7 +93,7 @@ ${lengthInstruction(length)}
 This is a free demo on a public tools page. Generate a high-quality example post that showcases what this style can do. Return just the post text, no explanation, no markdown formatting, no quotes around it.`;
 
   const message = await anthropic.messages.create({
-    model: MODELS.sonnet,
+    model: MODELS.haiku,
     max_tokens: 1400,
     system: cachedSystem(dynamicContent),
     messages: [{ role: 'user', content: `Write the post about: ${topic}` }],

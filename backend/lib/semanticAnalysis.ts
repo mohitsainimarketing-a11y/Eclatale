@@ -224,7 +224,7 @@ export async function analyzeUserPatterns(
     `Styles: ${((persona as any)?.communication_styles || []).join(', ') || 'not specified'}.`;
 
   const message = await anthropic.messages.create({
-    model: MODELS.sonnet,
+    model: MODELS.haiku,
     max_tokens: 1200,
     system: `${getDateContext()}\n\n${USER_PATTERNS_INSTRUCTIONS}`,
     messages: [{ role: 'user', content: `${context}\n\nWriting pattern data across their last ${rows.length} posts (oldest to newest):\n${JSON.stringify(compact)}` }],

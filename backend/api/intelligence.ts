@@ -1224,7 +1224,7 @@ ${UNIVERSAL_HUMAN_WRITING_RULES}
 Output ONLY the LinkedIn post text. No preamble, no explanation, no markdown formatting, no quotes around it.`;
 
         const message = await anthropic.messages.create({
-          model: MODELS.sonnet,
+          model: MODELS.haiku,
           max_tokens: 1400,
           system: systemPrompt,
           messages: [{ role: 'user', content: `Write the post about: ${topic}` }],
@@ -1574,7 +1574,7 @@ Return ONLY valid JSON: {"categories":[{"label":"Tools","items":[{"topic":"...",
         const trimmedHistory = [...history];
         while (trimmedHistory.length && trimmedHistory[0].role !== 'user') trimmedHistory.shift();
         const reply = await anthropic.messages.create({
-          model: MODELS.sonnet,
+          model: MODELS.haiku,
           max_tokens: 400,
           system: `You are a sharp, conversational content strategist helping someone turn source material into a LinkedIn post. You have access to the following resource(s):\n\n${contextBlock}\n\nSuggest specific angles, ask clarifying questions, and be genuinely useful. Never generic. Keep replies to 2-4 sentences, conversational tone.\n\n${NO_DASH_RULE}`,
           messages: [...trimmedHistory.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user', content: message }],

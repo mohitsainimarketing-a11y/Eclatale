@@ -163,7 +163,7 @@ export async function ariaChat(
   const trimmedHistory = conversationHistory.slice(-16); // keep the request small; full history is persisted separately
 
   const response = await anthropic.messages.create({
-    model: MODELS.sonnet,
+    model: MODELS.haiku,
     max_tokens: 500,
     system: systemPrompt,
     messages: [...trimmedHistory, { role: 'user', content: message }],

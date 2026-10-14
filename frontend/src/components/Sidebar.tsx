@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Home, Sparkles, BarChart3, Lightbulb, FolderOpen, Target, UserCog, Settings,
+  Home, Sparkles, BarChart3, Lightbulb, Target, Settings,
   MessageCircle, ChevronLeft, ChevronRight, Menu, X, CalendarDays, Wrench, Users,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -18,8 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard' },
   { icon: <Sparkles size={18} />, label: 'Create', href: '/create', primary: true },
   { icon: <Lightbulb size={18} />, label: 'Ideas', href: '/ideas' },
-  { icon: <FolderOpen size={18} />, label: 'Content Library', href: '/history' },
-  { icon: <CalendarDays size={18} />, label: 'Schedule', href: '/schedule' },
+  { icon: <CalendarDays size={18} />, label: 'Calendar', href: '/calendar' },
   { icon: <BarChart3 size={18} />, label: 'Analytics', href: '/dashboard' },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup' },
   { icon: <Wrench size={18} />, label: 'Free Tools', href: '/tools' },

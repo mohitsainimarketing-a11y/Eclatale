@@ -34,6 +34,7 @@ const ToolsHub = lazy(() => import('./pages/tools/ToolsHub'));
 const ToolPage = lazy(() => import('./pages/tools/ToolPage'));
 const Discover = lazy(() => import('./pages/Discover'));
 const Ideas = lazy(() => import('./pages/Ideas'));
+const CalendarPage = lazy(() => import('./pages/Calendar'));
 const Resources = lazy(() => import('./pages/Resources'));
 const Leads = lazy(() => import('./pages/Leads'));
 
@@ -94,8 +95,9 @@ function App() {
           <Route path="/create/talk" element={<Navigate to="/create?mode=scratch" replace />} />
           <Route path="/create/resource" element={<Navigate to="/create?mode=repurpose" replace />} />
           <Route path="/guided" element={<Navigate to="/create" replace />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/history" element={<Navigate to="/calendar" replace />} />
+          <Route path="/schedule" element={<Navigate to="/calendar?tab=calendar" replace />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/persona-setup" element={<PersonaSetup />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/create-visual" element={<CreateVisual />} />

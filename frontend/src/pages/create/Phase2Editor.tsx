@@ -1781,17 +1781,15 @@ export default function Phase2Editor({
         )}
 
         {/* Row 3: Post action */}
-        <div className="flex items-center gap-2 px-3 pb-4">
+        <div className="px-3 pb-4">
           <button
-            onClick={handlePublish}
-            disabled={publishing || isGenerating || !content.trim()}
-            className="flex-1 h-12 flex items-center justify-center text-[14px] font-bold text-white rounded-2xl disabled:opacity-40"
+            onClick={() => setMobileDrawerOpen(true)}
+            disabled={isGenerating || !content.trim()}
+            className="w-full h-12 flex items-center justify-center gap-2 text-[14px] font-bold text-white rounded-2xl disabled:opacity-40"
             style={{ background: '#0A66C2', boxShadow: '0 4px 16px rgba(10,102,194,0.28)' }}
           >
             {publishing ? 'Publishing...' : selectedImages.length > 0 ? 'Post with image' : 'Post to LinkedIn'}
-          </button>
-          <button onClick={() => setMobileDrawerOpen(true)} className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0" style={{ border: '1.5px solid #EDE8FF', color: '#9CA3AF' }}>
-            <MoreHorizontal size={18} />
+            <ChevronDown size={16} />
           </button>
         </div>
       </div>
@@ -2051,53 +2049,7 @@ export default function Phase2Editor({
               </button>
             </div>
 
-            {/* Image section (shown at top) */}
-            <button
-              onClick={() => imageInputRef.current?.click()}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2"
-              style={{ background: 'linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(247,37,133,0.08) 100%)', border: '1.5px solid #EDE8FF' }}
-            >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
-                <ImagePlus size={18} color="white" />
-              </div>
-              <div className="text-left flex-1 min-w-0">
-                <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>
-                  {selectedImages.length > 0 ? `${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''} selected` : 'Add image'}
-                </p>
-                <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
-                  {selectedImages.length > 0 ? 'Tap to change or add more' : 'Attach a photo to your post'}
-                </p>
-              </div>
-            </button>
-
-            {/* Image previews + carousel choice */}
-            {selectedImages.length > 0 && (
-              <div className="mb-3 px-1">
-                <div className="flex gap-2 overflow-x-auto pb-1 mb-2">
-                  {selectedImages.map((src, i) => (
-                    <div key={i} className="relative flex-shrink-0">
-                      <img src={src} alt="" className="w-14 h-14 rounded-xl object-cover" />
-                      <button
-                        onClick={() => setSelectedImages(prev => prev.filter((_, j) => j !== i))}
-                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
-                        style={{ background: '#1A1A2E', color: 'white' }}
-                      >
-                        <X size={8} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => { setMobileDrawerOpen(false); handleCarousel(); }}
-                  className="w-full py-2.5 rounded-xl text-[12px] font-bold"
-                  style={{ color: '#7C5CFC', background: 'rgba(124,92,252,0.06)', border: '1px dashed #D4CEFF' }}
-                >
-                  Turn into carousel instead
-                </button>
-              </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5 mb-3">
               <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Copy size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Copy</span>
@@ -2111,6 +2063,14 @@ export default function Phase2Editor({
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
               </button>
             </div>
+            <button
+              onClick={() => { setMobileDrawerOpen(false); handlePublish(); }}
+              disabled={publishing || isGenerating || !content.trim()}
+              className="w-full h-12 flex items-center justify-center text-[14px] font-bold text-white rounded-2xl disabled:opacity-40"
+              style={{ background: '#0A66C2', boxShadow: '0 4px 16px rgba(10,102,194,0.22)' }}
+            >
+              {publishing ? 'Publishing...' : selectedImages.length > 0 ? 'Post with image' : 'Post now'}
+            </button>
           </div>
         </div>
       )}

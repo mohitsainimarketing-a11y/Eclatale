@@ -165,6 +165,7 @@ export default function Phase2Editor({
 
   const [carouselState, setCarouselState] = useState<'idle' | 'generating'>('idle');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [imageMenuOpen, setImageMenuOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -758,16 +759,6 @@ export default function Phase2Editor({
           >Preview</button>
         </div>
         <span className="flex-1" />
-        {/* Quality chip */}
-        {content.trim() && !kbVisible && (
-          <button
-            onClick={() => setAiPanelOpen(true)}
-            className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mr-2"
-            style={{ background: `${qualityColor(overallQuality)}18`, color: qualityColor(overallQuality), border: `1px solid ${qualityColor(overallQuality)}30` }}
-          >
-            Q:{overallQuality}
-          </button>
-        )}
         {kbVisible ? (
           <button
             onMouseDown={e => { e.preventDefault(); textareaRef.current?.blur(); }}
@@ -777,7 +768,26 @@ export default function Phase2Editor({
             Done
           </button>
         ) : (
-          <span className="text-[10px] font-medium" style={{ color: content.length > 2700 ? '#F72585' : '#C4C4CF' }}>{content.length}</span>
+          <>
+            <span className="text-[10px] font-medium mr-2" style={{ color: content.length > 2700 ? '#F72585' : '#C4C4CF' }}>{content.length}</span>
+            {/* AI Edit button */}
+            <button
+              onClick={() => setAiPanelOpen(true)}
+              className="relative flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', color: 'white' }}
+            >
+              <Sparkles size={11} />
+              AI Edit
+              {content.trim() && (
+                <span
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-white flex items-center justify-center text-[7px] font-bold"
+                  style={{ background: qualityColor(overallQuality) }}
+                >
+                  {overallQuality}
+                </span>
+              )}
+            </button>
+          </>
         )}
       </div>
 
@@ -1737,55 +1747,21 @@ export default function Phase2Editor({
           </button>
         </div>
 
-        {/* Row 2: Aria — own dedicated section */}
+        {/* Row 2: Image attachment */}
         <div className="flex items-center gap-2 px-3 py-2">
-          {/* Claude-style input box */}
-          <div
-            className="flex-1 min-w-0 flex items-center gap-2 rounded-2xl px-3 py-2"
-            style={{ background: '#FAFAFE', border: '1.5px solid #EDE8FF', boxShadow: '0 1px 4px rgba(124,92,252,0.08)' }}
-          >
-            <button
-              onClick={() => imageInputRef.current?.click()}
-              className="flex-shrink-0 relative"
-              style={{ color: selectedImages.length > 0 ? '#7C5CFC' : '#C4C4CF' }}
-              title="Attach image"
-            >
-              <Paperclip size={14} />
-              {selectedImages.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-white flex items-center justify-center text-[8px] font-bold" style={{ background: '#7C5CFC' }}>
-                  {selectedImages.length}
-                </span>
-              )}
-            </button>
-            <input
-              type="text"
-              value={ariaInput}
-              onChange={e => setAriaInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && ariaInput.trim() && content.trim()) handleAriaRefine(); }}
-              placeholder="Ask Aria to edit your post..."
-              className="flex-1 min-w-0 text-[13px] bg-transparent outline-none"
-              style={{ color: '#1A1A2E' }}
-            />
-            {ariaInput.trim() ? (
-              <button
-                onClick={() => handleAriaRefine()}
-                disabled={isRefining || !content.trim()}
-                className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
-              >
-                <ChevronRight size={12} color="white" />
-              </button>
-            ) : (
-              <Sparkles size={12} style={{ color: '#C4C4CF', flexShrink: 0 }} />
-            )}
-          </div>
-          {/* AI Edit — opens full panel */}
           <button
-            onClick={() => setAiPanelOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
+            onClick={() => setImageMenuOpen(true)}
+            className="flex-1 flex items-center gap-2 h-10 px-4 rounded-2xl text-[13px] font-semibold transition-colors"
+            style={{
+              background: selectedImages.length > 0 ? 'rgba(124,92,252,0.08)' : '#FAFAFE',
+              border: `1.5px solid ${selectedImages.length > 0 ? '#7C5CFC' : '#EDE8FF'}`,
+              color: selectedImages.length > 0 ? '#7C5CFC' : '#9CA3AF',
+            }}
           >
-            <Sparkles size={15} color="white" />
+            <ImagePlus size={16} />
+            {selectedImages.length > 0
+              ? `${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''} attached`
+              : 'Add image to post'}
           </button>
         </div>
 
@@ -1827,6 +1803,58 @@ export default function Phase2Editor({
           </button>
         </div>
       </div>
+
+      {/* Image attachment bottom sheet */}
+      {imageMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50" onClick={() => setImageMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl safe-bottom animate-slideUp"
+            onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-[#E5E7EB] mx-auto mt-3 mb-4" />
+            <div className="px-5 pb-6 space-y-3">
+              <p className="text-[13px] font-bold mb-3" style={{ color: '#1A1A2E' }}>Add image to post</p>
+              {/* Option 1: Attach from device */}
+              <button
+                onClick={() => { setImageMenuOpen(false); imageInputRef.current?.click(); }}
+                className="w-full flex items-center gap-3 p-4 rounded-2xl text-left transition-colors"
+                style={{ background: 'rgba(124,92,252,0.05)', border: '1.5px solid #EDE8FF' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,92,252,0.10)' }}>
+                  <Paperclip size={18} style={{ color: '#7C5CFC' }} />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>Attach from device</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Pick a photo or image from your camera roll</p>
+                </div>
+              </button>
+              {/* Option 2: Create with AI */}
+              <button
+                onClick={() => { setImageMenuOpen(false); window.location.href = '/create?mode=visual'; }}
+                className="w-full flex items-center gap-3 p-4 rounded-2xl text-left transition-colors"
+                style={{ background: 'rgba(247,37,133,0.04)', border: '1.5px solid rgba(247,37,133,0.15)' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(247,37,133,0.10)' }}>
+                  <Sparkles size={18} style={{ color: '#F72585' }} />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>Create image with AI</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Generate a custom image for this post</p>
+                </div>
+              </button>
+              {/* Remove images if any attached */}
+              {selectedImages.length > 0 && (
+                <button
+                  onClick={() => { setSelectedImages([]); setImageMenuOpen(false); }}
+                  className="w-full py-3 rounded-2xl text-[13px] font-semibold text-center"
+                  style={{ color: '#EF4444', border: '1.5px solid rgba(239,68,68,0.2)' }}
+                >
+                  Remove {selectedImages.length} image{selectedImages.length > 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile diff preview — shown when AI style refine (emoji, Make-It, etc.) has a pending result */}
       {pendingDiff && (

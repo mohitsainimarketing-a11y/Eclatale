@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Home, Sparkles, BarChart3, Compass, FolderOpen, Target, UserCog, Settings,
+  Home, Sparkles, BarChart3, Lightbulb, FolderOpen, Target, UserCog, Settings,
   MessageCircle, ChevronLeft, ChevronRight, Menu, X, CalendarDays, Wrench, Users,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -17,14 +17,13 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard' },
   { icon: <Sparkles size={18} />, label: 'Create', href: '/create', primary: true },
-  { icon: <Compass size={18} />, label: 'Discover', href: '/discover' },
-  { icon: <Wrench size={18} />, label: 'Free Tools', href: '/tools' },
-  { icon: <Users size={18} />, label: 'Leads', href: '/leads' },
-  { icon: <BarChart3 size={18} />, label: 'Intelligence', href: '/intelligence' },
+  { icon: <Lightbulb size={18} />, label: 'Ideas', href: '/ideas' },
   { icon: <FolderOpen size={18} />, label: 'Content Library', href: '/history' },
   { icon: <CalendarDays size={18} />, label: 'Schedule', href: '/schedule' },
+  { icon: <BarChart3 size={18} />, label: 'Analytics', href: '/dashboard' },
   { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup' },
-  { icon: <UserCog size={18} />, label: 'Profile Optimizer', href: '/intelligence#profile' },
+  { icon: <Wrench size={18} />, label: 'Free Tools', href: '/tools' },
+  { icon: <Users size={18} />, label: 'Leads', href: '/leads' },
   { icon: <Settings size={18} />, label: 'Settings', href: '/settings' },
 ];
 

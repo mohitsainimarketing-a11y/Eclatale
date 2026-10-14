@@ -33,6 +33,7 @@ const ExtensionAuth = lazy(() => import('./pages/ExtensionAuth'));
 const ToolsHub = lazy(() => import('./pages/tools/ToolsHub'));
 const ToolPage = lazy(() => import('./pages/tools/ToolPage'));
 const Discover = lazy(() => import('./pages/Discover'));
+const Ideas = lazy(() => import('./pages/Ideas'));
 const Resources = lazy(() => import('./pages/Resources'));
 const Leads = lazy(() => import('./pages/Leads'));
 
@@ -98,8 +99,9 @@ function App() {
           <Route path="/persona-setup" element={<PersonaSetup />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/create-visual" element={<CreateVisual />} />
-          <Route path="/intelligence" element={<Intelligence />} />
-          <Route path="/discover" element={<Discover />} />
+          <Route path="/intelligence" element={<Navigate to="/ideas?tab=intel" replace />} />
+          <Route path="/discover" element={<Navigate to="/ideas" replace />} />
+          <Route path="/ideas" element={<Ideas />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />

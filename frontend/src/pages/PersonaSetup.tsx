@@ -84,7 +84,7 @@ export default function PersonaSetup() {
   const handleFinish = async () => {
     setSaving(true);
     await savePersona(true);
-    window.location.href = '/dashboard';
+    window.location.href = '/brand-brain';
   };
 
   const canProceed1 = styles.length > 0;

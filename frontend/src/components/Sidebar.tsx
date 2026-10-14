@@ -15,12 +15,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard' },
+  { icon: <Home size={18} />, label: 'Home', href: '/dashboard' },
   { icon: <Sparkles size={18} />, label: 'Create', href: '/create', primary: true },
   { icon: <Lightbulb size={18} />, label: 'Ideas', href: '/ideas' },
   { icon: <CalendarDays size={18} />, label: 'Calendar', href: '/calendar' },
   { icon: <BarChart3 size={18} />, label: 'Analytics', href: '/dashboard' },
-  { icon: <Target size={18} />, label: 'Voice Profile', href: '/persona-setup' },
+  { icon: <Target size={18} />, label: 'Brand Brain', href: '/brand-brain' },
   { icon: <Wrench size={18} />, label: 'Free Tools', href: '/tools' },
   { icon: <Users size={18} />, label: 'Leads', href: '/leads' },
   { icon: <Settings size={18} />, label: 'Settings', href: '/settings' },

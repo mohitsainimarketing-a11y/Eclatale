@@ -288,7 +288,7 @@ export default function Dashboard() {
                       label: 'Voice', val: overview.brandHealth.voice,
                       tip: overview.brandHealth.voice >= 80 ? 'Strong voice profile. Claude knows your style'
                         : overview.brandHealth.voice >= 60 ? 'Good. Add 2 to 3 more voice samples in Settings'
-                        : 'Complete your voice profile in Settings to train your AI clone',
+                        : 'Complete your voice profile in Brand Brain to train your AI clone',
                     },
                   ] as { label: string; val: number; tip: string }[]).map(({ label, val, tip }) => (
                     <div key={label}>
@@ -345,7 +345,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               ) : (
-                <a href="/persona-setup" className="text-xs text-brand-purple font-semibold hover:underline">Set up voice →</a>
+                <a href="/brand-brain" className="text-xs text-brand-purple font-semibold hover:underline">Set up voice →</a>
               )}
             </div>
 
@@ -478,7 +478,7 @@ export default function Dashboard() {
                   <span className="w-1 h-1 rounded-full bg-brand-teal animate-pulse" />
                 </div>
                 {overview.activityFeed.length > 5 && (
-                  <a href="/history" className="text-[10px] font-semibold text-brand-purple">View all →</a>
+                  <a href="/calendar" className="text-[10px] font-semibold text-brand-purple">View all →</a>
                 )}
               </div>
               {overview.activityFeed.length === 0 ? (

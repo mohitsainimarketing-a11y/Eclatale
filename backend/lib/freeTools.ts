@@ -633,21 +633,16 @@ export async function generateResearchBrief(
   const message = await anthropic.messages.create({
     model: MODELS.haiku,
     max_tokens: 900,
+    system: `${getDateContext()}\nYou are a LinkedIn content strategist. Return ONLY valid JSON, no other text, no markdown fences.`,
     messages: [{
       role: 'user',
-      content: `You are a LinkedIn content strategist. Create a research brief for a post about: "${topic}"
+      content: `Create a research brief for a LinkedIn post about: "${topic}"
 ${researchText ? `\nRecent findings (use these as the basis for stats):\n${researchText.slice(0, 1500)}` : ''}
 
-Return ONLY valid JSON:
-{
-  "stats": string[] (3-5 specific facts or data points. Each under 120 chars. No em dashes. Be concrete with real numbers.),
-  "angles": [
-    { "style": "Contrarian" | "Data-driven" | "Story" | "Insider" | "Teaching", "hook": string (scroll-stopping opening line under 90 chars) }
-  ] (exactly 3 different angles, each using a different style),
-  "recommendedHook": string (the single best opening line based on the strongest stat or finding, under 90 chars)
-}
+Return this exact JSON shape:
+{"stats":["fact 1","fact 2","fact 3"],"angles":[{"style":"Contrarian","hook":"opening line"},{"style":"Data-driven","hook":"opening line"},{"style":"Story","hook":"opening line"}],"recommendedHook":"best single opening line"}
 
-Rules: no em dashes, no en dashes, no banned words: ${BANNED_WORDS}. Be specific.`,
+Rules: stats must be 3-5 specific facts with real numbers, each under 120 chars. Each angle hook under 90 chars. No em dashes, no en dashes, no banned words: ${BANNED_WORDS}.`,
     }],
   });
 

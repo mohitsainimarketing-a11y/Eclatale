@@ -146,6 +146,41 @@ export default function CreatePost() {
         return;
       }
 
+      // Repurpose handoff from Ideas page (RepurposeDrawer or MyIdeasTab).
+      try {
+        const raw = sessionStorage.getItem('eclatale_repurpose');
+        if (raw) {
+          sessionStorage.removeItem('eclatale_repurpose');
+          const parsed = JSON.parse(raw);
+          const spark = parsed.url || parsed.topic || '';
+          if (spark) {
+            setPreloadedSpark(spark);
+            setCustomInput('repurposed content');
+            setSelectedAngle(null);
+            sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, 'repurposed content');
+            goToPhase(2);
+            fetchAngles(u.id, false);
+            setAnglesLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      // ?topic= URL param from Ideas page "Content Idea" and Intel topic links.
+      const topicParam = params.get('topic');
+      if (topicParam) {
+        const topic = decodeURIComponent(topicParam).trim();
+        if (topic) {
+          setCustomInput(topic);
+          setSelectedAngle(null);
+          sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic);
+          goToPhase(2);
+          fetchAngles(u.id, false);
+          setAnglesLoading(false);
+          return;
+        }
+      }
+
       // Background-fetch angles so Phase 1 is ready when user arrives
       fetchAngles(u.id, false);
 

@@ -158,7 +158,7 @@ function ArticleCard({ item, onRepurpose }: { item: DiscoveredItem; onRepurpose:
       </div>
       <div className="flex gap-2 pt-1 border-t border-[rgba(124,92,252,0.06)]">
         <a
-          href="/create"
+          href={`/create?topic=${encodeURIComponent(item.title)}`}
           className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold text-brand-purple bg-[rgba(124,92,252,0.06)] hover:bg-[rgba(124,92,252,0.12)] rounded-lg py-2 transition-colors"
         >
           <Lightbulb size={13} />
@@ -485,7 +485,7 @@ function CompetitorPanel({ userId }: { userId: string }) {
               <p className="text-[10px] text-brand-muted font-medium mb-4">AI-curated for your industry</p>
               <div className="space-y-2">
                 {data.trendingTopics.map((topic, i) => (
-                  <a key={i} href={`/create`}
+                  <a key={i} href={`/create?topic=${encodeURIComponent(topic)}`}
                     className="block p-3 rounded-xl border border-[rgba(124,92,252,0.06)] hover:border-brand-purple/20 hover:shadow-brand transition-all group bg-white">
                     <p className="text-[13px] text-brand-dark leading-snug mb-2 font-medium">{topic}</p>
                     <span className="inline-flex items-center gap-1 text-[11px] text-brand-purple font-semibold opacity-70 group-hover:opacity-100 transition-opacity">

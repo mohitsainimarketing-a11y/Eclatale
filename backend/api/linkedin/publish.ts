@@ -58,8 +58,8 @@ async function registerAndUploadImage(dataUrl: string, token: string, memberId: 
 
 async function handleCarouselPublish(req: VercelRequest, res: VercelResponse, userId: string) {
   const { images, caption } = req.body;
-  if (!Array.isArray(images) || images.length < 2 || !caption) {
-    return res.status(400).json({ error: 'Missing images or caption. A carousel needs at least 2 slides.' });
+  if (!Array.isArray(images) || images.length < 1 || !caption) {
+    return res.status(400).json({ error: 'Missing images or caption for this post.' });
   }
   if (images.length > MAX_CAROUSEL_SLIDES) {
     return res.status(400).json({ error: `LinkedIn allows at most ${MAX_CAROUSEL_SLIDES} images in one post.` });

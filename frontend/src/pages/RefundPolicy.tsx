@@ -60,7 +60,7 @@ export default function RefundPolicy() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-brand-dark mb-2">Contact</h2>
-            <p>Questions about a refund? Reach us at <a href="mailto:support@eclatale.com" className="text-brand-purple font-semibold hover:underline">support@eclatale.com</a>.</p>
+            <p>Questions about a refund? Reach us at <a href="mailto:hello@eclatale.com" className="text-brand-purple font-semibold hover:underline">hello@eclatale.com</a>.</p>
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ function ensureVapid() {
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
   if (pub && priv) {
-    webpush.setVapidDetails('mailto:info@eclatale.com', pub, priv);
+    webpush.setVapidDetails('mailto:hello@eclatale.com', pub, priv);
     vapidConfigured = true;
   }
 }

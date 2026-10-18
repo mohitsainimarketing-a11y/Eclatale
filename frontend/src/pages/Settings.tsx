@@ -1140,7 +1140,7 @@ export default function Settings() {
               This action cannot be undone. All your posts, persona data, and connected accounts will be permanently removed.
             </p>
             <p className="text-sm text-brand-dark mb-5">
-              To delete your account, please contact support at <a href="mailto:support@eclatale.com" className="text-brand-purple font-semibold">support@eclatale.com</a>
+              To delete your account, please contact support at <a href="mailto:hello@eclatale.com" className="text-brand-purple font-semibold">hello@eclatale.com</a>
             </p>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowDeleteModal(false)} className="btn-ghost text-sm">Cancel</button>
@@ -1174,7 +1174,7 @@ export default function Settings() {
                 <div className="p-4 rounded-2xl bg-[rgba(124,92,252,0.05)] border border-[rgba(124,92,252,0.1)] mb-5">
                   <p className="text-sm font-semibold text-brand-dark mb-1">Before you go, stay for $9.50/mo</p>
                   <p className="text-xs text-brand-muted mb-3">Apply LAUNCH50 for 50% off your next 3 months instead of cancelling.</p>
-                  <a href="mailto:info@eclatale.com?subject=Apply%20LAUNCH50%20to%20my%20subscription" className="text-xs text-brand-purple font-semibold hover:underline">
+                  <a href="mailto:hello@eclatale.com?subject=Apply%20LAUNCH50%20to%20my%20subscription" className="text-xs text-brand-purple font-semibold hover:underline">
                     Email us to apply the discount →
                   </a>
                 </div>

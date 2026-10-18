@@ -37,7 +37,7 @@ const PREFERENCE_COLUMN: Partial<Record<EmailType, 'notif_weekly_digest' | 'noti
   industry_briefing: 'notif_industry_briefing',
 };
 
-const FROM_NOREPLY = process.env.GMAIL_FROM_NOREPLY || 'noreply@eclatale.com';
+const FROM_NOREPLY = process.env.GMAIL_FROM_NOREPLY || 'hello@eclatale.com';
 const FROM_HELLO = process.env.GMAIL_FROM_HELLO || 'hello@eclatale.com';
 
 const TRANSACTIONAL_TYPES = new Set<EmailType>(['confirmation', 'password_reset']);

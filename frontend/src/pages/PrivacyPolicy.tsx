@@ -47,7 +47,7 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="Contact">
-          <p>Questions about this policy? Reach us at <a href="mailto:info@eclatale.com" className="text-brand-purple font-semibold hover:underline">info@eclatale.com</a>.</p>
+          <p>Questions about this policy? Reach us at <a href="mailto:hello@eclatale.com" className="text-brand-purple font-semibold hover:underline">hello@eclatale.com</a>.</p>
         </Section>
       </div>
 

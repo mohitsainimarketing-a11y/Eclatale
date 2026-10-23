@@ -20,7 +20,7 @@ type CachedTextBlock = TextBlock & { cache_control: { type: 'ephemeral' } };
 
 /**
  * The universal static block shared by all content-generation endpoints.
- * Cached for 5 minutes across all users — single warm-up call primes it for everyone.
+ * Cached for 5 minutes across all users, so a single warm-up call primes it for everyone.
  * ~1600+ tokens, well above the 1024-token caching minimum.
  */
 export const STATIC_CONTENT_BLOCK: CachedTextBlock = {

@@ -15,6 +15,7 @@ interface Phase0Props {
   onGoIdea: (angles: Angle[], sources: Source[]) => void;
   onGoDirectIdea?: (topic: string, length: PostLength) => void;
   onGoWithResearch?: (topic: string, brief: ResearchBrief, length: PostLength) => void;
+  initialRepurposeOpen?: boolean;
 }
 
 interface TrendItem { topic: string; source: string; }
@@ -22,13 +23,13 @@ interface TrendCategory { label: string; items: TrendItem[]; }
 
 export default function Phase0Picker({
   userId, firstName, voiceLabel,
-  onGoIdeas, onGoTrending, onGoRepurpose, onGoIdea, onGoDirectIdea, onGoWithResearch,
+  onGoIdeas, onGoTrending, onGoRepurpose, onGoIdea, onGoDirectIdea, onGoWithResearch, initialRepurposeOpen,
 }: Phase0Props) {
   const [trendCategories, setTrendCategories] = useState<TrendCategory[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [idea, setIdea] = useState('');
   const [selectedLength, setSelectedLength] = useState<PostLength>('short');
-  const [repurposeOpen, setRepurposeOpen] = useState(false);
+  const [repurposeOpen, setRepurposeOpen] = useState(!!initialRepurposeOpen);
   const [repurposeText, setRepurposeText] = useState('');
   const [researchLoading, setResearchLoading] = useState(false);
   const [researchBrief, setResearchBrief] = useState<ResearchBrief | null>(null);
@@ -78,8 +79,18 @@ export default function Phase0Picker({
         body: JSON.stringify({ action: 'research-brief', topic: idea.trim(), userId }),
       });
       const data = await res.json();
-      if (data.error) { setResearchError(data.error); return; }
-      setResearchBrief(data);
+      if (data.error) { setResearchError(data.message || data.error); return; }
+      const brief: ResearchBrief = {
+        stats: Array.isArray(data.stats) ? data.stats : [],
+        angles: Array.isArray(data.angles) ? data.angles : [],
+        recommendedHook: data.recommendedHook || '',
+        briefText: data.briefText || '',
+      };
+      if (!brief.stats.length && !brief.angles.length && !brief.recommendedHook) {
+        setResearchError("Couldn't find research on that topic. Try rephrasing it, or generate the post directly.");
+        return;
+      }
+      setResearchBrief(brief);
     } catch {
       setResearchError('Could not load research. Try again.');
     } finally {
@@ -89,7 +100,7 @@ export default function Phase0Picker({
 
   const handleWriteFromResearch = () => {
     if (!researchBrief || !onGoWithResearch) return;
-    onGoWithResearch(idea.trim(), researchBrief, selectedLength);
+    onGoWithResearch(idea.trim() || researchBrief.recommendedHook, researchBrief, selectedLength);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -208,8 +219,14 @@ export default function Phase0Picker({
               </div>
             )}
 
-            {researchError && (
-              <div className="px-5 py-4 text-[13px] text-red-500">{researchError}</div>
+            {researchError && !researchLoading && (
+              <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <p className="flex-1 text-[13px] text-red-500">{researchError}</p>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button onClick={handleResearchFirst} disabled={!canGenerate} className="text-[12px] font-bold text-brand-purple disabled:opacity-40">Try again</button>
+                  <button onClick={handleGenerate} disabled={!canGenerate} className="text-[12px] font-semibold text-brand-muted hover:text-brand-dark disabled:opacity-40">Generate directly</button>
+                </div>
+              </div>
             )}
 
             {researchBrief && !researchLoading && (
@@ -269,6 +286,7 @@ export default function Phase0Picker({
                 <div className="flex items-center gap-3 pt-1">
                   <button
                     onClick={handleWriteFromResearch}
+                    disabled={!canGenerate}
                     className="flex items-center gap-2 text-[13px] font-bold text-white px-5 py-2.5 rounded-full transition-all"
                     style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 4px 16px rgba(124,92,252,0.28)' }}
                   >

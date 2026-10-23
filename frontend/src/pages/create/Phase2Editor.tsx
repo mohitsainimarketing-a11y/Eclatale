@@ -27,6 +27,8 @@ const BOLD = RICH_TEXT_STYLES.find(s => s.id === 'bold')!.apply;
 const ITALIC = RICH_TEXT_STYLES.find(s => s.id === 'italic')!.apply;
 const BOLD_ITALIC = RICH_TEXT_STYLES.find(s => s.id === 'bold-italic')!.apply;
 const looksLikeUrl = (s: string) => /^https?:\/\/\S+$/i.test(s.trim());
+// Hidden until the publish-due cron runs more than once a day (Hobby plan only allows daily).
+const SCHEDULING_ENABLED = false;
 
 const LOADING_MESSAGES = [
   'Finding the latest on this topic...',
@@ -88,6 +90,11 @@ function scoreColor(score: number): string {
   return '#F72585';
 }
 
+// <input type="date"> works in local time; toISOString() would give the UTC date.
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function estimateSlides(content: string): number {
   const paragraphs = content.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   return Math.max(3, Math.min(10, paragraphs.length + 1));
@@ -121,7 +128,12 @@ export default function Phase2Editor({
   preloadedSpark, preloadedResearchBrief, presetStyleId,
 }: Phase2Props) {
   const { showToast } = useToast();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Desktop and mobile layouts are both mounted (CSS hides one), so they need
+  // separate refs. A shared ref ends up on the hidden mobile textarea.
+  const desktopTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const mobileTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const getEditor = (): HTMLTextAreaElement | null =>
+    [desktopTextareaRef.current, mobileTextareaRef.current].find(el => el && el.offsetParent !== null) || null;
 
   const [content, setContent] = useState(initialContent);
   const [postId, setPostId] = useState<string | null>(initialPostId);
@@ -131,7 +143,7 @@ export default function Phase2Editor({
   const [sparkInput, setSparkInput] = useState(preloadedSpark || '');
   const [researchPanelOpen, setResearchPanelOpen] = useState(true);
   const [variantsOpen, setVariantsOpen] = useState(false);
-  const [variants, setVariants] = useState<{ styleId: string; label: string; emoji: string; content: string }[]>([]);
+  const [variants, setVariants] = useState<{ styleId: string; label: string; emoji: string; content: string; failed?: boolean }[]>([]);
   const [generatingVariants, setGeneratingVariants] = useState(false);
 
   // New UI state for LinkedIn-style editor
@@ -260,23 +272,41 @@ export default function Phase2Editor({
         if (!line.startsWith('data: ')) continue;
         const payload = line.slice(6);
         if (payload === '[DONE]') return;
-        try { const { text } = JSON.parse(payload); if (text) onChunk(text); } catch { /* skip malformed */ }
+        let parsed: { text?: string; error?: string } | null = null;
+        try { parsed = JSON.parse(payload); } catch { /* skip malformed */ }
+        if (parsed?.error) throw new Error(parsed.error);
+        if (parsed?.text) onChunk(parsed.text);
       }
     }
+    // Stream closed without [DONE]: the function timed out or the connection dropped.
+    throw new Error('Generation was cut off. Try again.');
   }, [angle, currentTopic, selectedLength, userId, presetStyleId]);
 
+  const postIdRef = useRef<string | null>(initialPostId);
+  useEffect(() => { postIdRef.current = postId; }, [postId]);
+
+  // Regenerating rewrites the same draft row rather than piling up new ones.
   const savePost = useCallback(async (postContent: string) => {
+    if (postIdRef.current) {
+      await supabase.from('posts').update({ content: postContent }).eq('id', postIdRef.current);
+      return;
+    }
     const { data: inserted } = await supabase.from('posts').insert({
       user_id: userId, content: postContent, topic: currentTopic(), tone: 'professional', content_type: 'linkedin-post', source: 'auto',
     }).select('id').single();
-    if (inserted) setPostId(inserted.id);
+    if (inserted) { postIdRef.current = inserted.id; setPostId(inserted.id); }
   }, [userId, currentTopic]);
 
+  const contentRef = useRef(content);
+  useEffect(() => { contentRef.current = content; }, [content]);
+
   const handleGenerate = useCallback(async (lengthOverride?: PostLength) => {
+    const previous = contentRef.current;
     setIsGenerating(true);
     setGenError('');
     checkedRef.current = false;
     let accumulated = '';
+    try { sessionStorage.removeItem('eclatale_create_content'); } catch {}
     try {
       const spark = await resolveSpark();
       setContent('');
@@ -284,15 +314,25 @@ export default function Phase2Editor({
         accumulated += chunk;
         setContent(accumulated);
       }, undefined, true, lengthOverride);
-      if (accumulated) {
-        await savePost(accumulated);
-        try { sessionStorage.setItem('eclatale_create_content', accumulated); } catch {}
-      }
+      if (!accumulated.trim()) throw new Error('The post came back empty. Try again.');
+      if (previous.trim()) { pushUndo(previous); pushUndo(accumulated); }
+      else resetUndo(accumulated);
+      await savePost(accumulated);
+      try { sessionStorage.setItem('eclatale_create_content', accumulated); } catch {}
     } catch (e: any) {
-      setGenError(e.message || "Couldn't generate a post. Try again.");
+      const msg = e.message || "Couldn't generate a post. Try again.";
+      if (previous.trim()) {
+        // Never trade a working draft for a half-written or empty one.
+        setContent(previous);
+        try { sessionStorage.setItem('eclatale_create_content', previous); } catch {}
+        showToast('error', msg);
+      } else {
+        setContent('');
+        setGenError(msg);
+      }
     }
     setIsGenerating(false);
-  }, [resolveSpark, generateStreaming, savePost]);
+  }, [resolveSpark, generateStreaming, savePost, pushUndo, resetUndo, showToast]);
 
   const handleLengthAndRegenerate = (l: PostLength) => {
     onLengthChange(l);
@@ -371,8 +411,9 @@ export default function Phase2Editor({
       });
       const data = await res.json();
       if (data.error) throw new Error(data.message || data.error);
-      pushUndo(prevContent);
-      setContent(data.content);
+      if (!String(data.content || '').trim()) throw new Error('Aria came back empty. Try rephrasing the request.');
+      if (contentRef.current !== prevContent) throw new Error('You edited the post while Aria was working. Run it again on the latest version.');
+      commitEdit(data.content);
       if (!overrideInstruction) setAriaInput('');
       checkedRef.current = false;
       if (postId) {
@@ -401,7 +442,9 @@ export default function Phase2Editor({
             acc += chunk;
             setVariants(prev => prev.map((v, i) => i === idx ? { ...v, content: acc } : v));
           }, style.styleId, false);
-        } catch { /* leave variant empty on error */ }
+        } catch {
+          setVariants(prev => prev.map((v, i) => i === idx ? { ...v, content: '', failed: true } : v));
+        }
       })
     );
     setGeneratingVariants(false);
@@ -419,9 +462,10 @@ export default function Phase2Editor({
         body: JSON.stringify({ postContent: content, userId }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      pushUndo(prevContent);
-      setContent(data.content);
+      if (data.error) throw new Error(data.message || data.error);
+      if (!String(data.content || '').trim()) throw new Error('Humanize came back empty. Try again.');
+      if (contentRef.current !== prevContent) throw new Error('You edited the post while it was humanizing. Run it again on the latest version.');
+      commitEdit(data.content);
       checkedRef.current = false;
       if (postId) {
         await supabase.from('posts').update({ content: data.content }).eq('id', postId);
@@ -465,9 +509,8 @@ export default function Phase2Editor({
   useEffect(() => { loadVersions(); }, [loadVersions]);
 
   const handleRestore = useCallback(async (version: PostVersion) => {
-    pushUndo(content);
     const restoredContent = version.content;
-    setContent(restoredContent);
+    commitEdit(restoredContent);
     checkedRef.current = false;
     if (postId) {
       await supabase.from('posts').update({ content: restoredContent }).eq('id', postId);
@@ -492,6 +535,7 @@ export default function Phase2Editor({
       });
       const data = await res.json();
       if (data.error) throw new Error(data.message || data.error);
+      if (!String(data.content || '').trim()) throw new Error('That style change came back empty. Try again.');
       setPendingDiff({ before: content, after: data.content, label });
     } catch (e: any) {
       showToast('error', e.message || 'Style change failed. Try again.');
@@ -501,8 +545,7 @@ export default function Phase2Editor({
 
   const acceptDiff = async () => {
     if (!pendingDiff) return;
-    pushUndo(pendingDiff.before);
-    setContent(pendingDiff.after);
+    commitEdit(pendingDiff.after);
     checkedRef.current = false;
     if (postId) {
       await supabase.from('posts').update({ content: pendingDiff.after }).eq('id', postId);
@@ -513,52 +556,62 @@ export default function Phase2Editor({
 
   const rejectDiff = () => setPendingDiff(null);
 
+  const applyVariant = async (variantContent: string) => {
+    commitEdit(variantContent);
+    setVariantsOpen(false);
+    checkedRef.current = false;
+    // Supabase query builders are lazy: without await the update never fires.
+    if (postId) await supabase.from('posts').update({ content: variantContent }).eq('id', postId);
+  };
+
   // ── Toolbar helpers ──────────────────────────────────────────────────────
 
-  const insertAtCursor = (text: string) => {
-    const el = textareaRef.current;
-    if (!el) { setContent(c => c + text); return; }
-    const start = el.selectionStart ?? content.length;
-    const end = el.selectionEnd ?? content.length;
-    const next = content.slice(0, start) + text + content.slice(end);
+  const commitEdit = (next: string) => {
+    if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
+    pushUndo(content);
+    pushUndo(next);
     setContent(next);
-    requestAnimationFrame(() => { el.focus(); el.selectionStart = el.selectionEnd = start + text.length; });
+    try { sessionStorage.setItem('eclatale_create_content', next); } catch {}
+  };
+
+  const insertAtCursor = (text: string) => {
+    const el = getEditor();
+    const start = el ? el.selectionStart ?? content.length : content.length;
+    const end = el ? el.selectionEnd ?? content.length : content.length;
+    commitEdit(content.slice(0, start) + text + content.slice(end));
+    if (el) requestAnimationFrame(() => { el.focus(); el.selectionStart = el.selectionEnd = start + text.length; });
   };
 
   const insertHookTemplate = (text: string) => {
-    const el = textareaRef.current;
+    const el = getEditor();
     const insertText = text + '\n\n';
     const bracketMatch = insertText.match(/\[[^\]]+\]/);
-    if (!el) { setContent(c => c + insertText); return; }
-    const start = el.selectionStart ?? content.length;
-    const end = el.selectionEnd ?? content.length;
-    const next = content.slice(0, start) + insertText + content.slice(end);
-    setContent(next);
+    const start = el ? el.selectionStart ?? 0 : 0;
+    const end = el ? el.selectionEnd ?? 0 : 0;
+    commitEdit(content.slice(0, start) + insertText + content.slice(end));
+    if (!el) return;
     const selStart = bracketMatch ? start + (bracketMatch.index || 0) : start + insertText.length;
     const selEnd = bracketMatch ? selStart + bracketMatch[0].length : selStart;
     requestAnimationFrame(() => { el.focus(); el.selectionStart = selStart; el.selectionEnd = selEnd; });
   };
 
   const transformSelection = (fn: (t: string) => string) => {
-    const el = textareaRef.current;
+    const el = getEditor();
     if (!el || el.selectionStart === el.selectionEnd) { showToast('info', 'Select some text first.'); return; }
     const start = el.selectionStart, end = el.selectionEnd;
-    const selected = content.slice(start, end);
-    const next = content.slice(0, start) + fn(selected) + content.slice(end);
-    setContent(next);
-    requestAnimationFrame(() => el.focus());
+    const replaced = fn(content.slice(start, end));
+    commitEdit(content.slice(0, start) + replaced + content.slice(end));
+    requestAnimationFrame(() => { el.focus(); el.selectionStart = start; el.selectionEnd = start + replaced.length; });
   };
 
   const prefixLines = (prefix: (i: number) => string) => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const start = el.selectionStart ?? 0, end = el.selectionEnd ?? content.length;
+    const el = getEditor();
+    const start = el ? el.selectionStart ?? 0 : 0;
+    const end = el ? el.selectionEnd ?? content.length : content.length;
     const lineStart = content.lastIndexOf('\n', start - 1) + 1;
     const lineEnd = end > start ? end : content.indexOf('\n', end) === -1 ? content.length : content.indexOf('\n', end);
-    const block = content.slice(lineStart, lineEnd);
-    const lines = block.split('\n');
-    const next = content.slice(0, lineStart) + lines.map((l, i) => `${prefix(i)}${l}`).join('\n') + content.slice(lineEnd);
-    setContent(next);
+    const lines = content.slice(lineStart, lineEnd).split('\n');
+    commitEdit(content.slice(0, lineStart) + lines.map((l, i) => `${prefix(i)}${l}`).join('\n') + content.slice(lineEnd));
   };
 
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -627,7 +680,7 @@ export default function Phase2Editor({
       } else {
         target.setDate(target.getDate() + 1);
       }
-      setScheduleDate(target.toISOString().slice(0, 10));
+      setScheduleDate(localDateStr(target));
       const match = bestTime?.recommendedTimes?.[0]?.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)/i);
       if (match) {
         let h = parseInt(match[1], 10);
@@ -761,7 +814,7 @@ export default function Phase2Editor({
         <span className="flex-1" />
         {kbVisible ? (
           <button
-            onMouseDown={e => { e.preventDefault(); textareaRef.current?.blur(); }}
+            onMouseDown={e => { e.preventDefault(); mobileTextareaRef.current?.blur(); }}
             className="text-[12px] font-semibold px-3 py-1 rounded-lg"
             style={{ background: '#0A66C2', color: 'white' }}
           >
@@ -852,7 +905,7 @@ export default function Phase2Editor({
                       <span className="text-[13px] font-bold" style={{ color: '#1A1A2E' }}>{v.emoji} {v.label}</span>
                       {v.content && !generatingVariants && (
                         <button
-                          onClick={() => { setContent(v.content); setVariantsOpen(false); checkedRef.current = false; if (postId) supabase.from('posts').update({ content: v.content }).eq('id', postId); }}
+                          onClick={() => applyVariant(v.content)}
                           className="text-[11px] font-bold px-3 py-1.5 rounded-full text-white flex-shrink-0"
                           style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
                         >
@@ -863,6 +916,8 @@ export default function Phase2Editor({
                     <div className="flex-1 p-4 overflow-y-auto">
                       {v.content ? (
                         <p className="text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: '#1A1A2E' }}>{v.content}</p>
+                      ) : v.failed ? (
+                        <p className="text-[12px]" style={{ color: '#F72585' }}>Couldn't write this style. Generate again to retry.</p>
                       ) : (
                         <div className="flex flex-col gap-2 pt-1">
                           {[80, 65, 90, 55, 75].map((w, j) => (
@@ -1219,7 +1274,7 @@ export default function Phase2Editor({
                       <LinkedInPostPreview content={content} />
                     ) : (
                       <textarea
-                        ref={textareaRef}
+                        ref={desktopTextareaRef}
                         value={content}
                         onChange={e => handleContentChange(e.target.value)}
                         onKeyDown={handleEditorKeyDown}
@@ -1414,9 +1469,11 @@ export default function Phase2Editor({
               <History size={12} /> History
             </button>
             <div className="flex-1" />
-            <button onClick={openSchedule} className="flex items-center gap-1.5 text-[13px] font-bold px-4 py-2 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}>
-              <Calendar size={13} /> Schedule
-            </button>
+            {SCHEDULING_ENABLED && (
+              <button onClick={openSchedule} className="flex items-center gap-1.5 text-[13px] font-bold px-4 py-2 rounded-full" style={{ color: '#7C5CFC', border: '1.5px solid #D4CEFF', background: 'rgba(124,92,252,0.06)' }}>
+                <Calendar size={13} /> Schedule
+              </button>
+            )}
             <button
               onClick={handlePublish}
               disabled={publishing || isGenerating || !content.trim()}
@@ -1528,7 +1585,7 @@ export default function Phase2Editor({
                           <span className="text-[11px] font-semibold" style={{ color: '#1A1A2E' }}>{v.emoji} {v.label}</span>
                           {v.content && !generatingVariants && (
                             <button
-                              onClick={() => { setContent(v.content); setVariantsOpen(false); checkedRef.current = false; if (postId) supabase.from('posts').update({ content: v.content }).eq('id', postId); }}
+                              onClick={() => applyVariant(v.content)}
                               className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white flex-shrink-0"
                               style={{ background: 'linear-gradient(135deg, #7C5CFC, #F72585)' }}
                             >
@@ -1541,6 +1598,8 @@ export default function Phase2Editor({
                             <p className="text-[11px] leading-relaxed" style={{ color: '#6B7280' }}>
                               {v.content.slice(0, 120)}{v.content.length > 120 ? '…' : ''}
                             </p>
+                          ) : v.failed ? (
+                            <p className="text-[11px]" style={{ color: '#F72585' }}>Couldn't write this style.</p>
                           ) : (
                             <div className="flex flex-col gap-1.5">
                               {[80, 60, 70].map((w, j) => <div key={j} className="skeleton h-2.5 rounded" style={{ width: `${w}%` }} />)}
@@ -1560,9 +1619,11 @@ export default function Phase2Editor({
               <div className="px-3 py-3 border-b" style={{ borderColor: '#EDE8FF' }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold" style={{ color: '#1A1A2E' }}>Best time to post</span>
-                  <button onClick={openSchedule} className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}>
-                    Schedule
-                  </button>
+                  {SCHEDULING_ENABLED && (
+                    <button onClick={openSchedule} className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(124,92,252,0.10)', color: '#7C5CFC' }}>
+                      Schedule
+                    </button>
+                  )}
                 </div>
                 {bestTimeLocked ? (
                   <p className="text-[10px] mt-1" style={{ color: '#9CA3AF' }}>Upgrade to Individual to see your best time.</p>
@@ -1650,7 +1711,7 @@ export default function Phase2Editor({
       <div className="md:hidden flex-1 min-h-0 flex flex-col bg-white overflow-y-auto">
         {previewMode === 'preview' ? (
           <div className="flex-1 overflow-y-auto">
-            {/* LinkedIn preview card — no outer padding, feels immersive */}
+            {/* LinkedIn preview card, no outer padding so it feels immersive */}
             <div className="bg-white">
               <div className="flex items-center gap-3 px-5 pt-5 pb-3">
                 <Avatar src={userAvatar} initials={userInitials || 'Y'} alt={userName} size={38} />
@@ -1679,6 +1740,12 @@ export default function Phase2Editor({
               {[0, 1, 2, 3].map(i => <div key={i} className="skeleton h-3.5 rounded" style={{ width: `${90 - i * 12}%` }} />)}
             </div>
           </div>
+        ) : genError && !content ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 px-6">
+            <p className="text-[14px]" style={{ color: '#F72585' }}>{genError}</p>
+            <button onClick={() => handleGenerate()} className="text-[13px] font-bold px-5 py-2.5 rounded-full text-white" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>Try again</button>
+            <button onClick={onBack} className="text-[12px] font-semibold" style={{ color: '#9CA3AF' }}>Pick a different topic</button>
+          </div>
         ) : (
           <div className="flex-1 min-h-0 relative">
             {isGenerating && content && (
@@ -1688,7 +1755,7 @@ export default function Phase2Editor({
               </div>
             )}
             <textarea
-              ref={textareaRef}
+              ref={mobileTextareaRef}
               value={content}
               onChange={e => handleContentChange(e.target.value)}
               onKeyDown={handleEditorKeyDown}
@@ -1819,7 +1886,11 @@ export default function Phase2Editor({
               </button>
               {/* Option 2: Create with AI */}
               <button
-                onClick={() => { setImageMenuOpen(false); window.location.href = '/create?mode=visual'; }}
+                onClick={() => {
+                  setImageMenuOpen(false);
+                  const topic = content.split('\n').find(l => l.trim())?.slice(0, 120) || '';
+                  window.location.href = `/create-visual${topic ? `?topic=${encodeURIComponent(topic)}` : ''}`;
+                }}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl text-left transition-colors"
                 style={{ background: 'rgba(247,37,133,0.04)', border: '1.5px solid rgba(247,37,133,0.15)' }}
               >
@@ -1846,7 +1917,7 @@ export default function Phase2Editor({
         </div>
       )}
 
-      {/* Mobile diff preview — shown when AI style refine (emoji, Make-It, etc.) has a pending result */}
+      {/* Mobile diff preview, shown when AI style refine (emoji, Make-It, etc.) has a pending result */}
       {pendingDiff && (
         <div className="md:hidden fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(26,26,46,0.55)' }}>
           <div className="flex-1" onClick={() => setPendingDiff(null)} />
@@ -1872,7 +1943,7 @@ export default function Phase2Editor({
         </div>
       )}
 
-      {/* Mobile emoji picker — fixed overlay above bottom bar, avoids all overflow clipping */}
+      {/* Mobile emoji picker: fixed overlay above bottom bar, avoids all overflow clipping */}
       {formatMoreOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center" onClick={() => setFormatMoreOpen(false)}>
           <div className="absolute inset-x-0 bottom-[104px] flex flex-col items-center px-4 gap-2" onClick={e => e.stopPropagation()}>
@@ -2019,7 +2090,7 @@ export default function Phase2Editor({
             )}
 
             {/* Secondary actions */}
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className={`grid ${SCHEDULING_ENABLED ? 'grid-cols-3' : 'grid-cols-2'} gap-2.5`}>
               <button onClick={() => { handleCopy(); setAiPanelOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Copy size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Copy</span>
@@ -2028,10 +2099,12 @@ export default function Phase2Editor({
                 <Save size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>{savingDraft ? 'Saving…' : 'Save'}</span>
               </button>
-              <button onClick={() => { openSchedule(); setAiPanelOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
-                <Calendar size={18} style={{ color: '#6B7280' }} />
-                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
-              </button>
+              {SCHEDULING_ENABLED && (
+                <button onClick={() => { openSchedule(); setAiPanelOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
+                  <Calendar size={18} style={{ color: '#6B7280' }} />
+                  <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -2049,7 +2122,7 @@ export default function Phase2Editor({
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5 mb-3">
+            <div className={`grid ${SCHEDULING_ENABLED ? 'grid-cols-3' : 'grid-cols-2'} gap-2.5 mb-3`}>
               <button onClick={() => { handleCopy(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
                 <Copy size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Copy</span>
@@ -2058,10 +2131,12 @@ export default function Phase2Editor({
                 <Save size={18} style={{ color: '#6B7280' }} />
                 <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>{savingDraft ? 'Saving…' : 'Save'}</span>
               </button>
-              <button onClick={() => { openSchedule(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
-                <Calendar size={18} style={{ color: '#6B7280' }} />
-                <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
-              </button>
+              {SCHEDULING_ENABLED && (
+                <button onClick={() => { openSchedule(); setMobileDrawerOpen(false); }} className="flex flex-col items-center gap-2 py-4 rounded-2xl" style={{ border: '1.5px solid #EDE8FF' }}>
+                  <Calendar size={18} style={{ color: '#6B7280' }} />
+                  <span className="text-[11px] font-semibold" style={{ color: '#6B7280' }}>Schedule</span>
+                </button>
+              )}
             </div>
             <button
               onClick={() => { setMobileDrawerOpen(false); handlePublish(); }}
@@ -2118,13 +2193,15 @@ export default function Phase2Editor({
               </div>
             )}
             <label className="block text-[11px] font-bold mb-1" style={{ color: '#6B7280' }}>Date</label>
-            <input type="date" value={scheduleDate} min={new Date().toISOString().slice(0, 10)} onChange={e => setScheduleDate(e.target.value)} className="w-full text-[13px] px-3 py-2 rounded-xl mb-3" style={{ border: '1.5px solid #EDE8FF' }} />
+            <input type="date" value={scheduleDate} min={localDateStr(new Date())} onChange={e => setScheduleDate(e.target.value)} className="w-full text-[13px] px-3 py-2 rounded-xl mb-3" style={{ border: '1.5px solid #EDE8FF' }} />
             <label className="block text-[11px] font-bold mb-1" style={{ color: '#6B7280' }}>Time</label>
             <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full text-[13px] px-3 py-2 rounded-xl mb-4" style={{ border: '1.5px solid #EDE8FF' }} />
             <button onClick={handleConfirmSchedule} disabled={scheduling || !scheduleDate || !scheduleTime} className="w-full text-[13px] font-bold text-white py-2.5 rounded-full disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}>
               {scheduling ? 'Scheduling...' : 'Confirm schedule'}
             </button>
-            <p className="text-[10px] text-center mt-2" style={{ color: '#9CA3AF' }}>Posts publish within the hour of your selected time.</p>
+            <p className="text-[10px] text-center mt-2" style={{ color: '#9CA3AF' }}>
+              Scheduled posts go out in a daily publishing run at {new Date(Date.UTC(2000, 0, 1, 9)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} your time, the first run after the time you pick.
+            </p>
           </div>
         </div>
       )}

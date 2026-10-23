@@ -18,7 +18,19 @@ const LENGTH_STORAGE_KEY = 'eclatale_create_length';
 const PHASE_SESSION_KEY = 'eclatale_create_phase';
 const CUSTOM_INPUT_SESSION_KEY = 'eclatale_create_custom_input';
 const CONTENT_SESSION_KEY = 'eclatale_create_content';
+const SPARK_SESSION_KEY = 'eclatale_create_spark';
 type Phase = 0 | 1 | 2 | 3;
+
+// The topic line sent to the model. A placeholder like "repurposed content"
+// makes the model write about repurposing itself, so derive it from the source.
+function repurposeTopic(spark: string): string {
+  const flat = spark.replace(/\s+/g, ' ').trim();
+  return flat.length > 120 ? `${flat.slice(0, 120)}...` : flat;
+}
+
+function clearHandoffParams() {
+  try { window.history.replaceState({ createPhase: 0 }, '', window.location.pathname); } catch {}
+}
 
 export default function CreatePost() {
   const { sidebarWidth, breakpoint } = useSidebar();
@@ -62,8 +74,14 @@ export default function CreatePost() {
     try { return (localStorage.getItem(LENGTH_STORAGE_KEY) as PostLength) || 'short'; } catch { return 'short'; }
   });
 
+  // Angles load in the background on every entry path. They must not steal the
+  // selection from a user-supplied topic, or Regenerate writes about the angle.
+  const customInputRef = React.useRef('');
+  useEffect(() => { customInputRef.current = customInput; }, [customInput]);
+
   // Publish handoff (Phase 3)
   const [publishedPostUrn, setPublishedPostUrn] = useState('');
+  const [openRepurpose] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'repurpose');
 
   const fetchAngles = useCallback(async (uid: string, forceRefresh: boolean) => {
     setAnglesLoading(true);
@@ -80,10 +98,11 @@ export default function CreatePost() {
       setSources(data.sources || []);
       setAnglesUpdatedAt(data.generatedAt || new Date().toISOString());
 
-      const lastAngleId = localStorage.getItem(LAST_ANGLE_STORAGE_KEY);
-      const restored = (data.angles || []).find((a: Angle) => a.id === lastAngleId);
-      const first = restored || (data.angles || [])[0] || null;
-      setSelectedAngle(first);
+      if (!customInputRef.current.trim()) {
+        const lastAngleId = localStorage.getItem(LAST_ANGLE_STORAGE_KEY);
+        const restored = (data.angles || []).find((a: Angle) => a.id === lastAngleId);
+        setSelectedAngle(restored || (data.angles || [])[0] || null);
+      }
     } catch (e: any) {
       setAnglesError(e.message || "Couldn't load angles. Try refreshing.");
     }
@@ -136,6 +155,7 @@ export default function CreatePost() {
       // re-pick. Phase 2 generates from customTopic on mount.
       const pending = consumePendingDemo();
       if (pending) {
+        customInputRef.current = pending.topic;
         setCustomInput(pending.topic);
         setPresetStyleId(pending.style);
         setSelectedAngle(null);
@@ -152,12 +172,16 @@ export default function CreatePost() {
         if (raw) {
           sessionStorage.removeItem('eclatale_repurpose');
           const parsed = JSON.parse(raw);
-          const spark = parsed.url || parsed.topic || '';
+          const spark = String(parsed.url || parsed.topic || '').trim();
           if (spark) {
+            const topic = repurposeTopic(String(parsed.topic || '')) || repurposeTopic(spark);
             setPreloadedSpark(spark);
-            setCustomInput('repurposed content');
+            customInputRef.current = topic;
+            setCustomInput(topic);
             setSelectedAngle(null);
-            sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, 'repurposed content');
+            sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic);
+            sessionStorage.setItem(SPARK_SESSION_KEY, spark);
+            sessionStorage.removeItem(CONTENT_SESSION_KEY);
             goToPhase(2);
             fetchAngles(u.id, false);
             setAnglesLoading(false);
@@ -167,19 +191,24 @@ export default function CreatePost() {
       } catch {}
 
       // ?topic= URL param from Ideas page "Content Idea" and Intel topic links.
-      const topicParam = params.get('topic');
-      if (topicParam) {
-        const topic = decodeURIComponent(topicParam).trim();
-        if (topic) {
-          setCustomInput(topic);
-          setSelectedAngle(null);
+      // URLSearchParams already decodes, and decoding twice throws on a literal "%".
+      const topic = (params.get('topic') || '').trim();
+      if (topic) {
+        clearHandoffParams();
+        customInputRef.current = topic;
+        setCustomInput(topic);
+        setSelectedAngle(null);
+        try {
           sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic);
-          goToPhase(2);
-          fetchAngles(u.id, false);
-          setAnglesLoading(false);
-          return;
-        }
+          sessionStorage.removeItem(SPARK_SESSION_KEY);
+          sessionStorage.removeItem(CONTENT_SESSION_KEY);
+        } catch {}
+        goToPhase(2);
+        fetchAngles(u.id, false);
+        setAnglesLoading(false);
+        return;
       }
+      if (params.get('mode')) clearHandoffParams();
 
       // Background-fetch angles so Phase 1 is ready when user arrives
       fetchAngles(u.id, false);
@@ -191,7 +220,9 @@ export default function CreatePost() {
         if (saved === '1') {
           setCurrentPhase(1);
         } else if (saved === '2') {
-          if (savedTopic) setCustomInput(savedTopic);
+          if (savedTopic) { customInputRef.current = savedTopic; setCustomInput(savedTopic); }
+          const savedSpark = sessionStorage.getItem(SPARK_SESSION_KEY) || '';
+          if (savedSpark) setPreloadedSpark(savedSpark);
           setSelectedAngle(null);
           // Restore saved content so Phase2Editor doesn't call the API again on refresh
           const savedContent = sessionStorage.getItem(CONTENT_SESSION_KEY) || '';
@@ -243,14 +274,24 @@ export default function CreatePost() {
 
   const canContinue = !!(selectedAngle || customInput.trim());
 
-  const handleContinueToPhase2 = () => {
-    if (!canContinue) return;
+  // Every fresh draft starts here so a refresh never resurrects the previous post.
+  const seedNewDraft = (topic: string, spark: string) => {
     setEditMode(false);
     setPostId(null);
     setInitialContent('');
-    setPreloadedSpark('');
-    const topic = customInput.trim() || selectedAngle?.hook || '';
-    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic); } catch {}
+    setPreloadedSpark(spark);
+    try {
+      sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic);
+      if (spark) sessionStorage.setItem(SPARK_SESSION_KEY, spark);
+      else sessionStorage.removeItem(SPARK_SESSION_KEY);
+      sessionStorage.removeItem(CONTENT_SESSION_KEY);
+    } catch {}
+  };
+
+  const handleContinueToPhase2 = () => {
+    if (!canContinue) return;
+    setPreloadedResearchBrief(null);
+    seedNewDraft(customInput.trim() || selectedAngle?.hook || '', '');
     goToPhase(2);
   };
 
@@ -261,6 +302,8 @@ export default function CreatePost() {
 
   const handleBackToAngles = () => goToPhase(1);
   const handleBackToPicker = () => goToPhase(0);
+  // Only the angle picker hands off with a selected angle; every other entry point starts at Phase 0.
+  const handleBackFromEditor = () => goToPhase(selectedAngle ? 1 : 0);
 
   const handlePublished = (id: string, urn: string) => {
     setPostId(id);
@@ -284,6 +327,9 @@ export default function CreatePost() {
 
   // Phase 0 handlers
   const handleGoIdeas = () => {
+    setCustomInput('');
+    customInputRef.current = '';
+    setSelectedAngle(prev => prev || angles[0] || null);
     goToPhase(1);
   };
 
@@ -296,13 +342,11 @@ export default function CreatePost() {
   };
 
   const handleGoRepurpose = (spark: string) => {
-    setPreloadedSpark(spark);
-    setEditMode(false);
-    setPostId(null);
-    setInitialContent('');
-    setCustomInput('repurposed content');
+    const topic = repurposeTopic(spark);
+    setCustomInput(topic);
     setSelectedAngle(null);
-    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, 'repurposed content'); } catch {}
+    setPreloadedResearchBrief(null);
+    seedNewDraft(topic, spark);
     goToPhase(2);
   };
 
@@ -321,11 +365,8 @@ export default function CreatePost() {
     setCustomInput(topic);
     setSelectedAngle(null);
     handleLengthChange(length);
-    setEditMode(false);
-    setPostId(null);
-    setInitialContent('');
-    setPreloadedSpark('');
-    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic); } catch {}
+    setPreloadedResearchBrief(null);
+    seedNewDraft(topic, '');
     goToPhase(2);
   };
 
@@ -333,12 +374,8 @@ export default function CreatePost() {
     setCustomInput(topic);
     setSelectedAngle(null);
     handleLengthChange(length);
-    setEditMode(false);
-    setPostId(null);
-    setInitialContent('');
-    setPreloadedSpark(brief.briefText);
     setPreloadedResearchBrief(brief);
-    try { sessionStorage.setItem(CUSTOM_INPUT_SESSION_KEY, topic); } catch {}
+    seedNewDraft(topic, brief.briefText);
     goToPhase(2);
   };
 
@@ -352,10 +389,10 @@ export default function CreatePost() {
       {currentPhase > 0 && !editMode && (
         <div className="hidden md:block bg-white border-b border-[rgba(124,92,252,0.06)] px-4 py-1.5">
           <button
-            onClick={currentPhase === 2 ? handleBackToAngles : handleBackToPicker}
+            onClick={currentPhase === 2 ? handleBackFromEditor : handleBackToPicker}
             className="text-[12px] font-semibold text-brand-muted hover:text-brand-purple transition-colors flex items-center gap-1"
           >
-            {currentPhase === 2 ? '← Back to angles' : '← Change starting point'}
+            {currentPhase === 2 && selectedAngle ? '← Back to angles' : '← Change starting point'}
           </button>
         </div>
       )}
@@ -372,6 +409,7 @@ export default function CreatePost() {
             onGoIdea={handleGoIdea}
             onGoDirectIdea={handleGoDirectIdea}
             onGoWithResearch={handleGoWithResearch}
+            initialRepurposeOpen={openRepurpose}
           />
         )}
         {currentPhase === 1 && (
@@ -410,7 +448,7 @@ export default function CreatePost() {
             initialContent={initialContent}
             selectedLength={selectedLength}
             onLengthChange={handleLengthChange}
-            onBack={handleBackToAngles}
+            onBack={handleBackFromEditor}
             onPublished={handlePublished}
             preloadedSpark={preloadedSpark || undefined}
             preloadedResearchBrief={preloadedResearchBrief || undefined}
@@ -426,6 +464,7 @@ export default function CreatePost() {
             selectedAngle={selectedAngle}
             onDraftTomorrow={handleDraftTomorrow}
             onMaybeLater={handleMaybeLater}
+            onWriteAnother={handleBackToPicker}
           />
         )}
       </div>

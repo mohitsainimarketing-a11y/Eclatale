@@ -103,7 +103,7 @@ function App() {
           <Route path="/persona-setup" element={<Navigate to="/brand-brain" replace />} />
           <Route path="/brand-brain" element={<BrandBrain />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/create-visual" element={<Navigate to="/create" replace />} />
+          <Route path="/create-visual" element={<CreateVisual />} />
           <Route path="/intelligence" element={<Navigate to="/ideas?tab=intel" replace />} />
           <Route path="/discover" element={<Navigate to="/ideas" replace />} />
           <Route path="/ideas" element={<Ideas />} />

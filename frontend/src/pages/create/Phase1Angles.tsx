@@ -21,12 +21,11 @@ function timeAgo(iso: string | null): string {
 
 const STYLE_ACCENT: Record<string, string> = {
   Contrarian: '#F72585',
-  Story: '#7C5CFC',
-  Data: '#0EA5E9',
-  Practical: '#10B981',
-  'Hot Take': '#F59E0B',
-  Authority: '#6366F1',
-  Insight: '#8B5CF6',
+  Storyteller: '#7C5CFC',
+  'Data-driven': '#0EA5E9',
+  Teacher: '#10B981',
+  Motivator: '#F59E0B',
+  Insider: '#6366F1',
 };
 
 const STYLE_LABEL: Record<string, string> = {
@@ -294,9 +293,9 @@ export default function Phase1Angles({
             <button onClick={onRefresh} className="text-[12px] font-bold text-brand-purple hover:underline">↻ Refresh angles</button>
           </div>
         )}
-        {!loading && styleFilter && filteredAngles === angles && (
+        {!loading && styleFilter && angles.length > 0 && filteredAngles === angles && (
           <p className="text-center text-[11px] mb-2" style={{ color: '#9CA3AF' }}>
-            No {styleFilter} angles right now. Showing all styles instead.
+            No "{STYLE_LABEL[styleFilter]}" angles right now. Showing all styles instead.
           </p>
         )}
       </div>

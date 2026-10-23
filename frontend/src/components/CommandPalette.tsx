@@ -28,7 +28,7 @@ function buildItems(close: () => void): PaletteItem[] {
   return [
     nav('Dashboard',        'Your brand overview and stats',          <Home size={16} />,        '/dashboard'),
     nav('Create post',      'Start a new LinkedIn post',              <Sparkles size={16} />,    '/create', 'N'),
-    nav('Schedule',         'Plan and queue your posts',              <CalendarDays size={16} />, '/schedule'),
+    nav('Calendar',         'Plan your posts',                        <CalendarDays size={16} />, '/calendar?tab=calendar'),
     nav('Content Library',  'Browse all your past drafts and posts',  <FolderOpen size={16} />,  '/history'),
     nav('Intelligence',     'Brand score and post analytics',         <BarChart3 size={16} />,   '/intelligence'),
     nav('Voice Profile',    'Set your personal writing voice',        <Target size={16} />,      '/persona-setup'),

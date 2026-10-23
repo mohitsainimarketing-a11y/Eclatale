@@ -87,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const insightFragment = angle?.insight ? `\nWhy this angle resonates with this reader: ${angle.insight}\n` : '';
     let researchFragment = '';
     // Always research when no spark is provided. If spark exists, the user already
-    // ran Research Brief and the research is embedded there — no duplicate search needed.
+    // ran Research Brief and the research is embedded there, so no duplicate search is needed.
     if (!spark && topic) {
       try {
         const searchRes = await anthropic.messages.create({
@@ -154,11 +154,17 @@ ${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error: any) {
-    if (isCreditsExhaustedError(error)) {
-      console.error('Anthropic credits exhausted');
-      return res.status(503).json(creditsExhaustedBody());
-    }
     console.error('Generation error:', error);
+    // Once streaming has started the status line is already sent, so the
+    // failure has to travel as an SSE event or the client keeps a half post.
+    if (res.headersSent) {
+      try {
+        res.write(`data: ${JSON.stringify({ error: 'Generation stopped partway. Try again.' })}\n\n`);
+        res.end();
+      } catch { /* connection already closed */ }
+      return;
+    }
+    if (isCreditsExhaustedError(error)) return res.status(503).json(creditsExhaustedBody());
     res.status(500).json({ error: error.message || 'Failed to generate content' });
   }
 }

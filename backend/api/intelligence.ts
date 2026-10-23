@@ -1398,11 +1398,17 @@ ${NO_DASH_RULE}`;
         const parseTrendJson = (content: any[]): any[] => {
           const allText = content.filter((b: any) => b.type === 'text').map((b: any) => b.text || '').join('');
           if (!allText) return [];
+          // Web search answers often narrate before the JSON, and that prose can
+          // contain braces, so anchor on the categories key rather than the first "{".
+          const anchor = allText.lastIndexOf('{"categories"');
+          const candidate = anchor >= 0 ? allText.slice(anchor) : allText;
           try {
-            const match = allText.match(/\{[\s\S]*\}/);
+            const match = candidate.match(/\{[\s\S]*\}/);
             if (!match) return [];
             const parsed = JSON.parse(match[0]);
-            return Array.isArray(parsed.categories) ? parsed.categories : [];
+            return Array.isArray(parsed.categories)
+              ? parsed.categories.filter((c: any) => c && Array.isArray(c.items) && c.items.length > 0)
+              : [];
           } catch { return []; }
         };
 
@@ -1751,6 +1757,9 @@ Return ONLY the cleaned post text. No explanation, no preamble, no quotes around
         if (!topic) return res.status(400).json({ error: 'topic is required' });
         const { generateResearchBrief } = await import('../lib/freeTools');
         const brief = await generateResearchBrief(anthropic, topic);
+        if (brief.stats.length === 0 && brief.angles.length === 0 && !brief.recommendedHook) {
+          return res.status(502).json({ error: "Couldn't build a research brief for that topic. Try rephrasing it, or generate the post directly." });
+        }
         return res.json(brief);
       }
 

@@ -125,7 +125,7 @@ export default function Dashboard() {
   const [healthExpanded, setHealthExpanded] = useState(false);
 
   useEffect(() => {
-    // getSession() reads from localStorage — no network round-trip
+    // getSession() reads from localStorage, so no network round-trip
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user;
       if (!u) { window.location.href = '/login'; return; }
@@ -204,7 +204,7 @@ export default function Dashboard() {
 
   const weeklyGoal = overview?.subscriptionTier === 'individual' ? 5 : 3;
 
-  // Only block render if user session hasn't resolved yet (getSession is local — this is near-instant)
+  // Only block render if user session hasn't resolved yet (getSession is local, so this is near-instant)
   if (!user) return null;
 
   return (

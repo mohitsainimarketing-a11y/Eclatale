@@ -26,7 +26,7 @@ async function triggerSyncOnLinkedInTabs() {
     try {
       await chrome.tabs.sendMessage(tab.id, { type: 'ECLATALE_SYNC_NOW' });
     } catch (_) {
-      // Tab may not have the content script ready — safe to ignore
+      // Tab may not have the content script ready, safe to ignore
     }
   }
   await chrome.storage.local.set({ last_background_sync: Date.now() });

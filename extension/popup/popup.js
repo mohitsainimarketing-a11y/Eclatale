@@ -153,7 +153,7 @@ async function render() {
         showToast('Lead saved!');
         btn.textContent = '✓ Saved';
       } catch {
-        showToast('Save failed — try again');
+        showToast('Save failed. Try again.');
         btn.textContent = '👤 Save Lead';
         btn.disabled = false;
       }

@@ -230,10 +230,10 @@ export async function generateContentSeries(
   const message = await anthropic.messages.create({
     model: MODELS.haiku,
     max_tokens: 1200,
-    system: getDateContext(),
+    system: `${getDateContext()}\nYou are a LinkedIn content strategist. Return ONLY a valid JSON array, no other text, no markdown fences.`,
     messages: [{
       role: 'user',
-      content: `You are a LinkedIn content strategist. Create a ${seriesLength}-post content series plan.
+      content: `Create a ${seriesLength}-post content series plan.
 
 TOPIC: ${topic}
 AUDIENCE: ${audience || 'LinkedIn professionals'}
@@ -282,7 +282,7 @@ export async function generateHashtags(anthropic: Anthropic, topic: string): Pro
       role: 'user',
       content: `Generate LinkedIn hashtags for this topic: "${topic}".
 
-Return exactly this JSON shape — no prose, no markdown:
+Return exactly this JSON shape. No prose, no markdown:
 {
   "high": [5 hashtags with 1M+ followers each, broad topics],
   "mid": [7 hashtags with 100K-1M followers, industry or function specific],
@@ -612,7 +612,7 @@ export async function generateResearchBrief(
 ): Promise<ResearchBrief> {
   let researchText = '';
 
-  // Try live web search first — graceful fallback on failure
+  // Try live web search first, with a graceful fallback on failure
   try {
     const searchMsg = await anthropic.messages.create({
       model: MODELS.haiku,
@@ -782,7 +782,7 @@ Rules:
 - No banned words: delve, leverage, synergy, empower, transformative, game-changer, cutting-edge, holistic, paradigm, utilize, unlock, foster, nuanced, streamline, elevate, robust, comprehensive, landscape, notably, crucial, significant, pivotal, seamlessly, groundbreaking, revolutionary, innovative
 - Be specific: reference actual repo names, real languages, real project outcomes
 - Post hooks must be scroll-stopping, not generic tech advice
-- aboutOpener must NOT start with "I am a" or "I have" — open with a result or project`,
+- aboutOpener must NOT start with "I am a" or "I have". Open with a result or project`,
     }],
   });
 

@@ -21,10 +21,11 @@ interface Phase3Props {
   selectedAngle: Angle | null;
   onDraftTomorrow: (angle: Angle) => void;
   onMaybeLater: () => void;
+  onWriteAnother: () => void;
 }
 
 export default function Phase3Publish({
-  userId, publishedPostUrn, linkedinConnected, angles, selectedAngle, onDraftTomorrow, onMaybeLater,
+  userId, publishedPostUrn, linkedinConnected, angles, selectedAngle, onDraftTomorrow, onMaybeLater, onWriteAnother,
 }: Phase3Props) {
   const [journey, setJourney] = useState<GrowthJourneyResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,15 +152,15 @@ export default function Phase3Publish({
                   {bestTime!.recommendedDays[0]} at {bestTime!.recommendedTimes?.[0] || ''}
                 </p>
                 <p className="text-[12px] mb-3" style={{ color: '#6B7280', lineHeight: 1.5 }}>
-                  Your audience is most active then. Get ahead and schedule your next post now.
+                  Your audience is most active then. Get ahead and draft your next post now.
                 </p>
-                <a
-                  href="/schedule"
+                <button
+                  onClick={onWriteAnother}
                   className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full text-white"
                   style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)' }}
                 >
-                  <CalendarDays size={13} /> Schedule next post
-                </a>
+                  <CalendarDays size={13} /> Draft next post
+                </button>
               </>
             )}
             {bestTimeLocked && (
@@ -193,6 +194,22 @@ export default function Phase3Publish({
                 Maybe later
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Angles may be empty (direct idea, repurpose, ?topic= handoff), so always leave a way forward */}
+        {!tomorrowAngle && (
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={onWriteAnother}
+              className="flex items-center justify-center gap-1.5 text-[13px] font-bold text-white py-2.5 rounded-full"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC 0%, #F72585 100%)', boxShadow: '0 4px 16px rgba(124,92,252,0.25)' }}
+            >
+              Write another post <ArrowRight size={14} />
+            </button>
+            <button onClick={onMaybeLater} className="text-[12px] font-semibold py-1.5" style={{ color: '#9CA3AF' }}>
+              Back to dashboard
+            </button>
           </div>
         )}
       </div>

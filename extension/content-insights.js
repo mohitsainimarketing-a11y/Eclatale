@@ -161,7 +161,7 @@
     return data;
   }
 
-  // ── Full lead scraper — runs only on explicit user action ─────────────────
+  // ── Full lead scraper (runs only on explicit user action) ─────────────────
 
   async function scrapeFullProfile() {
     await sleep(1500);
@@ -195,7 +195,7 @@
     lead.followerCount = findNumberNear('followers?', bt);
     lead.connectionCount = findNumberNear('connections?', bt);
 
-    // About section — try DOM first, fall back to text scan
+    // About section: try DOM first, fall back to text scan
     const aboutSpans = document.querySelectorAll('#about ~ .pvs-list__outer-container span[aria-hidden="true"]');
     if (aboutSpans.length > 0) {
       lead.about = Array.from(aboutSpans).map(s => s.innerText?.trim()).filter(Boolean).join(' ').slice(0, 800);
@@ -223,7 +223,7 @@
     return lead;
   }
 
-  // ── Post text extractor — runs only on explicit user action ───────────────
+  // ── Post text extractor (runs only on explicit user action) ───────────────
 
   function extractCurrentPostText() {
     const selectors = [

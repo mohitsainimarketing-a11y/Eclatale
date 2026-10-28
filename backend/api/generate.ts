@@ -13,6 +13,7 @@ import { checkWeeklyPostLimit, incrementWeeklyPostCount } from '../lib/featureGa
 import { handleSendFreeLimit } from './intelligence';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { MODELS } from '../lib/models';
+import { waitUntil } from '@vercel/functions';
 
 const anthropic = createAnthropic();
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -115,6 +116,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // the post streams and fills the cache for the next request, but we stop waiting
     // for it after 1.5s.
     const trendPromise = getTrendContext(anthropic, supabase, industry, role);
+    // Keep the function alive after the response ends so a cache-miss search can finish
+    // and fill the cache. Without this the search was cut off and every call missed.
+    waitUntil(trendPromise.catch(() => undefined));
     const [researchText, trendResult] = await Promise.all([
       researchPromise,
       Promise.race([

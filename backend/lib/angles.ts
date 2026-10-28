@@ -66,16 +66,16 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
   {
     const fallback = await anthropic.messages.create({
       model: MODELS.sonnet,
-      max_tokens: 1800,
+      max_tokens: 1100,
       system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
       messages: [{
         role: 'user',
         content: `Generate 6 distinct LinkedIn post angles for a ${role} in ${industry}.
 
 For each angle:
-- Write a compelling hook (2-3 sentences). This is the actual opening of the post
+- Write a compelling hook (1-2 short sentences, under 30 words). This is the actual opening of the post
 - Assign a style from exactly these 6 (use exact casing): Contrarian, Storyteller, Data-driven, Insider, Teacher, Motivator
-- Write one sentence explaining why this works for a ${role} in ${industry}
+- Write one short sentence (under 15 words) explaining why this works for a ${role} in ${industry}
 - Add a realistic performance stat (e.g. "2.4x more comments")
 
 Return ONLY valid JSON (no prose, no markdown fences):

@@ -39,10 +39,14 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
 
   const { role, industry } = await getRoleIndustry(supabase, userId);
 
-  const message = await (anthropic.messages.create as any)({
+  // Web search is a bonus. Cap it at 30s so the plain fallback below always has
+  // time to run inside the 60s function limit.
+  let message: any = { content: [] };
+  try {
+  message = await (anthropic.messages.create as any)({
     model: MODELS.sonnet,
     max_tokens: 4000,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
     system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
     messages: [{
       role: 'user',
@@ -68,13 +72,23 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
 }
 "sources" should be the 2-5 articles you actually used to ground the trending topics.`,
     }],
-  });
+  }, { timeout: 30000 });
+  } catch (e) {
+    console.error('angles web search failed, using fallback', (e as any)?.message);
+  }
 
-  const textBlock = (message.content || []).find((b: any) => b.type === 'text');
-  const raw: string = textBlock?.text || '{}';
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  // With web search the reply has several text blocks (narration, then the JSON).
+  // Join them all and anchor on the angles key instead of taking the first block.
+  const raw: string = (message.content || [])
+    .filter((b: any) => b.type === 'text')
+    .map((b: any) => b.text || '')
+    .join('');
+  const anchors = [...raw.matchAll(/\{\s*"angles"/g)];
+  const anchor = anchors.length ? anchors[anchors.length - 1].index! : -1;
+  const candidate = anchor >= 0 ? raw.slice(anchor) : raw;
+  const jsonMatch = candidate.match(/\{[\s\S]*\}/);
   let parsed: any = {};
-  try { parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw); } catch { parsed = {}; }
+  try { parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}'); } catch { parsed = {}; }
 
   let rawAngles: any[] = Array.isArray(parsed.angles) ? parsed.angles : [];
 

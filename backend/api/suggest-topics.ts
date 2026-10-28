@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropic } from '../lib/anthropicClient';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { TOPIC_SUGGESTION_PROMPT } from '../lib/contentPrompts';
@@ -10,7 +11,7 @@ import { readCache, writeCache } from '../lib/intelligenceCache';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { MODELS } from '../lib/models';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = createAnthropic();
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 

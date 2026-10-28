@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropic } from '../lib/anthropicClient';
 import { getDateContext } from '../lib/dateContext';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { NO_DASH_RULE } from '../lib/writingStyles';
@@ -15,7 +16,7 @@ const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = createAnthropic();
 
 // FLUX.2-dev hallucinates garbled pseudo-text when the prompt reads like a
 // caption/headline it should "depict" (e.g. "inspired by the theme: <topic>").

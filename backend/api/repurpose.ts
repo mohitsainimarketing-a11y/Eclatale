@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropic } from '../lib/anthropicClient';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
@@ -12,7 +13,7 @@ import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { NO_DASH_RULE } from '../lib/writingStyles';
 import { MODELS } from '../lib/models';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = createAnthropic();
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

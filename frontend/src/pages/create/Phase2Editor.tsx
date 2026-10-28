@@ -272,8 +272,9 @@ export default function Phase2Editor({
         if (!line.startsWith('data: ')) continue;
         const payload = line.slice(6);
         if (payload === '[DONE]') return;
-        let parsed: { text?: string; error?: string } | null = null;
+        let parsed: { text?: string; error?: string; timing?: Record<string, number> } | null = null;
         try { parsed = JSON.parse(payload); } catch { /* skip malformed */ }
+        if (parsed?.timing) console.info('[gen-timing]', JSON.stringify(parsed.timing));
         if (parsed?.error) throw new Error(parsed.error);
         if (parsed?.text) onChunk(parsed.text);
       }

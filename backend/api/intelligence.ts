@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropic } from '../lib/anthropicClient';
 import { createClient } from '@supabase/supabase-js';
 import {
   COMPETITOR_INTELLIGENCE_SYSTEM, buildCompetitorIntelligenceUserPrompt,
@@ -38,7 +39,7 @@ import { createAngles, ANGLE_STYLE_META } from '../lib/angles';
 import { sendBriefingToUser, weeklyIndustryBriefingCron, buildBriefingData } from '../lib/weeklyBriefing';
 import { MODELS } from '../lib/models';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = createAnthropic();
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 // Base64-encoded PDF/DOCX uploads (resource-upload action) can exceed the

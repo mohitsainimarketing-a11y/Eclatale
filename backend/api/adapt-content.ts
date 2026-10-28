@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropic } from '../lib/anthropicClient';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { CONTENT_TYPE_INSTRUCTIONS } from '../lib/contentPrompts';
@@ -9,7 +10,7 @@ import { isCreditsExhaustedError, creditsExhaustedBody } from '../lib/anthropicE
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { MODELS } from '../lib/models';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = createAnthropic();
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 const FORMAT_LABELS: Record<string, string> = {

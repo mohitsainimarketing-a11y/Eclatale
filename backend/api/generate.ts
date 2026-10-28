@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropic } from '../lib/anthropicClient';
 import { createClient } from '@supabase/supabase-js';
 import { buildPersonaPrompt } from '../lib/personaPromptBuilder';
 import { CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, CONTENT_LENGTH_INSTRUCTIONS, ContentLength } from '../lib/contentPrompts';
@@ -13,12 +14,13 @@ import { handleSendFreeLimit } from './intelligence';
 import { checkAuthToken, reconcileUserId } from '../lib/verifyAuth';
 import { MODELS } from '../lib/models';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = createAnthropic();
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export const config = { maxDuration: 60 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const tStart = Date.now();
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -49,6 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // the legacy character-count tiers for backward compatibility.
     const useWordLength = !!angle && TALK_LENGTH_OPTIONS.some(o => o.id === contentLength);
 
+    const t0 = Date.now();
+    const marks: Record<string, number> = { auth: t0 - tStart };
     // Independent lookups run together instead of one after another.
     const [limitCheck, profileRes, personaFragment] = await Promise.all([
       checkWeeklyPostLimit(supabase, userId),
@@ -66,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    marks.lookups = Date.now() - tStart;
     const profile = profileRes.data;
     const role = profile?.role || 'professional';
     const industry = profile?.domain || 'business';
@@ -90,11 +95,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? `\nOpen with or closely riff on this exact hook. Keep its energy and specificity, minor wording changes are fine: "${angle.hook}"\n`
       : '';
     const insightFragment = angle?.insight ? `\nWhy this angle resonates with this reader: ${angle.insight}\n` : '';
-    // Always research when no spark is provided. If spark exists, the user already
-    // ran Research Brief and the research is embedded there, so no duplicate search is needed.
-    // Research and trend lookup run in parallel, each with a hard time cap, so the
-    // first word of the post never waits on a slow web search.
-    const researchPromise: Promise<string> = (!spark && topic)
+    // A live web search adds 5 to 7 seconds before the first word, so it only runs when
+    // the caller asks for it (researchMode). Normal posts start writing immediately, and
+    // "Research first" (the spark) is the route for fully researched posts.
+    // Trend lookup is cache-first with a hard wait cap for the same reason.
+    const researchPromise: Promise<string> = (!spark && topic && researchMode)
       ? anthropic.messages.create({
           model: MODELS.haiku,
           max_tokens: 500,
@@ -114,12 +119,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       researchPromise,
       Promise.race([
         trendPromise,
-        new Promise<{ trends: string[]; generatedAt: string; cached: boolean }>(r => setTimeout(() => r({ trends: [], generatedAt: new Date().toISOString(), cached: false }), 1500)),
+        new Promise<{ trends: string[]; generatedAt: string; cached: boolean }>(r => setTimeout(() => r({ trends: [], generatedAt: new Date().toISOString(), cached: false }), 400)),
       ]),
     ]);
+    marks.research = Date.now() - tStart;
     const researchFragment = researchText
       ? `\nVerified research context. You MUST use only these facts and numbers in the post. Do not invent any statistic, percentage, or figure not present here. If a number is not in this list, do not use it:\n${researchText.slice(0, 2000)}\n`
-      : '';
+      : (!spark ? '\nNo research was provided for this post. Do not invent statistics, percentages, named studies, or quotes. Use concrete, specific details from the angle and experience instead of made-up numbers.\n' : '');
 
     const sparkFragment = spark
       ? `\nResearch and context that sparked this post. Ground every fact and number in this source material. Do not invent statistics not present here:\n${spark.slice(0, 4000)}\n`
@@ -148,18 +154,31 @@ ${useWordLength ? lengthInstruction(contentLength) : (contentType === 'linkedin-
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('X-Accel-Buffering', 'no');
 
+    marks.prompt = Date.now() - tStart;
     const stream = anthropic.messages.stream({
       model: MODELS.sonnet,
       max_tokens: 2048,
+      // No hidden reasoning pass: it delays the first word and the post needs none.
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: `Write a ${contentType.replace(/-/g, ' ')} about: ${topic}` }],
       system: cachedSystem(dynamicContent),
     });
 
     for await (const chunk of stream) {
       if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        if (marks.firstToken === undefined) marks.firstToken = Date.now() - tStart;
         res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`);
       }
     }
+    marks.total = Date.now() - tStart;
+    try {
+      const usage = (await stream.finalMessage()).usage as any;
+      marks.inTok = usage.input_tokens;
+      marks.cacheRead = usage.cache_read_input_tokens || 0;
+      marks.cacheWrite = usage.cache_creation_input_tokens || 0;
+    } catch { /* diagnostics only */ }
+    // Timing breakdown for performance tuning. Clients ignore events without text.
+    res.write(`data: ${JSON.stringify({ timing: marks })}\n\n`);
 
     await incrementWeeklyPostCount(supabase, userId);
     handleSendFreeLimit(userId).catch(err => console.error('free-limit notify failed:', err));

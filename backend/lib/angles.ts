@@ -48,10 +48,8 @@ async function getRoleIndustry(supabase: SupabaseClient, userId: string): Promis
   return { role: profile?.role || 'professional', industry: profile?.domain || 'business' };
 }
 
-// Generates 6 distinct post angles grounded in current (last-7-days) trends
-// for the user's role/industry, using Claude's web_search tool so the hooks
-// reference genuinely current events rather than stale training data.
-// Cached 2h per user (angles refresh slowly; the ↻ button forces a redo).
+// Generates 6 distinct post angles for the user's role/industry in one fast model
+// call. Cached 2h per user (angles refresh slowly; the refresh button forces a redo).
 export async function createAngles(anthropic: Anthropic, supabase: SupabaseClient, userId: string, forceRefresh: boolean) {
   if (!forceRefresh) {
     const cached = await readCache(supabase, userId, 'angles', 2 * 60 * 60 * 1000);
@@ -60,61 +58,15 @@ export async function createAngles(anthropic: Anthropic, supabase: SupabaseClien
 
   const { role, industry } = await getRoleIndustry(supabase, userId);
 
-  // Web search is a bonus. Cap it at 30s so the plain fallback below always has
-  // time to run inside the 60s function limit.
-  let message: any = { content: [] };
-  try {
-  message = await (anthropic.messages.create as any)({
-    model: MODELS.sonnet,
-    max_tokens: 4000,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
-    system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
-    messages: [{
-      role: 'user',
-      content: `Generate 6 distinct LinkedIn post angles for a ${role} in ${industry}.
+  // No web search here. It added 20 to 40 seconds to the first load. Angles come from one
+  // fast model call, and the trending panel on the start screen carries the live news.
+  const parsed: any = { sources: [] };
+  let rawAngles: any[] = [];
 
-Use web search to find 2-3 trending topics in ${industry} right now (last 7 days).
-
-For each angle:
-- Write a compelling hook (2-3 sentences). This is the actual opening of the post
-- The hook must reference something genuinely current. Never reference anything from 2022-2024 as if it were recent
-- Assign a style from exactly these 6 (use this exact casing): Contrarian, Storyteller, Data-driven, Insider, Teacher, Motivator
-- Write one sentence explaining why this works for a ${role} in ${industry} (mention their specific role)
-- Add a realistic performance stat specific to the style type (e.g. "2.4x more comments")
-
-After searching, respond with ONLY valid JSON (no prose, no markdown fences) matching this shape:
-{
-  "angles": [
-    { "style": "Contrarian", "hook": "...", "insight": "...", "performanceStat": "..." }
-  ],
-  "sources": [
-    { "title": "...", "url": "...", "excerpt": "one sentence summary", "publishedDate": "YYYY-MM-DD or null" }
-  ]
-}
-"sources" should be the 2-5 articles you actually used to ground the trending topics.`,
-    }],
-  }, { timeout: 30000 });
-  } catch (e) {
-    console.error('angles web search failed, using fallback', (e as any)?.message);
-  }
-
-  // With web search the reply has several text blocks (narration, then the JSON).
-  // Join them all and anchor on the angles key instead of taking the first block.
-  const raw: string = (message.content || [])
-    .filter((b: any) => b.type === 'text')
-    .map((b: any) => b.text || '')
-    .join('');
-  let parsed: any = parseAnglesReply(raw);
-
-  let rawAngles: any[] = Array.isArray(parsed.angles) ? parsed.angles : [];
-  if (rawAngles.length === 0) console.error('angles: web search reply unusable', raw.slice(0, 300));
-
-  // Fallback: if web_search yielded no angles (credits exhausted or empty response),
-  // retry without web_search so users always get something useful.
-  if (rawAngles.length === 0) {
+  {
     const fallback = await anthropic.messages.create({
       model: MODELS.sonnet,
-      max_tokens: 3000,
+      max_tokens: 1800,
       system: [STATIC_CONTENT_BLOCK, dynamicBlock(getDateContext())],
       messages: [{
         role: 'user',

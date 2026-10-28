@@ -610,51 +610,37 @@ export async function generateResearchBrief(
   anthropic: Anthropic,
   topic: string,
 ): Promise<ResearchBrief> {
-  let researchText = '';
-
-  // Try live web search first, with a graceful fallback on failure
-  try {
-    const searchMsg = await anthropic.messages.create({
-      model: MODELS.haiku,
-      max_tokens: 800,
-      tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 3 }],
-      messages: [{
-        role: 'user',
-        content: `Find 5 recent, specific facts or stats about "${topic}" relevant to a LinkedIn post. Return a brief bullet list only.`,
-      }],
-    });
-    researchText = searchMsg.content
-      .filter((b: any) => b.type === 'text')
-      .map((b: any) => b.text)
-      .join('\n')
-      .trim();
-  } catch { /* web search is optional */ }
-
-  const buildPrompt = (withFindings: boolean) => `Create a research brief for a LinkedIn post about: "${topic}"
-${withFindings && researchText ? `\nRecent findings (use these as the basis for stats):\n${researchText.slice(0, 1500)}` : ''}
-
+  const buildPrompt = (withSearch: boolean) => `Create a research brief for a LinkedIn post about: "${topic}"
+${withSearch ? '\nFirst use web search to find recent, specific facts and stats about this topic, then use them as the basis for the stats.\n' : ''}
 Return this exact JSON shape:
 {"stats":["fact 1","fact 2","fact 3"],"angles":[{"style":"Contrarian","hook":"opening line"},{"style":"Data-driven","hook":"opening line"},{"style":"Story","hook":"opening line"}],"recommendedHook":"best single opening line"}
 
 Rules: stats must be 3-5 specific facts with real numbers, each under 120 chars. Each angle hook under 90 chars. Do not use double quote characters inside any string value. No em dashes, no en dashes, no banned words: ${BANNED_WORDS}.`;
 
-  // Two attempts: with the web findings, then plain. The first reply is sometimes
-  // truncated or malformed JSON, which used to surface as an empty brief.
+  // One call that searches and writes the brief together (was two sequential calls).
+  // If the search path is slow, errors, or returns unusable JSON, a plain call follows.
   let p: any = {};
-  for (const withFindings of [true, false]) {
-    const message = await anthropic.messages.create({
-      model: MODELS.haiku,
-      max_tokens: 1500,
-      system: `${getDateContext()}\nYou are a LinkedIn content strategist. Return ONLY valid JSON, no other text, no markdown fences.`,
-      messages: [{ role: 'user', content: buildPrompt(withFindings) }],
-    });
-    const text = message.content
-      .filter((b: any) => b.type === 'text')
-      .map((b: any) => b.text)
-      .join('\n');
-    p = parseJsonObject(text);
-    if (Array.isArray(p.stats) && p.stats.length > 0) break;
-    console.error('research-brief unusable reply', { withFindings, stop: message.stop_reason, raw: text.slice(0, 400) });
+  for (const withSearch of [true, false]) {
+    try {
+      const message = await (anthropic.messages.create as any)({
+        model: MODELS.haiku,
+        max_tokens: 1200,
+        ...(withSearch ? { tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }] } : {}),
+        system: `${getDateContext()}\nYou are a LinkedIn content strategist. Return ONLY valid JSON, no other text, no markdown fences.`,
+        messages: [{ role: 'user', content: buildPrompt(withSearch) }],
+      }, { timeout: withSearch ? 20000 : 25000, maxRetries: 0 });
+      const text: string = message.content
+        .filter((b: any) => b.type === 'text')
+        .map((b: any) => b.text)
+        .join('\n');
+      const anchors = [...text.matchAll(/\{\s*"stats"/g)];
+      p = parseJsonObject(anchors.length ? text.slice(anchors[anchors.length - 1].index!) : text);
+      if (Array.isArray(p.stats) && p.stats.length > 0) break;
+      console.error('research-brief unusable reply', { withSearch, stop: message.stop_reason, raw: text.slice(0, 400) });
+    } catch (e: any) {
+      console.error('research-brief call failed', { withSearch, msg: e?.message });
+      if (!withSearch) throw e;
+    }
   }
 
   const stats = Array.isArray(p.stats) ? p.stats.slice(0, 5).map(String) : [];

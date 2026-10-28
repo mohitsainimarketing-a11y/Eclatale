@@ -49,7 +49,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // the legacy character-count tiers for backward compatibility.
     const useWordLength = !!angle && TALK_LENGTH_OPTIONS.some(o => o.id === contentLength);
 
-    const limitCheck = await checkWeeklyPostLimit(supabase, userId);
+    // Independent lookups run together instead of one after another.
+    const [limitCheck, profileRes, personaFragment] = await Promise.all([
+      checkWeeklyPostLimit(supabase, userId),
+      supabase.from('profiles').select('role, domain, goals').eq('id', userId).single(),
+      buildPersonaPrompt(supabase, userId),
+    ]);
     if (!limitCheck.allowed) {
       return res.status(403).json({
         error: 'weekly_limit_reached',
@@ -61,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role, domain, goals').eq('id', userId).single();
+    const profile = profileRes.data;
     const role = profile?.role || 'professional';
     const industry = profile?.domain || 'business';
     const goals = profile?.goals || [];
@@ -85,34 +90,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? `\nOpen with or closely riff on this exact hook. Keep its energy and specificity, minor wording changes are fine: "${angle.hook}"\n`
       : '';
     const insightFragment = angle?.insight ? `\nWhy this angle resonates with this reader: ${angle.insight}\n` : '';
-    let researchFragment = '';
     // Always research when no spark is provided. If spark exists, the user already
     // ran Research Brief and the research is embedded there, so no duplicate search is needed.
-    if (!spark && topic) {
-      try {
-        const searchRes = await anthropic.messages.create({
+    // Research and trend lookup run in parallel, each with a hard time cap, so the
+    // first word of the post never waits on a slow web search.
+    const researchPromise: Promise<string> = (!spark && topic)
+      ? anthropic.messages.create({
           model: MODELS.haiku,
-          max_tokens: 800,
-          tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 3 }],
+          max_tokens: 500,
+          tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 2 }],
           messages: [{ role: 'user', content: `Find 3 recent, specific, credible facts, stats, or news items about: ${topic}. Focus on data from the last 6 months. Include the source name for each finding. Return only the findings as a brief bullet list with source names.` }],
-        });
-        const researchText = searchRes.content
+        }, { timeout: 7000, maxRetries: 0 }).then((searchRes: any) => searchRes.content
           .filter((b: any) => b.type === 'text')
           .map((b: any) => b.text)
           .join('\n')
-          .trim();
-        if (researchText) {
-          researchFragment = `\nVerified research context. You MUST use only these facts and numbers in the post. Do not invent any statistic, percentage, or figure not present here. If a number is not in this list, do not use it:\n${researchText.slice(0, 2000)}\n`;
-        }
-      } catch { /* research is optional, never block generation */ }
-    }
+          .trim()).catch(() => '')
+      : Promise.resolve('');
+    // Cached trends return instantly. On a cache miss the search keeps running while
+    // the post streams and fills the cache for the next request, but we stop waiting
+    // for it after 1.5s.
+    const trendPromise = getTrendContext(anthropic, supabase, industry, role);
+    const [researchText, trendResult] = await Promise.all([
+      researchPromise,
+      Promise.race([
+        trendPromise,
+        new Promise<{ trends: string[]; generatedAt: string; cached: boolean }>(r => setTimeout(() => r({ trends: [], generatedAt: new Date().toISOString(), cached: false }), 1500)),
+      ]),
+    ]);
+    const researchFragment = researchText
+      ? `\nVerified research context. You MUST use only these facts and numbers in the post. Do not invent any statistic, percentage, or figure not present here. If a number is not in this list, do not use it:\n${researchText.slice(0, 2000)}\n`
+      : '';
 
     const sparkFragment = spark
       ? `\nResearch and context that sparked this post. Ground every fact and number in this source material. Do not invent statistics not present here:\n${spark.slice(0, 4000)}\n`
       : '';
 
-    const personaFragment = await buildPersonaPrompt(supabase, userId);
-    const trendResult = await getTrendContext(anthropic, supabase, industry, role);
     const trendFragment = buildTrendPromptFragment(trendResult, industry);
 
     const dynamicContent = `${getDateContext()}

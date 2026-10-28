@@ -22,6 +22,27 @@ export const ANGLE_STYLE_META: Record<string, {
   Motivator: { emoji: '💪', writingStyleId: 'motivator', badgeColor: 'rgba(255,107,53,0.12)', badgeTextColor: '#FF6B35', performanceIcon: 'trending-up', performanceColor: '#FF6B35' },
 };
 
+// Strict JSON first. Hooks often contain unescaped double quotes (dialogue, scare
+// quotes) which break JSON.parse, so fall back to pulling each angle out by its keys.
+function parseAnglesReply(text: string): { angles?: any[]; sources?: any[] } {
+  const anchors = [...text.matchAll(/\{\s*"angles"/g)];
+  const start = anchors.length ? anchors[anchors.length - 1].index! : -1;
+  const candidate = start >= 0 ? text.slice(start) : text;
+  const match = candidate.match(/\{[\s\S]*\}/);
+  try {
+    const p = JSON.parse(match ? match[0] : '{}');
+    if (Array.isArray(p.angles) && p.angles.length > 0) return p;
+  } catch { /* fall through to key extraction */ }
+
+  const angles: any[] = [];
+  const re = /"style"\s*:\s*"([^"]+)"\s*,\s*"hook"\s*:\s*"([\s\S]*?)"\s*,\s*"insight"\s*:\s*"([\s\S]*?)"\s*,\s*"performanceStat"\s*:\s*"([\s\S]*?)"\s*\}/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(candidate)) !== null) {
+    angles.push({ style: m[1], hook: m[2].replace(/\\"/g, '"'), insight: m[3].replace(/\\"/g, '"'), performanceStat: m[4] });
+  }
+  return { angles };
+}
+
 async function getRoleIndustry(supabase: SupabaseClient, userId: string): Promise<{ role: string; industry: string }> {
   const { data: profile } = await supabase.from('profiles').select('role, domain').eq('id', userId).single();
   return { role: profile?.role || 'professional', industry: profile?.domain || 'business' };
@@ -83,14 +104,10 @@ After searching, respond with ONLY valid JSON (no prose, no markdown fences) mat
     .filter((b: any) => b.type === 'text')
     .map((b: any) => b.text || '')
     .join('');
-  const anchors = [...raw.matchAll(/\{\s*"angles"/g)];
-  const anchor = anchors.length ? anchors[anchors.length - 1].index! : -1;
-  const candidate = anchor >= 0 ? raw.slice(anchor) : raw;
-  const jsonMatch = candidate.match(/\{[\s\S]*\}/);
-  let parsed: any = {};
-  try { parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}'); } catch { parsed = {}; }
+  let parsed: any = parseAnglesReply(raw);
 
   let rawAngles: any[] = Array.isArray(parsed.angles) ? parsed.angles : [];
+  if (rawAngles.length === 0) console.error('angles: web search reply unusable', raw.slice(0, 300));
 
   // Fallback: if web_search yielded no angles (credits exhausted or empty response),
   // retry without web_search so users always get something useful.
@@ -113,10 +130,14 @@ Return ONLY valid JSON (no prose, no markdown fences):
 {"angles":[{"style":"Contrarian","hook":"...","insight":"...","performanceStat":"..."}],"sources":[]}`,
       }],
     });
-    const fbText = fallback.content[0].type === 'text' ? fallback.content[0].text : '{}';
-    const fbMatch = fbText.match(/\{[\s\S]*\}/);
-    let fbParsed: any = {};
-    try { fbParsed = JSON.parse(fbMatch ? fbMatch[0] : fbText); } catch { fbParsed = {}; }
+    const fbText = fallback.content
+      .filter((b: any) => b.type === 'text')
+      .map((b: any) => b.text || '')
+      .join('');
+    const fbParsed: any = parseAnglesReply(fbText);
+    if (!Array.isArray(fbParsed.angles) || fbParsed.angles.length === 0) {
+      console.error('angles: fallback reply unusable', fbText.slice(0, 300));
+    }
     rawAngles = Array.isArray(fbParsed.angles) ? fbParsed.angles : [];
     if (!Array.isArray(parsed.sources)) parsed.sources = fbParsed.sources || [];
   }
